@@ -24,7 +24,6 @@ import (
 	"github.com/dfuse-io/derr"
 	_ "github.com/dfuse-io/dfuse-solana/codec"
 	"github.com/dfuse-io/dlauncher/launcher"
-	dmeshClient "github.com/dfuse-io/dmesh/client"
 	_ "github.com/dfuse-io/kvdb/store/badger"
 	_ "github.com/dfuse-io/kvdb/store/bigkv"
 	_ "github.com/dfuse-io/kvdb/store/tikv"
@@ -68,10 +67,10 @@ func Start(dataDir string, args []string) (err error) {
 		return err
 	}
 
-	meshClient, err := dmeshClient.New(viper.GetString("search-common-mesh-dsn"))
-	if err != nil {
-		return fmt.Errorf("unable to create dmesh client: %w", err)
-	}
+	//meshClient, err := dmeshClient.New(viper.GetString("search-common-mesh-dsn"))
+	//if err != nil {
+	//	return fmt.Errorf("unable to create dmesh client: %w", err)
+	//}
 
 	/// SETUP CHAIN TRACKER
 	//tracker := bstream.NewTracker(250)
@@ -98,7 +97,7 @@ func Start(dataDir string, args []string) (err error) {
 	////////
 
 	modules := &launcher.Runtime{
-		SearchDmeshClient: meshClient,
+		//SearchDmeshClient: meshClient,
 		//BlockFilter:       blockfilter,
 		AbsDataDir: dataDirAbs,
 		//Tracker:           tracker,

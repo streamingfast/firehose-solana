@@ -11,6 +11,7 @@ require (
 	github.com/dfuse-io/kvdb v0.0.0-20200508203924-c107cb0b2fa2
 	github.com/dfuse-io/logging v0.0.0-20200611143916-aade15324493
 	github.com/dfuse-io/pbgo v0.0.6-0.20200602201455-99986ef5a09d
+	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
 	github.com/manifoldco/promptui v0.7.0 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
