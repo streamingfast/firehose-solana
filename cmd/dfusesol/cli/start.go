@@ -20,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/derr"
 	_ "github.com/dfuse-io/dfuse-solana/codec"
 	"github.com/dfuse-io/dlauncher/launcher"
@@ -103,11 +102,11 @@ func Start(dataDir string, args []string) (err error) {
 		//Tracker:           tracker,
 	}
 
-	err = bstream.ValidateRegistry()
-	if err != nil {
-		return fmt.Errorf("protocol specific hooks not configured correctly: %w", err)
-	}
-
+	/*	err = bstream.ValidateRegistry()
+		if err != nil {
+			return fmt.Errorf("protocol specific hooks not configured correctly: %w", err)
+		}
+	*/
 	launch := launcher.NewLauncher(modules)
 	userLog.Debug("launcher created")
 
