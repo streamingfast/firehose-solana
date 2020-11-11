@@ -3,7 +3,6 @@ package cli
 import (
 	"github.com/dfuse-io/dfuse-solana/graphql/app/graphql"
 	"github.com/dfuse-io/dlauncher/launcher"
-	"github.com/dfuse-io/logging"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -11,10 +10,6 @@ import (
 )
 
 func init() {
-	appLogger := zap.NewNop()
-
-	logging.Register("github.com/dfuse-io/dfuse-solana/graphql", &appLogger)
-
 	launcher.RegisterApp(&launcher.AppDef{
 		ID:          "graphql",
 		Title:       "graphql",
@@ -27,7 +22,6 @@ func init() {
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("graphql-rpc-endpoint", "api.mainnet-beta.solana.com:80/rpc", "")
 			cmd.Flags().String("graphql-http-listen-addr", ":8080", "")
-			cmd.Flags().String("graphql-config-name", "mainnet", "")
 			cmd.Flags().String("graphql-config-name", "mainnet", "")
 			return nil
 		},
