@@ -35,15 +35,15 @@ func init() {
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "schema.graphql",
-		FileModTime: time.Unix(1605037499, 0),
+		FileModTime: time.Unix(1605109052, 0),
 
-		Content: string("schema {\n  query: Queries\n  subscription: Subscription\n  mutation: Mutations\n}\n\ntype Queries {\n}\n\ntype Subscription {\n  market(\n    marketAddress: String!\n  ): OrderBook\n}\n\ntype Mutations {\n}\n\ntype OrderBook {\n  type: OrderBookType!\n  orders: [Order!]!\n}\n\nenum OrderBookType {\n  ASK\n  BID\n}\n\ntype Order {\n}\n\nscalar Int32\nscalar Int64\nscalar JSON\n"),
+		Content: string("schema {\n  query: Queries\n  subscription: Subscription\n  mutation: Mutations\n}\n\ntype Queries {\n}\n\ntype Subscription {\n  market(\n    marketAddress: String!\n  ): OrderBook\n\n  transaction(accountAddress: String!): String\n}\n\ntype Mutations {\n}\n\ntype OrderBook {\n  type: OrderBookType!\n  orders: [Order!]!\n}\n\nenum OrderBookType {\n  ASK\n  BID\n}\n\ntype Order {\n}\n\nscalar Int32\nscalar Int64\nscalar JSON\n"),
 	}
 
 	// define dirs
 	dir1 := &embedded.EmbeddedDir{
 		Filename:   "",
-		DirModTime: time.Unix(1605037499, 0),
+		DirModTime: time.Unix(1605109052, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file2, // "favorites.json"
 			file3, // "graphiql.html"
@@ -60,7 +60,7 @@ func init() {
 	// register embeddedBox
 	embedded.RegisterEmbeddedBox(`build`, &embedded.EmbeddedBox{
 		Name: `build`,
-		Time: time.Unix(1605037499, 0),
+		Time: time.Unix(1605109052, 0),
 		Dirs: map[string]*embedded.EmbeddedDir{
 			"": dir1,
 		},

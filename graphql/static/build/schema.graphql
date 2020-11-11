@@ -11,6 +11,8 @@ type Subscription {
   market(
     marketAddress: String!
   ): OrderBook
+
+  trade(accountAddress: String!): String
 }
 
 type Mutations {

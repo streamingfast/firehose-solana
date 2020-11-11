@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/dfuse-io/solana-go/rpc"
+
 	"github.com/dfuse-io/logging"
 
 	rice "github.com/GeertJohan/go.rice"
@@ -38,7 +40,7 @@ func (s *Server) Launch() error {
 	// initialize GraphQL
 	box := rice.MustFindBox("build")
 
-	resolver := resolvers.NewRoot(s.rpcRUL, s.wsURL)
+	resolver := resolvers.NewRoot(rpc.NewClient(s.rpcRUL), s.wsURL)
 	schema, err := graphql.ParseSchema(
 		string(box.MustBytes("schema.graphql")),
 		resolver,

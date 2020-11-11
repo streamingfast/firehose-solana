@@ -1,18 +1,14 @@
 package resolvers
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
 	"go.uber.org/zap"
 
-	"github.com/lunixbochs/struc"
-
 	"github.com/dfuse-io/solana-go/serum"
 
 	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/rpc"
 	"github.com/dfuse-io/solana-go/rpc/ws"
 )
 
@@ -34,31 +30,24 @@ func (r *Root) Market(ctx context.Context, args *MarketRequest) (<-chan *OrderBo
 		return nil, fmt.Errorf("order book subscription: websocket dial: %w", err)
 	}
 
-	_ = wsClient
-
-	rpcClient := rpc.NewClient(r.rpcURL)
-
-	accountInfo, err := rpcClient.GetAccountInfo(ctx, marketPublicKey)
+	accountInfo, err := r.rpcClient.GetAccountInfo(ctx, marketPublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("order book subscription: get account info: %w", err)
 	}
 	zlog.Debug("got account info, about to unpack", zap.Int("data_length", len(accountInfo.Value.Data)))
 
 	var market serum.MarketV2
-	err = struc.Unpack(bytes.NewReader(accountInfo.Value.Data), &market)
+	err = market.Decode(accountInfo.Value.Data)
 	if err != nil {
 		return nil, fmt.Errorf("order book subscription: unpack market: %w", err)
 	}
-	zlog.Debug("market unpacked")
-	fmt.Println("market:", market)
 
 	c := make(chan *OrderBook)
 
-	sub, err := wsClient.AccountSubscribe(marketPublicKey, "")
+	sub, err := wsClient.AccountSubscribe(market.Asks, "")
 	if err != nil {
 		return nil, fmt.Errorf("order book subscription: subscribe account info: %w", err)
 	}
-
 	go func() {
 		for {
 			result, err := sub.Recv()
