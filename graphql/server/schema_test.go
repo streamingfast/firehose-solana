@@ -1,4 +1,4 @@
-package graphql
+package server
 
 import (
 	"io/ioutil"
@@ -15,7 +15,7 @@ func TestSchema(t *testing.T) {
 	cnt, err := ioutil.ReadFile("static/build/schema.graphql")
 	require.NoError(t, err)
 
-	rootResolver := resolvers.NewRoot(nil, "")
+	rootResolver := resolvers.NewRoot(nil, "", nil)
 
 	_, err = graphql.ParseSchema(
 		string(cnt),

@@ -1,4 +1,4 @@
-package graphql
+package server
 
 import (
 	"context"
@@ -6,15 +6,14 @@ import (
 	"net"
 	"net/http"
 
+	graphql2 "github.com/dfuse-io/dfuse-solana/graphql"
 	"github.com/dfuse-io/solana-go/rpc"
-
 	"github.com/dfuse-io/logging"
-
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/dfuse-io/derr"
 	"github.com/dfuse-io/dfuse-solana/graphql/apollo"
 	"github.com/dfuse-io/dfuse-solana/graphql/resolvers"
-	"github.com/dfuse-io/dfuse-solana/graphql/static"
+	"github.com/dfuse-io/dfuse-solana/graphql/server/static"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
@@ -24,15 +23,17 @@ import (
 
 type Server struct {
 	servingAddr string
-	rpcRUL      string
+	rpcClient *rpc.Client
+	subManager *graphql2.Manager
 	wsURL       string
 }
 
-func NewServer(servingAddr string, rpcRUL string, wsURL string) *Server {
+func NewServer(servingAddr string, rpcEndpoint string, manager *graphql2.Manager) *Server {
 	return &Server{
 		servingAddr: servingAddr,
-		rpcRUL:      rpcRUL,
-		wsURL:       wsURL,
+		rpcClient:   rpc.NewClient(fmt.Sprintf("http://%s", rpcEndpoint)),
+		subManager:  manager,
+		wsURL:       fmt.Sprintf("ws://%s", rpcEndpoint),
 	}
 }
 
@@ -40,7 +41,7 @@ func (s *Server) Launch() error {
 	// initialize GraphQL
 	box := rice.MustFindBox("build")
 
-	resolver := resolvers.NewRoot(rpc.NewClient(s.rpcRUL), s.wsURL)
+	resolver := resolvers.NewRoot(s.rpcClient, s.wsURL,s.subManager)
 	schema, err := graphql.ParseSchema(
 		string(box.MustBytes("schema.graphql")),
 		resolver,

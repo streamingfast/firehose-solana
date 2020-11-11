@@ -25,6 +25,9 @@ func init() {
 			[]zapcore.Level{zap.WarnLevel, zap.WarnLevel, zap.InfoLevel, zap.DebugLevel},
 		),
 		RegisterFlags: func(cmd *cobra.Command) error {
+			cmd.Flags().String("graphql-rpc-endpoint", "api.mainnet-beta.solana.com:80/rpc", "")
+			cmd.Flags().String("graphql-http-listen-addr", ":8080", "")
+			cmd.Flags().String("graphql-config-name", "mainnet", "")
 			cmd.Flags().String("graphql-config-name", "mainnet", "")
 			return nil
 		},
@@ -33,7 +36,9 @@ func init() {
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
 			return graphql.New(&graphql.Config{
-				Name: viper.GetString("graphql-config-name"),
+				Name:              viper.GetString("graphql-config-name"),
+				RPCEndpoint:       viper.GetString("graphql-rpc-endpoint"),
+				HTTPListenAddress: viper.GetString("graphql-http-listen-addr"),
 			}, &graphql.Modules{}), nil
 		},
 	})
