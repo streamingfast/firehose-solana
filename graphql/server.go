@@ -1,8 +1,12 @@
 package graphql
 
 import (
+	"context"
+	"fmt"
 	"net"
 	"net/http"
+
+	"github.com/dfuse-io/logging"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/dfuse-io/derr"
@@ -40,6 +44,7 @@ func (s *Server) Launch() error {
 		resolver,
 		graphql.UseFieldResolvers(),
 		graphql.UseStringDescriptions(),
+		graphql.Logger(&graphqlLogger{}),
 	)
 	derr.Check("parse schema", err)
 	return StartHTTPServer(s.servingAddr, schema)
@@ -85,4 +90,16 @@ func NewCORSMiddleware() mux.MiddlewareFunc {
 	maxAge := handlers.MaxAge(86400) // 24 hours - hard capped by Firefox / Chrome is max 10 minutes
 
 	return handlers.CORS(allowedHeaders, allowedOrigins, allowedMethods, maxAge)
+}
+
+type graphqlLogger struct{}
+
+func (*graphqlLogger) LogPanic(ctx context.Context, value interface{}) {
+	var err error
+	if v, ok := value.(error); ok {
+		err = v
+	} else {
+		err = fmt.Errorf("unknown error: %s", value)
+	}
+	logging.Logger(ctx, zlog).Error("graphlql resolver panicked", zap.Error(err))
 }

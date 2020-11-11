@@ -8,8 +8,8 @@ type Queries {
 }
 
 type Subscription {
-  orderBook(
-    dexAddress: String!
+  market(
+    marketAddress: String!
   ): OrderBook
 }
 

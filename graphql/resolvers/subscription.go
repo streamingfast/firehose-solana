@@ -1,47 +1,79 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+
+	"go.uber.org/zap"
+
+	"github.com/lunixbochs/struc"
+
+	"github.com/dfuse-io/solana-go/serum"
 
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/rpc"
 	"github.com/dfuse-io/solana-go/rpc/ws"
 )
 
-type OrderBookRequest struct {
-	DexAddress string
+type MarketRequest struct {
+	MarketAddress string
 }
 
-func (r *Root) OrderBook(ctx context.Context, args *OrderBookRequest) (<-chan *OrderBook, error) {
+func (r *Root) Market(ctx context.Context, args *MarketRequest) (<-chan *OrderBook, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			zlog.Error("market subscription: recovering from panic:", zap.Error(r.(error)))
+		}
+	}()
 
-	dexPublicKey := solana.MustPublicKeyFromBase58(args.DexAddress)
+	zlog.Info("entering market subscription.")
+	marketPublicKey := solana.MustPublicKeyFromBase58(args.MarketAddress)
 	wsClient, err := ws.Dial(ctx, r.wsURL)
 	if err != nil {
 		return nil, fmt.Errorf("order book subscription: websocket dial: %w", err)
 	}
 
+	_ = wsClient
+
 	rpcClient := rpc.NewClient(r.rpcURL)
 
-	_, err = rpcClient.GetAccountInfo(ctx, dexPublicKey)
+	accountInfo, err := rpcClient.GetAccountInfo(ctx, marketPublicKey)
 	if err != nil {
 		return nil, fmt.Errorf("order book subscription: get account info: %w", err)
 	}
+	zlog.Debug("got account info, about to unpack", zap.Int("data_length", len(accountInfo.Value.Data)))
 
-	sub, err := wsClient.AccountSubscribe(dexPublicKey, "")
+	var market serum.MarketV2
+	err = struc.Unpack(bytes.NewReader(accountInfo.Value.Data), &market)
+	if err != nil {
+		return nil, fmt.Errorf("order book subscription: unpack market: %w", err)
+	}
+	zlog.Debug("market unpacked")
+	fmt.Println("market:", market)
+
+	c := make(chan *OrderBook)
+
+	sub, err := wsClient.AccountSubscribe(marketPublicKey, "")
 	if err != nil {
 		return nil, fmt.Errorf("order book subscription: subscribe account info: %w", err)
 	}
 
-	for {
-		result, err := sub.Recv()
-		if err != nil {
-			return nil, fmt.Errorf("order book subscription: subscribe account info: %w", err)
+	go func() {
+		for {
+			result, err := sub.Recv()
+			if err != nil {
+				zlog.Error("sub.")
+				//return nil, fmt.Errorf("order book subscription: subscribe account info: %w", err)
+			}
+			account := result.(*ws.AccountResult).Value.Account
+			fmt.Println("account owner:", account.Owner)
+			fmt.Println("account data:", account.Data.String())
 		}
-		account := result.(*ws.AccountResult).Value.Account
-		fmt.Println("account owner:", account.Owner)
-		fmt.Println("account data:", account.Data.String())
-	}
+	}()
+
+	return c, nil
+
 }
 
 type OrderBook struct {
