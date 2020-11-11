@@ -37,7 +37,7 @@ func init() {
 		Filename:    "schema.graphql",
 		FileModTime: time.Unix(1605109052, 0),
 
-		Content: string("schema {\n  query: Queries\n  subscription: Subscription\n  mutation: Mutations\n}\n\ntype Queries {\n}\n\ntype Subscription {\n  market(\n    marketAddress: String!\n  ): OrderBook\n\n  transaction(accountAddress: String!): String\n}\n\ntype Mutations {\n}\n\ntype OrderBook {\n  type: OrderBookType!\n  orders: [Order!]!\n}\n\nenum OrderBookType {\n  ASK\n  BID\n}\n\ntype Order {\n}\n\nscalar Int32\nscalar Int64\nscalar JSON\n"),
+		Content: string("schema {\n  query: Queries\n  subscription: Subscription\n  mutation: Mutations\n}\n\ntype Queries {\n}\n\ntype Subscription {\n  market(\n    marketAddress: String!\n  ): OrderBook\n\n  trade(accountAddress: String!): String\n}\n\ntype Mutations {\n}\n\ntype OrderBook {\n  type: OrderBookType!\n  orders: [Order!]!\n}\n\nenum OrderBookType {\n  ASK\n  BID\n}\n\ntype Order {\n}\n\nscalar Int32\nscalar Int64\nscalar JSON\n"),
 	}
 
 	// define dirs
