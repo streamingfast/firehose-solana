@@ -8,5 +8,5 @@ import (
 var zlog = zap.NewNop()
 
 func init() {
-	logging.Register("github.com/eoscanada/admin-api/apollo", &zlog)
+	logging.Register("github.com/dfuse-io/dfuse-solana/graphql/apollo", &zlog)
 }

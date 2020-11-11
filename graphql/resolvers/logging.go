@@ -8,5 +8,5 @@ import (
 var zlog = zap.NewNop()
 
 func init() {
-	logging.Register("github.com/dfuse/solana-go/api/graphql/resolvers", &zlog)
+	logging.Register("github.com/dfuse-io/dfuse-solana/graphql/resolvers", &zlog)
 }

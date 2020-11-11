@@ -25,5 +25,5 @@ var traceEnabled = os.Getenv("TRACE") != ""
 var zlog = zap.NewNop()
 
 func init() {
-	logging.Register("github.com/dfuse-io/solana-go/api/graphql", &zlog)
+	logging.Register("github.com/dfuse-io/dfuse-solana/graphql", &zlog)
 }
