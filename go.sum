@@ -132,6 +132,7 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f/go.mod h1:xH/i4TFMt8koVQZ6WFms69WAsDWr2XsYL3Hkl7jkoLE=
 github.com/dfuse-io/bstream v0.0.2-0.20200714123252-e9115283f55f h1:3sATpfUBNfPxSkdcsA5CT3JXMXoypJdT0zMXrM7JEdI=
 github.com/dfuse-io/bstream v0.0.2-0.20200714123252-e9115283f55f/go.mod h1:BHEANTxf3ORDdJdGmQ+lJyX8JqjUH45WGBvBKBaMLQg=
+github.com/dfuse-io/dauth v0.0.0-20200529171443-21c0e2d262c2 h1:vwhGlWTxCLt+9YHYYL/RkT9m0G5Hc2YLO8EFBz29gdw=
 github.com/dfuse-io/dauth v0.0.0-20200529171443-21c0e2d262c2/go.mod h1:tab5biQg59hbrHjaXTjaLcsP3zblx6B0I0Keu03xB44=
 github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb h1:yrE/Ncb9PAjdN7w5Ixx47Oy1kQQdluBfuv7c8D9UaPQ=
 github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb/go.mod h1:yMMhO8IdiSS+R/961s9Ac1oyAx3MdAO0OneSZ9Wt/Wg=
@@ -140,16 +141,19 @@ github.com/dfuse-io/derr v0.0.0-20200417132224-d333cfd0e9a0 h1:saup3uh3r5kk12Kbr
 github.com/dfuse-io/derr v0.0.0-20200417132224-d333cfd0e9a0/go.mod h1:/DjjRCyTi/KIiI1E1hnhvfWwg+K06jo+qM4VcjHvHq4=
 github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152 h1:8Ee802t3evsUTc7B/W9Lf1pavPje2dtYWEpMtMnE7TY=
 github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152/go.mod h1:8bq4KABI5QklH7a16SFIH7/R/jNCOloKu20T5VP+iTk=
+github.com/dfuse-io/dgraphql v0.0.1 h1:BsUa00b2iKvLRjNwb1DbM+dkCj32bRNQcAcuk9z3eQk=
 github.com/dfuse-io/dgraphql v0.0.1/go.mod h1:/VVsS8/b2hi4Xj07wVfqk+kgx/EEAiVDytLQ5wGPWYM=
 github.com/dfuse-io/dgrpc v0.0.0-20200406214416-6271093e544c h1:ebrUj1rR2g1ErpCMjQUmTON3T3MNi22wf/vYJ/zSkXI=
 github.com/dfuse-io/dgrpc v0.0.0-20200406214416-6271093e544c/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
 github.com/dfuse-io/dgrpc v0.0.0-20200417124327-c8f215bc4ce5 h1:O53JE3UcuZ1o998PPROQEgXsF3XqFbvupfkWPvHat8s=
 github.com/dfuse-io/dgrpc v0.0.0-20200417124327-c8f215bc4ce5/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
+github.com/dfuse-io/dipp v1.0.1-0.20200407033930-5c17c531c3c4 h1:2y5Tbm8RPbhCSutKgJwa328F/bJ23rpWC8clt5LhCiA=
 github.com/dfuse-io/dipp v1.0.1-0.20200407033930-5c17c531c3c4/go.mod h1:4OSkJC9kCEQMw9f79Kl4Dl2vQZxQLknn0W7hZlZLsPM=
 github.com/dfuse-io/dlauncher v0.0.0-20200715193603-ea2a15e9e193 h1:W+gcmETqW0zuJLyLFfHhJU0T+oQ9NXMpW/SOekS3ymc=
 github.com/dfuse-io/dlauncher v0.0.0-20200715193603-ea2a15e9e193/go.mod h1:2dQkCV/nxU/DphxWLWWzRsEF0KcFxv5NHE9ASSytmsY=
 github.com/dfuse-io/dmesh v0.0.0-20200602201926-d79e48fdac7c h1:j6tHp6tKicuytJDuYAZkP69uh+tx1OkE/GDx5idYzrk=
 github.com/dfuse-io/dmesh v0.0.0-20200602201926-d79e48fdac7c/go.mod h1:e1x/Bvi0Y0Hl5pJCboN4RnNHwGuVqS6kIZFgrAs9V2E=
+github.com/dfuse-io/dmetering v0.0.0-20200529171737-525c3029795c h1:W7m94YJYS+JMr/ZNnhATMn3tgH42p7dGyp+La2MjPWA=
 github.com/dfuse-io/dmetering v0.0.0-20200529171737-525c3029795c/go.mod h1:Qtr0qJsu5zfOJEKxNhp+hlTB785Psam/iAR2VbMa7uA=
 github.com/dfuse-io/dmetrics v0.0.0-20200406214800-499fc7b320ab h1:sgm+qkT4EM6q2App/t9h5FoPqsJ4Ooph5zw7BdBpbfU=
 github.com/dfuse-io/dmetrics v0.0.0-20200406214800-499fc7b320ab/go.mod h1:bTeE3yXvn/O8f0hw7wOstnUrKTCw9HDzC6aBtldPVRI=
@@ -172,6 +176,7 @@ github.com/dfuse-io/logging v0.0.0-20200611143916-aade15324493 h1:rMaoK/SwpP+wVv
 github.com/dfuse-io/logging v0.0.0-20200611143916-aade15324493/go.mod h1:80YyilHcgoqrnoIeeJKgcsOw6Y/0/bQzDO/XzNIrIdM=
 github.com/dfuse-io/logging v0.0.0-20201023175426-d0173f8508dc h1:w3SL2sM5CM8F4bxS7Ny8WKFavUujbBEL/eo8bzh2tV4=
 github.com/dfuse-io/logging v0.0.0-20201023175426-d0173f8508dc/go.mod h1:V+ED4kT/t/lKtH99JQmKIb0v9WL3VaYkJ36CfHlVECI=
+github.com/dfuse-io/opaque v0.0.0-20200407012705-75c4ca372d71 h1:4sHaW1PpyHN2akafVagucu/t+4RqCJQ3WEuowxhdudk=
 github.com/dfuse-io/opaque v0.0.0-20200407012705-75c4ca372d71/go.mod h1:X6Ib6YZlRUabwo4Elw7u1YOLBEiU93r1MwxL3zwY6RE=
 github.com/dfuse-io/pbgo v0.0.6-0.20200407175820-b82ffcb63bf6/go.mod h1:thG/VHT3fqEpuhfxNA7psbzizGgJ3kSCM0rSUZ/LNaQ=
 github.com/dfuse-io/pbgo v0.0.6-0.20200602201455-99986ef5a09d h1:qANtvvff34ioxSulVT9OkGukfo4erOkNtTkj1lCdU+I=
@@ -373,6 +378,7 @@ github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxv
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
+github.com/kr/pretty v0.2.0 h1:s5hAObm+yFO5uHYt5dYjxi2rXrsnmRpJx4OYvIWUaQs=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=

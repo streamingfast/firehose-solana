@@ -2,11 +2,15 @@ package graphql
 
 import (
 	"github.com/dfuse-io/dfuse-solana/graphql"
+	"github.com/dfuse-io/dfuse-solana/graphql/server"
 	"github.com/dfuse-io/shutter"
+	"go.uber.org/zap"
 )
 
 type Config struct {
-	Name string
+	Name              string
+	RPCEndpoint       string
+	HTTPListenAddress string
 }
 
 type Modules struct {
@@ -29,7 +33,16 @@ func New(config *Config, modules *Modules) *App {
 }
 
 func (a *App) Run() error {
-	server := graphql.NewServer(":8080", "http://api.mainnet-beta.solana.com:80/rpc", "ws://api.mainnet-beta.solana.com:80/rpc")
+	zlog.Info("running graphql application", zap.Reflect("config", a.config))
+
+	manager := graphql.NewManager()
+
+	s := server.NewServer(
+		a.config.HTTPListenAddress,
+		a.config.RPCEndpoint,
+		manager,
+	)
 	zlog.Info("serving ...")
-	return server.Launch()
+
+	return s.Launch()
 }

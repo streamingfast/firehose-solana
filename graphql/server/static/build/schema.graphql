@@ -12,18 +12,33 @@ type Subscription {
     marketAddress: String!
   ): OrderBook
 
-  trade(accountAddress: String!): String
+  trade(account: String!): Trade
+
+}
+
+type Trade {
+  market: Market!
+  side: Side!
+  size: Float!
+  price: Float!
+  liquidity: Float!
+  fee: Float!
+}
+
+type Market {
+  name: String
+  address: String!
 }
 
 type Mutations {
 }
 
 type OrderBook {
-  type: OrderBookType!
+  type: Side!
   orders: [Order!]!
 }
 
-enum OrderBookType {
+enum Side {
   ASK
   BID
 }
@@ -31,6 +46,3 @@ enum OrderBookType {
 type Order {
 }
 
-scalar Int32
-scalar Int64
-scalar JSON
