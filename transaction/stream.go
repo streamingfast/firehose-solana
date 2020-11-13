@@ -10,8 +10,8 @@ import (
 )
 
 type TrxProcessor interface {
-	process(trx *rpc.TransactionWithMeta)
-	processErr(err error)
+	Process(trx *rpc.TransactionWithMeta)
+	ProcessErr(err error)
 }
 
 type Stream struct {
@@ -26,7 +26,6 @@ func NewStream(rpcClient *rpc.Client, wsURL string, processor TrxProcessor) *Str
 		wsURL:     wsURL,
 		processor: processor,
 	}
-
 }
 
 func (s *Stream) Launch(ctx context.Context) error {
@@ -53,10 +52,10 @@ func (s *Stream) Launch(ctx context.Context) error {
 			block, err := s.rpcClient.GetConfirmedBlock(ctx, slot.Slot, "json")
 			if err != nil {
 				zlog.Error("failed to get confirmed block", zap.Uint64("slot", slot.Slot))
-				s.processor.processErr(err)
+				s.processor.ProcessErr(err)
 			}
 			for _, trx := range block.Transactions {
-				s.processor.process(&trx)
+				s.processor.Process(&trx)
 			}
 		}
 	}()

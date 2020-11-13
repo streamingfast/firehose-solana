@@ -1,20 +1,21 @@
 package resolvers
 
-import "github.com/dfuse-io/solana-go/rpc"
-
-import "github.com/dfuse-io/dfuse-solana/graphql"
+import (
+	"github.com/dfuse-io/dfuse-solana/graphql/trade"
+	"github.com/dfuse-io/solana-go/rpc"
+)
 
 // Root is the root resolvers.
 type Root struct {
-	rpcClient *rpc.Client
-	manager   *graphql.Manager
-	wsURL     string
+	rpcClient    *rpc.Client
+	tradeManager *trade.Manager
+	wsURL        string
 }
 
-func NewRoot(rpcClient *rpc.Client, wsURL string, manager *graphql.Manager) *Root {
+func NewRoot(rpcClient *rpc.Client, wsURL string, manager *trade.Manager) *Root {
 	return &Root{
-		rpcClient: rpcClient,
-		wsURL:     wsURL,
-		manager:   manager,
+		rpcClient:    rpcClient,
+		wsURL:        wsURL,
+		tradeManager: manager,
 	}
 }

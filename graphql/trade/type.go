@@ -1,4 +1,4 @@
-package graphql
+package trade
 
 import "math/big"
 

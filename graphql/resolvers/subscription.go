@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+
 	"github.com/dfuse-io/logging"
 	"go.uber.org/zap"
 
@@ -23,10 +24,7 @@ func (r *Root) Trade(ctx context.Context, args *TradeArgs) (<-chan *Trade, error
 
 	zlogger.Info("received trade stream", zap.String("account", account))
 
-
-	sub := r.manager.Subscribe(account)
-
-
+	sub := r.tradeManager.Subscribe(account)
 
 	//emitError := func(err error) {
 	//	out := &Trade{
@@ -35,15 +33,13 @@ func (r *Root) Trade(ctx context.Context, args *TradeArgs) (<-chan *Trade, error
 	//	c <- out
 	//}
 
-
-
 	go func() {
 		zlog.Info("starting stream from channel")
 		for {
 			select {
 			case <-ctx.Done():
 				zlogger.Info("received context cancelled for trade")
-				r.manager.Unsubscribe(sub)
+				r.tradeManager.Unsubscribe(sub)
 				break
 			case t := <-sub.Stream:
 				c <- newTrade(t)
