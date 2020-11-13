@@ -31,6 +31,12 @@ func NewManager() *Manager {
 }
 
 func (m *Manager) ProcessBlock(blk interface{}) {
+	founc : =map[]
+
+	Transaction()
+	Tran
+
+	sub.Push(NewTrade)
 
 }
 

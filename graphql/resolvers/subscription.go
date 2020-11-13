@@ -23,6 +23,11 @@ func (r *Root) Trade(ctx context.Context, args *TradeArgs) (<-chan *Trade, error
 
 	zlogger.Info("received trade stream", zap.String("account", account))
 
+
+	sub := r.manager.Subscribe(account)
+
+
+
 	//emitError := func(err error) {
 	//	out := &Trade{
 	//		err: dgraphql.UnwrapError(ctx, err),
@@ -30,7 +35,7 @@ func (r *Root) Trade(ctx context.Context, args *TradeArgs) (<-chan *Trade, error
 	//	c <- out
 	//}
 
-	sub := r.manager.Subscribe(account)
+
 
 	go func() {
 		zlog.Info("starting stream from channel")
