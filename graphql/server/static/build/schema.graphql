@@ -17,12 +17,13 @@ type Subscription {
 }
 
 type Trade {
-  market: Market!
-  side: Side!
-  size: Float!
-  price: Float!
-  liquidity: Float!
-  fee: Float!
+  type: String!
+  body: String!
+#  side: Side!
+#  size: Float!
+#  price: Float!
+#  liquidity: Float!
+#  fee: Float!
 }
 
 type Market {

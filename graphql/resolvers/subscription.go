@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/dfuse-io/dfuse-solana/graphql/trade"
+
 	"github.com/dfuse-io/logging"
 	"go.uber.org/zap"
 
@@ -18,37 +20,38 @@ type TradeArgs struct {
 
 func (r *Root) Trade(ctx context.Context, args *TradeArgs) (<-chan *Trade, error) {
 	zlogger := logging.Logger(ctx, zlog)
-
+	zlogger.Info("received trade stream", zap.String("account", args.Account))
 	c := make(chan *Trade)
-	account := args.Account
+	account, err := solana.PublicKeyFromBase58(args.Account)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse public key: %w", err)
+	}
 
-	zlogger.Info("received trade stream", zap.String("account", account))
-
-	sub := r.tradeManager.Subscribe(account)
-
-	//emitError := func(err error) {
-	//	out := &Trade{
-	//		err: dgraphql.UnwrapError(ctx, err),
-	//	}
-	//	c <- out
-	//}
+	sub := trade.NewSubscription(account)
 
 	go func() {
 		zlog.Info("starting stream from channel")
 		for {
+			zlog.Info("waiting for instruction")
 			select {
 			case <-ctx.Done():
 				zlogger.Info("received context cancelled for trade")
 				r.tradeManager.Unsubscribe(sub)
 				break
 			case t := <-sub.Stream:
+				zlogger.Info("graphql subscription received a new instruction")
 				c <- newTrade(t)
+				zlogger.Info("sent graphql new instruction subscription")
 			}
 		}
+		zlog.Info("clsoing channel")
 		close(c)
 	}()
 
-	return nil, nil
+	r.tradeManager.Subscribe(sub)
+	sub.Backfill(ctx, r.rpcClient)
+
+	return c, nil
 }
 
 type MarketRequest struct {

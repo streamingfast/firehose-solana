@@ -47,13 +47,19 @@ func (s *Stream) Launch(ctx context.Context) error {
 				zlog.Error("sub.")
 			}
 			slot := result.(*ws.SlotResult)
-			fmt.Println("slot parent:", slot.Root, slot.Parent, slot.Slot)
+			//fmt.Println("slot parent:", slot.Root, slot.Parent, slot.Slot)
 
 			block, err := s.rpcClient.GetConfirmedBlock(ctx, slot.Slot, "json")
 			if err != nil {
 				zlog.Error("failed to get confirmed block", zap.Uint64("slot", slot.Slot))
 				s.processor.ProcessErr(err)
+				continue
 			}
+			if block == nil {
+				zlog.Error("received empty block result")
+				continue
+			}
+
 			for _, trx := range block.Transactions {
 				s.processor.Process(&trx)
 			}
