@@ -1,0 +1,25 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: gce
+    networking.gke.io/managed-certificates: sol-dfuse-io
+  name: default-ingress
+  namespace: sol-mainnet
+spec:
+  rules:
+  - host: mainnet.sol.dfuse.io
+    http:
+      paths:
+      - backend:
+          serviceName: dgraphql-v1
+          servicePort: 8080
+        path: /graphiql
+      - backend:
+          serviceName: dgraphql-v1
+          servicePort: 8080
+        path: /graphiql/*
+      - backend:
+          serviceName: dgraphql-v1
+          servicePort: 8080
+        path: /graphql
