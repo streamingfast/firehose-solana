@@ -51,7 +51,10 @@ func (s *Stream) Launch(ctx context.Context) error {
 
 			block, err := s.rpcClient.GetConfirmedBlock(ctx, slot.Slot-100, "json")
 			if err != nil {
-				zlog.Error("failed to get confirmed block", zap.Uint64("slot", slot.Slot))
+				if traceEnabled {
+					zlog.Error("failed to get confirmed block", zap.Uint64("slot", slot.Slot))
+				}
+
 				s.processor.ProcessErr(err)
 				continue
 			}

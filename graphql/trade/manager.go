@@ -21,10 +21,11 @@ type Subscription struct {
 }
 
 func (s Subscription) Push(inst *serum.Instruction) {
-	zlog.Debug("sending instruction to subscription",
-		zap.Reflect("instruction", inst),
-	)
-	// todo should we check channel capacity
+	if traceEnabled {
+		zlog.Debug("sending instruction to subscription",
+			zap.Reflect("instruction", inst),
+		)
+	}
 	s.Stream <- inst
 }
 
@@ -53,7 +54,9 @@ type Manager struct {
 }
 
 func (m *Manager) ProcessErr(err error) {
-	zlog.Debug("managaer received stream err", zap.String("error", err.Error()))
+	if traceEnabled {
+		zlog.Debug("manager received stream err", zap.String("error", err.Error()))
+	}
 }
 
 func NewManager() *Manager {
@@ -107,9 +110,11 @@ func getStreamableInstructions(trx *rpc.TransactionWithMeta, sender func(inst *s
 
 			sender(instruction)
 		} else {
-			zlog.Debug("skipping none serum DEX program ID",
-				zap.Stringer("program_id", programID),
-			)
+			if traceEnabled {
+				zlog.Debug("skipping none serum DEX program ID",
+					zap.Stringer("program_id", programID),
+				)
+			}
 		}
 	}
 }

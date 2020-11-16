@@ -35,15 +35,15 @@ func init() {
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "schema.graphql",
-		FileModTime: time.Unix(1605286787, 0),
+		FileModTime: time.Unix(1605551011, 0),
 
-		Content: string("schema {\n  query: Queries\n  subscription: Subscription\n  mutation: Mutations\n}\n\ntype Queries {\n}\n\ntype Subscription {\n  market(\n    marketAddress: String!\n  ): OrderBook\n\n  trade(account: String!): Trade\n\n}\n\ntype Trade {\n  type: String!\n  body: String!\n#  side: Side!\n#  size: Float!\n#  price: Float!\n#  liquidity: Float!\n#  fee: Float!\n}\n\ntype Market {\n  name: String\n  address: String!\n}\n\ntype Mutations {\n}\n\ntype OrderBook {\n  type: Side!\n  orders: [Order!]!\n}\n\nenum Side {\n  ASK\n  BID\n}\n\ntype Order {\n}\n\n"),
+		Content: string("schema {\n  query: Queries\n  subscription: Subscription\n}\n\ntype Queries {\n}\n\ntype Subscription {\n  serum(account: String!,market: String!): SerumCall\n}\n\n\ntype SerumCall {\n  instruction: SerumInstruction\n}\n\n\nunion SerumInstruction = SerumInitializeMarket | SerumNewOrder | SerumMatchOrder | SerumConsumeEvents | SerumCancelOrder | SerumSettleFunds | SerumCancelOrderByClientId\n\ntype SerumInitializeMarket {\n  baseLotSize: Uint64!\n  quoteLotSize: Uint64!\n  feeRateBps: Uint64!\n  vaultSignerNonce: Uint64!\n  quoteDustThreshold: Uint64!\n}\n\ntype SerumNewOrder {\n  side:        SideType!\n  limitPrice:  Uint64!\n  maxQuantity: Uint64!\n  orderType:   OrderType!\n  clientID:    Uint64!\n}\n\ntype SerumMatchOrder {\n  limit: Uint64!\n}\n\ntype SerumConsumeEvents {\n  limit: Uint64!\n}\n\ntype SerumCancelOrder {\n  side: SideType!\n  orderId: String!\n  openOrders: String!\n  openOrderSlot: Uint64!\n}\n\ntype SerumSettleFunds {\n}\n\ntype SerumCancelOrderByClientId {\n  clientID: Uint64!\n}\n\nenum SideType {\n  ASK\n  BID\n  UNKNOWN\n}\n\nenum OrderType {\n  LIMIT\n  IMMEDIATE_OR_CANCEL\n  POST_ONLY\n  UNKNOWN\n}\n\nscalar Uint64\n"),
 	}
 
 	// define dirs
 	dir1 := &embedded.EmbeddedDir{
 		Filename:   "",
-		DirModTime: time.Unix(1605286787, 0),
+		DirModTime: time.Unix(1605551011, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file2, // "favorites.json"
 			file3, // "graphiql.html"
@@ -60,7 +60,7 @@ func init() {
 	// register embeddedBox
 	embedded.RegisterEmbeddedBox(`build`, &embedded.EmbeddedBox{
 		Name: `build`,
-		Time: time.Unix(1605286787, 0),
+		Time: time.Unix(1605551011, 0),
 		Dirs: map[string]*embedded.EmbeddedDir{
 			"": dir1,
 		},

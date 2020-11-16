@@ -16,12 +16,13 @@ import (
 
 type TradeArgs struct {
 	Account string
+	Market  string
 }
 
-func (r *Root) Trade(ctx context.Context, args *TradeArgs) (<-chan *Trade, error) {
+func (r *Root) Serum(ctx context.Context, args *TradeArgs) (<-chan *SerumCall, error) {
 	zlogger := logging.Logger(ctx, zlog)
 	zlogger.Info("received trade stream", zap.String("account", args.Account))
-	c := make(chan *Trade)
+	c := make(chan *SerumCall)
 	account, err := solana.PublicKeyFromBase58(args.Account)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse public key: %w", err)
@@ -32,24 +33,57 @@ func (r *Root) Trade(ctx context.Context, args *TradeArgs) (<-chan *Trade, error
 	go func() {
 		zlog.Info("starting stream from channel")
 		for {
-			zlog.Info("waiting for instruction")
 			select {
 			case <-ctx.Done():
 				zlogger.Info("received context cancelled for trade")
 				r.tradeManager.Unsubscribe(sub)
-				break
+				return
 			case t := <-sub.Stream:
-				zlogger.Info("graphql subscription received a new instruction")
-				c <- newTrade(t)
-				zlogger.Info("sent graphql new instruction subscription")
+				zlogger.Debug("graphql subscription received a new Instruction",
+					zap.Reflect("Instruction", t),
+				)
+
+				switch i := t.Impl.(type) {
+				case *serum.InstructionInitializeMarket:
+					c <- &SerumCall{
+						Instruction: NewSerumInitializeMarket(i),
+					}
+				case *serum.InstructionNewOrder:
+					c <- &SerumCall{
+						Instruction: NewSerumNewOrder(i),
+					}
+				case *serum.InstructionMatchOrder:
+					c <- &SerumCall{
+						Instruction: NewSerumMatchOrder(i),
+					}
+				case *serum.InstructionConsumeEvents:
+					c <- &SerumCall{
+						Instruction: NewSerumConsumeEvents(i),
+					}
+				case *serum.InstructionCancelOrder:
+					c <- &SerumCall{
+						Instruction: NewSerumCancelOrder(i),
+					}
+				case *serum.InstructionSettleFunds:
+					c <- &SerumCall{
+						Instruction: NewSerumSettleFunds(i),
+					}
+				case *serum.InstructionCancelOrderByClientId:
+					c <- &SerumCall{
+						Instruction: NewSerumCancelOrderByClientId(i),
+					}
+				default:
+					zlog.Error(fmt.Sprintf("unknonwn insutrction type: %T", t.Impl))
+				}
+
 			}
 		}
 		zlog.Info("clsoing channel")
 		close(c)
 	}()
 
-	r.tradeManager.Subscribe(sub)
 	sub.Backfill(ctx, r.rpcClient)
+	r.tradeManager.Subscribe(sub)
 
 	return c, nil
 }

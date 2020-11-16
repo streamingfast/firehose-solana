@@ -15,13 +15,11 @@
 package trade
 
 import (
-	"os"
-
 	"github.com/dfuse-io/logging"
 	"go.uber.org/zap"
 )
 
-var traceEnabled = os.Getenv("TRACE") != ""
+var traceEnabled = logging.IsTraceEnabled("dfusesol", "github.com/dfuse-io/dfuse-solana/graphql/trade")
 var zlog = zap.NewNop()
 
 func init() {
