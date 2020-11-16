@@ -127,8 +127,6 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f/go.mod h1:xH/i4TFMt8koVQZ6WFms69WAsDWr2XsYL3Hkl7jkoLE=
-github.com/dfuse-io/binary v0.0.0-20201113132610-5a1e246afeec h1:VmIyiZuZzW1ENZyIHBwyCaj/w3rHDdfFrtSXzFeXIGg=
-github.com/dfuse-io/binary v0.0.0-20201113132610-5a1e246afeec/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
 github.com/dfuse-io/binary v0.0.0-20201113172957-3eda1bb6412c h1:ufKbFyLlpy/Rg6iErIBcsTqnql66Fq7iZynLfhYpNKg=
 github.com/dfuse-io/binary v0.0.0-20201113172957-3eda1bb6412c/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
 github.com/dfuse-io/bstream v0.0.2-0.20200714123252-e9115283f55f h1:3sATpfUBNfPxSkdcsA5CT3JXMXoypJdT0zMXrM7JEdI=
@@ -169,10 +167,10 @@ github.com/dfuse-io/pbgo v0.0.6-0.20200602201455-99986ef5a09d/go.mod h1:thG/VHT3
 github.com/dfuse-io/shutter v1.4.1-0.20200319040708-c809eec458e6/go.mod h1:2mLf0v+n8J8NI7F6L6avYaRNfa6XECB6CP3WO8rRx88=
 github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f h1:3T9cxfuDYZqWaP/5FUi01UqbCXmcCKsndF4q5LBJr+U=
 github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f/go.mod h1:DNhYoTwU0YjpH3nixaqytVJ43uTe/4SahfipE221e68=
-github.com/dfuse-io/solana-go v0.1.1-0.20201113142100-0a7c9bc30b36 h1:EdYxz6qvEcEtCOtrWgjcGs20LKBRdREqS3aHCQOydtg=
-github.com/dfuse-io/solana-go v0.1.1-0.20201113142100-0a7c9bc30b36/go.mod h1:iYeeQQJsGC3daSgyPz7Ny+f4/SFVpTVe06D2wym/Tgw=
 github.com/dfuse-io/solana-go v0.1.1-0.20201113175514-e22f93385830 h1:lQbN4E1XOhGlCLl43WBaDEDg2EQrMkzGwXZ6mfks8j8=
 github.com/dfuse-io/solana-go v0.1.1-0.20201113175514-e22f93385830/go.mod h1:1J6AZ+IbQzZXPE16ckj23otZRS+eg2xDqNfp2U0eDws=
+github.com/dfuse-io/solana-go v0.1.1-0.20201116144428-90034de44608 h1:xbaZqrZJH5zhOahhGp+ZiLA2ES/f90jCbi3iufBi6HI=
+github.com/dfuse-io/solana-go v0.1.1-0.20201116144428-90034de44608/go.mod h1:1J6AZ+IbQzZXPE16ckj23otZRS+eg2xDqNfp2U0eDws=
 github.com/dgraph-io/badger/v2 v2.0.3 h1:inzdf6VF/NZ+tJ8RwwYMjJMvsOALTHYdozn0qSl6XJI=
 github.com/dgraph-io/badger/v2 v2.0.3/go.mod h1:3KY8+bsP8wI0OEnQJAKpd4wIJW/Mm32yw2j/9FUVnIM=
 github.com/dgraph-io/ristretto v0.0.2-0.20200115201040-8f368f2f2ab3 h1:MQLRM35Pp0yAyBYksjbj1nZI/w6eyRY/mWoM1sFf4kU=
@@ -356,8 +354,6 @@ github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381 h1:bqDmpDG49ZRn
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/logrusorgru/aurora v2.0.3+incompatible h1:tOpm7WcpBTn4fjmVfgpQq0EfczGlG91VSDkswnjF5A8=
 github.com/logrusorgru/aurora v2.0.3+incompatible/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
-github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40 h1:EnfXoSqDfSNJv0VBNqY/88RNnhSGYkrHaO0mmFGbVsc=
-github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40/go.mod h1:vy1vK6wD6j7xX6O6hXe621WabdtNkou2h7uRtTfRMyg=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=

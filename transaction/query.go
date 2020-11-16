@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/rpc"
+	"go.uber.org/zap"
 )
 
 type TransactionHandlerFunc func(trx *rpc.TransactionWithMeta)
