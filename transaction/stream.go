@@ -3,6 +3,7 @@ package transaction
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/dfuse-io/solana-go/rpc"
 	"github.com/dfuse-io/solana-go/rpc/ws"
@@ -15,16 +16,18 @@ type TrxProcessor interface {
 }
 
 type Stream struct {
-	rpcClient *rpc.Client
-	wsURL     string
-	processor TrxProcessor
+	rpcClient  *rpc.Client
+	wsURL      string
+	processor  TrxProcessor
+	slotOffset uint64
 }
 
-func NewStream(rpcClient *rpc.Client, wsURL string, processor TrxProcessor) *Stream {
+func NewStream(rpcClient *rpc.Client, wsURL string, processor TrxProcessor, slotOffset uint64) *Stream {
 	return &Stream{
-		rpcClient: rpcClient,
-		wsURL:     wsURL,
-		processor: processor,
+		rpcClient:  rpcClient,
+		wsURL:      wsURL,
+		processor:  processor,
+		slotOffset: slotOffset,
 	}
 }
 
@@ -49,25 +52,50 @@ func (s *Stream) Launch(ctx context.Context) error {
 			slot := result.(*ws.SlotResult)
 			//fmt.Println("slot parent:", slot.Root, slot.Parent, slot.Slot)
 
-			block, err := s.rpcClient.GetConfirmedBlock(ctx, slot.Slot-100, "json")
-			if err != nil {
-				if traceEnabled {
-					zlog.Error("failed to get confirmed block", zap.Uint64("slot", slot.Slot))
+			var blockResp *rpc.GetConfirmedBlockResult
+			foundBlock := false
+			iter := uint64(0)
+			slotID := slot.Slot - s.slotOffset
+			delta := 0 * time.Second
+			for foundBlock {
+				time.Sleep(delta)
+				iter++
+				blockResp, err = s.getConfirmedBlock(ctx, slotID)
+				if err != nil {
+					if traceEnabled {
+						zlog.Error("block cannot be confirmed... retrying in 100ms",
+							zap.Uint64("slot_id", slotID),
+							zap.Uint64("retry_count", iter),
+						)
+					}
+					delta = 100 * time.Millisecond
+					continue
 				}
-
-				s.processor.ProcessErr(err)
-				continue
+				foundBlock = true
 			}
-			if block == nil {
+			if blockResp == nil {
 				zlog.Debug("received empty block result")
 				continue
 			}
 
-			for _, trx := range block.Transactions {
+			for _, trx := range blockResp.Transactions {
 				s.processor.Process(&trx)
 			}
 		}
 	}()
 
 	return nil
+}
+
+func (s *Stream) getConfirmedBlock(ctx context.Context, slotID uint64) (*rpc.GetConfirmedBlockResult, error) {
+	resp, err := s.rpcClient.GetConfirmedBlock(ctx, slotID, "json")
+	if err != nil {
+		// block doesn't exists
+		if traceEnabled {
+			zlog.Error("failed to get confirmed block", zap.Uint64("slot_id", slotID))
+		}
+		return nil, fmt.Errorf("failed to get confirmed block at slot number %d: %w", slotID, err)
+	}
+	return resp, nil
+
 }

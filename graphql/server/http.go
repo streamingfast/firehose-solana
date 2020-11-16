@@ -6,8 +6,6 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/dfuse-io/dfuse-solana/transaction"
-
 	"github.com/dfuse-io/dfuse-solana/graphql/trade"
 
 	rice "github.com/GeertJohan/go.rice"
@@ -29,28 +27,20 @@ type Server struct {
 	rpcClient   *rpc.Client
 	subManager  *trade.Manager
 	wsURL       string
-	trxStream   *transaction.Stream
 }
 
-func NewServer(servingAddr string, rpcURL string, rpcWSURL string) *Server {
-	rpcClient := rpc.NewClient(rpcURL)
-	tradeManager := trade.NewManager()
-	trxStream := transaction.NewStream(rpcClient, rpcWSURL, tradeManager)
+func NewServer(servingAddr string, rpcClient *rpc.Client, trade *trade.Manager, rpcWSURL string) *Server {
 	return &Server{
 		servingAddr: servingAddr,
 		rpcClient:   rpcClient,
-		subManager:  tradeManager,
-		trxStream:   trxStream,
-		wsURL:       rpcURL,
+		subManager:  trade,
+		wsURL:       rpcWSURL,
 	}
 }
 
 func (s *Server) Launch() error {
 	// initialize GraphQL
 	box := rice.MustFindBox("build")
-
-	err := s.trxStream.Launch(context.Background())
-	derr.Check("launch trx stream", err)
 
 	resolver := resolvers.NewRoot(s.rpcClient, s.wsURL, s.subManager)
 	schema, err := graphql.ParseSchema(

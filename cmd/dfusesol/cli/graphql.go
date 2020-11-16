@@ -24,6 +24,7 @@ func init() {
 			cmd.Flags().String("graphql-rpc-ws-url", "ws://api.mainnet-beta.solana.com:80/rpc", "")
 			cmd.Flags().String("graphql-http-listen-addr", ":8080", "")
 			cmd.Flags().String("graphql-config-name", "mainnet", "")
+			cmd.Flags().Uint64("graphql-slot-offset", 100, "number of slots offset")
 			return nil
 		},
 		InitFunc: func(runtime *launcher.Runtime) error {
@@ -35,6 +36,7 @@ func init() {
 				RPCURL:            viper.GetString("graphql-rpc-url"),
 				RPCWSURL:          viper.GetString("graphql-rpc-ws-url"),
 				HTTPListenAddress: viper.GetString("graphql-http-listen-addr"),
+				SlotOffset:        viper.GetUint64("graphql-slot-offset"),
 			}, &graphql.Modules{}), nil
 		},
 	})

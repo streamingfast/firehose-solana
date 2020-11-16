@@ -1,8 +1,14 @@
 package graphql
 
 import (
+	"context"
+
+	"github.com/dfuse-io/derr"
 	"github.com/dfuse-io/dfuse-solana/graphql/server"
+	"github.com/dfuse-io/dfuse-solana/graphql/trade"
+	"github.com/dfuse-io/dfuse-solana/transaction"
 	"github.com/dfuse-io/shutter"
+	"github.com/dfuse-io/solana-go/rpc"
 	"go.uber.org/zap"
 )
 
@@ -11,6 +17,7 @@ type Config struct {
 	RPCURL            string
 	HTTPListenAddress string
 	RPCWSURL          string
+	SlotOffset        uint64
 }
 
 type Modules struct {
@@ -35,9 +42,21 @@ func New(config *Config, modules *Modules) *App {
 func (a *App) Run() error {
 	zlog.Info("running graphql application", zap.Reflect("config", a.config))
 
+	ctx := context.Background()
+
+	rpcClient := rpc.NewClient(a.config.RPCURL)
+
+	tradeManager := trade.NewManager()
+
+	trxStream := transaction.NewStream(rpcClient, a.config.RPCWSURL, tradeManager, a.config.SlotOffset)
+
+	err := trxStream.Launch(ctx)
+	derr.Check("launch trx stream", err)
+
 	s := server.NewServer(
 		a.config.HTTPListenAddress,
-		a.config.RPCURL,
+		rpcClient,
+		tradeManager,
 		a.config.RPCWSURL,
 	)
 	zlog.Info("serving ...")
