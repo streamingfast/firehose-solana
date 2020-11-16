@@ -49,22 +49,22 @@ func (s *Stream) Launch(ctx context.Context) error {
 			if err != nil {
 				zlog.Error("sub.")
 			}
-			slot := result.(*ws.SlotResult)
-			//fmt.Println("slot parent:", slot.Root, slot.Parent, slot.Slot)
+			slotResult := result.(*ws.SlotResult)
+			//fmt.Println("slotResult parent:", slotResult.Root, slotResult.Parent, slotResult.Slot)
 
 			var blockResp *rpc.GetConfirmedBlockResult
 			foundBlock := false
 			iter := uint64(0)
-			slotID := slot.Slot - s.slotOffset
+			slot := slotResult.Slot - s.slotOffset
 			delta := 0 * time.Second
 			for foundBlock {
 				time.Sleep(delta)
 				iter++
-				blockResp, err = s.getConfirmedBlock(ctx, slotID)
+				blockResp, err = s.getConfirmedBlock(ctx, slot)
 				if err != nil {
 					if traceEnabled {
 						zlog.Error("block cannot be confirmed... retrying in 100ms",
-							zap.Uint64("slot_id", slotID),
+							zap.Uint64("slot_id", slot),
 							zap.Uint64("retry_count", iter),
 						)
 					}
@@ -74,7 +74,9 @@ func (s *Stream) Launch(ctx context.Context) error {
 				foundBlock = true
 			}
 			if blockResp == nil {
-				zlog.Debug("received empty block result")
+				if traceEnabled {
+					zlog.Debug("received empty block result", zap.Uint64("slotResult", slot))
+				}
 				continue
 			}
 

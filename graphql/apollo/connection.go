@@ -134,7 +134,6 @@ func (conn *connection) writeLoop(ctx context.Context) sendFunc {
 					return
 				default:
 				}
-				zlog.Debug("setting connection timeout value", zap.Duration("write_timeout", conn.writeTimeout))
 				if err := conn.ws.SetWriteDeadline(time.Now().Add(conn.writeTimeout)); err != nil {
 					return
 				}

@@ -21,23 +21,30 @@ type Subscription struct {
 }
 
 func (s Subscription) Push(inst *serum.Instruction) {
-	if traceEnabled {
-		zlog.Debug("sending instruction to subscription",
-			zap.Reflect("instruction", inst),
-		)
-	}
+	zlog.Debug("sending instruction to subscription",
+		zap.Int("sub stream length", len(s.Stream)),
+		zap.Int("cap stream length", cap(s.Stream)),
+		zap.Reflect("instruction", inst),
+	)
+
 	s.Stream <- inst
 }
 
 func (s *Subscription) Backfill(ctx context.Context, rpcClient *rpc.Client) {
+	zlog.Info("back filling subscription")
 	transaction.GetTransactionForAccount(ctx, rpcClient, s.account, func(trx *rpc.TransactionWithMeta) {
+		zlog.Debug("got a transaction", zap.String("signature", trx.Transaction.Signatures[0].String()))
 		if !trx.Transaction.IsSigner(s.account) {
+			zlog.Debug("transaction was not signed by subscribed account")
 			return
 		}
+		zlog.Debug("getting instruction for transaction")
 		getStreamableInstructions(trx, func(inst *serum.Instruction) {
+			zlog.Debug("got instruction")
 			s.Push(inst)
 		})
 	})
+	zlog.Info("back fill terminated")
 }
 
 func NewSubscription(account solana.PublicKey) *Subscription {
@@ -122,7 +129,6 @@ func getStreamableInstructions(trx *rpc.TransactionWithMeta, sender func(inst *s
 func (m *Manager) Subscribe(sub *Subscription) {
 	m.Lock()
 	defer m.Unlock()
-
 	m.subscriptions[sub.account.String()] = append(m.subscriptions[sub.account.String()], sub)
 	zlog.Info("subscribed",
 		zap.Stringer("account", sub.account),

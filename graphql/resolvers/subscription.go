@@ -78,12 +78,10 @@ func (r *Root) Serum(ctx context.Context, args *TradeArgs) (<-chan *SerumCall, e
 
 			}
 		}
-		zlog.Info("clsoing channel")
-		close(c)
 	}()
 
-	sub.Backfill(ctx, r.rpcClient)
 	r.tradeManager.Subscribe(sub)
+	go sub.Backfill(ctx, r.rpcClient)
 
 	return c, nil
 }
