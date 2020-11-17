@@ -60,6 +60,13 @@ type SerumInstruction struct {
 	inner interface{}
 }
 
+type SerumInitializeMarketAccounts struct {
+	Market        string
+	SplCoinToken  string
+	SplPriceToken string
+	CoinMint      string
+	PriceMint     string
+}
 type SerumInitializeMarket struct {
 	BaseLotSize        gtype.Uint64
 	QuoteLotSize       gtype.Uint64
@@ -67,11 +74,7 @@ type SerumInitializeMarket struct {
 	VaultSignerNonce   gtype.Uint64
 	QuoteDustThreshold gtype.Uint64
 
-	MarketAccount        string
-	SplCoinTokenAccount  string
-	SplPriceTokenAccount string
-	CoinMintAccount      string
-	PriceMintAccount     string
+	Accounts SerumInitializeMarketAccounts
 }
 
 func (d *SerumInstruction) ToSerumInitializeMarket() (*SerumInitializeMarket, bool) {
@@ -84,16 +87,18 @@ func (d *SerumInstruction) ToSerumInitializeMarket() (*SerumInitializeMarket, bo
 func NewSerumInitializeMarket(s *serum.InstructionInitializeMarket) *SerumInstruction {
 	return &SerumInstruction{
 		inner: &SerumInitializeMarket{
-			BaseLotSize:          gtype.Uint64(s.BaseLotSize),
-			QuoteLotSize:         gtype.Uint64(s.QuoteLotSize),
-			FeeRateBps:           gtype.Uint64(s.FeeRateBps),
-			VaultSignerNonce:     gtype.Uint64(s.VaultSignerNonce),
-			QuoteDustThreshold:   gtype.Uint64(s.QuoteLotSize),
-			MarketAccount:        s.Accounts.Market.PublicKey.String(),
-			SplCoinTokenAccount:  s.Accounts.SPLCoinToken.PublicKey.String(),
-			SplPriceTokenAccount: s.Accounts.SPLPriceToken.PublicKey.String(),
-			CoinMintAccount:      s.Accounts.CoinMint.PublicKey.String(),
-			PriceMintAccount:     s.Accounts.PriceMint.PublicKey.String(),
+			BaseLotSize:        gtype.Uint64(s.BaseLotSize),
+			QuoteLotSize:       gtype.Uint64(s.QuoteLotSize),
+			FeeRateBps:         gtype.Uint64(s.FeeRateBps),
+			VaultSignerNonce:   gtype.Uint64(s.VaultSignerNonce),
+			QuoteDustThreshold: gtype.Uint64(s.QuoteLotSize),
+			Accounts: SerumInitializeMarketAccounts{
+				Market:        s.Accounts.Market.PublicKey.String(),
+				SplCoinToken:  s.Accounts.SPLCoinToken.PublicKey.String(),
+				SplPriceToken: s.Accounts.SPLPriceToken.PublicKey.String(),
+				CoinMint:      s.Accounts.CoinMint.PublicKey.String(),
+				PriceMint:     s.Accounts.PriceMint.PublicKey.String(),
+			},
 		},
 	}
 }
@@ -105,6 +110,18 @@ func (d *SerumInstruction) ToSerumNewOrder() (*SerumNewOrder, bool) {
 	return nil, false
 }
 
+type SerumNewOrderAccounts struct {
+	Market          string
+	OpenOrders      string
+	RequestQueue    string
+	Payer           string
+	Owner           string
+	CoinVault       string
+	PcVault         string
+	SplTokenProgram string
+	Rent            string
+	SRMDiscount     *string
+}
 type SerumNewOrder struct {
 	Side        SideType
 	LimitPrice  gtype.Uint64
@@ -112,38 +129,31 @@ type SerumNewOrder struct {
 	OrderType   OrderType
 	ClientID    gtype.Uint64
 
-	Market             string
-	OpenOrders         string
-	RequestQueue       string
-	Payer              string
-	Owner              string
-	CoinVault          string
-	PcVault            string
-	SplTokenProgram    string
-	Rent               string
-	SRMDiscountAccount *string
+	Accounts SerumNewOrderAccounts
 }
 
 func NewSerumNewOrder(i *serum.InstructionNewOrder) *SerumInstruction {
 	s := &SerumNewOrder{
-		Side:            newSideType(i.Side),
-		LimitPrice:      gtype.Uint64(i.LimitPrice),
-		MaxQuantity:     gtype.Uint64(i.MaxQuantity),
-		OrderType:       NewOrderType(i.OrderType),
-		ClientID:        gtype.Uint64(i.ClientID),
-		Market:          i.Accounts.Market.PublicKey.String(),
-		OpenOrders:      i.Accounts.OpenOrders.PublicKey.String(),
-		RequestQueue:    i.Accounts.RequestQueue.PublicKey.String(),
-		Payer:           i.Accounts.Payer.PublicKey.String(),
-		Owner:           i.Accounts.Owner.PublicKey.String(),
-		CoinVault:       i.Accounts.CoinVault.PublicKey.String(),
-		PcVault:         i.Accounts.PCVault.PublicKey.String(),
-		SplTokenProgram: i.Accounts.SPLTokenProgram.PublicKey.String(),
-		Rent:            i.Accounts.Rent.PublicKey.String(),
+		Side:        newSideType(i.Side),
+		LimitPrice:  gtype.Uint64(i.LimitPrice),
+		MaxQuantity: gtype.Uint64(i.MaxQuantity),
+		OrderType:   NewOrderType(i.OrderType),
+		ClientID:    gtype.Uint64(i.ClientID),
+		Accounts: SerumNewOrderAccounts{
+			Market:          i.Accounts.Market.PublicKey.String(),
+			OpenOrders:      i.Accounts.OpenOrders.PublicKey.String(),
+			RequestQueue:    i.Accounts.RequestQueue.PublicKey.String(),
+			Payer:           i.Accounts.Payer.PublicKey.String(),
+			Owner:           i.Accounts.Owner.PublicKey.String(),
+			CoinVault:       i.Accounts.CoinVault.PublicKey.String(),
+			PcVault:         i.Accounts.PCVault.PublicKey.String(),
+			SplTokenProgram: i.Accounts.SPLTokenProgram.PublicKey.String(),
+			Rent:            i.Accounts.Rent.PublicKey.String(),
+		},
 	}
 	if i.Accounts.SRMDiscountAccount != nil {
 		v := i.Accounts.SRMDiscountAccount.PublicKey.String()
-		s.SRMDiscountAccount = &v
+		s.Accounts.SRMDiscount = &v
 	}
 
 	return &SerumInstruction{
@@ -151,9 +161,7 @@ func NewSerumNewOrder(i *serum.InstructionNewOrder) *SerumInstruction {
 	}
 }
 
-type SerumMatchOrder struct {
-	Limit gtype.Uint64
-
+type SerumMatchOrderAccounts struct {
 	Market            string
 	RequestQueue      string
 	EventQueue        string
@@ -163,17 +171,24 @@ type SerumMatchOrder struct {
 	PCFeeReceivable   string
 }
 
+type SerumMatchOrder struct {
+	Limit    gtype.Uint64
+	Accounts SerumMatchOrderAccounts
+}
+
 func NewSerumMatchOrder(i *serum.InstructionMatchOrder) *SerumInstruction {
 	return &SerumInstruction{
 		inner: &SerumMatchOrder{
-			Limit:             gtype.Uint64(i.Limit),
-			Market:            i.Accounts.Market.PublicKey.String(),
-			RequestQueue:      i.Accounts.RequestQueue.PublicKey.String(),
-			EventQueue:        i.Accounts.EventQueue.PublicKey.String(),
-			Bids:              i.Accounts.Bids.PublicKey.String(),
-			Asks:              i.Accounts.Asks.PublicKey.String(),
-			CoinFeeReceivable: i.Accounts.CoinFeeReceivable.PublicKey.String(),
-			PCFeeReceivable:   i.Accounts.PCFeeReceivable.PublicKey.String(),
+			Limit: gtype.Uint64(i.Limit),
+			Accounts: SerumMatchOrderAccounts{
+				Market:            i.Accounts.Market.PublicKey.String(),
+				RequestQueue:      i.Accounts.RequestQueue.PublicKey.String(),
+				EventQueue:        i.Accounts.EventQueue.PublicKey.String(),
+				Bids:              i.Accounts.Bids.PublicKey.String(),
+				Asks:              i.Accounts.Asks.PublicKey.String(),
+				CoinFeeReceivable: i.Accounts.CoinFeeReceivable.PublicKey.String(),
+				PCFeeReceivable:   i.Accounts.PCFeeReceivable.PublicKey.String(),
+			},
 		},
 	}
 }
@@ -185,27 +200,31 @@ func (d *SerumInstruction) ToSerumMatchOrder() (*SerumMatchOrder, bool) {
 	return nil, false
 }
 
-type SerumConsumeEvents struct {
-	Limit gtype.Uint64
-
+type SerumConsumeEventsAccounts struct {
 	OpenOrders        []string
 	Market            string
 	EventQueue        string
 	CoinFeeReceivable string
 	PCFeeReceivable   string
 }
+type SerumConsumeEvents struct {
+	Limit    gtype.Uint64
+	Accounts SerumConsumeEventsAccounts
+}
 
 func NewSerumConsumeEvents(i *serum.InstructionConsumeEvents) *SerumInstruction {
 	s := &SerumConsumeEvents{
-		Limit:             gtype.Uint64(i.Limit),
-		Market:            i.Accounts.Market.PublicKey.String(),
-		EventQueue:        i.Accounts.EventQueue.PublicKey.String(),
-		CoinFeeReceivable: i.Accounts.CoinFeeReceivable.PublicKey.String(),
-		PCFeeReceivable:   i.Accounts.PCFeeReceivable.PublicKey.String(),
+		Limit: gtype.Uint64(i.Limit),
+		Accounts: SerumConsumeEventsAccounts{
+			Market:            i.Accounts.Market.PublicKey.String(),
+			EventQueue:        i.Accounts.EventQueue.PublicKey.String(),
+			CoinFeeReceivable: i.Accounts.CoinFeeReceivable.PublicKey.String(),
+			PCFeeReceivable:   i.Accounts.PCFeeReceivable.PublicKey.String(),
+		},
 	}
 
 	for _, a := range i.Accounts.OpenOrders {
-		s.OpenOrders = append(s.OpenOrders, a.PublicKey.String())
+		s.Accounts.OpenOrders = append(s.Accounts.OpenOrders, a.PublicKey.String())
 
 	}
 	return &SerumInstruction{
@@ -220,15 +239,18 @@ func (d *SerumInstruction) ToSerumConsumeEvents() (*SerumConsumeEvents, bool) {
 	return nil, false
 }
 
+type SerumCancelOrderAccounts struct {
+	Market       string
+	RequestQueue string
+	Owner        string
+}
 type SerumCancelOrder struct {
 	Side          SideType
 	OrderId       string
 	OpenOrders    string
 	OpenOrderSlot gtype.Uint64
 
-	Market       string
-	RequestQueue string
-	Owner        string
+	Accounts SerumCancelOrderAccounts
 }
 
 func NewSerumCancelOrder(i *serum.InstructionCancelOrder) *SerumInstruction {
@@ -238,9 +260,11 @@ func NewSerumCancelOrder(i *serum.InstructionCancelOrder) *SerumInstruction {
 			OrderId:       i.OrderID.String(),
 			OpenOrders:    i.OpenOrders.String(),
 			OpenOrderSlot: gtype.Uint64(i.OpenOrderSlot),
-			Market:        i.Accounts.Market.PublicKey.String(),
-			RequestQueue:  i.Accounts.Market.PublicKey.String(),
-			Owner:         i.Accounts.Market.PublicKey.String(),
+			Accounts: SerumCancelOrderAccounts{
+				Market:       i.Accounts.Market.PublicKey.String(),
+				RequestQueue: i.Accounts.Market.PublicKey.String(),
+				Owner:        i.Accounts.Market.PublicKey.String(),
+			},
 		},
 	}
 }
@@ -252,7 +276,7 @@ func (d *SerumInstruction) ToSerumCancelOrder() (*SerumCancelOrder, bool) {
 	return nil, false
 }
 
-type SerumSettleFunds struct {
+type SerumSettleFundsAccounts struct {
 	Market           string
 	OpenOrders       string
 	Owner            string
@@ -264,23 +288,28 @@ type SerumSettleFunds struct {
 	SplTokenProgram  string
 	ReferrerPCWallet *string
 }
+type SerumSettleFunds struct {
+	Accounts SerumSettleFundsAccounts
+}
 
 func NewSerumSettleFunds(i *serum.InstructionSettleFunds) *SerumInstruction {
 	s := &SerumSettleFunds{
-		Market:          i.Accounts.Market.PublicKey.String(),
-		OpenOrders:      i.Accounts.OpenOrders.PublicKey.String(),
-		Owner:           i.Accounts.Owner.PublicKey.String(),
-		CoinVault:       i.Accounts.CoinVault.PublicKey.String(),
-		PcVault:         i.Accounts.PCVault.PublicKey.String(),
-		CoinWallet:      i.Accounts.CoinWallet.PublicKey.String(),
-		PcWallet:        i.Accounts.PCWallet.PublicKey.String(),
-		Signer:          i.Accounts.Signer.PublicKey.String(),
-		SplTokenProgram: i.Accounts.SPLTokenProgram.PublicKey.String(),
+		Accounts: SerumSettleFundsAccounts{
+			Market:          i.Accounts.Market.PublicKey.String(),
+			OpenOrders:      i.Accounts.OpenOrders.PublicKey.String(),
+			Owner:           i.Accounts.Owner.PublicKey.String(),
+			CoinVault:       i.Accounts.CoinVault.PublicKey.String(),
+			PcVault:         i.Accounts.PCVault.PublicKey.String(),
+			CoinWallet:      i.Accounts.CoinWallet.PublicKey.String(),
+			PcWallet:        i.Accounts.PCWallet.PublicKey.String(),
+			Signer:          i.Accounts.Signer.PublicKey.String(),
+			SplTokenProgram: i.Accounts.SPLTokenProgram.PublicKey.String(),
+		},
 	}
 
 	if i.Accounts.ReferrerPCWallet != nil {
 		v := i.Accounts.ReferrerPCWallet.PublicKey.String()
-		s.ReferrerPCWallet = &v
+		s.Accounts.ReferrerPCWallet = &v
 	}
 	return &SerumInstruction{
 		inner: s,
@@ -294,23 +323,28 @@ func (d *SerumInstruction) ToSerumSettleFunds() (*SerumSettleFunds, bool) {
 	return nil, false
 }
 
-type SerumCancelOrderByClientId struct {
-	ClientID gtype.Uint64
-
+type SerumCancelOrderByClientIdAccounts struct {
 	Market       string
 	OpenOrders   string
 	RequestQueue string
 	Owner        string
 }
 
+type SerumCancelOrderByClientId struct {
+	ClientID gtype.Uint64
+	Accounts SerumCancelOrderByClientIdAccounts
+}
+
 func NewSerumCancelOrderByClientId(i *serum.InstructionCancelOrderByClientId) *SerumInstruction {
 	return &SerumInstruction{
 		inner: &SerumCancelOrderByClientId{
-			ClientID:     gtype.Uint64(i.ClientID),
-			Market:       i.Accounts.Market.PublicKey.String(),
-			OpenOrders:   i.Accounts.OpenOrders.PublicKey.String(),
-			RequestQueue: i.Accounts.RequestQueue.PublicKey.String(),
-			Owner:        i.Accounts.Owner.PublicKey.String(),
+			ClientID: gtype.Uint64(i.ClientID),
+			Accounts: SerumCancelOrderByClientIdAccounts{
+				Market:       i.Accounts.Market.PublicKey.String(),
+				OpenOrders:   i.Accounts.OpenOrders.PublicKey.String(),
+				RequestQueue: i.Accounts.RequestQueue.PublicKey.String(),
+				Owner:        i.Accounts.Owner.PublicKey.String(),
+			},
 		},
 	}
 }

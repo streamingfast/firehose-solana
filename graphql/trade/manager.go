@@ -6,12 +6,9 @@ import (
 	"sync"
 
 	"github.com/dfuse-io/dfuse-solana/transaction"
-
 	"github.com/dfuse-io/solana-go"
-
-	"github.com/dfuse-io/solana-go/serum"
-
 	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/dfuse-io/solana-go/serum"
 	"go.uber.org/zap"
 )
 
