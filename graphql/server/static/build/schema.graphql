@@ -7,11 +7,10 @@ type Queries {
 }
 
 type Subscription {
-  serum(account: String!,market: String!): SerumCall
+  serumInstructionHistory(account: String!): SerumInstructionResponse
 }
 
-
-type SerumCall {
+type SerumInstructionResponse {
   instruction: SerumInstruction
 }
 
@@ -35,17 +34,22 @@ type SerumInitializeMarket {
   accounts : SerumInitializeMarketAccounts!
 }
 
+type Account {
+  publicKey:  String!
+  isSigner:   Boolean!
+  isWritable: Boolean!
+}
 type SerumNewOrderAccounts {
-  market: String!
-  openOrders: String!
-  requestQueue: String!
-  payer: String!
-  owner: String!
-  coinVault: String!
-  pcVault: String!
-  splTokenProgram: String!
-  rent: String!
-  srmDiscount: String
+  market: Account!
+  openOrders: Account!
+  requestQueue: Account!
+  payer: Account!
+  owner: Account!
+  coinVault: Account!
+  pcVault: Account!
+  splTokenProgram: Account!
+  rent: Account!
+  srmDiscount: Account
 }
 
 type SerumNewOrder {
@@ -60,13 +64,13 @@ type SerumNewOrder {
 }
 
 type SerumMatchOrderAccounts {
-  market: String!
-  requestQueue: String!
-  eventQueue: String!
-  bids: String!
-  asks: String!
-  coinFeeReceivable: String!
-  pcFeeReceivable: String!
+  market: Account!
+  requestQueue: Account!
+  eventQueue: Account!
+  bids: Account!
+  asks: Account!
+  coinFeeReceivable: Account!
+  pcFeeReceivable: Account!
 }
 type SerumMatchOrder {
   limit: Uint64!
@@ -75,11 +79,11 @@ type SerumMatchOrder {
 }
 
 type SerumConsumeEventsAccounts {
-  openOrders: [String!]!
-  market: String!
-  eventQueue: String!
-  coinFeeReceivable: String!
-  pcFeeReceivable: String!
+  openOrders: [Account!]!
+  market: Account!
+  eventQueue: Account!
+  coinFeeReceivable: Account!
+  pcFeeReceivable: Account!
 }
 type SerumConsumeEvents {
   limit: Uint64!
@@ -88,9 +92,9 @@ type SerumConsumeEvents {
 }
 
 type SerumCancelOrderAccounts {
-  market: String!
-  requestQueue: String!
-  owner: String!
+  market: Account!
+  requestQueue: Account!
+  owner: Account!
 }
 type SerumCancelOrder {
   side: SideType!
@@ -101,26 +105,26 @@ type SerumCancelOrder {
 }
 
 type SerumSettleFundsAccounts{
-  market: String!
-  openOrders: String!
-  owner: String!
-  coinVault: String!
-  pcVault: String!
-  coinWallet: String!
-  pcWallet: String!
-  signer: String!
-  splTokenProgram: String!
-  referrerPCWallet: String
+  market: Account!
+  openOrders: Account!
+  owner: Account!
+  coinVault: Account!
+  pcVault: Account!
+  coinWallet: Account!
+  pcWallet: Account!
+  signer: Account!
+  splTokenProgram: Account!
+  referrerPCWallet: Account
 }
 type SerumSettleFunds {
   accounts : SerumSettleFundsAccounts!
 }
 
 type SerumCancelOrderByClientIdAccounts {
-  market: String!
-  openOrders: String!
-  requestQueue: String!
-  owner: String!
+  market: Account!
+  openOrders: Account!
+  requestQueue: Account!
+  owner: Account!
 }
 type SerumCancelOrderByClientId {
   clientID: Uint64!

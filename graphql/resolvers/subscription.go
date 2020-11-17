@@ -16,13 +16,12 @@ import (
 
 type TradeArgs struct {
 	Account string
-	Market  string
 }
 
-func (r *Root) Serum(ctx context.Context, args *TradeArgs) (<-chan *SerumResponse, error) {
+func (r *Root) SerumInstructionHistory(ctx context.Context, args *TradeArgs) (<-chan *SerumInstructionResponse, error) {
 	zlogger := logging.Logger(ctx, zlog)
 	zlogger.Info("received trade stream", zap.String("account", args.Account))
-	c := make(chan *SerumResponse)
+	c := make(chan *SerumInstructionResponse)
 	account, err := solana.PublicKeyFromBase58(args.Account)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse public key: %w", err)
@@ -41,7 +40,7 @@ func (r *Root) Serum(ctx context.Context, args *TradeArgs) (<-chan *SerumRespons
 			case t, ok := <-sub.Stream:
 				if !ok {
 					if sub.Err != nil {
-						c <- &SerumResponse{err: sub.Err}
+						c <- &SerumInstructionResponse{err: sub.Err}
 						return
 					} else {
 						close(c)
@@ -54,31 +53,31 @@ func (r *Root) Serum(ctx context.Context, args *TradeArgs) (<-chan *SerumRespons
 
 				switch i := t.Impl.(type) {
 				case *serum.InstructionInitializeMarket:
-					c <- &SerumResponse{
+					c <- &SerumInstructionResponse{
 						Instruction: NewSerumInitializeMarket(i),
 					}
 				case *serum.InstructionNewOrder:
-					c <- &SerumResponse{
+					c <- &SerumInstructionResponse{
 						Instruction: NewSerumNewOrder(i),
 					}
 				case *serum.InstructionMatchOrder:
-					c <- &SerumResponse{
+					c <- &SerumInstructionResponse{
 						Instruction: NewSerumMatchOrder(i),
 					}
 				case *serum.InstructionConsumeEvents:
-					c <- &SerumResponse{
+					c <- &SerumInstructionResponse{
 						Instruction: NewSerumConsumeEvents(i),
 					}
 				case *serum.InstructionCancelOrder:
-					c <- &SerumResponse{
+					c <- &SerumInstructionResponse{
 						Instruction: NewSerumCancelOrder(i),
 					}
 				case *serum.InstructionSettleFunds:
-					c <- &SerumResponse{
+					c <- &SerumInstructionResponse{
 						Instruction: NewSerumSettleFunds(i),
 					}
 				case *serum.InstructionCancelOrderByClientId:
-					c <- &SerumResponse{
+					c <- &SerumInstructionResponse{
 						Instruction: NewSerumCancelOrderByClientId(i),
 					}
 				default:

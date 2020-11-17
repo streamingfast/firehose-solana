@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	gtype "github.com/dfuse-io/dgraphql/types"
+	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/serum"
 )
 
@@ -50,7 +51,7 @@ func newSideType(side uint32) SideType {
 	}
 }
 
-type SerumResponse struct {
+type SerumInstructionResponse struct {
 	Instruction *SerumInstruction
 	err         error
 }
@@ -109,17 +110,25 @@ func (d *SerumInstruction) ToSerumNewOrder() (*SerumNewOrder, bool) {
 	return nil, false
 }
 
+type AccountMeta struct {
+	am *solana.AccountMeta
+}
+
+func (a AccountMeta) PublicKey() string { return a.am.PublicKey.String() }
+func (a AccountMeta) IsSigner() bool    { return a.am.IsSigner }
+func (a AccountMeta) IsWritable() bool  { return a.am.IsWritable }
+
 type SerumNewOrderAccounts struct {
-	Market          string
-	OpenOrders      string
-	RequestQueue    string
-	Payer           string
-	Owner           string
-	CoinVault       string
-	PcVault         string
-	SplTokenProgram string
-	Rent            string
-	SRMDiscount     *string
+	Market          AccountMeta
+	OpenOrders      AccountMeta
+	RequestQueue    AccountMeta
+	Payer           AccountMeta
+	Owner           AccountMeta
+	CoinVault       AccountMeta
+	PcVault         AccountMeta
+	SplTokenProgram AccountMeta
+	Rent            AccountMeta
+	SRMDiscount     *AccountMeta
 }
 type SerumNewOrder struct {
 	Side        SideType
@@ -139,19 +148,19 @@ func NewSerumNewOrder(i *serum.InstructionNewOrder) *SerumInstruction {
 		OrderType:   NewOrderType(i.OrderType),
 		ClientID:    gtype.Uint64(i.ClientID),
 		Accounts: SerumNewOrderAccounts{
-			Market:          i.Accounts.Market.PublicKey.String(),
-			OpenOrders:      i.Accounts.OpenOrders.PublicKey.String(),
-			RequestQueue:    i.Accounts.RequestQueue.PublicKey.String(),
-			Payer:           i.Accounts.Payer.PublicKey.String(),
-			Owner:           i.Accounts.Owner.PublicKey.String(),
-			CoinVault:       i.Accounts.CoinVault.PublicKey.String(),
-			PcVault:         i.Accounts.PCVault.PublicKey.String(),
-			SplTokenProgram: i.Accounts.SPLTokenProgram.PublicKey.String(),
-			Rent:            i.Accounts.Rent.PublicKey.String(),
+			Market:          AccountMeta{&i.Accounts.Market},
+			OpenOrders:      AccountMeta{&i.Accounts.OpenOrders},
+			RequestQueue:    AccountMeta{&i.Accounts.RequestQueue},
+			Payer:           AccountMeta{&i.Accounts.Payer},
+			Owner:           AccountMeta{&i.Accounts.Owner},
+			CoinVault:       AccountMeta{&i.Accounts.CoinVault},
+			PcVault:         AccountMeta{&i.Accounts.PCVault},
+			SplTokenProgram: AccountMeta{&i.Accounts.SPLTokenProgram},
+			Rent:            AccountMeta{&i.Accounts.Rent},
 		},
 	}
 	if i.Accounts.SRMDiscountAccount != nil {
-		v := i.Accounts.SRMDiscountAccount.PublicKey.String()
+		v := AccountMeta{i.Accounts.SRMDiscountAccount}
 		s.Accounts.SRMDiscount = &v
 	}
 
@@ -161,13 +170,13 @@ func NewSerumNewOrder(i *serum.InstructionNewOrder) *SerumInstruction {
 }
 
 type SerumMatchOrderAccounts struct {
-	Market            string
-	RequestQueue      string
-	EventQueue        string
-	Bids              string
-	Asks              string
-	CoinFeeReceivable string
-	PCFeeReceivable   string
+	Market            AccountMeta
+	RequestQueue      AccountMeta
+	EventQueue        AccountMeta
+	Bids              AccountMeta
+	Asks              AccountMeta
+	CoinFeeReceivable AccountMeta
+	PCFeeReceivable   AccountMeta
 }
 
 type SerumMatchOrder struct {
@@ -180,13 +189,13 @@ func NewSerumMatchOrder(i *serum.InstructionMatchOrder) *SerumInstruction {
 		inner: &SerumMatchOrder{
 			Limit: gtype.Uint64(i.Limit),
 			Accounts: SerumMatchOrderAccounts{
-				Market:            i.Accounts.Market.PublicKey.String(),
-				RequestQueue:      i.Accounts.RequestQueue.PublicKey.String(),
-				EventQueue:        i.Accounts.EventQueue.PublicKey.String(),
-				Bids:              i.Accounts.Bids.PublicKey.String(),
-				Asks:              i.Accounts.Asks.PublicKey.String(),
-				CoinFeeReceivable: i.Accounts.CoinFeeReceivable.PublicKey.String(),
-				PCFeeReceivable:   i.Accounts.PCFeeReceivable.PublicKey.String(),
+				Market:            AccountMeta{&i.Accounts.Market},
+				RequestQueue:      AccountMeta{&i.Accounts.RequestQueue},
+				EventQueue:        AccountMeta{&i.Accounts.EventQueue},
+				Bids:              AccountMeta{&i.Accounts.Bids},
+				Asks:              AccountMeta{&i.Accounts.Asks},
+				CoinFeeReceivable: AccountMeta{&i.Accounts.CoinFeeReceivable},
+				PCFeeReceivable:   AccountMeta{&i.Accounts.PCFeeReceivable},
 			},
 		},
 	}
@@ -200,11 +209,11 @@ func (d *SerumInstruction) ToSerumMatchOrder() (*SerumMatchOrder, bool) {
 }
 
 type SerumConsumeEventsAccounts struct {
-	OpenOrders        []string
-	Market            string
-	EventQueue        string
-	CoinFeeReceivable string
-	PCFeeReceivable   string
+	OpenOrders        []AccountMeta
+	Market            AccountMeta
+	EventQueue        AccountMeta
+	CoinFeeReceivable AccountMeta
+	PCFeeReceivable   AccountMeta
 }
 type SerumConsumeEvents struct {
 	Limit    gtype.Uint64
@@ -215,15 +224,15 @@ func NewSerumConsumeEvents(i *serum.InstructionConsumeEvents) *SerumInstruction 
 	s := &SerumConsumeEvents{
 		Limit: gtype.Uint64(i.Limit),
 		Accounts: SerumConsumeEventsAccounts{
-			Market:            i.Accounts.Market.PublicKey.String(),
-			EventQueue:        i.Accounts.EventQueue.PublicKey.String(),
-			CoinFeeReceivable: i.Accounts.CoinFeeReceivable.PublicKey.String(),
-			PCFeeReceivable:   i.Accounts.PCFeeReceivable.PublicKey.String(),
+			Market:            AccountMeta{&i.Accounts.Market},
+			EventQueue:        AccountMeta{&i.Accounts.EventQueue},
+			CoinFeeReceivable: AccountMeta{&i.Accounts.CoinFeeReceivable},
+			PCFeeReceivable:   AccountMeta{&i.Accounts.PCFeeReceivable},
 		},
 	}
 
 	for _, a := range i.Accounts.OpenOrders {
-		s.Accounts.OpenOrders = append(s.Accounts.OpenOrders, a.PublicKey.String())
+		s.Accounts.OpenOrders = append(s.Accounts.OpenOrders, AccountMeta{&a})
 
 	}
 	return &SerumInstruction{
@@ -239,9 +248,9 @@ func (d *SerumInstruction) ToSerumConsumeEvents() (*SerumConsumeEvents, bool) {
 }
 
 type SerumCancelOrderAccounts struct {
-	Market       string
-	RequestQueue string
-	Owner        string
+	Market       AccountMeta
+	RequestQueue AccountMeta
+	Owner        AccountMeta
 }
 type SerumCancelOrder struct {
 	Side          SideType
@@ -260,9 +269,9 @@ func NewSerumCancelOrder(i *serum.InstructionCancelOrder) *SerumInstruction {
 			OpenOrders:    i.OpenOrders.String(),
 			OpenOrderSlot: gtype.Uint64(i.OpenOrderSlot),
 			Accounts: SerumCancelOrderAccounts{
-				Market:       i.Accounts.Market.PublicKey.String(),
-				RequestQueue: i.Accounts.RequestQueue.PublicKey.String(),
-				Owner:        i.Accounts.Owner.PublicKey.String(),
+				Market:       AccountMeta{&i.Accounts.Market},
+				RequestQueue: AccountMeta{&i.Accounts.RequestQueue},
+				Owner:        AccountMeta{&i.Accounts.Owner},
 			},
 		},
 	}
@@ -276,16 +285,16 @@ func (d *SerumInstruction) ToSerumCancelOrder() (*SerumCancelOrder, bool) {
 }
 
 type SerumSettleFundsAccounts struct {
-	Market           string
-	OpenOrders       string
-	Owner            string
-	CoinVault        string
-	PcVault          string
-	CoinWallet       string
-	PcWallet         string
-	Signer           string
-	SplTokenProgram  string
-	ReferrerPCWallet *string
+	Market           AccountMeta
+	OpenOrders       AccountMeta
+	Owner            AccountMeta
+	CoinVault        AccountMeta
+	PcVault          AccountMeta
+	CoinWallet       AccountMeta
+	PcWallet         AccountMeta
+	Signer           AccountMeta
+	SplTokenProgram  AccountMeta
+	ReferrerPCWallet *AccountMeta
 }
 type SerumSettleFunds struct {
 	Accounts SerumSettleFundsAccounts
@@ -294,20 +303,20 @@ type SerumSettleFunds struct {
 func NewSerumSettleFunds(i *serum.InstructionSettleFunds) *SerumInstruction {
 	s := &SerumSettleFunds{
 		Accounts: SerumSettleFundsAccounts{
-			Market:          i.Accounts.Market.PublicKey.String(),
-			OpenOrders:      i.Accounts.OpenOrders.PublicKey.String(),
-			Owner:           i.Accounts.Owner.PublicKey.String(),
-			CoinVault:       i.Accounts.CoinVault.PublicKey.String(),
-			PcVault:         i.Accounts.PCVault.PublicKey.String(),
-			CoinWallet:      i.Accounts.CoinWallet.PublicKey.String(),
-			PcWallet:        i.Accounts.PCWallet.PublicKey.String(),
-			Signer:          i.Accounts.Signer.PublicKey.String(),
-			SplTokenProgram: i.Accounts.SPLTokenProgram.PublicKey.String(),
+			Market:          AccountMeta{&i.Accounts.Market},
+			OpenOrders:      AccountMeta{&i.Accounts.OpenOrders},
+			Owner:           AccountMeta{&i.Accounts.Owner},
+			CoinVault:       AccountMeta{&i.Accounts.CoinVault},
+			PcVault:         AccountMeta{&i.Accounts.PCVault},
+			CoinWallet:      AccountMeta{&i.Accounts.CoinWallet},
+			PcWallet:        AccountMeta{&i.Accounts.PCWallet},
+			Signer:          AccountMeta{&i.Accounts.Signer},
+			SplTokenProgram: AccountMeta{&i.Accounts.SPLTokenProgram},
 		},
 	}
 
 	if i.Accounts.ReferrerPCWallet != nil {
-		v := i.Accounts.ReferrerPCWallet.PublicKey.String()
+		v := AccountMeta{i.Accounts.ReferrerPCWallet}
 		s.Accounts.ReferrerPCWallet = &v
 	}
 	return &SerumInstruction{
@@ -323,10 +332,10 @@ func (d *SerumInstruction) ToSerumSettleFunds() (*SerumSettleFunds, bool) {
 }
 
 type SerumCancelOrderByClientIdAccounts struct {
-	Market       string
-	OpenOrders   string
-	RequestQueue string
-	Owner        string
+	Market       AccountMeta
+	OpenOrders   AccountMeta
+	RequestQueue AccountMeta
+	Owner        AccountMeta
 }
 
 type SerumCancelOrderByClientId struct {
@@ -339,10 +348,10 @@ func NewSerumCancelOrderByClientId(i *serum.InstructionCancelOrderByClientId) *S
 		inner: &SerumCancelOrderByClientId{
 			ClientID: gtype.Uint64(i.ClientID),
 			Accounts: SerumCancelOrderByClientIdAccounts{
-				Market:       i.Accounts.Market.PublicKey.String(),
-				OpenOrders:   i.Accounts.OpenOrders.PublicKey.String(),
-				RequestQueue: i.Accounts.RequestQueue.PublicKey.String(),
-				Owner:        i.Accounts.Owner.PublicKey.String(),
+				Market:       AccountMeta{&i.Accounts.Market},
+				OpenOrders:   AccountMeta{&i.Accounts.OpenOrders},
+				RequestQueue: AccountMeta{&i.Accounts.RequestQueue},
+				Owner:        AccountMeta{&i.Accounts.Owner},
 			},
 		},
 	}
