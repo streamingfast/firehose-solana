@@ -23,3 +23,5 @@ require (
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807
+
+replace github.com/dfuse-io/solana-go => /Users/julien/codebase/dfuse-io/solana-go

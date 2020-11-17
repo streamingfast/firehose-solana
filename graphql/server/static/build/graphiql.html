@@ -47,7 +47,11 @@
     const alphaSchema = isAlphaSchemaQueryParamFound(queryParams)
 
     async function initialize() {
-
+        try {
+            await reconfigureGraphiQLStorage("sol", "mainnet", alphaSchema);
+        }catch (error) {
+            console.log("Unable to correctly reconfigure graphiql, continuing anyway", error)
+        }
         loadGraphiql()
     }
 
