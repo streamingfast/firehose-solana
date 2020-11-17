@@ -15,6 +15,7 @@ import (
 type Subscription struct {
 	Stream  chan *serum.Instruction
 	account solana.PublicKey
+	Err     error
 }
 
 func (s Subscription) Push(inst *serum.Instruction) {
@@ -36,7 +37,12 @@ func (s *Subscription) Backfill(ctx context.Context, rpcClient *rpc.Client) {
 			return
 		}
 		zlog.Debug("getting instruction for transaction")
-		getStreamableInstructions(trx, func(inst *serum.Instruction) {
+		getStreamableInstructions(trx, func(inst *serum.Instruction, err error) {
+			if err != nil { //send error to all sub ...
+				s.Err = err
+				close(s.Stream)
+				return
+			}
 			zlog.Debug("got instruction")
 			s.Push(inst)
 		})
@@ -85,14 +91,19 @@ func (m *Manager) Process(trx *rpc.TransactionWithMeta) {
 		return
 	}
 
-	getStreamableInstructions(trx, func(inst *serum.Instruction) {
+	getStreamableInstructions(trx, func(inst *serum.Instruction, err error) {
 		for _, sub := range subscriptions {
+			if err != nil { //send error to all sub ...
+				sub.Err = err
+				close(sub.Stream)
+				continue
+			}
 			sub.Push(inst)
 		}
 	})
 }
 
-func getStreamableInstructions(trx *rpc.TransactionWithMeta, sender func(inst *serum.Instruction)) {
+func getStreamableInstructions(trx *rpc.TransactionWithMeta, sender func(inst *serum.Instruction, err error)) {
 	for idx, ins := range trx.Transaction.Message.Instructions {
 		programID, err := trx.Transaction.ResolveProgramIDIndex(ins.ProgramIDIndex)
 		if err != nil {
@@ -109,10 +120,11 @@ func getStreamableInstructions(trx *rpc.TransactionWithMeta, sender func(inst *s
 					zap.Int("instruction_index", idx),
 					zap.String("data", hex.EncodeToString(ins.Data)),
 				)
-				continue
+				sender(nil, err)
+				return
 			}
 
-			sender(instruction)
+			sender(instruction, nil)
 		} else {
 			if traceEnabled {
 				zlog.Debug("skipping none serum DEX program ID",

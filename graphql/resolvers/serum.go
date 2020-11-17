@@ -50,10 +50,9 @@ func newSideType(side uint32) SideType {
 	}
 }
 
-type SerumCall struct {
+type SerumResponse struct {
 	Instruction *SerumInstruction
-
-	err error
+	err         error
 }
 
 type SerumInstruction struct {

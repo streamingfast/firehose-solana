@@ -19,10 +19,10 @@ type TradeArgs struct {
 	Market  string
 }
 
-func (r *Root) Serum(ctx context.Context, args *TradeArgs) (<-chan *SerumCall, error) {
+func (r *Root) Serum(ctx context.Context, args *TradeArgs) (<-chan *SerumResponse, error) {
 	zlogger := logging.Logger(ctx, zlog)
 	zlogger.Info("received trade stream", zap.String("account", args.Account))
-	c := make(chan *SerumCall)
+	c := make(chan *SerumResponse)
 	account, err := solana.PublicKeyFromBase58(args.Account)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse public key: %w", err)
@@ -38,38 +38,47 @@ func (r *Root) Serum(ctx context.Context, args *TradeArgs) (<-chan *SerumCall, e
 				zlogger.Info("received context cancelled for trade")
 				r.tradeManager.Unsubscribe(sub)
 				return
-			case t := <-sub.Stream:
+			case t, ok := <-sub.Stream:
+				if !ok {
+					if sub.Err != nil {
+						c <- &SerumResponse{err: sub.Err}
+						return
+					} else {
+						close(c)
+						return
+					}
+				}
 				zlogger.Debug("graphql subscription received a new Instruction",
 					zap.Reflect("Instruction", t),
 				)
 
 				switch i := t.Impl.(type) {
 				case *serum.InstructionInitializeMarket:
-					c <- &SerumCall{
+					c <- &SerumResponse{
 						Instruction: NewSerumInitializeMarket(i),
 					}
 				case *serum.InstructionNewOrder:
-					c <- &SerumCall{
+					c <- &SerumResponse{
 						Instruction: NewSerumNewOrder(i),
 					}
 				case *serum.InstructionMatchOrder:
-					c <- &SerumCall{
+					c <- &SerumResponse{
 						Instruction: NewSerumMatchOrder(i),
 					}
 				case *serum.InstructionConsumeEvents:
-					c <- &SerumCall{
+					c <- &SerumResponse{
 						Instruction: NewSerumConsumeEvents(i),
 					}
 				case *serum.InstructionCancelOrder:
-					c <- &SerumCall{
+					c <- &SerumResponse{
 						Instruction: NewSerumCancelOrder(i),
 					}
 				case *serum.InstructionSettleFunds:
-					c <- &SerumCall{
+					c <- &SerumResponse{
 						Instruction: NewSerumSettleFunds(i),
 					}
 				case *serum.InstructionCancelOrderByClientId:
-					c <- &SerumCall{
+					c <- &SerumResponse{
 						Instruction: NewSerumCancelOrderByClientId(i),
 					}
 				default:
