@@ -11,7 +11,7 @@ require (
 	github.com/dfuse-io/kvdb v0.0.0-20200508203924-c107cb0b2fa2
 	github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
-	github.com/dfuse-io/solana-go v0.1.1-0.20201117203537-730acc74a112
+	github.com/dfuse-io/solana-go v0.1.1-0.20201117225846-ef7e72b53e0c
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
@@ -23,5 +23,3 @@ require (
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807
-
-replace github.com/dfuse-io/solana-go => /Users/julien/codebase/dfuse-io/solana-go
