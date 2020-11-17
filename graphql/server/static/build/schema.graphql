@@ -24,6 +24,13 @@ type SerumInitializeMarket {
   feeRateBps: Uint64!
   vaultSignerNonce: Uint64!
   quoteDustThreshold: Uint64!
+
+  marketAccount: String!
+  splCoinTokenAccount: String!
+  splPriceTokenAccount: String!
+  coinMintAccount: String!
+  priceMintAccount: String!
+
 }
 
 type SerumNewOrder {
@@ -32,14 +39,40 @@ type SerumNewOrder {
   maxQuantity: Uint64!
   orderType:   OrderType!
   clientID:    Uint64!
+
+  market: String!
+  openOrders: String!
+  requestQueue: String!
+  payer: String!
+  owner: String!
+  coinVault: String!
+  pcVault: String!
+  splTokenProgram: String!
+  rent: String!
+  srmDiscountAccount: String
 }
 
 type SerumMatchOrder {
   limit: Uint64!
+
+  market: String!
+  requestQueue: String!
+  eventQueue: String!
+  bids: String!
+  asks: String!
+  coinFeeReceivable: String!
+  pcFeeReceivable: String!
+
 }
 
 type SerumConsumeEvents {
   limit: Uint64!
+  openOrders: [String!]!
+  market: String!
+  eventQueue: String!
+  coinFeeReceivable: String!
+  pcFeeReceivable: String!
+
 }
 
 type SerumCancelOrder {
@@ -47,13 +80,32 @@ type SerumCancelOrder {
   orderId: String!
   openOrders: String!
   openOrderSlot: Uint64!
+
+  market: String!
+  requestQueue: String!
+  owner: String!
 }
 
 type SerumSettleFunds {
+  market: String!
+  openOrders: String!
+  owner: String!
+  coinVault: String!
+  pcVault: String!
+  coinWallet: String!
+  pcWallet: String!
+  signer: String!
+  splTokenProgram: String!
+  referrerPCWallet: String
 }
 
 type SerumCancelOrderByClientId {
   clientID: Uint64!
+
+  market: String!
+  openOrders: String!
+  requestQueue: String!
+  owner: String!
 }
 
 enum SideType {
@@ -70,3 +122,4 @@ enum OrderType {
 }
 
 scalar Uint64
+scalar JSON

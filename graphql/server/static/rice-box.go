@@ -35,15 +35,15 @@ func init() {
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "schema.graphql",
-		FileModTime: time.Unix(1605551011, 0),
+		FileModTime: time.Unix(1605639160, 0),
 
-		Content: string("schema {\n  query: Queries\n  subscription: Subscription\n}\n\ntype Queries {\n}\n\ntype Subscription {\n  serum(account: String!,market: String!): SerumCall\n}\n\n\ntype SerumCall {\n  instruction: SerumInstruction\n}\n\n\nunion SerumInstruction = SerumInitializeMarket | SerumNewOrder | SerumMatchOrder | SerumConsumeEvents | SerumCancelOrder | SerumSettleFunds | SerumCancelOrderByClientId\n\ntype SerumInitializeMarket {\n  baseLotSize: Uint64!\n  quoteLotSize: Uint64!\n  feeRateBps: Uint64!\n  vaultSignerNonce: Uint64!\n  quoteDustThreshold: Uint64!\n}\n\ntype SerumNewOrder {\n  side:        SideType!\n  limitPrice:  Uint64!\n  maxQuantity: Uint64!\n  orderType:   OrderType!\n  clientID:    Uint64!\n}\n\ntype SerumMatchOrder {\n  limit: Uint64!\n}\n\ntype SerumConsumeEvents {\n  limit: Uint64!\n}\n\ntype SerumCancelOrder {\n  side: SideType!\n  orderId: String!\n  openOrders: String!\n  openOrderSlot: Uint64!\n}\n\ntype SerumSettleFunds {\n}\n\ntype SerumCancelOrderByClientId {\n  clientID: Uint64!\n}\n\nenum SideType {\n  ASK\n  BID\n  UNKNOWN\n}\n\nenum OrderType {\n  LIMIT\n  IMMEDIATE_OR_CANCEL\n  POST_ONLY\n  UNKNOWN\n}\n\nscalar Uint64\n"),
+		Content: string("schema {\n  query: Queries\n  subscription: Subscription\n}\n\ntype Queries {\n}\n\ntype Subscription {\n  serum(account: String!,market: String!): SerumCall\n}\n\n\ntype SerumCall {\n  instruction: SerumInstruction\n}\n\n\nunion SerumInstruction = SerumInitializeMarket | SerumNewOrder | SerumMatchOrder | SerumConsumeEvents | SerumCancelOrder | SerumSettleFunds | SerumCancelOrderByClientId\n\ntype SerumInitializeMarket {\n  baseLotSize: Uint64!\n  quoteLotSize: Uint64!\n  feeRateBps: Uint64!\n  vaultSignerNonce: Uint64!\n  quoteDustThreshold: Uint64!\n\n  marketAccount: String!\n  splCoinTokenAccount: String!\n  splPriceTokenAccount: String!\n  coinMintAccount: String!\n  priceMintAccount: String!\n\n}\n\ntype SerumNewOrder {\n  side:        SideType!\n  limitPrice:  Uint64!\n  maxQuantity: Uint64!\n  orderType:   OrderType!\n  clientID:    Uint64!\n\n  market: String!\n  openOrders: String!\n  requestQueue: String!\n  payer: String!\n  owner: String!\n  coinVault: String!\n  pcVault: String!\n  splTokenProgram: String!\n  rent: String!\n  srmDiscountAccount: String\n}\n\ntype SerumMatchOrder {\n  limit: Uint64!\n\n  market: String!\n  requestQueue: String!\n  eventQueue: String!\n  bids: String!\n  asks: String!\n  coinFeeReceivable: String!\n  pcFeeReceivable: String!\n\n}\n\ntype SerumConsumeEvents {\n  limit: Uint64!\n  openOrders: [String!]!\n  market: String!\n  eventQueue: String!\n  coinFeeReceivable: String!\n  pcFeeReceivable: String!\n\n}\n\ntype SerumCancelOrder {\n  side: SideType!\n  orderId: String!\n  openOrders: String!\n  openOrderSlot: Uint64!\n\n  market: String!\n  requestQueue: String!\n  owner: String!\n}\n\ntype SerumSettleFunds {\n  market: String!\n  openOrders: String!\n  owner: String!\n  coinVault: String!\n  pcVault: String!\n  coinWallet: String!\n  pcWallet: String!\n  signer: String!\n  splTokenProgram: String!\n  referrerPCWallet: String\n}\n\ntype SerumCancelOrderByClientId {\n  clientID: Uint64!\n\n  market: String!\n  openOrders: String!\n  requestQueue: String!\n  owner: String!\n}\n\nenum SideType {\n  ASK\n  BID\n  UNKNOWN\n}\n\nenum OrderType {\n  LIMIT\n  IMMEDIATE_OR_CANCEL\n  POST_ONLY\n  UNKNOWN\n}\n\nscalar Uint64\nscalar JSON\n"),
 	}
 
 	// define dirs
 	dir1 := &embedded.EmbeddedDir{
 		Filename:   "",
-		DirModTime: time.Unix(1605551011, 0),
+		DirModTime: time.Unix(1605639160, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file2, // "favorites.json"
 			file3, // "graphiql.html"
@@ -60,7 +60,7 @@ func init() {
 	// register embeddedBox
 	embedded.RegisterEmbeddedBox(`build`, &embedded.EmbeddedBox{
 		Name: `build`,
-		Time: time.Unix(1605551011, 0),
+		Time: time.Unix(1605639160, 0),
 		Dirs: map[string]*embedded.EmbeddedDir{
 			"": dir1,
 		},

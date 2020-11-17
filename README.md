@@ -16,3 +16,41 @@ Questions)
 
 - Is there pagination on `getAccountInfo`?
     There is pagination based on offset
+    
+    
+- 1) load a cache/store from disk (sts)    
+- 2) read jsonl with all markets, and add the ones that aren't the cache
+- 3)
+
+
+
+
+type Store struct {
+    map[string] MarketMeta {
+           
+    }
+}
+
+
+store Market version => data decoder
+
+getAcountInfo(eventAddress)
+-> HEAD EVENT, EVENT, EVENT, EVENT, EVENT, .....EVENT
+
+
+->load markets
+-> go routine
+        getAccountInfo(eventAddress)
+        load all events store
+        ws.subscribeAccount(eventAccount)
+            -> update events list
+            -> update events list
+            
+3 min
+->       
+            
+
+
+
+ 
+
