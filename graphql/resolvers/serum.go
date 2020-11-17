@@ -262,8 +262,8 @@ func NewSerumCancelOrder(i *serum.InstructionCancelOrder) *SerumInstruction {
 			OpenOrderSlot: gtype.Uint64(i.OpenOrderSlot),
 			Accounts: SerumCancelOrderAccounts{
 				Market:       i.Accounts.Market.PublicKey.String(),
-				RequestQueue: i.Accounts.Market.PublicKey.String(),
-				Owner:        i.Accounts.Market.PublicKey.String(),
+				RequestQueue: i.Accounts.RequestQueue.PublicKey.String(),
+				Owner:        i.Accounts.Owner.PublicKey.String(),
 			},
 		},
 	}
