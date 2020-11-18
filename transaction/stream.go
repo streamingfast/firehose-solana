@@ -57,28 +57,38 @@ func (s *Stream) Launch(ctx context.Context) error {
 			iter := uint64(0)
 			slot := slotResult.Slot - s.slotOffset
 			delta := 0 * time.Second
+			zlog.Debug("received new slot",
+				zap.Uint64("slot", slotResult.Slot),
+				zap.Uint64("offset", s.slotOffset),
+				zap.Uint64("resolved_slot", slot),
+			)
+
 			for foundBlock {
 				time.Sleep(delta)
 				iter++
 				blockResp, err = s.getConfirmedBlock(ctx, slot)
 				if err != nil {
-					if traceEnabled {
-						zlog.Error("block cannot be confirmed... retrying in 100ms",
-							zap.Uint64("slot_id", slot),
-							zap.Uint64("retry_count", iter),
-						)
-					}
+					zlog.Error("block cannot be confirmed... retrying in 100ms",
+						zap.Uint64("slot_id", slot),
+						zap.Uint64("retry_count", iter),
+					)
 					delta = 100 * time.Millisecond
 					continue
 				}
 				foundBlock = true
 			}
+
 			if blockResp == nil {
 				if traceEnabled {
 					zlog.Debug("received empty block result", zap.Uint64("slotResult", slot))
 				}
 				continue
 			}
+
+			zlog.Debug("found block in slot... processing transaction",
+				zap.Stringer("block_hash", blockResp.Blockhash),
+				zap.Uint64("slot_num", slot),
+			)
 
 			for _, trx := range blockResp.Transactions {
 				s.processor.Process(&trx)
