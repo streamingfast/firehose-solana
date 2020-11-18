@@ -9,7 +9,7 @@ metadata:
 spec:
   minReadySeconds: 60
   progressDeadlineSeconds: 600
-  replicas: 2
+  replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -47,12 +47,17 @@ spec:
         - --config-file=
         - --log-format=stackdriver
         - --log-to-file=false
+        - --graphql-rpc-url=http://api.mainnet-beta.solana.com:80/rpc
+        - --graphql-rpc-ws-url=ws://api.mainnet-beta.solana.com:80/rpc
+        - --graphql-http-listen-addr=:8080
+        - --graphql-config-name=mainnet
+        - --graphql-slot-offset=100
         env:
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /var/secrets/google/keyfile.json
         - name: INFO
           value: github.com/dfuse-io/.*
-        image: gcr.io/eoscanada-shared-services/dfuse-solana:5a16f8d
+        image: gcr.io/eoscanada-shared-services/dfusesol:ab-161f937
         imagePullPolicy: IfNotPresent
         name: dgraphql
         ports:

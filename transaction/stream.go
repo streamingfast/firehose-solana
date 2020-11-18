@@ -63,7 +63,7 @@ func (s *Stream) Launch(ctx context.Context) error {
 				zap.Uint64("resolved_slot", slot),
 			)
 
-			for foundBlock {
+			for !foundBlock {
 				time.Sleep(delta)
 				iter++
 				blockResp, err = s.getConfirmedBlock(ctx, slot)
@@ -79,9 +79,9 @@ func (s *Stream) Launch(ctx context.Context) error {
 			}
 
 			if blockResp == nil {
-				if traceEnabled {
-					zlog.Debug("received empty block result", zap.Uint64("slotResult", slot))
-				}
+				zlog.Debug("received empty block result",
+					zap.Uint64("slot_result", slot),
+				)
 				continue
 			}
 
