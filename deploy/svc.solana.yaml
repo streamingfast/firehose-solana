@@ -3,6 +3,7 @@ kind: Service
 metadata:
   annotations:
     cloud.google.com/neg: '{"ingress": true}'
+    beta.cloud.google.com/backend-config: '{"default": "dgraphql-backendconfig"}'
   labels:
     app: dgraphql-v1
     monitor: prometheus

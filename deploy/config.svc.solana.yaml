@@ -1,0 +1,11 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  labels:
+    app: dgraphql-v1
+  name: dgraphql-backendconfig
+  namespace: sol-mainnet
+spec:
+  timeoutSec: 86400
+  securityPolicy:
+    name: 'banned-api-abusers'
