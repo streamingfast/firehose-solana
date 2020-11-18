@@ -57,13 +57,15 @@ func (s *Stream) Launch(ctx context.Context) error {
 			iter := uint64(0)
 			slot := slotResult.Slot - s.slotOffset
 			delta := 0 * time.Second
-			zlog.Debug("received new slot",
-				zap.Uint64("slot", slotResult.Slot),
-				zap.Uint64("offset", s.slotOffset),
-				zap.Uint64("resolved_slot", slot),
-			)
-
 			logSlot := (slot%100 == 0)
+
+			if logSlot {
+				zlog.Info("received new slot",
+					zap.Uint64("slot", slotResult.Slot),
+					zap.Uint64("offset", s.slotOffset),
+					zap.Uint64("resolved_slot", slot),
+				)
+			}
 
 			for !foundBlock {
 				time.Sleep(delta)
@@ -87,13 +89,10 @@ func (s *Stream) Launch(ctx context.Context) error {
 				continue
 			}
 
-			if logSlot {
-				zlog.Info("found block in slot... processing transaction",
-					zap.Stringer("block_hash", blockResp.Blockhash),
-					zap.Uint64("slot_num", slot),
-				)
-			}
-
+			zlog.Debug("found block in slot... processing transaction",
+				zap.Stringer("block_hash", blockResp.Blockhash),
+				zap.Uint64("slot_num", slot),
+			)
 			for _, trx := range blockResp.Transactions {
 				s.processor.Process(&trx)
 			}
