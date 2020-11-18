@@ -19,6 +19,7 @@ type instructionWrapper struct {
 	Decoded      *serum.Instruction
 	Compiled     *solana.CompiledInstruction
 	TrxSignature string
+	TrxError     interface{}
 }
 
 type Subscription struct {
@@ -92,6 +93,7 @@ func (s *Subscription) Backfill(ctx context.Context, rpcClient *rpc.Client) {
 			s.pushSafe(true, &instructionWrapper{
 				Decoded:      decodedInstruction,
 				Compiled:     compiledInstruction,
+				TrxError:     trx.Meta.Err,
 				TrxSignature: trx.Transaction.Signatures[0].String(),
 			})
 		})
@@ -148,6 +150,7 @@ func (m *Manager) Process(trx *rpc.TransactionWithMeta) {
 			sub.pushSafe(false, &instructionWrapper{
 				Decoded:      decodedInstruction,
 				Compiled:     compiledInstruction,
+				TrxError:     trx.Meta.Err,
 				TrxSignature: trx.Transaction.Signatures[0].String(),
 			})
 		}

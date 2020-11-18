@@ -55,8 +55,13 @@ func newSideType(side uint32) SideType {
 
 type SerumInstructionResponse struct {
 	TrxSignature string
+	trxError     interface{}
 	Instruction  *SerumInstruction
 	err          error
+}
+
+func (r *SerumInstructionResponse) TrxError() bool {
+	return r.trxError != nil
 }
 
 type SerumInstruction struct {

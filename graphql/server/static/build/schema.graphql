@@ -12,6 +12,7 @@ type Subscription {
 
 type SerumInstructionResponse {
   trxSignature: String!
+  trxError: Boolean!
   instruction: SerumInstruction
 }
 

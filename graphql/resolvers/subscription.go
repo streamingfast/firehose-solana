@@ -51,7 +51,10 @@ func (r *Root) SerumInstructionHistory(ctx context.Context, args *TradeArgs) (<-
 					zap.Reflect("Instruction", t),
 				)
 
-				s := &SerumInstructionResponse{TrxSignature: t.TrxSignature}
+				s := &SerumInstructionResponse{
+					TrxSignature: t.TrxSignature,
+					trxError:     t.TrxError,
+				}
 
 				if t.Decoded == nil {
 					s.Instruction = NewUndecodedInstruction(t.Compiled, "unable to decode serum instruction")
