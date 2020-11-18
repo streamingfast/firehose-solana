@@ -57,7 +57,7 @@ spec:
           value: /var/secrets/google/keyfile.json
         - name: INFO
           value: .*
-        image: gcr.io/eoscanada-shared-services/dfusesol:ab-fdec76d
+        image: gcr.io/eoscanada-shared-services/dfusesol:ab-bb43353
         imagePullPolicy: IfNotPresent
         name: dgraphql
         ports:
