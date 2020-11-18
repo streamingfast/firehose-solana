@@ -58,7 +58,7 @@ func (s *Stream) Launch(ctx context.Context) error {
 			slot := slotResult.Slot - s.slotOffset
 			delta := 0 * time.Second
 
-			if slotResult.Slot%100 == 0 {
+			if slotResult.Slot%10 == 0 {
 				zlog.Info("received new slot",
 					zap.Uint64("slot", slotResult.Slot),
 					zap.Uint64("offset", s.slotOffset),
