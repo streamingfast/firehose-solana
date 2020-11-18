@@ -12,6 +12,7 @@ import (
 )
 
 func TestGetTransaction(t *testing.T) {
+	t.Skip()
 	rpcClient := rpc.NewClient("http://api.mainnet-beta.solana.com:80/rpc")
 	account := solana.MustPublicKeyFromBase58("CG1XSWuXo2rw2SuHTRc54nihKvLKh4wMYi7oF3487LYt")
 	err := GetTransactionForAccount(context.Background(), rpcClient, account, func(trx *rpc.TransactionWithMeta) {
