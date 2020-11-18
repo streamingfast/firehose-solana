@@ -57,7 +57,7 @@ spec:
           value: /var/secrets/google/keyfile.json
         - name: INFO
           value: github.com/dfuse-io/.*
-        image: gcr.io/eoscanada-shared-services/dfusesol:ab-161f937
+        image: gcr.io/eoscanada-shared-services/dfusesol:ab-fdec76d
         imagePullPolicy: IfNotPresent
         name: dgraphql
         ports:

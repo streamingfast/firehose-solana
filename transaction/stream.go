@@ -63,6 +63,8 @@ func (s *Stream) Launch(ctx context.Context) error {
 				zap.Uint64("resolved_slot", slot),
 			)
 
+			logSlot := (slot%100 == 0)
+
 			for !foundBlock {
 				time.Sleep(delta)
 				iter++
@@ -85,10 +87,12 @@ func (s *Stream) Launch(ctx context.Context) error {
 				continue
 			}
 
-			zlog.Debug("found block in slot... processing transaction",
-				zap.Stringer("block_hash", blockResp.Blockhash),
-				zap.Uint64("slot_num", slot),
-			)
+			if logSlot {
+				zlog.Info("found block in slot... processing transaction",
+					zap.Stringer("block_hash", blockResp.Blockhash),
+					zap.Uint64("slot_num", slot),
+				)
+			}
 
 			for _, trx := range blockResp.Transactions {
 				s.processor.Process(&trx)
