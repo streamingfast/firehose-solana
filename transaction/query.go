@@ -22,7 +22,8 @@ func GetTransactionForAccount(ctx context.Context, rpcCient *rpc.Client, account
 		zap.Int("signatures_count", len(signatures)),
 	)
 
-	for _, sig := range signatures {
+	for i := len(signatures) - 1; i >= 0; i-- {
+		sig := signatures[i]
 		if traceEnabled {
 			zlog.Debug("retrieving trx",
 				zap.String("signature", sig.Signature),

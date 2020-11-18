@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"sync"
 
+	"go.uber.org/atomic"
+
 	"github.com/dfuse-io/dfuse-solana/transaction"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/rpc"
@@ -13,24 +15,62 @@ import (
 )
 
 type instructionWrapper struct {
-	Inst  *serum.Instruction
-	TrxID string
+	Decoded      *serum.Instruction
+	Compiled     *solana.CompiledInstruction
+	TrxSignature string
 }
 
 type Subscription struct {
-	Stream  chan *instructionWrapper
-	account solana.PublicKey
-	Err     error
+	Stream                  chan *instructionWrapper
+	account                 solana.PublicKey
+	backfillCompleted       *atomic.Bool
+	backfilledTrxSignatures map[string]bool
+	pushLock                sync.Mutex
+	toSendLiveInstructions  []*instructionWrapper
+	Err                     error
 }
 
-func (s Subscription) Push(inst *instructionWrapper) {
-	zlog.Debug("sending instruction to subscription",
-		zap.Int("sub stream length", len(s.Stream)),
-		zap.Int("cap stream length", cap(s.Stream)),
-		zap.Reflect("instruction", inst),
-	)
+func NewSubscription(account solana.PublicKey) *Subscription {
+	return &Subscription{
+		account:                 account,
+		Stream:                  make(chan *instructionWrapper, 200),
+		backfillCompleted:       atomic.NewBool(false),
+		backfilledTrxSignatures: map[string]bool{},
+		toSendLiveInstructions:  []*instructionWrapper{},
+	}
+}
 
-	s.Stream <- inst
+func (s *Subscription) pushSafe(backfilling bool, inst *instructionWrapper) {
+	s.pushLock.Lock()
+	defer s.pushLock.Unlock()
+
+	s.push(backfilling, inst)
+}
+
+func (s *Subscription) push(backfilling bool, inst *instructionWrapper) {
+	if backfilling {
+		zlog.Debug("sending backfill instruction to subscription",
+			zap.Int("sub stream length", len(s.Stream)),
+			zap.Int("cap stream length", cap(s.Stream)),
+			zap.Reflect("instruction", inst),
+		)
+		s.Stream <- inst
+		s.backfilledTrxSignatures[inst.TrxSignature] = true
+		return
+	}
+
+	if s.backfillCompleted.Load() {
+		zlog.Debug("sending live instruction to subscription",
+			zap.Int("sub stream length", len(s.Stream)),
+			zap.Int("cap stream length", cap(s.Stream)),
+			zap.Reflect("instruction", inst),
+		)
+		s.Stream <- inst
+		return
+	}
+
+	s.toSendLiveInstructions = append(s.toSendLiveInstructions, inst)
+	return
 }
 
 func (s *Subscription) Backfill(ctx context.Context, rpcClient *rpc.Client) {
@@ -42,27 +82,22 @@ func (s *Subscription) Backfill(ctx context.Context, rpcClient *rpc.Client) {
 			return
 		}
 		zlog.Debug("getting instruction for transaction")
-		getStreamableInstructions(trx, func(inst *serum.Instruction, err error) {
-			if err != nil { //send error to all sub ...
-				s.Err = err
-				close(s.Stream)
-				return
-			}
-			zlog.Debug("got instruction")
-			s.Push(&instructionWrapper{
-				Inst:  inst,
-				TrxID: trx.Transaction.Signatures[0].String(),
+		getStreamableInstructions(trx, func(compiledInstruction *solana.CompiledInstruction, decodedInstruction *serum.Instruction) {
+			s.pushSafe(true, &instructionWrapper{
+				Decoded:      decodedInstruction,
+				Compiled:     compiledInstruction,
+				TrxSignature: trx.Transaction.Signatures[0].String(),
 			})
 		})
 	})
-	zlog.Info("back fill terminated")
-}
 
-func NewSubscription(account solana.PublicKey) *Subscription {
-	return &Subscription{
-		account: account,
-		Stream:  make(chan *instructionWrapper, 200),
+	s.pushLock.Lock()
+	defer s.pushLock.Unlock()
+	for _, inst := range s.toSendLiveInstructions {
+		s.push(true, inst)
 	}
+	s.backfillCompleted.Store(true)
+	zlog.Info("back fill terminated")
 }
 
 type Manager struct {
@@ -99,43 +134,39 @@ func (m *Manager) Process(trx *rpc.TransactionWithMeta) {
 		return
 	}
 
-	getStreamableInstructions(trx, func(inst *serum.Instruction, err error) {
+	getStreamableInstructions(trx, func(compiledInstruction *solana.CompiledInstruction, decodedInstruction *serum.Instruction) {
 		for _, sub := range subscriptions {
-			if err != nil { //send error to all sub ...
-				sub.Err = err
-				close(sub.Stream)
-				continue
-			}
-			sub.Push(&instructionWrapper{
-				Inst:  inst,
-				TrxID: trx.Transaction.Signatures[0].String(),
+			sub.pushSafe(false, &instructionWrapper{
+				Decoded:      decodedInstruction,
+				Compiled:     compiledInstruction,
+				TrxSignature: trx.Transaction.Signatures[0].String(),
 			})
 		}
 	})
 }
 
-func getStreamableInstructions(trx *rpc.TransactionWithMeta, sender func(inst *serum.Instruction, err error)) {
-	for idx, ins := range trx.Transaction.Message.Instructions {
-		programID, err := trx.Transaction.ResolveProgramIDIndex(ins.ProgramIDIndex)
+func getStreamableInstructions(trx *rpc.TransactionWithMeta, sender func(compiledInst *solana.CompiledInstruction, inst *serum.Instruction)) {
+	for idx, compiledInstruction := range trx.Transaction.Message.Instructions {
+		programID, err := trx.Transaction.ResolveProgramIDIndex(compiledInstruction.ProgramIDIndex)
 		if err != nil {
-			zlog.Info("invalid programID index... werid")
+			zlog.Info("invalid programID index... weird")
 			continue
 		}
 
 		if programID.Equals(serum.DEX_PROGRAM_ID) {
-			instruction, err := serum.DecodeInstruction(trx.Transaction.Message.AccountKeys, &ins)
+			decodedInstruction, err := serum.DecodeInstruction(trx.Transaction.Message.AccountKeys, &compiledInstruction)
 			if err != nil {
 				zlog.Error("error decoding instruction",
 					zap.Error(err),
 					zap.Stringer("trx_signature", trx.Transaction.Signatures[0]),
 					zap.Int("instruction_index", idx),
-					zap.String("data", hex.EncodeToString(ins.Data)),
+					zap.String("data", hex.EncodeToString(compiledInstruction.Data)),
 				)
-				sender(nil, err)
+				sender(&compiledInstruction, nil)
 				return
 			}
 
-			sender(instruction, nil)
+			sender(&compiledInstruction, decodedInstruction)
 		} else {
 			if traceEnabled {
 				zlog.Debug("skipping none serum DEX program ID",

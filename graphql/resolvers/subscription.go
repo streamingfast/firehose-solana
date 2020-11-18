@@ -51,8 +51,15 @@ func (r *Root) SerumInstructionHistory(ctx context.Context, args *TradeArgs) (<-
 					zap.Reflect("Instruction", t),
 				)
 
-				s := &SerumInstructionResponse{TrxSignature: t.TrxID}
-				switch i := t.Inst.Impl.(type) {
+				s := &SerumInstructionResponse{TrxSignature: t.TrxSignature}
+
+				if t.Decoded == nil {
+					s.Instruction = NewUndecodedInstruction(t.Compiled, "unable to decode serum instruction")
+					c <- s
+					continue
+				}
+
+				switch i := t.Decoded.Impl.(type) {
 				case *serum.InstructionInitializeMarket:
 					s.Instruction = NewSerumInitializeMarket(i)
 					c <- s
@@ -75,7 +82,7 @@ func (r *Root) SerumInstructionHistory(ctx context.Context, args *TradeArgs) (<-
 					s.Instruction = NewSerumCancelOrderByClientId(i)
 					c <- s
 				default:
-					zlog.Error(fmt.Sprintf("unknonwn insutrction type: %T", t.Inst.Impl))
+					zlog.Error(fmt.Sprintf("unknonwn insutrction type: %T", t.Decoded.Impl))
 				}
 
 			}

@@ -16,7 +16,16 @@ type SerumInstructionResponse {
 }
 
 
-union SerumInstruction = SerumInitializeMarket | SerumNewOrder | SerumMatchOrder | SerumConsumeEvents | SerumCancelOrder | SerumSettleFunds | SerumCancelOrderByClientId
+union SerumInstruction = UndecodedInstruction | SerumInitializeMarket | SerumNewOrder | SerumMatchOrder | SerumConsumeEvents | SerumCancelOrder | SerumSettleFunds | SerumCancelOrderByClientId
+
+type UndecodedInstruction {
+  programIDIndex: Uint64!
+  accountCount:   Uint64!
+  accounts:       [Uint64!]!
+  dataLength:     Uint64!
+  data:           String!
+  error:          String!
+}
 
 type SerumInitializeMarketAccounts {
   market: String!
@@ -25,6 +34,7 @@ type SerumInitializeMarketAccounts {
   coinMint: String!
   priceMint: String!
 }
+
 type SerumInitializeMarket {
   baseLotSize: Uint64!
   quoteLotSize: Uint64!

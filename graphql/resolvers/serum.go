@@ -1,6 +1,8 @@
 package resolvers
 
 import (
+	"encoding/hex"
+
 	gtype "github.com/dfuse-io/dgraphql/types"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/serum"
@@ -68,6 +70,39 @@ type SerumInitializeMarketAccounts struct {
 	CoinMint      string
 	PriceMint     string
 }
+
+type UndecodedInstruction struct {
+	ProgramIDIndex gtype.Uint64
+	AccountCount   gtype.Uint64
+	Accounts       []gtype.Uint64
+	DataLength     gtype.Uint64
+	Data           string
+	Error          string
+}
+
+func (d *SerumInstruction) ToUndecodedInstruction() (*UndecodedInstruction, bool) {
+	if v, ok := d.inner.(*UndecodedInstruction); ok {
+		return v, true
+	}
+	return nil, false
+}
+
+func NewUndecodedInstruction(i *solana.CompiledInstruction, error string) *SerumInstruction {
+	out := &UndecodedInstruction{
+		ProgramIDIndex: gtype.Uint64(i.ProgramIDIndex),
+		AccountCount:   gtype.Uint64(i.AccountCount),
+		DataLength:     gtype.Uint64(i.DataLength),
+		Data:           hex.EncodeToString(i.Data),
+		Error:          error,
+	}
+
+	for _, v := range i.Accounts {
+		out.Accounts = append(out.Accounts, gtype.Uint64(v))
+	}
+
+	return &SerumInstruction{inner: out}
+}
+
 type SerumInitializeMarket struct {
 	BaseLotSize        gtype.Uint64
 	QuoteLotSize       gtype.Uint64
