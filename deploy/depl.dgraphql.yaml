@@ -7,7 +7,7 @@ metadata:
   name: dgraphql-v1
   namespace: sol-mainnet
 spec:
-  minReadySeconds: 60
+  minReadySeconds: 0
   progressDeadlineSeconds: 600
   replicas: 2
   revisionHistoryLimit: 10
@@ -56,7 +56,7 @@ spec:
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: /var/secrets/google/keyfile.json
         - name: INFO
-          value: github.com/dfuse-io/.*
+          value: .*
         image: gcr.io/eoscanada-shared-services/dfusesol:ab-fdec76d
         imagePullPolicy: IfNotPresent
         name: dgraphql

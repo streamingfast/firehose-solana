@@ -6,8 +6,8 @@ import (
 )
 
 var zlog = zap.NewNop()
-var traceEnabled = logging.IsTraceEnabled("transaction", "github.com/dfuse/dfuse-solana/transaction")
+var traceEnabled = logging.IsTraceEnabled("transaction", "github.com/dfuse-io/dfuse-solana/transaction")
 
 func init() {
-	logging.Register("github.com/dfuse/dfuse-solana/transaction", &zlog)
+	logging.Register("github.com/dfuse-io/dfuse-solana/transaction", &zlog)
 }
