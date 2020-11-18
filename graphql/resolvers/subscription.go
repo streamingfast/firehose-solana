@@ -51,7 +51,7 @@ func (r *Root) SerumInstructionHistory(ctx context.Context, args *TradeArgs) (<-
 					zap.Reflect("Instruction", t),
 				)
 
-				s := &SerumInstructionResponse{TransactionId: t.TrxID}
+				s := &SerumInstructionResponse{TrxSignature: t.TrxID}
 				switch i := t.Inst.Impl.(type) {
 				case *serum.InstructionInitializeMarket:
 					s.Instruction = NewSerumInitializeMarket(i)

@@ -11,7 +11,7 @@ type Subscription {
 }
 
 type SerumInstructionResponse {
-  transactionId: String!
+  trxSignature: String!
   instruction: SerumInstruction
 }
 
