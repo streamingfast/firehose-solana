@@ -47,10 +47,13 @@ func (s *Stream) Launch(ctx context.Context) error {
 		for {
 			result, err := sub.Recv()
 			if err != nil {
-				zlog.Error("sub.")
+				zlog.Error("error receiving slot",
+					zap.Error(err),
+				)
+				continue
 			}
+
 			slotResult := result.(*ws.SlotResult)
-			//fmt.Println("slotResult parent:", slotResult.Root, slotResult.Parent, slotResult.Slot)
 
 			var blockResp *rpc.GetConfirmedBlockResult
 			foundBlock := false
