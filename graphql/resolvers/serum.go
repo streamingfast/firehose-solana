@@ -52,8 +52,9 @@ func newSideType(side uint32) SideType {
 }
 
 type SerumInstructionResponse struct {
-	Instruction *SerumInstruction
-	err         error
+	TransactionId string
+	Instruction   *SerumInstruction
+	err           error
 }
 
 type SerumInstruction struct {

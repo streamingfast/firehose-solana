@@ -12,13 +12,18 @@ import (
 	"go.uber.org/zap"
 )
 
+type instructionWrapper struct {
+	Inst  *serum.Instruction
+	TrxID string
+}
+
 type Subscription struct {
-	Stream  chan *serum.Instruction
+	Stream  chan *instructionWrapper
 	account solana.PublicKey
 	Err     error
 }
 
-func (s Subscription) Push(inst *serum.Instruction) {
+func (s Subscription) Push(inst *instructionWrapper) {
 	zlog.Debug("sending instruction to subscription",
 		zap.Int("sub stream length", len(s.Stream)),
 		zap.Int("cap stream length", cap(s.Stream)),
@@ -44,7 +49,10 @@ func (s *Subscription) Backfill(ctx context.Context, rpcClient *rpc.Client) {
 				return
 			}
 			zlog.Debug("got instruction")
-			s.Push(inst)
+			s.Push(&instructionWrapper{
+				Inst:  inst,
+				TrxID: trx.Transaction.Signatures[0].String(),
+			})
 		})
 	})
 	zlog.Info("back fill terminated")
@@ -53,7 +61,7 @@ func (s *Subscription) Backfill(ctx context.Context, rpcClient *rpc.Client) {
 func NewSubscription(account solana.PublicKey) *Subscription {
 	return &Subscription{
 		account: account,
-		Stream:  make(chan *serum.Instruction, 200),
+		Stream:  make(chan *instructionWrapper, 200),
 	}
 }
 
@@ -98,7 +106,10 @@ func (m *Manager) Process(trx *rpc.TransactionWithMeta) {
 				close(sub.Stream)
 				continue
 			}
-			sub.Push(inst)
+			sub.Push(&instructionWrapper{
+				Inst:  inst,
+				TrxID: trx.Transaction.Signatures[0].String(),
+			})
 		}
 	})
 }

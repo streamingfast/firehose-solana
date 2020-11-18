@@ -51,37 +51,31 @@ func (r *Root) SerumInstructionHistory(ctx context.Context, args *TradeArgs) (<-
 					zap.Reflect("Instruction", t),
 				)
 
-				switch i := t.Impl.(type) {
+				s := &SerumInstructionResponse{TransactionId: t.TrxID}
+				switch i := t.Inst.Impl.(type) {
 				case *serum.InstructionInitializeMarket:
-					c <- &SerumInstructionResponse{
-						Instruction: NewSerumInitializeMarket(i),
-					}
+					s.Instruction = NewSerumInitializeMarket(i)
+					c <- s
 				case *serum.InstructionNewOrder:
-					c <- &SerumInstructionResponse{
-						Instruction: NewSerumNewOrder(i),
-					}
+					s.Instruction = NewSerumNewOrder(i)
+					c <- s
 				case *serum.InstructionMatchOrder:
-					c <- &SerumInstructionResponse{
-						Instruction: NewSerumMatchOrder(i),
-					}
+					s.Instruction = NewSerumMatchOrder(i)
+					c <- s
 				case *serum.InstructionConsumeEvents:
-					c <- &SerumInstructionResponse{
-						Instruction: NewSerumConsumeEvents(i),
-					}
+					s.Instruction = NewSerumConsumeEvents(i)
+					c <- s
 				case *serum.InstructionCancelOrder:
-					c <- &SerumInstructionResponse{
-						Instruction: NewSerumCancelOrder(i),
-					}
+					s.Instruction = NewSerumCancelOrder(i)
+					c <- s
 				case *serum.InstructionSettleFunds:
-					c <- &SerumInstructionResponse{
-						Instruction: NewSerumSettleFunds(i),
-					}
+					s.Instruction = NewSerumSettleFunds(i)
+					c <- s
 				case *serum.InstructionCancelOrderByClientId:
-					c <- &SerumInstructionResponse{
-						Instruction: NewSerumCancelOrderByClientId(i),
-					}
+					s.Instruction = NewSerumCancelOrderByClientId(i)
+					c <- s
 				default:
-					zlog.Error(fmt.Sprintf("unknonwn insutrction type: %T", t.Impl))
+					zlog.Error(fmt.Sprintf("unknonwn insutrction type: %T", t.Inst.Impl))
 				}
 
 			}

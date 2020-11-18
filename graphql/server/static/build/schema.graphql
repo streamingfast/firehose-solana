@@ -11,6 +11,7 @@ type Subscription {
 }
 
 type SerumInstructionResponse {
+  transactionId: String!
   instruction: SerumInstruction
 }
 
