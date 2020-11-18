@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"sync"
+	"time"
 
 	"go.uber.org/atomic"
 
@@ -74,9 +75,14 @@ func (s *Subscription) push(backfilling bool, inst *instructionWrapper) {
 }
 
 func (s *Subscription) Backfill(ctx context.Context, rpcClient *rpc.Client) {
-	zlog.Info("back filling subscription")
+	t0 := time.Now()
+	zlog.Info("back filling subscription",
+		zap.Time("started_at", t0),
+	)
 	transaction.GetTransactionForAccount(ctx, rpcClient, s.account, func(trx *rpc.TransactionWithMeta) {
-		zlog.Debug("got a transaction", zap.String("signature", trx.Transaction.Signatures[0].String()))
+		zlog.Debug("got a transaction",
+			zap.String("signature", trx.Transaction.Signatures[0].String()),
+		)
 		if !trx.Transaction.IsSigner(s.account) {
 			zlog.Debug("transaction was not signed by subscribed account")
 			return
@@ -93,11 +99,14 @@ func (s *Subscription) Backfill(ctx context.Context, rpcClient *rpc.Client) {
 
 	s.pushLock.Lock()
 	defer s.pushLock.Unlock()
+	zlog.Info("backfilling completed draining pending live instruction queue",
+		zap.Int("queue_size", len(s.toSendLiveInstructions)),
+		zap.Duration("backfill_duration", time.Since(t0)),
+	)
 	for _, inst := range s.toSendLiveInstructions {
 		s.push(true, inst)
 	}
 	s.backfillCompleted.Store(true)
-	zlog.Info("back fill terminated")
 }
 
 type Manager struct {
