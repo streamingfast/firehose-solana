@@ -7,6 +7,20 @@
         "mainnet": "{\n  \"account\": \"YOUR-ACCOUNT-HERE\"\n}",
         "local": "{\n  \"account\": \"YOUR-ACCOUNT-HERE\"\n}"
       }
+    },
+    {
+      "label": "SOL - Get all token metadatas",
+      "query": "query{\n  splTokens {\n    address\n    mintAddress\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n  }\n}\n\n",
+      "variables": {
+      }
+    },
+    {
+      "label": "SOL - Get token metadata for a specific address",
+      "query": "query ($account: String!){\n  splToken(address:$account) {\n    address\n    mintAddress\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n  }\n}",
+      "variables": {
+        "mainnet": "{\n  \"account\": \"YOUR-ACCOUNT-HERE\"\n}",
+        "local": "{\n  \"account\": \"YOUR-ACCOUNT-HERE\"\n}"
+      }
     }
   ]
 }

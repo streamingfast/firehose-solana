@@ -4,6 +4,8 @@ schema {
 }
 
 type Queries {
+  splTokens: [SPLTokenMeta!]!
+  splToken(address: String!): SPLTokenMeta
 }
 
 type Subscription {
@@ -15,7 +17,6 @@ type SerumInstructionResponse {
   trxError: Boolean!
   instruction: SerumInstruction
 }
-
 
 union SerumInstruction = UndecodedInstruction | SerumInitializeMarket | SerumNewOrder | SerumMatchOrder | SerumConsumeEvents | SerumCancelOrder | SerumSettleFunds | SerumCancelOrderByClientId
 
@@ -154,6 +155,16 @@ enum OrderType {
   IMMEDIATE_OR_CANCEL
   POST_ONLY
   UNKNOWN
+}
+
+type SPLTokenMeta {
+  address: String!
+  mintAddress: String!
+  mintAuthority: String!
+  freezeAuthority: String!
+  supply: Uint64!
+  decimals: Int!
+  symbol: String!
 }
 
 scalar Uint64

@@ -4,7 +4,9 @@ go 1.14
 
 require (
 	github.com/GeertJohan/go.rice v1.0.0
+	github.com/dfuse-io/binary v0.0.0-20201117201711-8656308cf309
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
+	github.com/dfuse-io/dfuse-eosio v0.1.1-docker
 	github.com/dfuse-io/dgraphql v0.0.1
 	github.com/dfuse-io/dgrpc v0.0.0-20200417124327-c8f215bc4ce5
 	github.com/dfuse-io/dlauncher v0.0.0-20200715193603-ea2a15e9e193

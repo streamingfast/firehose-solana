@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/dfuse-io/dfuse-solana/token"
+
 	"github.com/dfuse-io/dfuse-solana/graphql/trade"
 
 	rice "github.com/GeertJohan/go.rice"
@@ -23,18 +25,20 @@ import (
 )
 
 type Server struct {
-	servingAddr string
-	rpcClient   *rpc.Client
-	subManager  *trade.Manager
-	wsURL       string
+	servingAddr   string
+	rpcClient     *rpc.Client
+	subManager    *trade.Manager
+	wsURL         string
+	tokenRegistry *token.Registry
 }
 
-func NewServer(servingAddr string, rpcClient *rpc.Client, trade *trade.Manager, rpcWSURL string) *Server {
+func NewServer(servingAddr string, rpcClient *rpc.Client, trade *trade.Manager, rpcWSURL string, tokenRegistry *token.Registry) *Server {
 	return &Server{
-		servingAddr: servingAddr,
-		rpcClient:   rpcClient,
-		subManager:  trade,
-		wsURL:       rpcWSURL,
+		servingAddr:   servingAddr,
+		rpcClient:     rpcClient,
+		subManager:    trade,
+		wsURL:         rpcWSURL,
+		tokenRegistry: tokenRegistry,
 	}
 }
 
@@ -42,7 +46,11 @@ func (s *Server) Launch() error {
 	// initialize GraphQL
 	box := rice.MustFindBox("build")
 
-	resolver := resolvers.NewRoot(s.rpcClient, s.wsURL, s.subManager)
+	if err := s.tokenRegistry.Load(); err != nil {
+		return fmt.Errorf("launching: loading token registry: %w", err)
+	}
+
+	resolver := resolvers.NewRoot(s.rpcClient, s.wsURL, s.subManager, s.tokenRegistry)
 	schema, err := graphql.ParseSchema(
 		string(box.MustBytes("schema.graphql")),
 		resolver,

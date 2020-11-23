@@ -15,7 +15,7 @@ func TestSchema(t *testing.T) {
 	cnt, err := ioutil.ReadFile("static/build/schema.graphql")
 	require.NoError(t, err)
 
-	rootResolver := resolvers.NewRoot(nil, "", nil)
+	rootResolver := resolvers.NewRoot(nil, "", nil, nil)
 
 	_, err = graphql.ParseSchema(
 		string(cnt),

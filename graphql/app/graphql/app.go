@@ -6,6 +6,7 @@ import (
 	"github.com/dfuse-io/derr"
 	"github.com/dfuse-io/dfuse-solana/graphql/server"
 	"github.com/dfuse-io/dfuse-solana/graphql/trade"
+	"github.com/dfuse-io/dfuse-solana/token"
 	"github.com/dfuse-io/dfuse-solana/transaction"
 	"github.com/dfuse-io/shutter"
 	"github.com/dfuse-io/solana-go/rpc"
@@ -50,6 +51,8 @@ func (a *App) Run() error {
 
 	trxStream := transaction.NewStream(rpcClient, a.config.RPCWSURL, tradeManager, a.config.SlotOffset)
 
+	tokenRegistry := token.NewRegistry(rpcClient)
+
 	err := trxStream.Launch(ctx)
 	derr.Check("launch trx stream", err)
 
@@ -58,6 +61,7 @@ func (a *App) Run() error {
 		rpcClient,
 		tradeManager,
 		a.config.RPCWSURL,
+		tokenRegistry,
 	)
 	zlog.Info("serving ...")
 
