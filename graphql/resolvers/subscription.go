@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/dfuse-io/solana-go"
+	"github.com/dfuse-io/solana-go/programs/serum"
 	"github.com/dfuse-io/solana-go/rpc/ws"
-	"github.com/dfuse-io/solana-go/serum"
 )
 
 type TradeArgs struct {

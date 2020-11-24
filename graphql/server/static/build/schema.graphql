@@ -165,6 +165,9 @@ type SPLTokenMeta {
   supply: Uint64!
   decimals: Int!
   symbol: String!
+  name: String!
+  logo: String!
+
 }
 
 scalar Uint64

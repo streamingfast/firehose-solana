@@ -5,7 +5,7 @@ import (
 
 	gtype "github.com/dfuse-io/dgraphql/types"
 	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/serum"
+	"github.com/dfuse-io/solana-go/programs/serum"
 )
 
 type OrderType string

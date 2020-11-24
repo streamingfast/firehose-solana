@@ -35,18 +35,26 @@ type SplTokensResponse struct {
 	supply          uint64
 	Decimals        int32
 	Symbol          string
+	Name            string
+	Logo            string
 }
 
 func (t *SplTokensResponse) Supply() types.Uint64 { return types.Uint64(t.supply) }
 
-func SplTokensResponseFromRegistryEntry(token *token.RegistredToken) *SplTokensResponse {
-	return &SplTokensResponse{
+func SplTokensResponseFromRegistryEntry(token *token.RegisteredToken) *SplTokensResponse {
+
+	r := &SplTokensResponse{
 		Address:         token.Address.String(),
 		MintAddress:     token.Mint.MintAuthority.String(),
 		MintAuthority:   token.MintAuthority.String(),
 		FreezeAuthority: token.FreezeAuthority.String(),
 		supply:          uint64(token.Supply),
 		Decimals:        int32(token.Decimals),
-		Symbol:          token.Symbol,
 	}
+	if token.Meta != nil {
+		r.Symbol = token.Meta.Symbol
+		r.Name = token.Meta.Name
+		r.Logo = token.Meta.Logo
+	}
+	return r
 }

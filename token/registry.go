@@ -7,27 +7,35 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dfuse-io/solana-go/programs/tokenregistry"
+
+	"github.com/dfuse-io/solana-go/programs/token"
+
 	"github.com/dfuse-io/solana-go/rpc/ws"
 
 	"go.uber.org/zap"
 
 	bin "github.com/dfuse-io/binary"
-	"github.com/dfuse-io/solana-go/token"
 
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/rpc"
 )
 
-type RegistredToken struct {
+type TokenMeta struct {
+	Logo   string
+	Name   string
+	Symbol string
+}
+type RegisteredToken struct {
 	*token.Mint
-	Symbol  string
+	Meta    *TokenMeta
 	Address solana.PublicKey
 }
 
 type Registry struct {
-	names     map[string]string
+	metas     map[string]*TokenMeta
 	rpcClient *rpc.Client
-	store     map[string]*RegistredToken
+	store     map[string]*RegisteredToken
 	storeLock sync.RWMutex
 	wsURL     string
 }
@@ -36,23 +44,25 @@ func NewRegistry(rpcClient *rpc.Client, wsURL string) *Registry {
 	return &Registry{
 		rpcClient: rpcClient,
 		wsURL:     wsURL,
-		names:     map[string]string{},
-		store:     map[string]*RegistredToken{},
+		metas:     map[string]*TokenMeta{},
+		store:     map[string]*RegisteredToken{},
 	}
 }
 
-func (r *Registry) GetToken(address *solana.PublicKey) *RegistredToken {
+func (r *Registry) GetToken(address *solana.PublicKey) *RegisteredToken {
 	r.storeLock.RLock()
 	defer r.storeLock.RUnlock()
 
 	return r.store[address.String()]
 }
 
-func (r *Registry) GetTokens() (out []*RegistredToken) {
+func (r *Registry) GetTokens() (out []*RegisteredToken) {
 	r.storeLock.RLock()
 	defer r.storeLock.RUnlock()
 
-	out = []*RegistredToken{}
+	zlog.Info("get tokens", zap.Int("store_size", len(r.store)))
+
+	out = []*RegisteredToken{}
 	for _, t := range r.store {
 		out = append(out, t)
 	}
@@ -60,35 +70,20 @@ func (r *Registry) GetTokens() (out []*RegistredToken) {
 	return
 }
 
-func (r *Registry) loadNames() error {
-	var nameList []struct {
-		Address string
-		Name    string
-	}
-
-	if err := json.Unmarshal([]byte(jsonData), &nameList); err != nil {
-		return fmt.Errorf("load names: %w", err)
-	}
-
-	for _, n := range nameList {
-		r.names[n.Address] = n.Name
-	}
-	return nil
-}
-
 func (r *Registry) Load() error {
 	address := "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 	pubKey := solana.MustPublicKeyFromBase58(address)
+
+	if err := r.loadNames(); err != nil {
+		return fmt.Errorf("loading: name: %w", err)
+	}
 
 	wsClient, err := ws.Dial(context.Background(), r.wsURL)
 	if err != nil {
 		return fmt.Errorf("loading: ws dial: %e", err)
 	}
-	go r.watch(pubKey, wsClient)
 
-	if err := r.loadNames(); err != nil {
-		return fmt.Errorf("loading: name: %w", err)
-	}
+	go r.watch(pubKey, wsClient)
 
 	accounts, err := r.rpcClient.GetProgramAccounts(
 		context.Background(),
@@ -118,10 +113,10 @@ func (r *Registry) Load() error {
 
 		r.storeLock.Lock()
 		if _, found := r.store[aPub]; !found { // can be found if the watch process added it
-			r.store[aPub] = &RegistredToken{
+			r.store[aPub] = &RegisteredToken{
 				Address: a.Pubkey,
 				Mint:    mint,
-				Symbol:  r.names[aPub],
+				Meta:    r.metas[aPub],
 			}
 		}
 		r.storeLock.Unlock()
@@ -162,15 +157,113 @@ retry:
 
 				zlog.Info("Updating token", zap.String("token_address", addr), zap.Uint64("supply", uint64(mint.Supply)))
 				r.storeLock.Lock()
-				r.store[addr] = &RegistredToken{
+				r.store[addr] = &RegisteredToken{
 					Address: address,
 					Mint:    mint,
-					Symbol:  r.names[addr],
+					Meta:    r.metas[addr],
 				}
 				r.storeLock.Unlock()
 			} else {
 				zlog.Debug("skipping program update, not a mint account")
 			}
+		}
+	}
+}
+
+func (r *Registry) loadNames() error {
+	var nameList []struct {
+		Address string
+		Name    string
+	}
+
+	if err := json.Unmarshal([]byte(jsonData), &nameList); err != nil {
+		return fmt.Errorf("load metas: %w", err)
+	}
+
+	for _, n := range nameList {
+		r.metas[n.Address] = &TokenMeta{
+			Symbol: n.Name,
+		}
+	}
+	return nil
+}
+
+func (r *Registry) loadMetas() error {
+
+	wsClient, err := ws.Dial(context.Background(), r.wsURL)
+	if err != nil {
+		return fmt.Errorf("loading meta: ws dial: %e", err)
+	}
+
+	go r.watch(token.TOKEN_PROGRAM_ID, wsClient)
+
+	accounts, err := r.rpcClient.GetProgramAccounts(context.Background(), tokenregistry.PROGRAM_ID, nil)
+	if err != nil {
+		return fmt.Errorf("loading metas: get program accounts: %s : %w", tokenregistry.PROGRAM_ID, err)
+	}
+	if accounts == nil {
+		return fmt.Errorf("loading metas: get program accounts: not found for: %s", tokenregistry.PROGRAM_ID)
+	}
+
+	for _, a := range accounts {
+		var m *tokenregistry.TokenMeta
+		if err := bin.NewDecoder(a.Account.Data).Decode(&m); err != nil {
+			return fmt.Errorf("loading meta: get program accounts: decoding to Token meta: %s", a.Account.Data)
+		}
+		r.metas[a.Pubkey.String()] = &TokenMeta{
+			Symbol: m.Symbol.String(),
+			Name:   m.Name.String(),
+			Logo:   m.Logo.String(),
+		}
+	}
+
+	return nil
+}
+
+func (r *Registry) watchMeta(client *ws.Client) {
+	address := tokenregistry.PROGRAM_ID
+	zlog.Info("watching metas ", zap.Stringer("address", address))
+	sleep := 0 * time.Second
+
+retry:
+	for {
+		time.Sleep(sleep)
+		sleep = 2 * time.Second
+		zlog.Info("getting program subscription", zap.Stringer("program_address", address))
+		sub, err := client.ProgramSubscribe(address, rpc.CommitmentSingle)
+		if err != nil {
+			zlog.Error("failed to subscribe", zap.Stringer("address", address))
+			continue
+		}
+
+		for {
+			res, err := sub.Recv()
+			if err != nil {
+				zlog.Error("failed to receive from subscribe", zap.Error(err))
+				continue retry
+			}
+
+			programResult := res.(*ws.ProgramResult)
+			var m *tokenregistry.TokenMeta
+			if err := bin.NewDecoder(programResult.Value.Account.Data).Decode(&m); err != nil {
+				zlog.Error("decoding", zap.Error(err))
+				continue retry
+			}
+			metaDataAddr := programResult.Value.PubKey.String()
+			tokenMeta := &TokenMeta{
+				Symbol: m.Symbol.String(),
+				Name:   m.Name.String(),
+				Logo:   m.Logo.String(),
+			}
+
+			zlog.Info("Updating token meta", zap.String("token_address", metaDataAddr))
+			r.storeLock.Lock()
+			r.store[metaDataAddr] = &RegisteredToken{
+				Meta: tokenMeta,
+			}
+			r.metas[metaDataAddr] = tokenMeta
+
+			r.storeLock.Unlock()
 		}
 	}
 }

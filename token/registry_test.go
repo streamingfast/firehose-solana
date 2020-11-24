@@ -13,7 +13,7 @@ func TestRegistry_loadName(t *testing.T) {
 	err := r.loadNames()
 	require.NoError(t, err)
 
-	require.Equal(t, "BTC", r.names["9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E"])
+	require.Equal(t, "BTC", r.metas["9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E"].Symbol)
 
 }
 
@@ -25,7 +25,7 @@ func TestRegistry_Load(t *testing.T) {
 	err := r.Load()
 	require.NoError(t, err)
 
-	require.Equal(t, "BTC", r.store["9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E"].Symbol)
+	require.Equal(t, "BTC", r.store["9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E"].Meta.Symbol)
 	require.Equal(t, uint8(6), r.store["9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E"].Decimals)
 
 }
