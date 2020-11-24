@@ -185,6 +185,7 @@ func (r *Registry) loadNames() error {
 
 func (r *Registry) loadMetas() error {
 
+	progID := tokenregistry.ProgramID()
 	wsClient, err := ws.Dial(context.Background(), r.wsURL)
 	if err != nil {
 		return fmt.Errorf("loading meta: ws dial: %e", err)
@@ -192,12 +193,12 @@ func (r *Registry) loadMetas() error {
 
 	go r.watch(token.TOKEN_PROGRAM_ID, wsClient)
 
-	accounts, err := r.rpcClient.GetProgramAccounts(context.Background(), tokenregistry.PROGRAM_ID, nil)
+	accounts, err := r.rpcClient.GetProgramAccounts(context.Background(), progID, nil)
 	if err != nil {
-		return fmt.Errorf("loading metas: get program accounts: %s : %w", tokenregistry.PROGRAM_ID, err)
+		return fmt.Errorf("loading metas: get program accounts: %s : %w", progID, err)
 	}
 	if accounts == nil {
-		return fmt.Errorf("loading metas: get program accounts: not found for: %s", tokenregistry.PROGRAM_ID)
+		return fmt.Errorf("loading metas: get program accounts: not found for: %s", progID)
 	}
 
 	for _, a := range accounts {
@@ -216,18 +217,18 @@ func (r *Registry) loadMetas() error {
 }
 
 func (r *Registry) watchMeta(client *ws.Client) {
-	address := tokenregistry.PROGRAM_ID
-	zlog.Info("watching metas ", zap.Stringer("address", address))
+	progID := tokenregistry.ProgramID()
+	zlog.Info("watching metas ", zap.Stringer("address", progID))
 	sleep := 0 * time.Second
 
 retry:
 	for {
 		time.Sleep(sleep)
 		sleep = 2 * time.Second
-		zlog.Info("getting program subscription", zap.Stringer("program_address", address))
-		sub, err := client.ProgramSubscribe(address, rpc.CommitmentSingle)
+		zlog.Info("getting program subscription", zap.Stringer("program_address", progID))
+		sub, err := client.ProgramSubscribe(progID, rpc.CommitmentSingle)
 		if err != nil {
-			zlog.Error("failed to subscribe", zap.Stringer("address", address))
+			zlog.Error("failed to subscribe", zap.Stringer("address", progID))
 			continue
 		}
 
