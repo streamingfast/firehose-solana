@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/GeertJohan/go.rice v1.0.0
-	github.com/dfuse-io/binary v0.0.0-20201117201711-8656308cf309
+	github.com/dfuse-io/binary v0.0.0-20201123150056-096380ef3e5d
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
 	github.com/dfuse-io/dfuse-eosio v0.1.1-docker
 	github.com/dfuse-io/dgraphql v0.0.1
@@ -13,7 +13,7 @@ require (
 	github.com/dfuse-io/kvdb v0.0.0-20200508203924-c107cb0b2fa2
 	github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
-	github.com/dfuse-io/solana-go v0.1.1-0.20201118211419-5a21265242e1
+	github.com/dfuse-io/solana-go v0.1.1-0.20201124134337-d7226cdc7bc4
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2

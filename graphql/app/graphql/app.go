@@ -51,7 +51,7 @@ func (a *App) Run() error {
 
 	trxStream := transaction.NewStream(rpcClient, a.config.RPCWSURL, tradeManager, a.config.SlotOffset)
 
-	tokenRegistry := token.NewRegistry(rpcClient)
+	tokenRegistry := token.NewRegistry(rpcClient, a.config.RPCWSURL)
 
 	err := trxStream.Launch(ctx)
 	derr.Check("launch trx stream", err)

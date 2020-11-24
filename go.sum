@@ -174,8 +174,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dennwc/base v1.0.0/go.mod h1:zaTDIiAcg2oKW9XhjIaRc1kJVteCFXSSW6jwmCedUaI=
 github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f/go.mod h1:xH/i4TFMt8koVQZ6WFms69WAsDWr2XsYL3Hkl7jkoLE=
-github.com/dfuse-io/binary v0.0.0-20201117201711-8656308cf309 h1:GO2JfJeCROHoV48h+1ioDCTW2sqeu7exi3cZrzIak+g=
-github.com/dfuse-io/binary v0.0.0-20201117201711-8656308cf309/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
+github.com/dfuse-io/binary v0.0.0-20201123150056-096380ef3e5d h1:GcxIdxuJIC7dhfU8Dh5VuJte9QC+JaWV8/v9D6kshzg=
+github.com/dfuse-io/binary v0.0.0-20201123150056-096380ef3e5d/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
 github.com/dfuse-io/blockmeta v0.0.0-20200428160315-bfdbab6691f4/go.mod h1:+dlVlGzRRQN2K+11Y/K3kozbbWppsSDP5wxu5uT1zSk=
 github.com/dfuse-io/bstream v0.0.0-20200415145349-b867db804e41/go.mod h1:s6htc3jWU18nI6wq0hCl0uatjUtrN652zRnJD6dMGGc=
 github.com/dfuse-io/bstream v0.0.0-20200427161155-5bc64e86c005/go.mod h1:BHEANTxf3ORDdJdGmQ+lJyX8JqjUH45WGBvBKBaMLQg=
@@ -246,8 +246,8 @@ github.com/dfuse-io/search-client v0.0.0-20200415184433-b2f6b5938237/go.mod h1:5
 github.com/dfuse-io/shutter v1.4.1-0.20200319040708-c809eec458e6/go.mod h1:2mLf0v+n8J8NI7F6L6avYaRNfa6XECB6CP3WO8rRx88=
 github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f h1:3T9cxfuDYZqWaP/5FUi01UqbCXmcCKsndF4q5LBJr+U=
 github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f/go.mod h1:DNhYoTwU0YjpH3nixaqytVJ43uTe/4SahfipE221e68=
-github.com/dfuse-io/solana-go v0.1.1-0.20201118211419-5a21265242e1 h1:u4jYmZAfb6rvdWJjxzQ7JfSVjMm/v7DwwHpvkHiRkI0=
-github.com/dfuse-io/solana-go v0.1.1-0.20201118211419-5a21265242e1/go.mod h1:W3RQeYypuhIlrodRSMOPklhmaajAMxVeSQ14FJEpE3M=
+github.com/dfuse-io/solana-go v0.1.1-0.20201124134337-d7226cdc7bc4 h1:pA2or/7GN1qtbB1QY5uInKbJuqoO1YXR1cGsEhZ6ntc=
+github.com/dfuse-io/solana-go v0.1.1-0.20201124134337-d7226cdc7bc4/go.mod h1:9Y/UT2YjdDplzV86EO6UL/yf+5hQ9bufNlEGvYmg7io=
 github.com/dfuse-io/validator v0.0.0-20200407012817-82c55c634c7a/go.mod h1:wurvriYPW8gHLl16oUVHPKvVV6xd0x5ivLbny1Fin90=
 github.com/dgraph-io/badger v1.5.4 h1:gVTrpUTbbr/T24uvoCaqY2KSHfNLVGm0w+hbee2HMeg=
 github.com/dgraph-io/badger v1.5.4/go.mod h1:VZxzAIRPHRVNRKRo6AXrX9BJegn6il06VMTZVJYCIjQ=
@@ -285,6 +285,7 @@ github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c/go.mod h1:Yg+htX
 github.com/facebookgo/stack v0.0.0-20160209184415-751773369052/go.mod h1:UbMTZqLaRiH3MsBH8va0n7s1pQYcu3uTb8G4tygF4Zg=
 github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4/go.mod h1:5tD+neXqOorC30/tWg0LCSkrqj/AR6gu8yY8/fpw1q0=
 github.com/fasthttp-contrib/websocket v0.0.0-20160511215533-1f3b11f56072/go.mod h1:duJ4Jxv5lDcvg4QuQr0oowTf7dz4/CR8NtyCooz9HL8=
+github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/structs v1.0.0/go.mod h1:9NiDSp5zOcgEDl+j00MP/WkGVPOlPRLejGD8Ga6PJ7M=
 github.com/felixge/httpsnoop v1.0.1 h1:lvB5Jl89CsZtGIWuTcDM1E/vkVs49/Ml7JJe07l8SPQ=
@@ -510,11 +511,13 @@ github.com/manifoldco/promptui v0.3.2/go.mod h1:8JU+igZ+eeiiRku4T5BjtKh2ms8sziGp
 github.com/manifoldco/promptui v0.7.0/go.mod h1:n4zTdgP0vr0S3w7/O/g98U+e0gwLScEXGwov2nIKuGQ=
 github.com/matishsiao/goInfo v0.0.0-20170803142006-617e6440957e/go.mod h1:yLZrFIhv+Z20hxHvcZpEyKVQp9HMsOJkXAxx7yDqtvg=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
+github.com/mattn/go-colorable v0.1.2 h1:/bC9yWikZXAL9uJdulbSfyVNIR3n3trXl+v8+1sx8mU=
 github.com/mattn/go-colorable v0.1.2/go.mod h1:U0ppj6V5qS13XJ6of8GYAs25YV2eR4EVcfRqFIhoBtE=
 github.com/mattn/go-ieproxy v0.0.0-20190610004146-91bb50d98149 h1:HfxbT6/JcvIljmERptWhwa8XzP7H3T+Z2N26gTsaDaA=
 github.com/mattn/go-ieproxy v0.0.0-20190610004146-91bb50d98149/go.mod h1:31jz6HNzdxOmlERGGEc4v/dMssOfmp2p5bT/okiKFFc=
 github.com/mattn/go-isatty v0.0.3/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
 github.com/mattn/go-isatty v0.0.4/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
+github.com/mattn/go-isatty v0.0.8 h1:HLtExJ+uU2HOZ+wI0Tt5DtUDrx8yhUqDcp7fYERX4CE=
 github.com/mattn/go-isatty v0.0.8/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hdxcsrc5s=
 github.com/mattn/go-runewidth v0.0.2/go.mod h1:LwmH8dsx7+W8Uxz3IHJYH5QSwggIsqBzpuz5H//U1FU=
 github.com/mattn/go-sqlite3 v2.0.3+incompatible/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=

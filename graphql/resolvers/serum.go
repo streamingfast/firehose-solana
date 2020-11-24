@@ -18,13 +18,13 @@ const (
 	OrderTypeUnkown   OrderType = "UNKNOWN"
 )
 
-func NewOrderType(side uint32) OrderType {
+func NewOrderType(side serum.OrderType) OrderType {
 	switch side {
-	case 0:
+	case serum.OrderTypeLimit:
 		return OrderTypeLimit // buy
-	case 1:
+	case serum.OrderTypeImmediateOrCancel:
 		return OrderTypeIOC // buy
-	case 2:
+	case serum.OrderTypePostOnly:
 		return OrderTypePostOnly // buy
 	default:
 		return OrderTypeUnkown
@@ -189,15 +189,15 @@ func NewSerumNewOrder(i *serum.InstructionNewOrder) *SerumInstruction {
 		OrderType:   NewOrderType(i.OrderType),
 		ClientID:    gtype.Uint64(i.ClientID),
 		Accounts: SerumNewOrderAccounts{
-			Market:          AccountMeta{&i.Accounts.Market},
-			OpenOrders:      AccountMeta{&i.Accounts.OpenOrders},
-			RequestQueue:    AccountMeta{&i.Accounts.RequestQueue},
-			Payer:           AccountMeta{&i.Accounts.Payer},
-			Owner:           AccountMeta{&i.Accounts.Owner},
-			CoinVault:       AccountMeta{&i.Accounts.CoinVault},
-			PcVault:         AccountMeta{&i.Accounts.PCVault},
-			SplTokenProgram: AccountMeta{&i.Accounts.SPLTokenProgram},
-			Rent:            AccountMeta{&i.Accounts.Rent},
+			Market:          AccountMeta{i.Accounts.Market},
+			OpenOrders:      AccountMeta{i.Accounts.OpenOrders},
+			RequestQueue:    AccountMeta{i.Accounts.RequestQueue},
+			Payer:           AccountMeta{i.Accounts.Payer},
+			Owner:           AccountMeta{i.Accounts.Owner},
+			CoinVault:       AccountMeta{i.Accounts.CoinVault},
+			PcVault:         AccountMeta{i.Accounts.PCVault},
+			SplTokenProgram: AccountMeta{i.Accounts.SPLTokenProgram},
+			Rent:            AccountMeta{i.Accounts.Rent},
 		},
 	}
 	if i.Accounts.SRMDiscountAccount != nil {
@@ -230,13 +230,13 @@ func NewSerumMatchOrder(i *serum.InstructionMatchOrder) *SerumInstruction {
 		inner: &SerumMatchOrder{
 			Limit: gtype.Uint64(i.Limit),
 			Accounts: SerumMatchOrderAccounts{
-				Market:            AccountMeta{&i.Accounts.Market},
-				RequestQueue:      AccountMeta{&i.Accounts.RequestQueue},
-				EventQueue:        AccountMeta{&i.Accounts.EventQueue},
-				Bids:              AccountMeta{&i.Accounts.Bids},
-				Asks:              AccountMeta{&i.Accounts.Asks},
-				CoinFeeReceivable: AccountMeta{&i.Accounts.CoinFeeReceivable},
-				PCFeeReceivable:   AccountMeta{&i.Accounts.PCFeeReceivable},
+				Market:            AccountMeta{i.Accounts.Market},
+				RequestQueue:      AccountMeta{i.Accounts.RequestQueue},
+				EventQueue:        AccountMeta{i.Accounts.EventQueue},
+				Bids:              AccountMeta{i.Accounts.Bids},
+				Asks:              AccountMeta{i.Accounts.Asks},
+				CoinFeeReceivable: AccountMeta{i.Accounts.CoinFeeReceivable},
+				PCFeeReceivable:   AccountMeta{i.Accounts.PCFeeReceivable},
 			},
 		},
 	}
@@ -265,15 +265,15 @@ func NewSerumConsumeEvents(i *serum.InstructionConsumeEvents) *SerumInstruction 
 	s := &SerumConsumeEvents{
 		Limit: gtype.Uint64(i.Limit),
 		Accounts: SerumConsumeEventsAccounts{
-			Market:            AccountMeta{&i.Accounts.Market},
-			EventQueue:        AccountMeta{&i.Accounts.EventQueue},
-			CoinFeeReceivable: AccountMeta{&i.Accounts.CoinFeeReceivable},
-			PCFeeReceivable:   AccountMeta{&i.Accounts.PCFeeReceivable},
+			Market:            AccountMeta{i.Accounts.Market},
+			EventQueue:        AccountMeta{i.Accounts.EventQueue},
+			CoinFeeReceivable: AccountMeta{i.Accounts.CoinFeeReceivable},
+			PCFeeReceivable:   AccountMeta{i.Accounts.PCFeeReceivable},
 		},
 	}
 
 	for _, a := range i.Accounts.OpenOrders {
-		s.Accounts.OpenOrders = append(s.Accounts.OpenOrders, AccountMeta{&a})
+		s.Accounts.OpenOrders = append(s.Accounts.OpenOrders, AccountMeta{a})
 
 	}
 	return &SerumInstruction{
@@ -310,9 +310,9 @@ func NewSerumCancelOrder(i *serum.InstructionCancelOrder) *SerumInstruction {
 			OpenOrders:    i.OpenOrders.String(),
 			OpenOrderSlot: gtype.Uint64(i.OpenOrderSlot),
 			Accounts: SerumCancelOrderAccounts{
-				Market:       AccountMeta{&i.Accounts.Market},
-				RequestQueue: AccountMeta{&i.Accounts.RequestQueue},
-				Owner:        AccountMeta{&i.Accounts.Owner},
+				Market:       AccountMeta{i.Accounts.Market},
+				RequestQueue: AccountMeta{i.Accounts.RequestQueue},
+				Owner:        AccountMeta{i.Accounts.Owner},
 			},
 		},
 	}
@@ -344,15 +344,15 @@ type SerumSettleFunds struct {
 func NewSerumSettleFunds(i *serum.InstructionSettleFunds) *SerumInstruction {
 	s := &SerumSettleFunds{
 		Accounts: SerumSettleFundsAccounts{
-			Market:          AccountMeta{&i.Accounts.Market},
-			OpenOrders:      AccountMeta{&i.Accounts.OpenOrders},
-			Owner:           AccountMeta{&i.Accounts.Owner},
-			CoinVault:       AccountMeta{&i.Accounts.CoinVault},
-			PcVault:         AccountMeta{&i.Accounts.PCVault},
-			CoinWallet:      AccountMeta{&i.Accounts.CoinWallet},
-			PcWallet:        AccountMeta{&i.Accounts.PCWallet},
-			Signer:          AccountMeta{&i.Accounts.Signer},
-			SplTokenProgram: AccountMeta{&i.Accounts.SPLTokenProgram},
+			Market:          AccountMeta{i.Accounts.Market},
+			OpenOrders:      AccountMeta{i.Accounts.OpenOrders},
+			Owner:           AccountMeta{i.Accounts.Owner},
+			CoinVault:       AccountMeta{i.Accounts.CoinVault},
+			PcVault:         AccountMeta{i.Accounts.PCVault},
+			CoinWallet:      AccountMeta{i.Accounts.CoinWallet},
+			PcWallet:        AccountMeta{i.Accounts.PCWallet},
+			Signer:          AccountMeta{i.Accounts.Signer},
+			SplTokenProgram: AccountMeta{i.Accounts.SPLTokenProgram},
 		},
 	}
 
@@ -389,10 +389,10 @@ func NewSerumCancelOrderByClientId(i *serum.InstructionCancelOrderByClientId) *S
 		inner: &SerumCancelOrderByClientId{
 			ClientID: gtype.Uint64(i.ClientID),
 			Accounts: SerumCancelOrderByClientIdAccounts{
-				Market:       AccountMeta{&i.Accounts.Market},
-				OpenOrders:   AccountMeta{&i.Accounts.OpenOrders},
-				RequestQueue: AccountMeta{&i.Accounts.RequestQueue},
-				Owner:        AccountMeta{&i.Accounts.Owner},
+				Market:       AccountMeta{i.Accounts.Market},
+				OpenOrders:   AccountMeta{i.Accounts.OpenOrders},
+				RequestQueue: AccountMeta{i.Accounts.RequestQueue},
+				Owner:        AccountMeta{i.Accounts.Owner},
 			},
 		},
 	}

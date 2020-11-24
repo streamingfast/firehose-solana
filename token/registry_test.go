@@ -9,7 +9,7 @@ import (
 
 func TestRegistry_loadName(t *testing.T) {
 
-	r := NewRegistry(nil)
+	r := NewRegistry(nil, "")
 	err := r.loadNames()
 	require.NoError(t, err)
 
@@ -21,7 +21,7 @@ func TestRegistry_Load(t *testing.T) {
 
 	rpcClient := rpc.NewClient("http://api.mainnet-beta.solana.com:80/rpc")
 
-	r := NewRegistry(rpcClient)
+	r := NewRegistry(rpcClient, "ws://api.mainnet-beta.solana.com:80/rpc")
 	err := r.Load()
 	require.NoError(t, err)
 
