@@ -7,18 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dfuse-io/solana-go/programs/tokenregistry"
-
-	"github.com/dfuse-io/solana-go/programs/token"
-
-	"github.com/dfuse-io/solana-go/rpc/ws"
-
-	"go.uber.org/zap"
-
 	bin "github.com/dfuse-io/binary"
-
 	"github.com/dfuse-io/solana-go"
+	"github.com/dfuse-io/solana-go/programs/token"
+	"github.com/dfuse-io/solana-go/programs/tokenregistry"
 	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/dfuse-io/solana-go/rpc/ws"
+	"go.uber.org/zap"
 )
 
 type TokenMeta struct {
@@ -71,7 +66,7 @@ func (r *Registry) GetTokens() (out []*RegisteredToken) {
 }
 
 func (r *Registry) Load() error {
-	address := "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+	address := token.TOKEN_PROGRAM_ID.String()
 	pubKey := solana.MustPublicKeyFromBase58(address)
 
 	if err := r.loadNames(); err != nil {
