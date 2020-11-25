@@ -165,7 +165,7 @@ func getStreamableInstructions(trx *rpc.TransactionWithMeta, sender func(compile
 			continue
 		}
 
-		if programID.Equals(serum.DEX_PROGRAM_ID) {
+		if programID.Equals(serum.PROGRAM_ID) {
 			decodedInstruction, err := serum.DecodeInstruction(trx.Transaction.AccountMetaList(), &compiledInstruction)
 			if err != nil {
 				zlog.Error("error decoding instruction",

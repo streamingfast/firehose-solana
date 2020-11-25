@@ -6,10 +6,10 @@ import (
 	"github.com/dfuse-io/solana-go"
 )
 
-func (r *Root) SplTokens() (out []*SplTokensResponse) {
-	out = []*SplTokensResponse{}
+func (r *Root) Tokens() (out []*TokensResponse) {
+	out = []*TokensResponse{}
 	for _, t := range r.tokenRegistry.GetTokens() {
-		out = append(out, SplTokensResponseFromRegistryEntry(t))
+		out = append(out, TokensResponseFromRegistryEntry(t))
 	}
 	return
 }
@@ -18,18 +18,17 @@ type SplTokenRequest struct {
 	Address string
 }
 
-func (r *Root) SplToken(req *SplTokenRequest) (*SplTokensResponse, error) {
+func (r *Root) Token(req *SplTokenRequest) (*TokensResponse, error) {
 	pubKey, err := solana.PublicKeyFromBase58(req.Address)
 	if err != nil {
 		return nil, err
 	}
 	t := r.tokenRegistry.GetToken(&pubKey)
-	return SplTokensResponseFromRegistryEntry(t), nil
+	return TokensResponseFromRegistryEntry(t), nil
 }
 
-type SplTokensResponse struct {
+type TokensResponse struct {
 	Address         string
-	MintAddress     string
 	MintAuthority   string
 	FreezeAuthority string
 	supply          uint64
@@ -39,13 +38,12 @@ type SplTokensResponse struct {
 	Logo            string
 }
 
-func (t *SplTokensResponse) Supply() types.Uint64 { return types.Uint64(t.supply) }
+func (t *TokensResponse) Supply() types.Uint64 { return types.Uint64(t.supply) }
 
-func SplTokensResponseFromRegistryEntry(token *token.RegisteredToken) *SplTokensResponse {
+func TokensResponseFromRegistryEntry(token *token.RegisteredToken) *TokensResponse {
 
-	r := &SplTokensResponse{
+	r := &TokensResponse{
 		Address:         token.Address.String(),
-		MintAddress:     token.Mint.MintAuthority.String(),
 		MintAuthority:   token.MintAuthority.String(),
 		FreezeAuthority: token.FreezeAuthority.String(),
 		supply:          uint64(token.Supply),

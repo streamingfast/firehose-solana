@@ -4,8 +4,8 @@ schema {
 }
 
 type Queries {
-  splTokens: [SPLTokenMeta!]!
-  splToken(address: String!): SPLTokenMeta
+  tokens: [TokenMeta!]!
+  token(address: String!): TokenMeta
 }
 
 type Subscription {
@@ -157,9 +157,8 @@ enum OrderType {
   UNKNOWN
 }
 
-type SPLTokenMeta {
+type TokenMeta {
   address: String!
-  mintAddress: String!
   mintAuthority: String!
   freezeAuthority: String!
   supply: Uint64!
