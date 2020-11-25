@@ -9,16 +9,16 @@
       }
     },
     {
-      "label": "Get all token metadatas",
-      "query": "query{\n  splTokens {\n    address\n    mintAddress\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n  }\n}\n\n",
+      "label": "Get all token meta",
+      "query": "query{\n  tokens {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n  }\n}\n\n",
       "variables": {
         "mainnet": "{}",
         "local": "{}"
       }
     },
     {
-      "label": "Get token metadata for a specific address",
-      "query": "query ($account: String!){\n  splToken(address:$account) {\n    address\n    mintAddress\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n  }\n}",
+      "label": "Get token meta for a specific address",
+      "query": "query ($account: String!){\n  token(address:$account) {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n  }\n}",
       "variables": {
         "mainnet": "{\n  \"account\": \"YOUR-ACCOUNT-HERE\"\n}",
         "local": "{\n  \"account\": \"YOUR-ACCOUNT-HERE\"\n}"
