@@ -13,7 +13,7 @@ require (
 	github.com/dfuse-io/kvdb v0.0.0-20200508203924-c107cb0b2fa2
 	github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
-	github.com/dfuse-io/solana-go v0.1.1-0.20201127163102-ea1c459f641c
+	github.com/dfuse-io/solana-go v0.1.1-0.20201127185747-66e0575af945
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
