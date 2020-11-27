@@ -171,7 +171,7 @@ func (r *Registry) loadNames() error {
 		Name    string
 	}
 
-	if err := json.Unmarshal([]byte(jsonData), &nameList); err != nil {
+	if err := json.Unmarshal([]byte(JSONData), &nameList); err != nil {
 		return fmt.Errorf("load metas: %w", err)
 	}
 

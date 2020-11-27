@@ -253,6 +253,9 @@ github.com/dfuse-io/solana-go v0.1.1-0.20201124155627-90a46419a6f3 h1:z7VpuBi+s6
 github.com/dfuse-io/solana-go v0.1.1-0.20201124155627-90a46419a6f3/go.mod h1:eFm72G6N0XODV+G4G2jc0S1RjV1yHmd4k9jHL7X+5dA=
 github.com/dfuse-io/solana-go v0.1.1-0.20201124172637-37a472e4b4d4 h1:owC8VcL/JmxMUwNS2b88RZkBWK8hsW4mr8TeHg+wTXs=
 github.com/dfuse-io/solana-go v0.1.1-0.20201124172637-37a472e4b4d4/go.mod h1:eFm72G6N0XODV+G4G2jc0S1RjV1yHmd4k9jHL7X+5dA=
+github.com/dfuse-io/solana-go v0.1.1-0.20201127152345-c6668030bf40/go.mod h1:JmxX8KYNWRCwg1RyADE2kersXSNqE1KLt+w5nEq353g=
+github.com/dfuse-io/solana-go v0.1.1-0.20201127152801-a5195991ae43 h1:3qgJKzilLS2LX1P0SH18PM4srGPBMpd2ZPMTTHKrFHw=
+github.com/dfuse-io/solana-go v0.1.1-0.20201127152801-a5195991ae43/go.mod h1:JmxX8KYNWRCwg1RyADE2kersXSNqE1KLt+w5nEq353g=
 github.com/dfuse-io/validator v0.0.0-20200407012817-82c55c634c7a/go.mod h1:wurvriYPW8gHLl16oUVHPKvVV6xd0x5ivLbny1Fin90=
 github.com/dgraph-io/badger v1.5.4 h1:gVTrpUTbbr/T24uvoCaqY2KSHfNLVGm0w+hbee2HMeg=
 github.com/dgraph-io/badger v1.5.4/go.mod h1:VZxzAIRPHRVNRKRo6AXrX9BJegn6il06VMTZVJYCIjQ=
