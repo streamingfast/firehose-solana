@@ -71,6 +71,7 @@ type RegisteredTokensResponse struct {
 	Symbol          string
 	Name            string
 	Logo            string
+	Website         string
 }
 
 func (t *RegisteredTokensResponse) Supply() types.Uint64 { return types.Uint64(t.supply) }
@@ -88,6 +89,7 @@ func RegisteredTokensResponseFromRegistryEntry(token *token.RegisteredToken) *Re
 		r.Symbol = token.Meta.Symbol
 		r.Name = token.Meta.Name
 		r.Logo = token.Meta.Logo
+		r.Website = token.Meta.Website
 	}
 	return r
 }

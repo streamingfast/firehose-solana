@@ -26,7 +26,7 @@
     },
     {
       "label": "Get all registered token",
-      "query": "query{\n  registeredTokens {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol    \n  }\n}\n\n",
+      "query": "query{\n  registeredTokens {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol    \n    name\n    logo\n    website\n  }\n}",
       "variables": {
         "mainnet": "{}",
         "local": "{}"
@@ -34,7 +34,7 @@
     },
     {
       "label": "Get token registered specific address",
-      "query": "query ($account: String!){\n  registeredToken(address:$account) {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n  }\n}",
+      "query": "query ($account: String!){\n  registeredToken(address:$account) {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n    name\n    logo\n    website\n  }\n}",
       "variables": {
         "mainnet": "{\n  \"account\": \"YOUR-ACCOUNT-HERE\"\n}",
         "local": "{\n  \"account\": \"YOUR-ACCOUNT-HERE\"\n}"

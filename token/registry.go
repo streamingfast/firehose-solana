@@ -17,9 +17,10 @@ import (
 )
 
 type TokenMeta struct {
-	Logo   string
-	Name   string
-	Symbol string
+	Logo    string
+	Name    string
+	Symbol  string
+	Website string
 }
 type RegisteredToken struct {
 	*token.Mint
@@ -210,9 +211,10 @@ func (r *Registry) loadMetas() error {
 		}
 		zlog.Info("storing meta", zap.Stringer("token_meta_address", a.Pubkey), zap.Stringer("mint_address", m.MintAddress))
 		r.metas[m.MintAddress.String()] = &TokenMeta{
-			Symbol: m.Symbol.String(),
-			Name:   m.Name.String(),
-			Logo:   m.Logo.String(),
+			Symbol:  m.Symbol.String(),
+			Name:    m.Name.String(),
+			Logo:    m.Logo.String(),
+			Website: m.Website.String(),
 		}
 	}
 
@@ -250,9 +252,10 @@ retry:
 			}
 			mintAddress := m.MintAddress.String()
 			tokenMeta := &TokenMeta{
-				Symbol: m.Symbol.String(),
-				Name:   m.Name.String(),
-				Logo:   m.Logo.String(),
+				Symbol:  m.Symbol.String(),
+				Name:    m.Name.String(),
+				Logo:    m.Logo.String(),
+				Website: m.Logo.String(),
 			}
 
 			zlog.Info("Updating token meta", zap.String("token_address", mintAddress))
