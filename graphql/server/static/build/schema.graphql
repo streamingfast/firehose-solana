@@ -4,8 +4,10 @@ schema {
 }
 
 type Queries {
-  tokens: [TokenMeta!]!
-  token(address: String!): TokenMeta
+  tokens: [TokenResponse!]!
+  token(address: String!): TokenResponse
+  registeredTokens: [RegisteredTokenResponse!]!
+  registeredToken(address: String!): RegisteredTokenResponse
 }
 
 type Subscription {
@@ -157,16 +159,22 @@ enum OrderType {
   UNKNOWN
 }
 
-type TokenMeta {
+type RegisteredTokenResponse {
   address: String!
   mintAuthority: String!
   freezeAuthority: String!
   supply: Uint64!
   decimals: Int!
   symbol: String!
-  name: String!
-  logo: String!
-
+#  name: String!
+#  logo: String!
+}
+type TokenResponse {
+  address: String!
+  mintAuthority: String!
+  freezeAuthority: String!
+  supply: Uint64!
+  decimals: Int!
 }
 
 scalar Uint64
