@@ -17,9 +17,10 @@ import (
 )
 
 type TokenMeta struct {
-	Logo   string
-	Name   string
-	Symbol string
+	Logo    string
+	Name    string
+	Symbol  string
+	Website string
 }
 type RegisteredToken struct {
 	*token.Mint
@@ -69,7 +70,7 @@ func (r *Registry) Load() error {
 	address := token.TOKEN_PROGRAM_ID.String()
 	pubKey := solana.MustPublicKeyFromBase58(address)
 
-	if err := r.loadNames(); err != nil {
+	if err := r.loadMetas(); err != nil {
 		return fmt.Errorf("loading: name: %w", err)
 	}
 
@@ -184,6 +185,7 @@ func (r *Registry) loadNames() error {
 }
 
 func (r *Registry) loadMetas() error {
+	zlog.Info("loading token meta from chain registry")
 
 	progID := tokenregistry.ProgramID()
 	wsClient, err := ws.Dial(context.Background(), r.wsURL)
@@ -191,7 +193,7 @@ func (r *Registry) loadMetas() error {
 		return fmt.Errorf("loading meta: ws dial: %e", err)
 	}
 
-	go r.watch(token.TOKEN_PROGRAM_ID, wsClient)
+	go r.watchMeta(wsClient)
 
 	accounts, err := r.rpcClient.GetProgramAccounts(context.Background(), progID, nil)
 	if err != nil {
@@ -201,15 +203,18 @@ func (r *Registry) loadMetas() error {
 		return fmt.Errorf("loading metas: get program accounts: not found for: %s", progID)
 	}
 
+	zlog.Info("found token meta", zap.Int("count", len(accounts)))
 	for _, a := range accounts {
 		var m *tokenregistry.TokenMeta
 		if err := bin.NewDecoder(a.Account.Data).Decode(&m); err != nil {
 			return fmt.Errorf("loading meta: get program accounts: decoding to Token meta: %s", a.Account.Data)
 		}
-		r.metas[a.Pubkey.String()] = &TokenMeta{
-			Symbol: m.Symbol.String(),
-			Name:   m.Name.String(),
-			Logo:   m.Logo.String(),
+		zlog.Info("storing meta", zap.Stringer("token_meta_address", a.Pubkey), zap.Stringer("mint_address", m.MintAddress))
+		r.metas[m.MintAddress.String()] = &TokenMeta{
+			Symbol:  m.Symbol.String(),
+			Name:    m.Name.String(),
+			Logo:    m.Logo.String(),
+			Website: m.Website.String(),
 		}
 	}
 
@@ -225,7 +230,7 @@ retry:
 	for {
 		time.Sleep(sleep)
 		sleep = 2 * time.Second
-		zlog.Info("getting program subscription", zap.Stringer("program_address", progID))
+		zlog.Info("watching meta: getting program subscription", zap.Stringer("program_address", progID))
 		sub, err := client.ProgramSubscribe(progID, rpc.CommitmentSingle)
 		if err != nil {
 			zlog.Error("failed to subscribe", zap.Stringer("address", progID))
@@ -238,26 +243,30 @@ retry:
 				zlog.Error("failed to receive from subscribe", zap.Error(err))
 				continue retry
 			}
-
+			zlog.Info("watching meta: received message")
 			programResult := res.(*ws.ProgramResult)
 			var m *tokenregistry.TokenMeta
 			if err := bin.NewDecoder(programResult.Value.Account.Data).Decode(&m); err != nil {
 				zlog.Error("decoding", zap.Error(err))
 				continue retry
 			}
-			metaDataAddr := programResult.Value.PubKey.String()
+			mintAddress := m.MintAddress.String()
 			tokenMeta := &TokenMeta{
-				Symbol: m.Symbol.String(),
-				Name:   m.Name.String(),
-				Logo:   m.Logo.String(),
+				Symbol:  m.Symbol.String(),
+				Name:    m.Name.String(),
+				Logo:    m.Logo.String(),
+				Website: m.Logo.String(),
 			}
 
-			zlog.Info("Updating token meta", zap.String("token_address", metaDataAddr))
+			zlog.Info("Updating token meta", zap.String("token_address", mintAddress))
 			r.storeLock.Lock()
-			r.store[metaDataAddr] = &RegisteredToken{
-				Meta: tokenMeta,
+
+			if storedToken, found := r.store[mintAddress]; found {
+				storedToken.Meta = tokenMeta
+			} else {
+				zlog.Warn("found meta for a unknown token", zap.String("mint_address", mintAddress), zap.Stringer("meta_address", programResult.Value.PubKey))
 			}
-			r.metas[metaDataAddr] = tokenMeta
+			r.metas[mintAddress] = tokenMeta
 
 			r.storeLock.Unlock()
 		}

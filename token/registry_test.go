@@ -19,6 +19,8 @@ func TestRegistry_loadName(t *testing.T) {
 
 func TestRegistry_Load(t *testing.T) {
 
+	t.Skip("This test will failed till we register BTC meta on mainnet")
+
 	rpcClient := rpc.NewClient("http://api.mainnet-beta.solana.com:80/rpc")
 
 	r := NewRegistry(rpcClient, "ws://api.mainnet-beta.solana.com:80/rpc")

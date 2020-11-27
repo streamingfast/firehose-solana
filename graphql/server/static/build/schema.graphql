@@ -166,8 +166,9 @@ type RegisteredTokenResponse {
   supply: Uint64!
   decimals: Int!
   symbol: String!
-#  name: String!
-#  logo: String!
+  name: String!
+  logo: String!
+  website: String!
 }
 type TokenResponse {
   address: String!
