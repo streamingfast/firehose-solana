@@ -14,6 +14,7 @@ require (
 	github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
 	github.com/dfuse-io/solana-go v0.1.1-0.20201127202323-d64d73f5792e
+	github.com/dfuse-io/node-manager v0.0.2-0.20201118164107-c584a24def1d
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
