@@ -17,6 +17,9 @@ type Subscription struct {
 }
 
 func newSubscription(account solana.PublicKey, closeFunc func(err error)) *Subscription {
+
+	//todo: register to the mindreader backed account data stream.
+
 	return &Subscription{
 		account:   account,
 		stream:    make(chan *Result, 200),
@@ -53,6 +56,7 @@ func (s *Subscription) Recv() (*Result, error) {
 }
 
 func (s *Subscription) Unsubscribe() {
+	//todo: unregister to the mindreader backed account data stream.
 	s.unsubscribe(nil)
 }
 
