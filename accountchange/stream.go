@@ -34,7 +34,7 @@ func (s *Stream) WatchAccount(account solana.PublicKey) (*Subscription, error) {
 			sub.err <- err
 		}
 
-		wsAccountResult := wsRes.(ws.AccountResult)
+		wsAccountResult := wsRes.(*ws.AccountResult)
 		wsAcc := wsAccountResult.Value.Account
 
 		sub.stream <- &Result{
