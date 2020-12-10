@@ -9,7 +9,6 @@ dashboard/client/.npmrc
 .DS_Store
 /bootstrapping/output.log
 /dfuse.yaml
-/dfuse-data
 */rice-box.go
 /dist
 *SOURCE_ME.sh*
@@ -19,3 +18,4 @@ dashboard/client/.npmrc
 /dashboard/client/node_modules
 /dashboard/dashboard-build
 dfusesol
+dfuse-data

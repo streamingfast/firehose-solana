@@ -123,7 +123,7 @@ func Start(dataDir string, args []string) (err error) {
 		//maybeCheckNodeosVersion() //todo
 	}
 
-	userLog.Printf("Launching applications: %s", strings.Join(apps, ","))
+	userLog.Printf("Launching applications %s", strings.Join(apps, ","))
 	if err = launch.Launch(apps); err != nil {
 		return err
 	}

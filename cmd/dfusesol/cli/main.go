@@ -27,14 +27,7 @@ import (
 
 // Root of the `dfusesol` command
 var RootCmd = &cobra.Command{Use: "dfusesol", Short: "dfuse for Solana"}
-var version = "dev"
-var commit = ""
 var allFlags = make(map[string]bool) // used as global because of async access to cobra init functions
-
-func init() {
-	RootCmd.Version = version + "-" + commit
-
-}
 
 func Main() {
 	cobra.OnInitialize(func() {
@@ -43,7 +36,7 @@ func Main() {
 
 	RootCmd.PersistentFlags().StringP("data-dir", "d", "./dfuse-data", "Path to data storage for all components of dfuse")
 	RootCmd.PersistentFlags().StringP("config-file", "c", "./dfuse.yaml", "dfuse configuration file to use. No config file loaded if set to an empty string.")
-	RootCmd.PersistentFlags().String("validator-path", "solana", "Path to the solana binary. Defaults to the solana found in your PATH")
+	RootCmd.PersistentFlags().String("validator-path", "solana-validator", "Path to the solana binary. Defaults to the solana found in your PATH")
 	RootCmd.PersistentFlags().Bool("skip-checks", false, "Skip checks to ensure 'solana' binary is supported")
 	RootCmd.PersistentFlags().String("log-format", "text", "Format for logging to stdout. Either 'text' or 'stackdriver'")
 	RootCmd.PersistentFlags().Bool("log-to-file", true, "Also write logs to {data-dir}/dfuse.log.json ")

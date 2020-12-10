@@ -132,6 +132,15 @@ func wrapRunE(root *cobra.Command) {
 	}
 }
 
+func mustFileExists(file string) bool {
+	exists, err := fileExists(file)
+	if err != nil {
+		panic(fmt.Errorf("unable to check if file %q exists or not: %w", file, err))
+	}
+
+	return exists
+}
+
 func fileExists(file string) (bool, error) {
 	stat, err := os.Stat(file)
 	if os.IsNotExist(err) {
