@@ -13,9 +13,10 @@ require (
 	github.com/dfuse-io/dgraphql v0.0.1
 	github.com/dfuse-io/dgrpc v0.0.0-20200417124327-c8f215bc4ce5
 	github.com/dfuse-io/dlauncher v0.0.0-20200715193603-ea2a15e9e193
+	github.com/dfuse-io/dstore v0.1.1-0.20201124190907-4b1585267864
 	github.com/dfuse-io/kvdb v0.0.0-20200508203924-c107cb0b2fa2
 	github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79
-	github.com/dfuse-io/node-manager v0.0.2-0.20201118164107-c584a24def1d
+	github.com/dfuse-io/node-manager v0.0.2-0.20201210205606-ef4eeb061004
 	github.com/dfuse-io/pbgo v0.0.6-0.20200602201455-99986ef5a09d
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
 	github.com/dfuse-io/solana-go v0.2.1-0.20201209142123-4e3f16df716e

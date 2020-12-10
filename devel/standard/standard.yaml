@@ -1,0 +1,5 @@
+start:
+  args:
+  - miner-node
+  flags:
+    miner-node-bootstrap-data-url: ./miner/bootstrap.tar.zst
