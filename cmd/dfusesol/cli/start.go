@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/derr"
 	_ "github.com/dfuse-io/dfuse-solana/codec"
 	"github.com/dfuse-io/dlauncher/launcher"
@@ -71,8 +72,9 @@ func Start(dataDir string, args []string) (err error) {
 	//	return fmt.Errorf("unable to create dmesh client: %w", err)
 	//}
 
-	/// SETUP CHAIN TRACKER
-	//tracker := bstream.NewTracker(250)
+	// FIXME: Most probably wrong, cannot do much yet ...
+	tracker := bstream.NewTracker(250)
+
 	//
 	//blockmetaAddr := viper.GetString("common-blockmeta-addr")
 	//if blockmetaAddr != "" {
@@ -93,13 +95,16 @@ func Start(dataDir string, args []string) (err error) {
 	//	tracker.AddResolver(codec.BlockstoreStartBlockResolver(blocksStore))
 	//}
 
+	// FIXME: Most probably wrong, cannot do much yet ...
+	tracker.AddResolver(bstream.OffsetStartBlockResolver(200))
+
 	////////
 
 	modules := &launcher.Runtime{
 		//SearchDmeshClient: meshClient,
 		//BlockFilter:       blockfilter,
 		AbsDataDir: dataDirAbs,
-		//Tracker:           tracker,
+		Tracker:    tracker,
 	}
 
 	/*	err = bstream.ValidateRegistry()

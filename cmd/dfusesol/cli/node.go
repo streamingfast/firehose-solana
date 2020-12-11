@@ -1,18 +1,25 @@
 package cli
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"math"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/dfuse-io/bstream"
+	"github.com/dfuse-io/dfuse-solana/codec"
 	nodeManagerSol "github.com/dfuse-io/dfuse-solana/node-manager"
+	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/dfuse-io/dlauncher/launcher"
 	"github.com/dfuse-io/logging"
 	nodeManager "github.com/dfuse-io/node-manager"
-	nodeManagerApp "github.com/dfuse-io/node-manager/app/node_manager"
+	nodeManagerApp "github.com/dfuse-io/node-manager/app/node_manager2"
 	"github.com/dfuse-io/node-manager/metrics"
+	"github.com/dfuse-io/node-manager/mindreader"
 	"github.com/dfuse-io/node-manager/operator"
 	"github.com/dfuse-io/node-manager/profiler"
 	solana "github.com/dfuse-io/solana-go"
@@ -22,29 +29,34 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var managerAPIPortByKind = map[string]string{
-	"miner":   MinerNodeHTTPServingAddr,
-	"peering": PeeringNodeHTTPServingAddr,
+var httpListenAddrByKind = map[string]string{
+	"miner":      MinerNodeHTTPServingAddr,
+	"mindreader": MindreaderNodeHTTPServingAddr,
+	"peering":    PeeringNodeHTTPServingAddr,
 }
 
 var rpcPortByKind = map[string]string{
-	"miner":   MinerNodeRPCPort,
-	"peering": PeeringNodeRPCPort,
+	"miner":      MinerNodeRPCPort,
+	"mindreader": MindreaderNodeRPCPort,
+	"peering":    PeeringNodeRPCPort,
 }
 
 var gossipPortByKind = map[string]string{
-	"miner":   MinerNodeGossipPort,
-	"peering": PeeringNodeGossipPort,
+	"miner":      MinerNodeGossipPort,
+	"mindreader": MindreaderNodeGossipPort,
+	"peering":    PeeringNodeGossipPort,
 }
 
 var p2pPortStartByKind = map[string]string{
-	"miner":   MinerNodeP2PPortStart,
-	"peering": PeeringNodeP2PPortStart,
+	"miner":      MinerNodeP2PPortStart,
+	"mindreader": MindreaderNodeP2PPortStart,
+	"peering":    PeeringNodeP2PPortStart,
 }
 
 var p2pPortEndByKind = map[string]string{
-	"miner":   MinerNodeP2PPortEnd,
-	"peering": PeeringNodeP2PPortEnd,
+	"miner":      MinerNodeP2PPortEnd,
+	"mindreader": MindreaderNodeP2PPortEnd,
+	"peering":    PeeringNodeP2PPortEnd,
 }
 
 // RegisterSolanaNodeApp is an helper function that registers a given Solana node app. The `kind` value determines
@@ -54,8 +66,8 @@ var p2pPortEndByKind = map[string]string{
 // - miner
 // - peering
 func RegisterSolanaNodeApp(kind string) {
-	if kind != "miner" && kind != "peering" {
-		panic(fmt.Errorf("invalid kind value, must be either 'miner' or 'peering', got %q", kind))
+	if kind != "miner" && kind != "mindreader" && kind != "peering" {
+		panic(fmt.Errorf("invalid kind value, must be either 'miner', 'mindreader' or 'peering', got %q", kind))
 	}
 
 	app := fmt.Sprintf("%s-node", kind)
@@ -82,15 +94,30 @@ func RegisterSolanaNodeApp(kind string) {
 			cmd.Flags().String(app+"-gossip-port", gossipPortByKind[kind], "TCP gossip listening port of Solana node")
 			cmd.Flags().String(app+"-p2p-port-start", p2pPortStartByKind[kind], "P2P dynamic range start listening port of Solana node")
 			cmd.Flags().String(app+"-p2p-port-end", p2pPortEndByKind[kind], "P2P dynamic range end of Solana node")
-			cmd.Flags().String(app+"-manager-api-addr", managerAPIPortByKind[kind], "Solana node manager API address")
+			cmd.Flags().String(app+"-http-listen-addr", httpListenAddrByKind[kind], "Solana node manager HTTP address when operational command can be send to control the node")
 			cmd.Flags().Duration(app+"-readiness-max-latency", 30*time.Second, "The health endpoint '/healthz' will return an error until the head block time is within that duration to now")
 			cmd.Flags().Duration(app+"-shutdown-delay", 0, "Delay before shutting manager when sigterm received")
 			cmd.Flags().String(app+"-extra-arguments", "", "Extra arguments to be passed when executing superviser binary")
 			cmd.Flags().String(app+"-bootstrap-data-url", "", "URL where to find bootstrapping data for this node, the URL must point to a `.tar.zst` archive containing the full data directory to bootstrap from")
 			cmd.Flags().Bool(app+"-disable-profiler", true, "Disables the node manager profiler")
 			cmd.Flags().Bool(app+"-log-to-zap", true, "Enable all node logs to transit into app's logger directly, when false, prints node logs directly to stdout")
-			cmd.Flags().Bool(app+"-debug-deep-mind", false, "[DEV] Prints deep mind instrumentation logs to standard output, should be use for debugging purposes only")
 			cmd.Flags().Bool(app+"-rpc-enable-debug-apis", false, "[DEV] Enable some of the Solana validator RPC APIs that can be used for debugging purposes")
+
+			if kind == "mindreader" {
+				cmd.Flags().String(app+"-grpc-listen-addr", MindreaderNodeGRPCAddr, "Address to listen for incoming gRPC requests")
+				cmd.Flags().Bool(app+"-discard-after-stop-num", false, "Ignore remaining blocks being processed after stop num (only useful if we discard the mindreader data after reprocessing a chunk of blocks)")
+				cmd.Flags().String(app+"-working-dir", "{dfuse-data-dir}/mindreader/work", "Path where mindreader will stores its files")
+				cmd.Flags().Int(app+"-blocks-chan-capacity", 100, "Capacity of the channel holding blocks read by the mindreader. Process will shutdown superviser/geth if the channel gets over 90% of that capacity to prevent horrible consequences. Raise this number when processing tiny blocks very quickly")
+				cmd.Flags().Bool(app+"-start-failure-handler", true, "Enables the startup function handler, that gets called if mindreader fails on startup")
+				cmd.Flags().Bool(app+"-fail-on-non-contiguous-block", false, "Enables the Continuity Checker that stops (or refuses to start) the superviser if a block was missed. It has a significant performance cost on reprocessing large segments of blocks")
+				cmd.Flags().Duration(app+"-wait-upload-complete-on-shutdown", 30*time.Second, "When the mindreader is shutting down, it will wait up to that amount of time for the archiver to finish uploading the blocks before leaving anyway")
+				cmd.Flags().Duration(app+"-merge-threshold-block-age", time.Duration(math.MaxInt64), "When processing blocks with a blocktime older than this threshold, they will be automatically merged")
+				cmd.Flags().String(app+"-oneblock-suffix", "", "If non-empty, the oneblock files will be appended with that suffix, so that mindreaders can each write their file for a given block instead of competing for writes.")
+				cmd.Flags().Bool(app+"-debug-deep-mind", false, "[DEV] Prints deep mind instrumentation logs to standard output, should be use for debugging purposes only")
+				cmd.Flags().Bool(app+"-merge-and-store-directly", false, "[BATCH] When enabled, do not write oneblock files, sidestep the merger and write the merged 100-blocks logs directly to --common-blocks-store-url")
+				cmd.Flags().Uint(app+"-start-block-num", 0, "[BATCH] Blocks that were produced with smaller block number then the given block num are skipped")
+				cmd.Flags().Uint(app+"-stop-block-num", 0, "[BATCH] Shutdown when we the following 'stop-block-num' has been reached, inclusively.")
+			}
 
 			return nil
 		},
@@ -253,16 +280,73 @@ func RegisterSolanaNodeApp(kind string) {
 					Profiler:                   p,
 				},
 			)
-
 			if err != nil {
 				return nil, fmt.Errorf("unable to create chain operator: %w", err)
 			}
 
+			var mindreaderPlugin *mindreader.MindReaderPlugin
+			if kind == "mindreader" {
+				oneBlockStoreURL := mustReplaceDataDir(dfuseDataDir, viper.GetString("common-oneblock-store-url"))
+				mergedBlocksStoreURL := mustReplaceDataDir(dfuseDataDir, viper.GetString("common-blocks-store-url"))
+				consoleReaderFactory := func(reader io.Reader) (mindreader.ConsolerReader, error) {
+					return codec.NewConsoleReader(reader)
+				}
+
+				consoleReaderBlockTransformer := func(obj interface{}) (*bstream.Block, error) {
+					blk, ok := obj.(*pbcodec.Block)
+					if !ok {
+						return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
+					}
+
+					return codec.BlockFromProto(blk)
+				}
+
+				// blockmetaAddr := viper.GetString("common-blockmeta-addr")
+				tracker := runtime.Tracker.Clone()
+				tracker.AddGetter(bstream.NetworkLIBTarget, func(ctx context.Context) (bstream.BlockRef, error) {
+					// FIXME: Need to re-enable the tracker through blockmeta later on (see commented code below), might need to tweak some stuff to make mindreader work...
+					return bstream.BlockRefEmpty, nil
+				})
+
+				// tracker.AddGetter(bstream.NetworkLIBTarget, bstream.NetworkLIBBlockRefGetter(blockmetaAddr))
+
+				workingDir := mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"-working-dir"))
+
+				mindreaderPlugin, err := mindreader.NewMindReaderPlugin(
+					oneBlockStoreURL,
+					mergedBlocksStoreURL,
+					viper.GetBool(app+"-merge-and-store-directly"),
+					viper.GetDuration(app+"-merge-threshold-block-age"),
+					workingDir,
+					consoleReaderFactory,
+					consoleReaderBlockTransformer,
+					tracker,
+					viper.GetUint64(app+"-start-block-num"),
+					viper.GetUint64(app+"-stop-block-num"),
+					viper.GetInt(app+"-blocks-chan-capacity"),
+					metricsAndReadinessManager.UpdateHeadBlock,
+					func(error) {
+						chainOperator.Shutdown(nil)
+					},
+					viper.GetBool(app+"-fail-on-non-contiguous-block"),
+					viper.GetDuration(app+"-wait-upload-complete-on-shutdown"),
+					viper.GetString(app+"-oneblock-suffix"),
+					appLogger,
+				)
+				if err != nil {
+					return nil, fmt.Errorf("new mindreader plugin: %w", err)
+				}
+
+				superviser.RegisterLogPlugin(mindreaderPlugin)
+			}
+
 			return nodeManagerApp.New(&nodeManagerApp.Config{
-				ManagerAPIAddress: viper.GetString(app + "-manager-api-addr"),
-				StartupDelay:      startupDelay,
+				HTTPAddr:     viper.GetString(app + "-http-listen-addr"),
+				GRPCAddr:     viper.GetString(app + "-grpc-listen-addr"),
+				StartupDelay: startupDelay,
 			}, &nodeManagerApp.Modules{
 				Operator:                   chainOperator,
+				MindreaderPlugin:           mindreaderPlugin,
 				MetricsAndReadinessManager: metricsAndReadinessManager,
 			}, appLogger), nil
 		},
