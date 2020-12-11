@@ -16,10 +16,10 @@ require (
 	github.com/dfuse-io/dstore v0.1.1-0.20201124190907-4b1585267864
 	github.com/dfuse-io/kvdb v0.0.0-20200508203924-c107cb0b2fa2
 	github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79
-	github.com/dfuse-io/node-manager v0.0.2-0.20201210205606-ef4eeb061004
+	github.com/dfuse-io/node-manager v0.0.2-0.20201211145401-3b6a5b958b66
 	github.com/dfuse-io/pbgo v0.0.6-0.20200602201455-99986ef5a09d
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
-	github.com/dfuse-io/solana-go v0.2.1-0.20201209142123-4e3f16df716e
+	github.com/dfuse-io/solana-go v0.2.1-0.20201211060155-98efad3ab010
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0

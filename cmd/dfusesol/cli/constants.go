@@ -45,22 +45,22 @@ const (
 
 	// Solana node instance port definitions
 	MinerNodeRPCPort      string = "13100"
-	MinerNodeGossipPort   string = "13101"
-	MinerNodeP2PPortStart string = "13102"
+	MinerNodeGossipPort   string = "13110"
+	MinerNodeP2PPortStart string = "13111"
 	MinerNodeP2PPortEnd   string = "13199"
 
 	MindreaderNodeRPCPort      string = "13200"
-	MindreaderNodeGossipPort   string = "13201"
-	MindreaderNodeP2PPortStart string = "13202"
+	MindreaderNodeGossipPort   string = "13210"
+	MindreaderNodeP2PPortStart string = "13211"
 	MindreaderNodeP2PPortEnd   string = "13299"
 
 	PeeringNodeRPCPort      string = "13300"
-	PeeringNodeGossipPort   string = "13301"
-	PeeringNodeP2PPortStart string = "13302"
+	PeeringNodeGossipPort   string = "13310"
+	PeeringNodeP2PPortStart string = "13311"
 	PeeringNodeP2PPortEnd   string = "13399"
 
 	BackupNodeRPCPort      string = "13400"
-	BackupNodeGossipPort   string = "13401"
-	BackupNodeP2PPortStart string = "13402"
+	BackupNodeGossipPort   string = "13410"
+	BackupNodeP2PPortStart string = "13411"
 	BackupNodeP2PPortEnd   string = "13499"
 )
