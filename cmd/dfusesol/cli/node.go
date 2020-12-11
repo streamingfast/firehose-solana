@@ -184,6 +184,7 @@ func RegisterSolanaNodeApp(kind string) {
 
 			network := viper.GetString(app + "-network")
 			startupDelay := time.Duration(0)
+			extraArguments := getExtraArguments(kind)
 
 			if kind == "peering" || kind == "mindreader" {
 				appLogger.Info("configuring node for syncing", zap.String("network", network))
@@ -193,6 +194,8 @@ func RegisterSolanaNodeApp(kind string) {
 					"--limit-ledger-size",
 					"--no-untrusted-rpc",
 					"--no-voting",
+					"--private-rpc",
+					"--wal-recovery-mode", "skip_any_corrupted_record",
 				)
 
 				if network == "development" {
@@ -229,25 +232,49 @@ func RegisterSolanaNodeApp(kind string) {
 						"--expected-genesis-hash", minerGenesisHash,
 						"--expected-shred-version", minerGenesisShred,
 					)
+				} else if network == "mainnet-beta" {
+					arguments = append(arguments,
+						"--entrypoint", "mainnet-beta.solana.com:8001",
+						"--trusted-validator", "7Np41oeYqPefeNQEHSv1UDhYrehxin3NStELsSKCT4K2",
+						"--trusted-validator", "GdnSyH3YtwcxFvQrVVJMm1JhTS4QVX7MFsX56uJLUfiZ",
+						"--trusted-validator", "DE1bawNcRJB9rVm3buyMVfr8mBEoyyu73NBovf2oXJsJ",
+						"--trusted-validator", "CakcnaRDHka2gXyfbEd2d3xsvkJkqsLw2akB3zsN1D2S",
+						"--expected-genesis-hash", "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+					)
+				} else if network == "testnet" {
+					arguments = append(arguments,
+						"--entrypoint", "entrypoint.testnet.solana.com:8001",
+						"--trusted-validator", "5D1fNXzvv5NjV1ysLjirC4WY92RNsVH18vjmcszZd8on",
+						"--trusted-validator", "ta1Uvfb7W5BRPrdGnhP9RmeCGKzBySGM1hTE4rBRy6T",
+						"--trusted-validator", "Ft5fbkqNa76vnsjYNwjDZUXoTWpP7VYm3mtsaQckQADN",
+						"--trusted-validator", "9QxCLckBiJc783jnMvXZubK4wH86Eqqvashtrwvcsgkv",
+						"--expected-genesis-hash", "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY",
+					)
+				} else if network == "devnet" {
+					arguments = append(arguments,
+						"--entrypoint", "entrypoint.devnet.solana.com:8001",
+						"--trusted-validator", "dv1LfzJvDF7S1fBKpFgKoKXK5yoSosmkAdfbxBo1GqJ",
+						"--expected-genesis-hash", "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+					)
 				} else if network == "custom" {
 					appLogger.Info("configuring node for custom syncing, you are expected to provide the required arguments through the '" + app + "-extra-arguments' flag")
 				} else {
-					return nil, fmt.Errorf(`unkown network %q, valid networks are "development", "custom"`, network)
+					return nil, fmt.Errorf(`unkown network %q, valid networks are "development", "mainnet-beta", "testnet", "devnet", "custom"`, network)
 				}
 			}
 
 			if kind == "mindreader" {
 				appLogger.Info("configuring node as a mindreader")
-				arguments = append(arguments,
-					"--no-snapshot-fetch",
-				)
+
+				if !hasExtraArgument(extraArguments, "--no-snapshot-fetch") {
+					arguments = append(arguments,
+						"--no-snapshot-fetch",
+					)
+				}
 			}
 
-			extraArguments := viper.GetString(app + "-extra-arguments")
-			if extraArguments != "" {
-				for _, arg := range strings.Split(extraArguments, " ") {
-					arguments = append(arguments, arg)
-				}
+			if len(extraArguments) > 0 {
+				arguments = append(arguments, extraArguments...)
 			}
 
 			metricsAndReadinessManager := nodeManager.NewMetricsAndReadinessManager(
@@ -403,4 +430,24 @@ func readConfigFile(kind string, file string) (string, error) {
 	}
 
 	return string(out), nil
+}
+
+func getExtraArguments(kind string) (out []string) {
+	extraArguments := viper.GetString(kind + "node-extra-arguments")
+	if extraArguments != "" {
+		for _, arg := range strings.Split(extraArguments, " ") {
+			out = append(out, arg)
+		}
+	}
+	return
+}
+
+func hasExtraArgument(arguments []string, flag string) bool {
+	for _, argument := range arguments {
+		if argument == flag {
+			return true
+		}
+	}
+
+	return false
 }
