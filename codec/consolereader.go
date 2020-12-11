@@ -113,17 +113,15 @@ type parseCtx struct {
 	slot          *pbcodec.Slot
 	activeSlotNum uint64
 	trxIndex      uint64
-	trx           *pbcodec.Transaction
-	trxTrace      *pbcodec.TransactionTrace
+	trxTraceMap   map[string]*pbcodec.TransactionTrace
 
 	conversionOptions []conversionOption
 }
 
 func newParseCtx() *parseCtx {
 	return &parseCtx{
-		slot:     &pbcodec.Slot{},
-		trx:      &pbcodec.Transaction{},
-		trxTrace: &pbcodec.TransactionTrace{},
+		slot:        &pbcodec.Slot{},
+		trxTraceMap: map[string]*pbcodec.TransactionTrace{},
 	}
 }
 
@@ -177,8 +175,7 @@ func (ctx *parseCtx) resetBlock() {
 }
 
 func (ctx *parseCtx) resetTrx() {
-	ctx.trxTrace = &pbcodec.TransactionTrace{}
-	ctx.trx = &pbcodec.Transaction{}
+	ctx.trxTraceMap = map[string]*pbcodec.TransactionTrace{}
 
 }
 
@@ -190,22 +187,22 @@ func (ctx *parseCtx) readSlotStart(line string) error {
 
 func (ctx *parseCtx) readTransactionStart(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 5 {
-		return fmt.Errorf("read transaction start: expected 5 fields, got %d", len(chunks))
+	if len(chunks) != 4 {
+		return fmt.Errorf("read transaction start: expected 4 fields, got %d", len(chunks))
 	}
 
 	ctx.resetTrx()
 
-	id := chunks[3]
+	id := chunks[2]
 	signatures := []string{id}
 
-	solMessage := &solana.Message{}
-	messageData, err := hex.DecodeString(chunks[4])
+	var solMessage *solana.Message
+	messageData, err := hex.DecodeString(chunks[3])
 	if err != nil {
 		return fmt.Errorf("read transaction start: hex decode message: %w", err)
 	}
 
-	err = bin.NewDecoder(messageData).Decode(&messageData)
+	err = bin.NewDecoder(messageData).Decode(&solMessage)
 	if err != nil {
 		return fmt.Errorf("read transaction start: binary decode message: %w", err)
 	}
@@ -266,10 +263,113 @@ func (ctx *parseCtx) recordTransaction(trx *pbcodec.Transaction) {
 }
 
 func (ctx *parseCtx) recordTransactionTrace(trxTrace *pbcodec.TransactionTrace) {
-	ctx.trxTrace = trxTrace
+	ctx.trxTraceMap[trxTrace.Id] = trxTrace
 	ctx.trxIndex++
 
 	return
+}
+
+func (ctx *parseCtx) readInstructionTraceStart(line string) error {
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != 7 {
+		return fmt.Errorf("read instructionTrace start: expected 7 fields, got %d", len(chunks))
+	}
+	trxID := chunks[2]
+	ordinal, err := strconv.Atoi(chunks[3])
+	if err != nil {
+		return fmt.Errorf("read instructionTrace start: ordinal to int: %w", err)
+	}
+
+	parentOrdinal, err := strconv.Atoi(chunks[4])
+	if err != nil {
+		return fmt.Errorf("read instructionTrace start: parent ordinal to int: %w", err)
+	}
+
+	program := chunks[5]
+	data := chunks[6]
+	hexData, err := hex.DecodeString(data)
+	if err != nil {
+		return fmt.Errorf("read instructionTrace start: hex decode data: %w", err)
+	}
+
+	instructionTrace := &pbcodec.InstructionTrace{
+		ProgramId:     program,
+		Data:          hexData,
+		Ordinal:       uint32(ordinal),
+		ParentOrdinal: uint32(parentOrdinal),
+	}
+
+	err = ctx.recordInstructionTrace(trxID, instructionTrace)
+	if err != nil {
+		return fmt.Errorf("read instructionTrace start: %w", err)
+	}
+
+	return nil
+}
+
+func (ctx *parseCtx) recordInstructionTrace(trxID string, instruction *pbcodec.InstructionTrace) error {
+	trxTrace := ctx.trxTraceMap[trxID]
+	if trxTrace == nil {
+		return fmt.Errorf("record instruction: transaction trace not found in context: %s", trxID)
+	}
+
+	trxTrace.InstructionTraces = append(trxTrace.InstructionTraces, instruction)
+
+	return nil
+}
+
+func (ctx *parseCtx) readAccountChange(line string) error {
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != 7 {
+		return fmt.Errorf("read account change: expected 7 fields, got %d", len(chunks))
+	}
+	trxID := chunks[1]
+	ordinal, err := strconv.Atoi(chunks[2])
+	if err != nil {
+		return fmt.Errorf("read account change: ordinal to int: %w", err)
+	}
+
+	parentOrdinal, err := strconv.Atoi(chunks[3])
+	if err != nil {
+		return fmt.Errorf("read account change: parent ordinal to int: %w", err)
+	}
+	_ = parentOrdinal
+
+	pubKey := chunks[4]
+
+	prevData, err := hex.DecodeString(chunks[5])
+	if err != nil {
+		return fmt.Errorf("read account change: hex decode prev data: %w", err)
+	}
+
+	newData, err := hex.DecodeString(chunks[6])
+	if err != nil {
+		return fmt.Errorf("read account change: hex decode new data: %w", err)
+	}
+
+	accountChange := &pbcodec.AccountChange{
+		Pubkey:   pubKey,
+		PrevData: prevData,
+		NewData:  newData,
+	}
+
+	err = ctx.recordAccountChange(trxID, ordinal, accountChange)
+	if err != nil {
+		return fmt.Errorf("read account change: %w", err)
+	}
+
+	return nil
+}
+
+func (ctx *parseCtx) recordAccountChange(trxID string, ordinal int, accountChange *pbcodec.AccountChange) error {
+	trxTrace := ctx.trxTraceMap[trxID]
+	if trxTrace == nil {
+		return fmt.Errorf("record account change: transaction trace not found in context: %s", trxID)
+	}
+
+	trxTrace.InstructionTraces[ordinal-1].AccountChanges = append(trxTrace.InstructionTraces[ordinal-1].AccountChanges, accountChange)
+
+	return nil
 }
 
 func splitNToM(line string, min, max int) ([]string, error) {

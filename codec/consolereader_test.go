@@ -15,12 +15,12 @@
 package codec
 
 import (
-	"bytes"
-	"fmt"
+	"os"
 	"testing"
 
-	"github.com/dfuse-io/solana-go/text"
+	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 
+	"github.com/dfuse-io/solana-go/text"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,7 +32,7 @@ func Test_readTransaction_Start(t *testing.T) {
 	}{
 		{
 			"TRANSACTION good",
-			`DMLOG TRANSACTION START 4z26VjEy1Yp5n56i2Cj6Fz74hWv1hV6kTVcd6wvSATSxbcTCr8otCyMGnMzsFbEaUp42PvGEyWBrF4etAD2zAivi 0010003051eb5dd35787f4d58187ffcb69383901cf60445cd438f6bd22ea3d5da0ee32f328f3c1e1ac69f7f78b611905fe96d5d041320ee4c9f0bb5cbbf33c4c9ad0054e206a7d517192f0aafc6f265e3fb77cc7ada82c529d0be3b136`,
+			`TRANSACTION START 2KQspsbTqezudMvUTdjYdFHx37M1LKF1iUU6BW6jpmuvBifwsypFiHECipasaF9fUuorz4thi3fsCcmokh2AXVfN 0100030520492cf7f4b78fcb0993860cea450edd343e36187aed68c366e6420b63a08d1509a4358fa8bde757dc294e4562866094db00ce9f2d8f3cd4f243afb9a0e0798c06a7d517192f0aafc6f265e3fb77cc7ada82c529d0be3b136e2d00552000000006a7d51718c774c928566398691d5eb68b5eb8a39b4b6d5c73555b21000000000761481d357474bb7c4d7624ebd3bdb3d8355e73d11043fc0da3538000000000e91b52701a3abe9afe583beff4e75914573207499b463577958da9e66b5bddc10104040102030045020000000200000000000000d09b3b0300000000d19b3b0300000000e0c76fe89639cb93719e58ce9776c14caf83e4ed3e3c007f72f25638c436252a01c112d15f00000000`,
 			nil,
 		},
 	}
@@ -44,612 +44,69 @@ func Test_readTransaction_Start(t *testing.T) {
 
 			require.Equal(t, test.expectedErr, err)
 
-			fmt.Println("wtf")
-			buf := new(bytes.Buffer)
-			text.NewEncoder(buf).Encode(ctx, nil)
-			fmt.Println("out:", string(buf.Bytes()))
+			err = text.NewEncoder(os.Stdout).Encode(ctx.slot, nil)
+			require.NoError(t, err)
+			//fmt.Println("out:", string(buf.Bytes()))
+
+		})
+	}
+}
+func Test_readInstruction_Start(t *testing.T) {
+	tests := []struct {
+		name        string
+		trxID       string
+		line        string
+		expectedErr error
+	}{
+		{
+			name:        "Instruction good",
+			trxID:       "2KQspsbTqezudMvUTdjYdFHx37M1LKF1iUU6BW6jpmuvBifwsypFiHECipasaF9fUuorz4thi3fsCcmokh2AXVfN",
+			line:        `INSTRUCTION START 2KQspsbTqezudMvUTdjYdFHx37M1LKF1iUU6BW6jpmuvBifwsypFiHECipasaF9fUuorz4thi3fsCcmokh2AXVfN 1 0 Vote111111111111111111111111111111111111111 020000000200000000000000d09b3b0300000000d19b3b0300000000e0c76fe89639cb93719e58ce9776c14caf83e4ed3e3c007f72f25638c436252a01c112d15f00000000`,
+			expectedErr: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := newParseCtx()
+			ctx.trxTraceMap[test.trxID] = &pbcodec.TransactionTrace{}
+			err := ctx.readInstructionTraceStart(test.line)
+
+			require.Equal(t, test.expectedErr, err)
+
+			text.NewEncoder(os.Stdout).Encode(ctx, nil)
 
 		})
 	}
 }
 
-//
-//import (
-//	"bytes"
-//	"errors"
-//	"fmt"
-//	"io"
-//	"io/ioutil"
-//	"net/http"
-//	"os"
-//	"os/exec"
-//	"path/filepath"
-//	"testing"
-//	"time"
-//
-//	_ "net/http/pprof"
-//
-//	"github.com/andreyvit/diff"
-//	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-//	"github.com/dfuse-io/jsonpb"
-//	"github.com/golang/protobuf/proto"
-//	"github.com/stretchr/testify/assert"
-//	"github.com/stretchr/testify/require"
-//	"go.uber.org/zap"
-//)
-//
-//func TestConsoleReaderPerformances(t *testing.T) {
-//	dmlogBenchmarkFile := os.Getenv("PERF_DMLOG_BENCHMARK_FILE")
-//	if dmlogBenchmarkFile == "" || !fileExists(dmlogBenchmarkFile) {
-//		t.Skipf("Environment variable 'PERF_DMLOG_BENCHMARK_FILE' not set or value %q is not an existing file", dmlogBenchmarkFile)
-//		return
-//	}
-//
-//	go func() {
-//		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
-//			zlog.Info("listening localhost:6060", zap.Error(err))
-//		}
-//	}()
-//
-//	fl, err := os.Open(dmlogBenchmarkFile)
-//	require.NoError(t, err)
-//
-//	r, err := NewConsoleReader(fl)
-//	require.NoError(t, err)
-//	defer r.Close()
-//
-//	count := 1999
-//
-//	t0 := time.Now()
-//
-//	for i := 0; i < count; i++ {
-//		blki, err := r.Read()
-//		require.NoError(t, err)
-//
-//		blk := blki.(*pbcodec.Block)
-//		fmt.Fprintln(os.Stderr, "Processing block", blk.Num())
-//	}
-//
-//	d1 := time.Since(t0)
-//	perSec := float64(count) / (float64(d1) / float64(time.Second))
-//	fmt.Printf("%d blocks in %s (%f blocks/sec)", count, d1, perSec)
-//}
-//
-//func TestParseFromFile(t *testing.T) {
-//	tests := []struct {
-//		name          string
-//		deepMindFile  string
-//		includeBlock  func(block *pbcodec.Block) bool
-//		readerOptions []ConsoleReaderOption
-//	}{
-//		{"full", "testdata/deep-mind.dmlog", nil, nil},
-//		{"max-console-log", "testdata/deep-mind.dmlog", blockWithConsole, []ConsoleReaderOption{LimitConsoleLength(10)}},
-//	}
-//
-//	for _, test := range tests {
-//		t.Run(test.name, func(t *testing.T) {
-//			cr := testFileConsoleReader(t, test.deepMindFile, test.readerOptions...)
-//			buf := &bytes.Buffer{}
-//
-//			for {
-//				out, err := cr.Read()
-//				if out != nil && out.(*pbcodec.Block) != nil {
-//					blk := out.(*pbcodec.Block)
-//					if test.includeBlock != nil && !test.includeBlock(blk) {
-//						continue
-//					}
-//
-//					if len(buf.Bytes()) != 0 {
-//						buf.Write([]byte("\n"))
-//					}
-//
-//					buf.Write([]byte(protoJSONMarshalIndent(t, blk)))
-//				}
-//
-//				if err == io.EOF {
-//					break
-//				}
-//
-//				require.NoError(t, err)
-//			}
-//
-//			goldenFile := filepath.Join("testdata", test.name+".golden.json")
-//			if os.Getenv("GOLDEN_UPDATE") == "true" {
-//				ioutil.WriteFile(goldenFile, buf.Bytes(), os.ModePerm)
-//			}
-//
-//			cnt, err := ioutil.ReadFile(goldenFile)
-//			require.NoError(t, err)
-//
-//			if !assert.Equal(t, string(cnt), buf.String()) {
-//				t.Error("previous diff:\n" + unifiedDiff(t, cnt, buf.Bytes()))
-//			}
-//		})
-//	}
-//}
-//
-//func unifiedDiff(t *testing.T, cnt1, cnt2 []byte) string {
-//	file1 := "/tmp/gotests-linediff-1"
-//	file2 := "/tmp/gotests-linediff-2"
-//	err := ioutil.WriteFile(file1, cnt1, 0600)
-//	require.NoError(t, err)
-//
-//	err = ioutil.WriteFile(file2, cnt2, 0600)
-//	require.NoError(t, err)
-//
-//	cmd := exec.Command("diff", "-u", file1, file2)
-//	out, _ := cmd.Output()
-//
-//	return string(out)
-//}
-//
-//func TestGeneratePBBlocks(t *testing.T) {
-//	cr := testFileConsoleReader(t, "testdata/deep-mind.dmlog")
-//
-//	// Create the folder, it might not exists in some contexts
-//	err := os.MkdirAll("testdata/pbblocks", os.ModePerm)
-//	require.NoError(t, err)
-//
-//	for {
-//		out, err := cr.Read()
-//		if out != nil && out.(*pbcodec.Block) != nil {
-//			block := out.(*pbcodec.Block)
-//
-//			outputFile, err := os.Create(fmt.Sprintf("testdata/pbblocks/battlefield-block.%d.deos.pb", block.Number))
-//			require.NoError(t, err)
-//
-//			bytes, err := proto.Marshal(block)
-//			require.NoError(t, err)
-//
-//			_, err = outputFile.Write(bytes)
-//			require.NoError(t, err)
-//
-//			outputFile.Close()
-//		}
-//
-//		if err == io.EOF {
-//			break
-//		}
-//
-//		require.NoError(t, err)
-//	}
-//}
-//
-//func testFileConsoleReader(t *testing.T, filename string, options ...ConsoleReaderOption) *ConsoleReader {
-//	t.Helper()
-//
-//	fl, err := os.Open(filename)
-//	require.NoError(t, err)
-//
-//	return testReaderConsoleReader(t, fl, func() { fl.Close() }, options...)
-//}
-//
-//func testReaderConsoleReader(t *testing.T, reader io.Reader, closer func(), options ...ConsoleReaderOption) *ConsoleReader {
-//	t.Helper()
-//
-//	consoleReader, err := NewConsoleReader(reader, options...)
-//	require.NoError(t, err)
-//
-//	return consoleReader
-//}
-//
-//func Test_BlockRlimitOp(t *testing.T) {
-//	tests := []struct {
-//		line        string
-//		expected    *pbcodec.RlimitOp
-//		expectedErr error
-//	}{
-//		{
-//			`RLIMIT_OP CONFIG INS {"cpu_limit_parameters":{"target":20000,"max":200000,"periods":120,"max_multiplier":1000,"contract_rate":{"numerator":99,"denominator":100},"expand_rate":{"numerator":1000,"denominator":999}},"net_limit_parameters":{"target":104857,"max":1048576,"periods":120,"max_multiplier":1000,"contract_rate":{"numerator":99,"denominator":100},"expand_rate":{"numerator":1000,"denominator":999}},"account_cpu_usage_average_window":172800,"account_net_usage_average_window":172800}`,
-//			&pbcodec.RlimitOp{
-//				Operation: pbcodec.RlimitOp_OPERATION_INSERT,
-//				Kind: &pbcodec.RlimitOp_Config{
-//					Config: &pbcodec.RlimitConfig{
-//						CpuLimitParameters: &pbcodec.ElasticLimitParameters{
-//							Target:        20000,
-//							Max:           200000,
-//							Periods:       120,
-//							MaxMultiplier: 1000,
-//							ContractRate: &pbcodec.Ratio{
-//								Numerator:   99,
-//								Denominator: 100,
-//							},
-//							ExpandRate: &pbcodec.Ratio{
-//								Numerator:   1000,
-//								Denominator: 999,
-//							},
-//						},
-//						NetLimitParameters: &pbcodec.ElasticLimitParameters{
-//							Target:        104857,
-//							Max:           1048576,
-//							Periods:       120,
-//							MaxMultiplier: 1000,
-//							ContractRate: &pbcodec.Ratio{
-//								Numerator:   99,
-//								Denominator: 100,
-//							},
-//							ExpandRate: &pbcodec.Ratio{
-//								Numerator:   1000,
-//								Denominator: 999,
-//							},
-//						},
-//						AccountCpuUsageAverageWindow: 172800,
-//						AccountNetUsageAverageWindow: 172800,
-//					},
-//				},
-//			},
-//			nil,
-//		},
-//		{
-//			`RLIMIT_OP STATE INS {"average_block_net_usage":{"last_ordinal":1,"value_ex":2,"consumed":3},"average_block_cpu_usage":{"last_ordinal":4,"value_ex":5,"consumed":6},"pending_net_usage":7,"pending_cpu_usage":8,"total_net_weight":9,"total_cpu_weight":10,"total_ram_bytes":11,"virtual_net_limit":1048576,"virtual_cpu_limit":200000}`,
-//			&pbcodec.RlimitOp{
-//				Operation: pbcodec.RlimitOp_OPERATION_INSERT,
-//				Kind: &pbcodec.RlimitOp_State{
-//					State: &pbcodec.RlimitState{
-//						AverageBlockNetUsage: &pbcodec.UsageAccumulator{
-//							LastOrdinal: 1,
-//							ValueEx:     2,
-//							Consumed:    3,
-//						},
-//						AverageBlockCpuUsage: &pbcodec.UsageAccumulator{
-//							LastOrdinal: 4,
-//							ValueEx:     5,
-//							Consumed:    6,
-//						},
-//						PendingNetUsage: 7,
-//						PendingCpuUsage: 8,
-//						TotalNetWeight:  9,
-//						TotalCpuWeight:  10,
-//						TotalRamBytes:   11,
-//						VirtualNetLimit: 1048576,
-//						VirtualCpuLimit: 200000,
-//					},
-//				},
-//			},
-//			nil,
-//		},
-//	}
-//
-//	for i, test := range tests {
-//		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-//			ctx := newParseCtx()
-//			err := ctx.readRlimitOp(test.line)
-//
-//			require.Equal(t, test.expectedErr, err)
-//
-//			if test.expectedErr == nil {
-//				require.Len(t, ctx.block.RlimitOps, 1)
-//
-//				expected := protoJSONMarshalIndent(t, test.expected)
-//				actual := protoJSONMarshalIndent(t, ctx.block.RlimitOps[0])
-//
-//				assert.JSONEq(t, expected, actual, diff.LineDiff(expected, actual))
-//			}
-//		})
-//	}
-//}
-//
-//func Test_TraceRlimitOp(t *testing.T) {
-//	tests := []struct {
-//		line        string
-//		expected    *pbcodec.RlimitOp
-//		expectedErr error
-//	}{
-//		{
-//			`RLIMIT_OP ACCOUNT_LIMITS INS {"owner":"eosio.ram","net_weight":-1,"cpu_weight":-1,"ram_bytes":-1}`,
-//			&pbcodec.RlimitOp{
-//				Operation: pbcodec.RlimitOp_OPERATION_INSERT,
-//				Kind: &pbcodec.RlimitOp_AccountLimits{
-//					AccountLimits: &pbcodec.RlimitAccountLimits{
-//						Owner:     "eosio.ram",
-//						NetWeight: -1,
-//						CpuWeight: -1,
-//						RamBytes:  -1,
-//					},
-//				},
-//			},
-//			nil,
-//		},
-//		{
-//			`RLIMIT_OP ACCOUNT_USAGE UPD {"owner":"eosio","net_usage":{"last_ordinal":0,"value_ex":868696,"consumed":1},"cpu_usage":{"last_ordinal":0,"value_ex":572949,"consumed":101},"ram_usage":1181072}`,
-//			&pbcodec.RlimitOp{
-//				Operation: pbcodec.RlimitOp_OPERATION_UPDATE,
-//				Kind: &pbcodec.RlimitOp_AccountUsage{
-//					AccountUsage: &pbcodec.RlimitAccountUsage{
-//						Owner:    "eosio",
-//						NetUsage: &pbcodec.UsageAccumulator{LastOrdinal: 0, ValueEx: 868696, Consumed: 1},
-//						CpuUsage: &pbcodec.UsageAccumulator{LastOrdinal: 0, ValueEx: 572949, Consumed: 101},
-//						RamUsage: 1181072,
-//					},
-//				},
-//			},
-//			nil,
-//		},
-//	}
-//
-//	for i, test := range tests {
-//		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-//			ctx := newParseCtx()
-//			err := ctx.readRlimitOp(test.line)
-//
-//			require.Equal(t, test.expectedErr, err)
-//
-//			if test.expectedErr == nil {
-//				require.Len(t, ctx.trx.RlimitOps, 1)
-//
-//				expected := protoJSONMarshalIndent(t, test.expected)
-//				actual := protoJSONMarshalIndent(t, ctx.trx.RlimitOps[0])
-//
-//				assert.JSONEq(t, expected, actual, diff.LineDiff(expected, actual))
-//			}
-//		})
-//	}
-//}
-//
-//func Test_readPermOp(t *testing.T) {
-//	auth := &pbcodec.Authority{
-//		Threshold: 1,
-//		Accounts: []*pbcodec.PermissionLevelWeight{
-//			{
-//				Permission: &pbcodec.PermissionLevel{Actor: "eosio", Permission: "active"},
-//				Weight:     1,
-//			},
-//		},
-//	}
-//
-//	tests := []struct {
-//		line        string
-//		expected    *pbcodec.PermOp
-//		expectedErr error
-//	}{
-//		{
-//			`PERM_OP INS 0 {"parent":1,"owner":"eosio.ins","name":"prod.major","last_updated":"2018-06-08T08:08:08.888","auth":{"threshold":1,"keys":[],"accounts":[{"permission":{"actor":"eosio","permission":"active"},"weight":1}],"waits":[]}}`,
-//			&pbcodec.PermOp{
-//				Operation:   pbcodec.PermOp_OPERATION_INSERT,
-//				ActionIndex: 0,
-//				OldPerm:     nil,
-//				NewPerm: &pbcodec.PermissionObject{
-//					ParentId:    1,
-//					Owner:       "eosio.ins",
-//					Name:        "prod.major",
-//					LastUpdated: mustProtoTimestamp(mustTimeParse("2018-06-08T08:08:08.888")),
-//					Authority:   auth,
-//				},
-//			},
-//			nil,
-//		},
-//		{
-//			`PERM_OP UPD 0 {"old":{"parent":2,"owner":"eosio.old","name":"prod.major","last_updated":"2018-06-08T08:08:08.888","auth":{"threshold":1,"keys":[],"accounts":[{"permission":{"actor":"eosio","permission":"active"},"weight":1}],"waits":[]}},"new":{"parent":3,"owner":"eosio.new","name":"prod.major","last_updated":"2018-06-08T08:08:08.888","auth":{"threshold":1,"keys":[],"accounts":[{"permission":{"actor":"eosio","permission":"active"},"weight":1}],"waits":[]}}}`,
-//			&pbcodec.PermOp{
-//				Operation:   pbcodec.PermOp_OPERATION_UPDATE,
-//				ActionIndex: 0,
-//				OldPerm: &pbcodec.PermissionObject{
-//					ParentId:    2,
-//					Owner:       "eosio.old",
-//					Name:        "prod.major",
-//					LastUpdated: mustProtoTimestamp(mustTimeParse("2018-06-08T08:08:08.888")),
-//					Authority:   auth,
-//				},
-//				NewPerm: &pbcodec.PermissionObject{
-//					ParentId:    3,
-//					Owner:       "eosio.new",
-//					Name:        "prod.major",
-//					LastUpdated: mustProtoTimestamp(mustTimeParse("2018-06-08T08:08:08.888")),
-//					Authority:   auth,
-//				},
-//			},
-//			nil,
-//		},
-//		{
-//			`PERM_OP REM 0 {"parent":4,"owner":"eosio.rem","name":"prod.major","last_updated":"2018-06-08T08:08:08.888","auth":{"threshold":1,"keys":[],"accounts":[{"permission":{"actor":"eosio","permission":"active"},"weight":1}],"waits":[]}}`,
-//			&pbcodec.PermOp{
-//				Operation:   pbcodec.PermOp_OPERATION_REMOVE,
-//				ActionIndex: 0,
-//				OldPerm: &pbcodec.PermissionObject{
-//					ParentId:    4,
-//					Owner:       "eosio.rem",
-//					Name:        "prod.major",
-//					LastUpdated: mustProtoTimestamp(mustTimeParse("2018-06-08T08:08:08.888")),
-//					Authority:   auth,
-//				},
-//				NewPerm: nil,
-//			},
-//			nil,
-//		},
-//
-//		// New format
-//		{
-//			`PERM_OP INS 0 2 {"parent":1,"owner":"eosio.ins","name":"prod.major","last_updated":"2018-06-08T08:08:08.888","auth":{"threshold":1,"keys":[],"accounts":[{"permission":{"actor":"eosio","permission":"active"},"weight":1}],"waits":[]}}`,
-//			&pbcodec.PermOp{
-//				Operation:   pbcodec.PermOp_OPERATION_INSERT,
-//				ActionIndex: 0,
-//				OldPerm:     nil,
-//				NewPerm: &pbcodec.PermissionObject{
-//					Id:          2,
-//					ParentId:    1,
-//					Owner:       "eosio.ins",
-//					Name:        "prod.major",
-//					LastUpdated: mustProtoTimestamp(mustTimeParse("2018-06-08T08:08:08.888")),
-//					Authority:   auth,
-//				},
-//			},
-//			nil,
-//		},
-//		{
-//			`PERM_OP UPD 0 4 {"old":{"parent":2,"owner":"eosio.old","name":"prod.major","last_updated":"2018-06-08T08:08:08.888","auth":{"threshold":1,"keys":[],"accounts":[{"permission":{"actor":"eosio","permission":"active"},"weight":1}],"waits":[]}},"new":{"parent":3,"owner":"eosio.new","name":"prod.major","last_updated":"2018-06-08T08:08:08.888","auth":{"threshold":1,"keys":[],"accounts":[{"permission":{"actor":"eosio","permission":"active"},"weight":1}],"waits":[]}}}`,
-//			&pbcodec.PermOp{
-//				Operation:   pbcodec.PermOp_OPERATION_UPDATE,
-//				ActionIndex: 0,
-//				OldPerm: &pbcodec.PermissionObject{
-//					Id:          4,
-//					ParentId:    2,
-//					Owner:       "eosio.old",
-//					Name:        "prod.major",
-//					LastUpdated: mustProtoTimestamp(mustTimeParse("2018-06-08T08:08:08.888")),
-//					Authority:   auth,
-//				},
-//				NewPerm: &pbcodec.PermissionObject{
-//					Id:          4,
-//					ParentId:    3,
-//					Owner:       "eosio.new",
-//					Name:        "prod.major",
-//					LastUpdated: mustProtoTimestamp(mustTimeParse("2018-06-08T08:08:08.888")),
-//					Authority:   auth,
-//				},
-//			},
-//			nil,
-//		},
-//		{
-//			`PERM_OP REM 0 3 {"parent":4,"owner":"eosio.rem","name":"prod.major","last_updated":"2018-06-08T08:08:08.888","auth":{"threshold":1,"keys":[],"accounts":[{"permission":{"actor":"eosio","permission":"active"},"weight":1}],"waits":[]}}`,
-//			&pbcodec.PermOp{
-//				Operation:   pbcodec.PermOp_OPERATION_REMOVE,
-//				ActionIndex: 0,
-//				OldPerm: &pbcodec.PermissionObject{
-//					Id:          3,
-//					ParentId:    4,
-//					Owner:       "eosio.rem",
-//					Name:        "prod.major",
-//					LastUpdated: mustProtoTimestamp(mustTimeParse("2018-06-08T08:08:08.888")),
-//					Authority:   auth,
-//				},
-//				NewPerm: nil,
-//			},
-//			nil,
-//		},
-//	}
-//
-//	for i, test := range tests {
-//		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-//			ctx := newParseCtx()
-//			err := ctx.readPermOp(test.line)
-//
-//			require.Equal(t, test.expectedErr, err)
-//
-//			if test.expectedErr == nil {
-//				require.Len(t, ctx.trx.PermOps, 1)
-//
-//				expected := protoJSONMarshalIndent(t, test.expected)
-//				actual := protoJSONMarshalIndent(t, ctx.trx.PermOps[0])
-//
-//				assert.JSONEq(t, expected, actual, diff.LineDiff(expected, actual))
-//			}
-//		})
-//	}
-//}
-//
+func Test_readAccountChange_Start(t *testing.T) {
+	tests := []struct {
+		name        string
+		trxID       string
+		line        string
+		expectedErr error
+	}{
+		{
+			name:        "Account change",
+			trxID:       "GDRAZ4PbkN3gkHguvoQMRGgz8wXZvoniapcLXLDjg4n2adfmUE9apaEK9fs9vVWLXk1Dv7hGLTnNJdnLVHUNqHp",
+			line:        `ACCOUNT_CHANGE GDRAZ4PbkN3gkHguvoQMRGgz8wXZvoniapcLXLDjg4n2adfmUE9apaEK9fs9vVWLXk1Dv7hGLTnNJdnLVHUNqHp 1 0 7gds7PbCzmHbJStjxA5L5K8cu2LVUakmd3MDXFHSfcic 01000000d38ded24c2a932d0722db7c1a33f7582b101d92d52bd489f32bc68801ff92e7ed38ded24c2a932d0722db7c1a33f7582b101d92d52bd489f32bc68801ff92e7e641f00000000000000b29b3b03000000001f000000b39b3b03000000001e000000b49b3b03000000001d000000b59b3b03000000001c000000b69b3b03000000001b000000b79b3b03000000001a000000b89b3b030000000019000000b99b3b030000000018000000ba9b3b030000000017000000bb9b3b030000000016000000bc9b3b030000000015000000bd9b3b030000000014000000be9b3b030000000013000000bf9b3b030000000012000000c09b3b030000000011000000c19b3b030000000010000000c29b3b03000000000f000000c39b3b03000000000e000000c49b3b03000000000d000000c59b3b03000000000c000000c69b3b03000000000b000000c79b3b03000000000a000000c89b3b030000000009000000c99b3b030000000008000000ca9b3b030000000007000000cb9b3b030000000006000000cc9b3b030000000005000000cd9b3b030000000004000000ce9b3b030000000003000000cf9b3b030000000002000000d09b3b03000000000100000001b19b3b030000000001000000000000007d00000000000000d38ded24c2a932d0722db7c1a33f7582b101d92d52bd489f32bc68801ff92e7e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f000000000000000131000000000000004d00000000000000386802000000000000000000000000004e00000000000000aa6208000000000038680200000000004f000000000000007e750e0000000000aa620800000000005000000000000000a3c71400000000007e750e0000000000510000000000000004d21a0000000000a3c71400000000005200000000000000589720000000000004d21a000000000053000000000000004348260000000000589720000000000054000000000000003a832b000000000043482600000000005500000000000000ea343100000000003a832b00000000005600000000000000b531370000000000ea343100000000005700000000000000c91b3d0000000000b53137000000000058000000000000001749430000000000c91b3d00000000005900000000000000905d49000000000017494300000000005a00000000000000ddae4f0000000000905d4900000000005b00000000000000bed6550000000000ddae4f00000000005c000000000000001ceb5b0000000000bed65500000000005d00000000000000d20b6200000000001ceb5b00000000005e00000000000000ea0e680000000000d20b6200000000005f00000000000000ce9c6d0000000000ea0e6800000000006000000000000000cce8720000000000ce9c6d00000000006100000000000000fb27790000000000cce8720000000000620000000000000001817f0000000000fb2779000000000063000000000000004dbc85000000000001817f0000000000640000000000000006978b00000000004dbc850000000000650000000000000040ac91000000000006978b0000000000660000000000000073dc97000000000040ac9100000000006700000000000000cada9d000000000073dc970000000000680000000000000094eba30000000000cada9d000000000069000000000000003b11aa000000000094eba300000000006a00000000000000594db000000000003b11aa00000000006b000000000000007e82b60000000000594db000000000006c000000000000004160bc00000000007e82b600000000006d00000000000000b304c200000000004160bc00000000006e000000000000008fdcc70000000000b304c200000000006f00000000000000d9c5cd00000000008fdcc700000000007000000000000000a3d3d30000000000d9c5cd000000000071000000000000005bb8d90000000000a3d3d300000000007200000000000000507bdf00000000005bb8d900000000007300000000000000f84ae50000000000507bdf00000000007400000000000000779dea0000000000f84ae500000000007500000000000000acabef0000000000779dea0000000000760000000000000048f6f40000000000acabef00000000007700000000000000a107fa000000000048f6f4000000000078000000000000004134ff0000000000a107fa00000000007900000000000000719c0301000000004134ff00000000007a0000000000000042b8080100000000719c0301000000007b0000000000000001f70d010000000042b80801000000007c00000000000000914613010000000001f70d01000000007d000000000000007a0c1501000000009146130100000000d09b3b0300000000c112d15f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 01000000d38ded24c2a932d0722db7c1a33f7582b101d92d52bd489f32bc68801ff92e7ed38ded24c2a932d0722db7c1a33f7582b101d92d52bd489f32bc68801ff92e7e641f00000000000000b39b3b03000000001f000000b49b3b03000000001e000000b59b3b03000000001d000000b69b3b03000000001c000000b79b3b03000000001b000000b89b3b03000000001a000000b99b3b030000000019000000ba9b3b030000000018000000bb9b3b030000000017000000bc9b3b030000000016000000bd9b3b030000000015000000be9b3b030000000014000000bf9b3b030000000013000000c09b3b030000000012000000c19b3b030000000011000000c29b3b030000000010000000c39b3b03000000000f000000c49b3b03000000000e000000c59b3b03000000000d000000c69b3b03000000000c000000c79b3b03000000000b000000c89b3b03000000000a000000c99b3b030000000009000000ca9b3b030000000008000000cb9b3b030000000007000000cc9b3b030000000006000000cd9b3b030000000005000000ce9b3b030000000004000000cf9b3b030000000003000000d09b3b030000000002000000d19b3b03000000000100000001b29b3b030000000001000000000000007d00000000000000d38ded24c2a932d0722db7c1a33f7582b101d92d52bd489f32bc68801ff92e7e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f000000000000000131000000000000004d00000000000000386802000000000000000000000000004e00000000000000aa6208000000000038680200000000004f000000000000007e750e0000000000aa620800000000005000000000000000a3c71400000000007e750e0000000000510000000000000004d21a0000000000a3c71400000000005200000000000000589720000000000004d21a000000000053000000000000004348260000000000589720000000000054000000000000003a832b000000000043482600000000005500000000000000ea343100000000003a832b00000000005600000000000000b531370000000000ea343100000000005700000000000000c91b3d0000000000b53137000000000058000000000000001749430000000000c91b3d00000000005900000000000000905d49000000000017494300000000005a00000000000000ddae4f0000000000905d4900000000005b00000000000000bed6550000000000ddae4f00000000005c000000000000001ceb5b0000000000bed65500000000005d00000000000000d20b6200000000001ceb5b00000000005e00000000000000ea0e680000000000d20b6200000000005f00000000000000ce9c6d0000000000ea0e6800000000006000000000000000cce8720000000000ce9c6d00000000006100000000000000fb27790000000000cce8720000000000620000000000000001817f0000000000fb2779000000000063000000000000004dbc85000000000001817f0000000000640000000000000006978b00000000004dbc850000000000650000000000000040ac91000000000006978b0000000000660000000000000073dc97000000000040ac9100000000006700000000000000cada9d000000000073dc970000000000680000000000000094eba30000000000cada9d000000000069000000000000003b11aa000000000094eba300000000006a00000000000000594db000000000003b11aa00000000006b000000000000007e82b60000000000594db000000000006c000000000000004160bc00000000007e82b600000000006d00000000000000b304c200000000004160bc00000000006e000000000000008fdcc70000000000b304c200000000006f00000000000000d9c5cd00000000008fdcc700000000007000000000000000a3d3d30000000000d9c5cd000000000071000000000000005bb8d90000000000a3d3d300000000007200000000000000507bdf00000000005bb8d900000000007300000000000000f84ae50000000000507bdf00000000007400000000000000779dea0000000000f84ae500000000007500000000000000acabef0000000000779dea0000000000760000000000000048f6f40000000000acabef00000000007700000000000000a107fa000000000048f6f4000000000078000000000000004134ff0000000000a107fa00000000007900000000000000719c0301000000004134ff00000000007a0000000000000042b8080100000000719c0301000000007b0000000000000001f70d010000000042b80801000000007c00000000000000914613010000000001f70d01000000007d000000000000007b0c1501000000009146130100000000d19b3b0300000000c112d15f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000`,
+			expectedErr: nil,
+		},
+	}
 
-//
-//func Test_readDeepMindVersion(t *testing.T) {
-//	tests := []struct {
-//		name        string
-//		line        string
-//		expectedErr error
-//	}{
-//		{
-//			"version 12",
-//			`DEEP_MIND_VERSION 12`,
-//			nil,
-//		},
-//		{
-//			"version 13",
-//			`DEEP_MIND_VERSION 13 0`,
-//			nil,
-//		},
-//		{
-//			"version 13, unsupported",
-//			`DEEP_MIND_VERSION 14 0`,
-//			errors.New("deep mind reported version 14, but this reader supports only 12, 13"),
-//		},
-//	}
-//
-//	for _, test := range tests {
-//		t.Run(test.name, func(t *testing.T) {
-//			ctx := newParseCtx()
-//			err := ctx.readDeepmindVersion(test.line)
-//
-//			require.Equal(t, test.expectedErr, err)
-//		})
-//	}
-//}
-//
-//func Test_readABIDump_ABI(t *testing.T) {
-//	tests := []struct {
-//		name        string
-//		line        string
-//		expectedErr error
-//	}{
-//		{
-//			"version 12",
-//			`ABIDUMP ABI 44 eosio AAAAAAAAAAAA`,
-//			nil,
-//		},
-//		{
-//			"version 13",
-//			`ABIDUMP ABI eosio AAAAAAAAAAAA`,
-//			nil,
-//		},
-//	}
-//
-//	for _, test := range tests {
-//		t.Run(test.name, func(t *testing.T) {
-//			ctx := newParseCtx()
-//			err := ctx.readABIDump(test.line)
-//
-//			require.Equal(t, test.expectedErr, err)
-//
-//			if test.expectedErr == nil {
-//				contractABI := ctx.abiDecoder.cache.findABI("eosio", 0)
-//				assert.NotNil(t, contractABI)
-//			}
-//		})
-//	}
-//}
-//
-//func mustTimeParse(input string) time.Time {
-//	value, err := time.Parse("2006-01-02T15:04:05", input)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	return value
-//}
-//
-//func reader(in string) io.Reader {
-//	return bytes.NewReader([]byte(in))
-//}
-//
-//var jsonpbMarshaler = &jsonpb.Marshaler{
-//	Indent: "  ",
-//}
-//
-//func protoJSONMarshalIndent(t *testing.T, message proto.Message) string {
-//	value, err := jsonpbMarshaler.MarshalToString(message)
-//	require.NoError(t, err)
-//
-//	return value
-//}
-//
-//func fileExists(path string) bool {
-//	info, err := os.Stat(path)
-//	if os.IsNotExist(err) {
-//		return false
-//	}
-//
-//	if err != nil {
-//		return false
-//	}
-//
-//	return !info.IsDir()
-//}
-//
-//func blockWithConsole(block *pbcodec.Block) bool {
-//	for _, trxTrace := range block.TransactionTraces() {
-//		for _, actTrace := range trxTrace.ActionTraces {
-//			if len(actTrace.Console) > 0 {
-//				return true
-//			}
-//		}
-//	}
-//
-//	return false
-//}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := newParseCtx()
+			ctx.trxTraceMap[test.trxID] = &pbcodec.TransactionTrace{
+				InstructionTraces: []*pbcodec.InstructionTrace{
+					&pbcodec.InstructionTrace{},
+				},
+			}
+			err := ctx.readAccountChange(test.line)
+			require.Equal(t, test.expectedErr, err)
+			text.NewEncoder(os.Stdout).Encode(ctx, nil)
+
+		})
+	}
+}
