@@ -94,8 +94,9 @@ Next page query for a given pubkey, with a cursor of the last order_seq_num retu
 
 ---
 
+* ConsoleReader à whipper
 * mindreader node, writing merged files and serving relayer-style endpoint
-* Firehose dans `dfuse-solana`
+* firehose dans `dfuse-solana` (copy & paste de `dfuse-eosio`)
 * deploy firehose that connects to mindreader node + blocks storage.
 * Write `serum/` injector service, based on firehose
   * Writes to the KVDB
