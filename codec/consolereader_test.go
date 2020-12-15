@@ -24,6 +24,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_readSlot_Process(t *testing.T) {
+	tests := []struct {
+		name        string
+		line        string
+		expectedErr error
+	}{
+		{
+			"SLOT PROCESS full",
+			`SLOT_PROCESS full 0 GTWZGyjoRJTQ9rAdxyMiXYXef2aQwCTGiePYcfFXto2h GTWZGyjoRJTQ9rAdxyMiXYXef2aQwCTGiePYcfFXto2h GTWZGyjoRJTQ9rAdxyMiXYXef2aQwCTGiePYcfFXto2h 0 0 0 0 1 0 0 64 0 3`,
+			nil,
+		},
+		{
+			"SLOT PROCESS partial",
+			`SLOT_PROCESS full 0 GTWZGyjoRJTQ9rAdxyMiXYXef2aQwCTGiePYcfFXto2h GTWZGyjoRJTQ9rAdxyMiXYXef2aQwCTGiePYcfFXto2h GTWZGyjoRJTQ9rAdxyMiXYXef2aQwCTGiePYcfFXto2h 0 0 0 0 1 0 0 64 0 3`,
+			nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := newParseCtx()
+			err := ctx.readSlotProcess(test.line)
+
+			require.Equal(t, test.expectedErr, err)
+
+			err = text.NewEncoder(os.Stdout).Encode(ctx.slot, nil)
+			require.NoError(t, err)
+			//fmt.Println("out:", string(buf.Bytes()))
+
+		})
+	}
+}
 func Test_readTransaction_Start(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -51,6 +83,35 @@ func Test_readTransaction_Start(t *testing.T) {
 		})
 	}
 }
+
+func Test_readTransaction_End(t *testing.T) {
+	tests := []struct {
+		name        string
+		line        string
+		expectedErr error
+	}{
+		{
+			"TRANSACTION End good",
+			`TRANSACTION END rAdPUg2K43akS1gCNsxzzsBU2Uiav3c2c796A7vin67X29X312LEb7GyoSPxNcEgoUmbCesXU2QgNy2TKcAnxZD`,
+			nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := newParseCtx()
+			err := ctx.readTransactionEnd(test.line)
+
+			require.Equal(t, test.expectedErr, err)
+
+			err = text.NewEncoder(os.Stdout).Encode(ctx.slot, nil)
+			require.NoError(t, err)
+			//fmt.Println("out:", string(buf.Bytes()))
+
+		})
+	}
+}
+
 func Test_readInstruction_Start(t *testing.T) {
 	tests := []struct {
 		name        string

@@ -24,9 +24,8 @@ import (
 	"strings"
 
 	bin "github.com/dfuse-io/binary"
-	"github.com/dfuse-io/solana-go"
-
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
+	"github.com/dfuse-io/solana-go"
 	"go.uber.org/zap"
 )
 
@@ -110,10 +109,9 @@ func (l *ConsoleReader) Close() {
 }
 
 type parseCtx struct {
-	slot          *pbcodec.Slot
-	activeSlotNum uint64
-	trxIndex      uint64
-	trxTraceMap   map[string]*pbcodec.TransactionTrace
+	slot        *pbcodec.Slot
+	trxIndex    uint64
+	trxTraceMap map[string]*pbcodec.TransactionTrace
 
 	conversionOptions []conversionOption
 }
@@ -137,8 +135,20 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 
 		// Order of conditions is based (approximately) on those that will appear more often
 		switch {
+		case strings.HasPrefix(line, "SLOT_PROCESS"):
+			err = ctx.readSlotProcess(line)
+
+		case strings.HasPrefix(line, "SLOT_END"):
+			err = ctx.readSlotEnd(line)
+
+		case strings.HasPrefix(line, "SLOT_FAILED"):
+			err = ctx.readSlotFailed(line)
+
 		case strings.HasPrefix(line, "TRANSACTION START"):
 			err = ctx.readTransactionStart(line)
+
+		case strings.HasPrefix(line, "TRANSACTION END"):
+			err = ctx.readTransactionEnd(line)
 
 		case strings.HasPrefix(line, "INSTRUCTION START"):
 			err = ctx.readInstructionTraceStart(line)
@@ -170,16 +180,10 @@ func (l *ConsoleReader) formatError(line string, err error) error {
 	return fmt.Errorf("%s: %s (line %q)", chunks[0], err, line)
 }
 
-type creationOp struct {
-	kind        string // ROOT, NOTIFY, CFA_INLINE, INLINE
-	actionIndex int
-}
-
-func (ctx *parseCtx) resetBlock() {
-	if ctx.activeSlotNum != 0 {
+func (ctx *parseCtx) resetSlot() {
+	if ctx.slot != nil {
 		ctx.resetTrx()
 	}
-
 	ctx.slot = &pbcodec.Slot{}
 }
 
@@ -188,10 +192,104 @@ func (ctx *parseCtx) resetTrx() {
 
 }
 
-func (ctx *parseCtx) readSlotStart(line string) error {
-	ctx.resetTrx()
-	ctx.activeSlotNum = 0 //todo: get slot from line ...
+func (ctx *parseCtx) readSlotProcess(line string) error {
+	ctx.resetSlot()
+
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != 16 {
+		return fmt.Errorf("read transaction provcess: expected 16 fields, got %d", len(chunks))
+	}
+
+	full := chunks[1] == "full"
+	slotID := chunks[3]
+	slotPreviousID := chunks[4]
+
+	slotNumber, err := strconv.Atoi(chunks[2])
+	if err != nil {
+		return fmt.Errorf("read transaction provcess: slotNumber to int: %w", err)
+	}
+
+	rootSlotNum, err := strconv.Atoi(chunks[8])
+	if err != nil {
+		return fmt.Errorf("read transaction provcess: slotNumber to int: %w", err)
+	}
+
+	slot := &pbcodec.Slot{
+		Version:    0,
+		Number:     uint64(slotNumber),
+		PreviousId: slotPreviousID, //from fist full or partial
+		Block:      nil,
+
+		RootSlotNum: uint64(rootSlotNum),
+	}
+
+	if full {
+		ctx.recordSlotProcessFull(slotID, slot)
+	} else {
+		ctx.recordSlotProcessPartial(slot)
+	}
+
 	return nil
+}
+
+func (ctx *parseCtx) recordSlotProcessFull(slotID string, slot *pbcodec.Slot) {
+	if ctx.slot == nil {
+		ctx.slot = slot
+	}
+	ctx.slot.Id = slotID
+}
+
+func (ctx *parseCtx) recordSlotProcessPartial(slot *pbcodec.Slot) {
+	ctx.resetTrx()
+	ctx.slot = slot
+}
+
+func (ctx *parseCtx) readSlotEnd(line string) error {
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != 2 {
+		return fmt.Errorf("read slot end: expected 2 fields, got %d", len(chunks))
+	}
+
+	slotNumber, err := strconv.Atoi(chunks[1])
+	if err != nil {
+		return fmt.Errorf("read slot end: slotNumber to int: %w", err)
+	}
+
+	if ctx.slot == nil || uint64(slotNumber) != ctx.slot.Number {
+		return fmt.Errorf("read slot %d end not matching ctx slot %s", slotNumber, ctx.slot)
+	}
+
+	ctx.slot.TransactionCount = uint32(len(ctx.slot.Transactions))
+	ctx.slot.TransactionTraceCount = uint32(len(ctx.trxTraceMap))
+
+	var trxTraces []*pbcodec.TransactionTrace
+	for _, t := range ctx.trxTraceMap {
+		trxTraces = append(trxTraces, t)
+	}
+
+	ctx.slot.TransactionTraces = trxTraces
+
+	return nil
+}
+
+func (ctx *parseCtx) readSlotFailed(line string) error {
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != 3 {
+		return fmt.Errorf("read slot failed: expected 3 fields, got %d", len(chunks))
+	}
+
+	slotNumber, err := strconv.Atoi(chunks[1])
+	if err != nil {
+		return fmt.Errorf("read transaction provcess: slotNumber to int: %w", err)
+	}
+
+	if ctx.slot == nil || uint64(slotNumber) != ctx.slot.Number {
+		return fmt.Errorf("read slot %d failed not matching ctx slot %s", slotNumber, ctx.slot)
+	}
+
+	msg := chunks[2]
+
+	return fmt.Errorf("slot %d failed: %s", slotNumber, msg)
 }
 
 func (ctx *parseCtx) readTransactionStart(line string) error {
@@ -276,6 +374,25 @@ func (ctx *parseCtx) recordTransactionTrace(trxTrace *pbcodec.TransactionTrace) 
 	ctx.trxIndex++
 
 	return
+}
+
+func (ctx *parseCtx) readTransactionEnd(line string) error {
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != 3 {
+		return fmt.Errorf("read transaction start: expected 3 fields, got %d", len(chunks))
+	}
+
+	ctx.resetTrx()
+
+	id := chunks[2]
+
+	ctx.recordTransactionEnd(id)
+
+	return nil
+}
+
+func (ctx *parseCtx) recordTransactionEnd(trxID string) {
+
 }
 
 func (ctx *parseCtx) readInstructionTraceStart(line string) error {

@@ -36,7 +36,7 @@ func (b *Slot) ID() string {
 }
 
 func (b *Slot) Num() uint64 {
-	return uint64(b.Number)
+	return b.Number
 }
 
 func (b *Slot) Time() (time.Time, error) {
@@ -67,19 +67,20 @@ func (b *Block) PreviousID() string {
 // FIXME: This logic at some point is hard-coded and will need to be re-visited in regard
 //        of the fork logic.
 func (b *Slot) LIBNum() uint64 {
-	if uint64(b.Number) == bstream.GetProtocolFirstStreamableBlock {
+	if b.Number == bstream.GetProtocolFirstStreamableBlock {
 		return bstream.GetProtocolGenesisBlock
 	}
 
-	if b.Number <= 200 {
+	//todo: remove that -10 stuff
+	if b.Number <= 10 {
 		return bstream.GetProtocolFirstStreamableBlock
 	}
 
-	return uint64(b.Number) - 200
+	return b.Number - 10
 }
 
 func (b *Slot) AsRef() bstream.BlockRef {
-	return bstream.NewBlockRef(b.ID(), uint64(b.Number))
+	return bstream.NewBlockRef(b.ID(), b.Number)
 }
 
 func BlockToBuffer(block *Slot) ([]byte, error) {
