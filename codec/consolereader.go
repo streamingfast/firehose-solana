@@ -137,8 +137,17 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 
 		// Order of conditions is based (approximately) on those that will appear more often
 		switch {
-		case strings.HasPrefix(line, "TRANSACTION"):
+		case strings.HasPrefix(line, "TRANSACTION START"):
 			err = ctx.readTransactionStart(line)
+
+		case strings.HasPrefix(line, "INSTRUCTION START"):
+			err = ctx.readInstructionTraceStart(line)
+
+		case strings.HasPrefix(line, "ACCOUNT_CHANGE"):
+			err = ctx.readAccountChange(line)
+
+		case strings.HasPrefix(line, "LAMPORT_CHANGE"):
+			err = ctx.readLamportsChange(line)
 
 		default:
 			zlog.Info("unknown log line", zap.String("line", line))
@@ -368,6 +377,54 @@ func (ctx *parseCtx) recordAccountChange(trxID string, ordinal int, accountChang
 	}
 
 	trxTrace.InstructionTraces[ordinal-1].AccountChanges = append(trxTrace.InstructionTraces[ordinal-1].AccountChanges, accountChange)
+
+	return nil
+}
+
+func (ctx *parseCtx) readLamportsChange(line string) error {
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != 6 {
+		return fmt.Errorf("read lamport change: expected 6 fields, got %d", len(chunks))
+	}
+	trxID := chunks[1]
+	ordinal, err := strconv.Atoi(chunks[2])
+	if err != nil {
+		return fmt.Errorf("read lamport change: ordinal to int: %w", err)
+	}
+
+	owner := chunks[3]
+
+	prevLamports, err := strconv.Atoi(chunks[4])
+	if err != nil {
+		return fmt.Errorf("read lamport change: hex decode prev lamports data: %w", err)
+	}
+
+	newLamports, err := strconv.Atoi(chunks[5])
+	if err != nil {
+		return fmt.Errorf("read lamport change: hex decode new lamports data: %w", err)
+	}
+
+	balanceChange := &pbcodec.BalanceChange{
+		Pubkey:       owner,
+		PrevLamports: uint64(prevLamports),
+		NewLamports:  uint64(newLamports),
+	}
+
+	err = ctx.recordLamportsChange(trxID, ordinal, balanceChange)
+	if err != nil {
+		return fmt.Errorf("read lamports change: %w", err)
+	}
+
+	return nil
+}
+
+func (ctx *parseCtx) recordLamportsChange(trxID string, ordinal int, balanceChange *pbcodec.BalanceChange) error {
+	trxTrace := ctx.trxTraceMap[trxID]
+	if trxTrace == nil {
+		return fmt.Errorf("record balanace change: transaction trace not found in context: %s", trxID)
+	}
+
+	trxTrace.InstructionTraces[ordinal-1].BalanceChanges = append(trxTrace.InstructionTraces[ordinal-1].BalanceChanges, balanceChange)
 
 	return nil
 }

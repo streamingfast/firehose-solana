@@ -8,8 +8,6 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-type Block = Slot
-
 // func MustBlockRefAsProto(ref bstream.BlockRef) *BlockRef {
 // 	if ref == nil || bstream.EqualsBlockRefs(ref, bstream.BlockRefEmpty) {
 // 		return nil

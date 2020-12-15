@@ -110,3 +110,34 @@ func Test_readAccountChange_Start(t *testing.T) {
 		})
 	}
 }
+
+func Test_readLamportChange(t *testing.T) {
+	tests := []struct {
+		name        string
+		trxID       string
+		line        string
+		expectedErr error
+	}{
+		{
+			name:        "Lamport change",
+			trxID:       "rAdPUg2K43akS1gCNsxzzsBU2Uiav3c2c796A7vin67X29X312LEb7GyoSPxNcEgoUmbCesXU2QgNy2TKcAnxZD",
+			line:        `LAMPORT_CHANGE rAdPUg2K43akS1gCNsxzzsBU2Uiav3c2c796A7vin67X29X312LEb7GyoSPxNcEgoUmbCesXU2QgNy2TKcAnxZD 1 11111111111111111111111111111111 0 5000000000`,
+			expectedErr: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := newParseCtx()
+			ctx.trxTraceMap[test.trxID] = &pbcodec.TransactionTrace{
+				InstructionTraces: []*pbcodec.InstructionTrace{
+					&pbcodec.InstructionTrace{},
+				},
+			}
+			err := ctx.readLamportsChange(test.line)
+			require.Equal(t, test.expectedErr, err)
+			text.NewEncoder(os.Stdout).Encode(ctx, nil)
+
+		})
+	}
+}

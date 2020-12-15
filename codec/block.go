@@ -8,26 +8,25 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func BlockFromProto(blk *pbcodec.Block) (*bstream.Block, error) {
-	blockTime, err := blk.Time()
+func BlockFromProto(slot *pbcodec.Slot) (*bstream.Block, error) {
+	blockTime, err := slot.Time()
 	if err != nil {
 		return nil, err
 	}
 
-	content, err := proto.Marshal(blk)
+	content, err := proto.Marshal(slot)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal to binary form: %s", err)
 	}
 
 	return &bstream.Block{
-		Id:          blk.ID(),
-		Number:      blk.Num(),
-		PreviousId:  blk.PreviousID(),
-		Timestamp:   blockTime,
-		LibNum:      blk.LIBNum(),
-		PayloadKind: Protocol_SOL,
-		// PayloadKind:    pbbstream.Protocol_SOL,
-		PayloadVersion: int32(blk.Version),
+		Id:             slot.ID(),
+		Number:         slot.Num(),
+		PreviousId:     slot.PreviousId,
+		Timestamp:      blockTime,
+		LibNum:         slot.LIBNum(),
+		PayloadKind:    Protocol_SOL,
+		PayloadVersion: int32(slot.Version),
 		PayloadBuffer:  content,
 	}, nil
 }
