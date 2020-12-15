@@ -4,6 +4,8 @@ ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 dfusesol="$ROOT/../dfusesol"
 
+export RUST_LOG=solana=info,solana_metrics=error
+
 main() {
   pushd "$ROOT" &> /dev/null
 

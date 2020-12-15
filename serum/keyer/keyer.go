@@ -31,14 +31,14 @@ const (
 //last_written_block => PB:slot_num:slot_id
 
 // orders:[market]:[order_seq_num]:[slot_num] => FillData(side)
-func EncodeFillData(market solana.PublicKey, orderSeqNum uint64, slotNumber uint64) []byte {
+func EncodeFillData(market solana.PublicKey, orderSeqNum uint64, slotNum uint64) []byte {
 
 	key := make([]byte, 1+32+8+8)
 
 	key[0] = PrefixFillData
 	copy(key[1:], market[:])
 	binary.BigEndian.PutUint64(key[33:], orderSeqNum)
-	binary.BigEndian.PutUint64(key[41:], slotNumber)
+	binary.BigEndian.PutUint64(key[41:], slotNum)
 	return key
 }
 
@@ -50,12 +50,12 @@ func DecodeFillData(key []byte) (market solana.PublicKey, orderSeqNum uint64, sl
 }
 
 // order_pubkey:[pubkey]:[rev_slot_num]:[market]:[rev_order_seq_num] => nil
-func EncodeFillsByPubkey(pubkey, market solana.PublicKey, orderSeqNum uint64, slotNumber uint64) []byte {
+func EncodeFillsByPubkey(pubkey, market solana.PublicKey, orderSeqNum uint64, slotNum uint64) []byte {
 	key := make([]byte, 1+32+32+8+8)
 
 	key[0] = PrefixFillsByPubkey
 	copy(key[1:], pubkey[:])
-	binary.BigEndian.PutUint64(key[33:], ^slotNumber)
+	binary.BigEndian.PutUint64(key[33:], ^slotNum)
 	copy(key[41:], market[:])
 	binary.BigEndian.PutUint64(key[73:], ^orderSeqNum)
 
@@ -72,13 +72,13 @@ func DecodeFillsByPubkey(key []byte) (pubkey, market solana.PublicKey, orderSeqN
 }
 
 // order_market:[market]:[pubkey]:[rev_slot_num]:[rev_order_seq_num] => nil
-func EncodeFillsByMarketPubkey(pubkey, market solana.PublicKey, orderSeqNum uint64, slotNumber uint64) []byte {
+func EncodeFillsByMarketPubkey(pubkey, market solana.PublicKey, orderSeqNum uint64, slotNum uint64) []byte {
 	key := make([]byte, 1+32+32+8+8)
 
 	key[0] = PrefixFillsByMarketPubkey
 	copy(key[1:], market[:])
 	copy(key[33:], pubkey[:])
-	binary.BigEndian.PutUint64(key[65:], ^slotNumber)
+	binary.BigEndian.PutUint64(key[65:], ^slotNum)
 	binary.BigEndian.PutUint64(key[73:], ^orderSeqNum)
 
 	return key

@@ -2,4 +2,6 @@ start:
   args:
   - mindreader-node
   flags:
-    common-blockstream-addr=:14003
+    common-blockstream-addr: ":14003"
+    mindreader-node-merge-and-store-directly: true
+
