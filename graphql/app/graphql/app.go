@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	Name              string
+	BlockStoreURL     string // GS path to read batch files from
 	RPCURL            string
 	HTTPListenAddress string
 	RPCWSURL          string
