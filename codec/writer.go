@@ -35,7 +35,7 @@ type BlockWriter struct {
 
 func NewBlockWriter(writer io.Writer) (*BlockWriter, error) {
 	dbinWriter := dbin.NewWriter(writer)
-	err := dbinWriter.WriteHeader(pbbstream.Protocol_EOS.String(), 1)
+	err := dbinWriter.WriteHeader("SOL", 1)
 	if err != nil {
 		return nil, fmt.Errorf("unable to write file header: %s", err)
 	}

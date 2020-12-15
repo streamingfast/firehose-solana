@@ -40,9 +40,8 @@ func NewBlockReader(reader io.Reader) (out *BlockReader, err error) {
 		return nil, fmt.Errorf("unable to read file header: %s", err)
 	}
 
-	protocol := pbbstream.Protocol(pbbstream.Protocol_value[contentType])
-	if protocol != pbbstream.Protocol_EOS && version != 1 {
-		return nil, fmt.Errorf("reader only knows about %s block kind at version 1, got %s at version %d", protocol, contentType, version)
+	if contentType != "SOL" && version != 1 {
+		return nil, fmt.Errorf("reader only knows about block version 1, got %s at version %d", contentType, version)
 	}
 
 	return &BlockReader{
