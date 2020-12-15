@@ -2,18 +2,13 @@ package firehose
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
-	"net"
-	"net/http"
-	"strings"
 	"time"
 
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/bstream/blockstream"
 	blockstreamv2 "github.com/dfuse-io/bstream/blockstream/v2"
 	"github.com/dfuse-io/bstream/hub"
-	"github.com/dfuse-io/derr"
 	_ "github.com/dfuse-io/dfuse-solana/codec"
 	"github.com/dfuse-io/dgraphql/metrics"
 	"github.com/dfuse-io/dgrpc"
@@ -21,7 +16,6 @@ import (
 	"github.com/dfuse-io/dstore"
 	pbbstream "github.com/dfuse-io/pbgo/dfuse/bstream/v1"
 	"github.com/dfuse-io/shutter"
-	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
 
@@ -144,8 +138,8 @@ func (a *App) Run() error {
 
 	go func() {
 		grpcSrv := dgrpc.NewServer(dgrpc.WithLogger(zlog))
-		pbbstream.RegisterBlockStreamV2Server(gs, s)
-		httpSrv := dgrpc.SimpleHTTPServer(grpcSrv, a.config.GRPCListenAddr, a.IsTerminating)
+		pbbstream.RegisterBlockStreamV2Server(grpcSrv, s)
+		httpSrv := dgrpc.SimpleHTTPServer(grpcSrv, a.config.GRPCListenAddr, dgrpc.SimpleHealthCheck(a.IsTerminating))
 		if err := dgrpc.ListenAndServe(httpSrv); err != nil {
 			a.Shutdown(err)
 		}
