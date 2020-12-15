@@ -20,7 +20,6 @@ import (
 
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/dbin"
-	pbbstream "github.com/dfuse-io/pbgo/dfuse/bstream/v1"
 	"github.com/golang/protobuf/proto"
 )
 
