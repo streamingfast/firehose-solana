@@ -78,6 +78,7 @@ github.com/ShinyTrinkets/meta-logger v0.2.0/go.mod h1:cY1KnpPfpLIopR+arZXHYVrVGO
 github.com/ShinyTrinkets/overseer v0.3.0/go.mod h1:MeOEZb808w8+F5WLhiWI2VpOvtkWH55oOlTlAqYI1Pk=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
+github.com/abourget/llerrgroup v0.0.0-20161118145731-75f536392d17 h1:fN3JGcKO6UIO6H5w5HQTOKQ+8v7RlRf5UIs6euMHzsg=
 github.com/abourget/llerrgroup v0.0.0-20161118145731-75f536392d17/go.mod h1:QukSa1Sim/0R4aRlWdiBdAy+0i1PBfOd1WHpfYM1ngA=
 github.com/abourget/llerrgroup v0.2.0 h1:2nPXy6Owo/KOKDQYvjMmS8rsjtitvuP2OEGrqgpj428=
 github.com/abourget/llerrgroup v0.2.0/go.mod h1:QukSa1Sim/0R4aRlWdiBdAy+0i1PBfOd1WHpfYM1ngA=
@@ -193,6 +194,8 @@ github.com/dfuse-io/bstream v0.0.2-0.20200714123252-e9115283f55f h1:3sATpfUBNfPx
 github.com/dfuse-io/bstream v0.0.2-0.20200714123252-e9115283f55f/go.mod h1:BHEANTxf3ORDdJdGmQ+lJyX8JqjUH45WGBvBKBaMLQg=
 github.com/dfuse-io/bstream v0.0.2-0.20201118191855-3c3b8b87518e h1:V2lE2LjLHac5DKpvV3OEec0ztluiwAzbbbEcppw/1zc=
 github.com/dfuse-io/bstream v0.0.2-0.20201118191855-3c3b8b87518e/go.mod h1:6ut64Krpzx5bmOAYr17joofrth6Xk7Cy3WD+DVc9Zd8=
+github.com/dfuse-io/bstream v0.0.2-0.20201211183633-b20d54adfd3d h1:WmMrUJWq+dxlUdriVMKfX/cAr9JKEWy8jK4PIMlMA10=
+github.com/dfuse-io/bstream v0.0.2-0.20201211183633-b20d54adfd3d/go.mod h1:6ut64Krpzx5bmOAYr17joofrth6Xk7Cy3WD+DVc9Zd8=
 github.com/dfuse-io/dauth v0.0.0-20200407002455-d8256e743286/go.mod h1:obh8aJXWndrj0HSW+EYd/HQZiyLYg+fHdOWFMUUtyYM=
 github.com/dfuse-io/dauth v0.0.0-20200529171443-21c0e2d262c2/go.mod h1:tab5biQg59hbrHjaXTjaLcsP3zblx6B0I0Keu03xB44=
 github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb h1:yrE/Ncb9PAjdN7w5Ixx47Oy1kQQdluBfuv7c8D9UaPQ=
@@ -572,12 +575,14 @@ github.com/maoueh/overseer v0.2.1-0.20191024193921-39856397cf3f h1:5G1KYNmPLySs2
 github.com/maoueh/overseer v0.2.1-0.20191024193921-39856397cf3f/go.mod h1:E0cqa1dK90ii2fglIk+u4K3LYXpkb9ZFWVDfbS2++Xk=
 github.com/matishsiao/goInfo v0.0.0-20170803142006-617e6440957e h1:Y+GY+bv5vf1gssphFsGiq6R8qdHxnpDZvYljFnXfhD8=
 github.com/matishsiao/goInfo v0.0.0-20170803142006-617e6440957e/go.mod h1:yLZrFIhv+Z20hxHvcZpEyKVQp9HMsOJkXAxx7yDqtvg=
+github.com/mattn/go-colorable v0.0.9 h1:UVL0vNpWh04HeJXV0KLcaT7r06gOH2l4OW6ddYRUIY4=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.1.2 h1:/bC9yWikZXAL9uJdulbSfyVNIR3n3trXl+v8+1sx8mU=
 github.com/mattn/go-colorable v0.1.2/go.mod h1:U0ppj6V5qS13XJ6of8GYAs25YV2eR4EVcfRqFIhoBtE=
 github.com/mattn/go-ieproxy v0.0.0-20190610004146-91bb50d98149 h1:HfxbT6/JcvIljmERptWhwa8XzP7H3T+Z2N26gTsaDaA=
 github.com/mattn/go-ieproxy v0.0.0-20190610004146-91bb50d98149/go.mod h1:31jz6HNzdxOmlERGGEc4v/dMssOfmp2p5bT/okiKFFc=
 github.com/mattn/go-isatty v0.0.3/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
+github.com/mattn/go-isatty v0.0.4 h1:bnP0vzxcAdeI1zdubAl5PjU6zsERjGZb7raWodagDYs=
 github.com/mattn/go-isatty v0.0.4/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
 github.com/mattn/go-isatty v0.0.8 h1:HLtExJ+uU2HOZ+wI0Tt5DtUDrx8yhUqDcp7fYERX4CE=
 github.com/mattn/go-isatty v0.0.8/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hdxcsrc5s=
