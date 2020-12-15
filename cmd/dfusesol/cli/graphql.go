@@ -32,7 +32,6 @@ func init() {
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
 			return graphql.New(&graphql.Config{
-				Name:              viper.GetString("graphql-config-name"),
 				RPCURL:            viper.GetString("graphql-rpc-url"),
 				RPCWSURL:          viper.GetString("graphql-rpc-ws-url"),
 				HTTPListenAddress: viper.GetString("graphql-http-listen-addr"),
