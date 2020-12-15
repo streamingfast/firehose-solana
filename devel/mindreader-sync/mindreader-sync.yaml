@@ -2,3 +2,4 @@ start:
   args:
   - mindreader-node
   flags:
+    common-blockstream-addr=:14003

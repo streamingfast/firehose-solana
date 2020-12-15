@@ -30,6 +30,7 @@ function main() {
   pushd "$ROOT/pb" &> /dev/null
 #  generate "dfuse/eosio/abicodec/v1/abicodec.proto"
   generate "dfuse/solana/codec/v1/codec.proto"
+  generate "dfuse/solana/serum/v1/rows.proto"
 #  generate "dfuse/eosio/statedb/v1/" "statedb.proto" "tablet.proto" "singlet.proto"
 #  generate "dfuse/eosio/trxdb/v1/trxdb.proto"
 #  generate "dfuse/eosio/funnel/v1/funnel.proto"
