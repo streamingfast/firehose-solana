@@ -11,7 +11,7 @@ require (
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
 	github.com/dfuse-io/dgraphql v0.0.1
 	github.com/dfuse-io/dgrpc v0.0.0-20201215171222-11bde2006cf9
-	github.com/dfuse-io/dlauncher v0.0.0-20201215173704-18c00ca683d1
+	github.com/dfuse-io/dlauncher v0.0.0-20201215203933-750a56ede40d
 	github.com/dfuse-io/dmetrics v0.0.0-20200508152325-93e7e9d576bb
 	github.com/dfuse-io/dstore v0.1.1-0.20201124190907-4b1585267864
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
@@ -25,6 +25,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
+	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
