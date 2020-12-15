@@ -18,3 +18,4 @@ dashboard/client/.npmrc
 /dashboard/client/node_modules
 /dashboard/dashboard-build
 dfuse-data
+/deploy/dfusesol
