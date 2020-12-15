@@ -141,24 +141,28 @@ func RegisterSolanaNodeApp(kind string) {
 				p = profiler.GetInstance(appLogger)
 			}
 
-			identityFile := filepath.Join(configDir, "identity.json")
-			if !mustFileExists(identityFile) {
-				return nil, fmt.Errorf("identity file %q does not exist but it should", identityFile)
-			}
-
-			voteAccountFile := identityFile
-			if mustFileExists(filepath.Join(configDir, "vote-account.json")) {
-				voteAccountFile = filepath.Join(configDir, "vote-account.json")
-			}
-
 			arguments := append([]string{
-				"--identity", identityFile,
-				"--vote-account", voteAccountFile,
 				"--ledger", dataDir,
 				"--gossip-port", viper.GetString(app + "-gossip-port"),
 				"--dynamic-port-range", fmt.Sprintf("%s-%s", viper.GetString(app+"-p2p-port-start"), viper.GetString(app+"-p2p-port-end")),
 				"--log", "-",
 			})
+			if app == "miner" {
+				identityFile := filepath.Join(configDir, "identity.json")
+				if !mustFileExists(identityFile) {
+					return nil, fmt.Errorf("identity file %q does not exist but it should", identityFile)
+				}
+
+				voteAccountFile := identityFile
+				if mustFileExists(filepath.Join(configDir, "vote-account.json")) {
+					voteAccountFile = filepath.Join(configDir, "vote-account.json")
+				}
+
+				arguments = append(arguments,
+					"--identity", identityFile,
+					"--vote-account", voteAccountFile,
+				)
+			}
 
 			rpcPort := viper.GetString(app + "-rpc-port")
 			if rpcPort != "" {
@@ -239,6 +243,14 @@ func RegisterSolanaNodeApp(kind string) {
 						"--trusted-validator", "GdnSyH3YtwcxFvQrVVJMm1JhTS4QVX7MFsX56uJLUfiZ",
 						"--trusted-validator", "DE1bawNcRJB9rVm3buyMVfr8mBEoyyu73NBovf2oXJsJ",
 						"--trusted-validator", "CakcnaRDHka2gXyfbEd2d3xsvkJkqsLw2akB3zsN1D2S",
+						"--trusted-validator", "tEBPZWSAdpzQoVzWBFD2qVGmZ7vB3Mh1Jq4tGZBx5eA",
+						"--trusted-validator", "CVAAQGA8GBzKi4kLdmpDuJnpkSik6PMWSvRk3RDds9K8",
+						"--trusted-validator", "ba2eZEU27TqR1MB9WUPJ2F7dcTrNsgdx38tBg53GexZ",
+						"--trusted-validator", "HzvGtvXFzMeJwNYcUu5pw8yyRxF2tLEvDSSFsAEBcBK2",
+						"--trusted-validator", "J4B32eD2PmwCZyre5SWQS1jCU4NkiGGYLNapg9f8Dkqo",
+						"--trusted-validator", "4TJZp9Ho82FrcRcBQes5oD52Y3QYeCxkpqWmjxmySQFY",
+						"--trusted-validator", "GosJ8GHbSUunTQPY5xEyjhY2Eg5a9qSuPhNC4Ctztr7y",
+						"--trusted-validator", "6cgsK8ph5tNUCiKG5WXLMZFX1CoL4jzuVouTPBwPC8fk",
 						"--expected-genesis-hash", "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
 					)
 				} else if network == "testnet" {

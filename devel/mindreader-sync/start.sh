@@ -29,7 +29,7 @@ main() {
     rm -rf dfuse-data &> /dev/null || true
   fi
 
-  exec $dfusesol -c $(basename $ROOT).yaml start --mindreader-node-network="$network" "$@"
+  exec $dfusesol -c $(basename $ROOT).yaml start mindreader-node,firehose --mindreader-node-network="$network" "$@"
 }
 
 usage_error() {

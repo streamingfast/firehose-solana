@@ -13,7 +13,7 @@ func init() {
 		ID:          "firehose",
 		Title:       "Block Firehose",
 		Description: "Provides on-demand filtered blocks, depends on common-blocks-store-url and common-blockstream-addr",
-		MetricsID:   "merged-filter",
+		MetricsID:   "firehose",
 		Logger:      launcher.NewLoggingDef("github.com/dfuse-io/dfuse-solana/firehose.*", nil),
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("firehose-grpc-listen-addr", FirehoseGRPCServingAddr, "Address on which the firehose will listen")
