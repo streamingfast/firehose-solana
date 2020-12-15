@@ -278,11 +278,11 @@ func RegisterSolanaNodeApp(kind string) {
 			if kind == "mindreader" {
 				appLogger.Info("configuring node as a mindreader")
 
-				if !hasExtraArgument(extraArguments, "--no-snapshot-fetch") {
-					arguments = append(arguments,
-						"--no-snapshot-fetch",
-					)
-				}
+				//if !hasExtraArgument(extraArguments, "--no-snapshot-fetch") {
+				//	arguments = append(arguments,
+				//		"--no-snapshot-fetch",
+				//	)
+				//}
 			}
 
 			if len(extraArguments) > 0 {
@@ -445,7 +445,7 @@ func readConfigFile(kind string, file string) (string, error) {
 }
 
 func getExtraArguments(kind string) (out []string) {
-	extraArguments := viper.GetString(kind + "node-extra-arguments")
+	extraArguments := viper.GetString(kind + "-node-extra-arguments")
 	if extraArguments != "" {
 		for _, arg := range strings.Split(extraArguments, " ") {
 			out = append(out, arg)

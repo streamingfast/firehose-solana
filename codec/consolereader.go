@@ -126,7 +126,7 @@ func newParseCtx() *parseCtx {
 
 func (l *ConsoleReader) Read() (out interface{}, err error) {
 	ctx := l.ctx
-
+	zlog.Debug("start reading new slot.")
 	for line := range l.readBuffer {
 		line = line[6:]
 
@@ -194,6 +194,7 @@ func (ctx *parseCtx) resetTrx() {
 }
 
 func (ctx *parseCtx) readSlotProcess(line string) error {
+	zlog.Debug("reading slot process:", zap.String("line", line))
 	if ctx.finalized {
 		ctx.resetSlot()
 	}
