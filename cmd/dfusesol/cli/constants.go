@@ -43,6 +43,7 @@ const (
 	FilteringRelayerServingAddr   string = ":14024"
 	TokenmetaGRPCServingAddr      string = ":14025"
 	FirehoseGRPCServingAddr       string = ":14026"
+	SolanaLoaderHTTPServingAddr   string = ":14027"
 
 	// Solana node instance port definitions
 	MinerNodeRPCPort      string = "14100"
