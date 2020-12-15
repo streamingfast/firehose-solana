@@ -29,7 +29,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var supportedVersions = []string{"12", "13"}
+var supportedVersions = []string{"1", "1"}
 
 type conversionOption interface{}
 type ConsoleReaderOption interface {
@@ -114,6 +114,7 @@ type parseCtx struct {
 	trxTraceMap map[string]*pbcodec.TransactionTrace
 
 	conversionOptions []conversionOption
+	finalized         bool
 }
 
 func newParseCtx() *parseCtx {
@@ -139,8 +140,7 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 			err = ctx.readSlotProcess(line)
 
 		case strings.HasPrefix(line, "SLOT_END"):
-			err = ctx.readSlotEnd(line)
-
+			return ctx.readSlotEnd(line)
 		case strings.HasPrefix(line, "SLOT_FAILED"):
 			err = ctx.readSlotFailed(line)
 
@@ -184,7 +184,8 @@ func (ctx *parseCtx) resetSlot() {
 	if ctx.slot != nil {
 		ctx.resetTrx()
 	}
-	ctx.slot = &pbcodec.Slot{}
+	ctx.finalized = false
+	ctx.slot = nil
 }
 
 func (ctx *parseCtx) resetTrx() {
@@ -193,7 +194,9 @@ func (ctx *parseCtx) resetTrx() {
 }
 
 func (ctx *parseCtx) readSlotProcess(line string) error {
-	ctx.resetSlot()
+	if ctx.finalized {
+		ctx.resetSlot()
+	}
 
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 16 {
@@ -215,7 +218,7 @@ func (ctx *parseCtx) readSlotProcess(line string) error {
 	}
 
 	slot := &pbcodec.Slot{
-		Version:    0,
+		Version:    1,
 		Number:     uint64(slotNumber),
 		PreviousId: slotPreviousID, //from fist full or partial
 		Block:      nil,
@@ -244,19 +247,19 @@ func (ctx *parseCtx) recordSlotProcessPartial(slot *pbcodec.Slot) {
 	ctx.slot = slot
 }
 
-func (ctx *parseCtx) readSlotEnd(line string) error {
+func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 2 {
-		return fmt.Errorf("read slot end: expected 2 fields, got %d", len(chunks))
+		return nil, fmt.Errorf("read slot end: expected 2 fields, got %d", len(chunks))
 	}
 
 	slotNumber, err := strconv.Atoi(chunks[1])
 	if err != nil {
-		return fmt.Errorf("read slot end: slotNumber to int: %w", err)
+		return nil, fmt.Errorf("read slot end: slotNumber to int: %w", err)
 	}
 
 	if ctx.slot == nil || uint64(slotNumber) != ctx.slot.Number {
-		return fmt.Errorf("read slot %d end not matching ctx slot %s", slotNumber, ctx.slot)
+		return nil, fmt.Errorf("read slot %d end not matching ctx slot %s", slotNumber, ctx.slot)
 	}
 
 	ctx.slot.TransactionCount = uint32(len(ctx.slot.Transactions))
@@ -268,8 +271,8 @@ func (ctx *parseCtx) readSlotEnd(line string) error {
 	}
 
 	ctx.slot.TransactionTraces = trxTraces
-
-	return nil
+	ctx.finalized = true
+	return ctx.slot, nil
 }
 
 func (ctx *parseCtx) readSlotFailed(line string) error {
@@ -288,7 +291,7 @@ func (ctx *parseCtx) readSlotFailed(line string) error {
 	}
 
 	msg := chunks[2]
-
+	ctx.finalized = true
 	return fmt.Errorf("slot %d failed: %s", slotNumber, msg)
 }
 
@@ -446,8 +449,8 @@ func (ctx *parseCtx) recordInstructionTrace(trxID string, instruction *pbcodec.I
 
 func (ctx *parseCtx) readAccountChange(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 7 {
-		return fmt.Errorf("read account change: expected 7 fields, got %d", len(chunks))
+	if len(chunks) != 6 {
+		return fmt.Errorf("read account change: expected 6 fields, got %d", len(chunks))
 	}
 	trxID := chunks[1]
 	ordinal, err := strconv.Atoi(chunks[2])
@@ -455,20 +458,14 @@ func (ctx *parseCtx) readAccountChange(line string) error {
 		return fmt.Errorf("read account change: ordinal to int: %w", err)
 	}
 
-	parentOrdinal, err := strconv.Atoi(chunks[3])
-	if err != nil {
-		return fmt.Errorf("read account change: parent ordinal to int: %w", err)
-	}
-	_ = parentOrdinal
+	pubKey := chunks[3]
 
-	pubKey := chunks[4]
-
-	prevData, err := hex.DecodeString(chunks[5])
+	prevData, err := hex.DecodeString(chunks[4])
 	if err != nil {
 		return fmt.Errorf("read account change: hex decode prev data: %w", err)
 	}
 
-	newData, err := hex.DecodeString(chunks[6])
+	newData, err := hex.DecodeString(chunks[5])
 	if err != nil {
 		return fmt.Errorf("read account change: hex decode new data: %w", err)
 	}
@@ -553,4 +550,30 @@ func splitNToM(line string, min, max int) ([]string, error) {
 	}
 
 	return chunks, nil
+}
+
+func (ctx *parseCtx) readDeepmindVersion(line string) error {
+	chunks, err := splitNToM(line, 2, 3)
+	if err != nil {
+		return err
+	}
+
+	majorVersion := chunks[1]
+	if !inSupportedVersion(majorVersion) {
+		return fmt.Errorf("deep mind reported version %s, but this reader supports only %s", majorVersion, strings.Join(supportedVersions, ", "))
+	}
+
+	zlog.Info("read deep mind version", zap.String("major_version", majorVersion))
+
+	return nil
+}
+
+func inSupportedVersion(majorVersion string) bool {
+	for _, supportedVersion := range supportedVersions {
+		if majorVersion == supportedVersion {
+			return true
+		}
+	}
+
+	return false
 }
