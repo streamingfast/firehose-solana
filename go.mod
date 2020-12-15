@@ -9,9 +9,9 @@ require (
 	github.com/dfuse-io/bstream v0.0.2-0.20201211183633-b20d54adfd3d
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
-	github.com/dfuse-io/dgraphql v0.0.1
 	github.com/dfuse-io/dgrpc v0.0.0-20201215171222-11bde2006cf9
-	github.com/dfuse-io/dlauncher v0.0.0-20200715193603-ea2a15e9e193
+	github.com/dfuse-io/dgraphql v0.0.1
+	github.com/dfuse-io/dlauncher v0.0.0-20201215173704-18c00ca683d1
 	github.com/dfuse-io/dmetrics v0.0.0-20200508152325-93e7e9d576bb
 	github.com/dfuse-io/dstore v0.1.1-0.20201124190907-4b1585267864
 	github.com/dfuse-io/kvdb v0.0.0-20200508203924-c107cb0b2fa2
@@ -28,6 +28,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
+	google.golang.org/grpc v1.29.1
 	go.uber.org/atomic v1.6.0
 	go.uber.org/zap v1.16.0
 )

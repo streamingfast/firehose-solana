@@ -320,7 +320,7 @@ func RegisterSolanaNodeApp(kind string) {
 				}
 
 				consoleReaderBlockTransformer := func(obj interface{}) (*bstream.Block, error) {
-					blk, ok := obj.(*pbcodec.Block)
+					blk, ok := obj.(*pbcodec.Slot)
 					if !ok {
 						return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
 					}
