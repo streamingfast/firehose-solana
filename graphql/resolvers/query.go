@@ -1,8 +1,8 @@
 package resolvers
 
 import (
-	"github.com/dfuse-io/dfuse-eosio/dgraphql/types"
 	"github.com/dfuse-io/dfuse-solana/token"
+	"github.com/dfuse-io/dgraphql/types"
 	"github.com/dfuse-io/solana-go"
 )
 
