@@ -1,0 +1,8 @@
+start:
+  args:
+  - dgraphql
+  flags:
+    common-rpc-endpoint: "https://api.mainnet-beta.solana.com/rpc"
+    common-rpc-ws-endpoint: "wss://api.mainnet-beta.solana.com/rpc"
+    dgraphql-http-addr: ":8080"
+    dgraphql-grpc-addr: ":9000"

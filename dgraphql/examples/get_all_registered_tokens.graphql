@@ -1,0 +1,13 @@
+{
+  registeredTokens {
+    address
+    mintAuthority
+    freezeAuthority
+    supply
+    decimals
+    symbol
+    name
+    logo
+    website
+  }
+}

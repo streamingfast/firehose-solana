@@ -5,11 +5,12 @@ go 1.14
 require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
-	github.com/dfuse-io/binary v0.0.0-20201123150056-096380ef3e5d
+	github.com/dfuse-io/binary v0.0.0-20201216050955-b339f1d2cdbe
 	github.com/dfuse-io/bstream v0.0.2-0.20201211183633-b20d54adfd3d
+	github.com/dfuse-io/dauth v0.0.0-20200529171443-21c0e2d262c2
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
-	github.com/dfuse-io/dgraphql v0.0.1
+	github.com/dfuse-io/dgraphql v0.0.2-0.20201204213310-1a60670e318b
 	github.com/dfuse-io/dgrpc v0.0.0-20201215171222-11bde2006cf9
 	github.com/dfuse-io/dlauncher v0.0.0-20201215203933-750a56ede40d
 	github.com/dfuse-io/dmetrics v0.0.0-20200508152325-93e7e9d576bb
@@ -20,7 +21,7 @@ require (
 	github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37
 	github.com/dfuse-io/pbgo v0.0.6-0.20201021183128-ec7a7f2c6bff
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
-	github.com/dfuse-io/solana-go v0.2.1-0.20201211060155-98efad3ab010
+	github.com/dfuse-io/solana-go v0.2.1-0.20201216203407-2c248b4b007b
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0

@@ -1,0 +1,9 @@
+query ($account: String!) {
+  token(address: $account) {
+    address
+    mintAuthority
+    freezeAuthority
+    supply
+    decimals
+  }
+}

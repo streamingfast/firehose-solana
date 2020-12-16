@@ -162,18 +162,18 @@ func fileExists(file string) (bool, error) {
 
 func setupSysctl() error {
 	out, err := sysctl.Get("vm.max_map_count")
-	if err != nil {
-		return fmt.Errorf("can't retrieve value for vm.max_map_count sysctl: %w", err)
+	if err == nil {
+		val, err := strconv.Atoi(out)
+		if err != nil {
+			return fmt.Errorf("can't convert value %q of vm.max_map_count: %w", out, err)
+		}
+
+		if val < 500000 {
+			return fmt.Errorf("vm.max_map_count too low, set it to at least 500000")
+		}
+	} else {
+		userLog.Printf("Unable to retrieve sysctl vm.max_map_count value, maybe your OS does not suppor it: %s", err)
 	}
 
-	val, err := strconv.Atoi(out)
-	if err != nil {
-		return fmt.Errorf("can't convert value %q of vm.max_map_count: %w", out, err)
-	}
-
-	if val < 500000 {
-		return fmt.Errorf("vm.max_map_count too low, set it to at least 500000")
-	}
-
-	return launcher.SetMaxOpenFilesLimit(1000000, 24576 /* see launcher/setup.go */)
+	return launcher.SetMaxOpenFilesLimit(1000000, 24576)
 }

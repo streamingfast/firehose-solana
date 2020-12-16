@@ -1,0 +1,9 @@
+{
+  tokens {
+    address
+    mintAuthority
+    freezeAuthority
+    supply
+    decimals
+  }
+}
