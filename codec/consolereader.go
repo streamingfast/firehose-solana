@@ -141,6 +141,7 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 
 		case strings.HasPrefix(line, "SLOT_END"):
 			return ctx.readSlotEnd(line)
+
 		case strings.HasPrefix(line, "SLOT_FAILED"):
 			err = ctx.readSlotFailed(line)
 
@@ -160,7 +161,7 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 			err = ctx.readLamportsChange(line)
 
 		default:
-			zlog.Info("unknown log line", zap.String("line", line))
+			zlog.Warn("unknown log line", zap.String("line", line))
 		}
 
 		if err != nil {
@@ -190,7 +191,6 @@ func (ctx *parseCtx) resetSlot() {
 
 func (ctx *parseCtx) resetTrx() {
 	ctx.trxTraceMap = map[string]*pbcodec.TransactionTrace{}
-
 }
 
 func (ctx *parseCtx) readSlotProcess(line string) error {
@@ -264,14 +264,12 @@ func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 	}
 
 	ctx.slot.TransactionCount = uint32(len(ctx.slot.Transactions))
-	ctx.slot.TransactionTraceCount = uint32(len(ctx.trxTraceMap))
+	ctx.slot.TransactionTraceCount = uint32(len(ctx.slot.TransactionTraces))
 
-	var trxTraces []*pbcodec.TransactionTrace
-	for _, t := range ctx.trxTraceMap {
-		trxTraces = append(trxTraces, t)
+	if len(ctx.trxTraceMap) != 0 {
+		return nil, fmt.Errorf("some transactions are not ended when the slot ends: %q", ctx.trxTraceMap)
 	}
 
-	ctx.slot.TransactionTraces = trxTraces
 	ctx.finalized = true
 	return ctx.slot, nil
 }
@@ -301,8 +299,6 @@ func (ctx *parseCtx) readTransactionStart(line string) error {
 	if len(chunks) != 4 {
 		return fmt.Errorf("read transaction start: expected 4 fields, got %d", len(chunks))
 	}
-
-	ctx.resetTrx()
 
 	id := chunks[2]
 	signatures := []string{id}
@@ -386,17 +382,16 @@ func (ctx *parseCtx) readTransactionEnd(line string) error {
 		return fmt.Errorf("read transaction start: expected 3 fields, got %d", len(chunks))
 	}
 
-	ctx.resetTrx()
-
 	id := chunks[2]
-
-	ctx.recordTransactionEnd(id)
+	trx := ctx.trxTraceMap[id]
+	ctx.recordTransactionEnd(trx)
+	delete(ctx.trxTraceMap, id)
 
 	return nil
 }
 
-func (ctx *parseCtx) recordTransactionEnd(trxID string) {
-
+func (ctx *parseCtx) recordTransactionEnd(trx *pbcodec.TransactionTrace) {
+	ctx.slot.TransactionTraces = append(ctx.slot.TransactionTraces, trx)
 }
 
 func (ctx *parseCtx) readInstructionTraceStart(line string) error {

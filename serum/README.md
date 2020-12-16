@@ -104,3 +104,23 @@ Next page query for a given pubkey, with a cursor of the last order_seq_num retu
 * `serum/client` to query fills
 * dgraphql integration to do the `SerumClient::Fills` query.
 * dgraphql integration to resolve market and token metadata
+
+
+
+[SLOT1]
+
+  [Entry: 1 trx]
+DMLOG next batch
+  [Entry: 1 trx]
+DMLOG next batch
+  [Entry: 2 trx]
+DMLOG next batch
+  [Entry: 0 trx]
+DMLOG next batch
+  [Entry: 25 trx]
+DMLOG next batch
+  [Entry: 25 trx]
+DMLOG next batch
+  [Entry: 0 trx]
+
+[SLOT2]
