@@ -252,8 +252,8 @@ func (ctx *parseCtx) recordSlotProcessPartial(slot *pbcodec.Slot) {
 // SLOT_END 3 120938102938 1029830129830192
 func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 2 {
-		return nil, fmt.Errorf("read slot end: expected 2 fields, got %d", len(chunks))
+	if len(chunks) != 4 {
+		return nil, fmt.Errorf("read slot end: expected 4 fields, got %d", len(chunks))
 	}
 
 	slotNumber, err := strconv.Atoi(chunks[1])
@@ -274,7 +274,7 @@ func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 	ctx.slot.ClockUnixTimestamp = uint64(clockTimestamp)
 
 	if ctx.slot == nil || uint64(slotNumber) != ctx.slot.Number {
-		return nil, fmt.Errorf("read slot %d end not matching ctx slot %s", slotNumber, ctx.slot)
+		return nil, fmt.Errorf("read slot %d end not matching ctx slot %d", slotNumber, ctx.slot.Number)
 	}
 
 	ctx.slot.TransactionCount = uint32(len(ctx.slot.Transactions))
@@ -299,7 +299,7 @@ func (ctx *parseCtx) readSlotFailed(line string) error {
 	}
 
 	if ctx.slot == nil || uint64(slotNumber) != ctx.slot.Number {
-		return fmt.Errorf("read slot %d failed not matching ctx slot %s", slotNumber, ctx.slot)
+		return fmt.Errorf("read slot %d failed not matching ctx slot %d", slotNumber, ctx.slot.Number)
 	}
 
 	msg := chunks[2]
@@ -358,13 +358,14 @@ func (ctx *parseCtx) recordTransaction(trx *pbcodec.Transaction) {
 	ctx.trxIndex++
 }
 
+// TRX_END signature...
 func (ctx *parseCtx) readTransactionEnd(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 3 {
-		return fmt.Errorf("read transaction start: expected 3 fields, got %d", len(chunks))
+	if len(chunks) != 2 {
+		return fmt.Errorf("read transaction start: expected 2 fields, got %d", len(chunks))
 	}
 
-	id := chunks[2]
+	id := chunks[1]
 	trx := ctx.trxMap[id]
 	ctx.recordTransactionEnd(trx)
 	delete(ctx.trxMap, id)

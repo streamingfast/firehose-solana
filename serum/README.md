@@ -54,16 +54,18 @@ type Token {
 ```
 
 
+order_seq_num = sub-element of the order_id
+
 EventQueue:
   write:
-    orders:[market]:[order_seq_num]:[rev_slot_num] => FillData(side)
+    filldata:[market]:[order_seq_num]:[rev_slot_num]:[slot_scoped_index_counter] => FillData(side)
 
-NewOrder:
+RequestQueue (NewOrder):
   write:
     // to query all markets, for a pubkey
-    order_pubkey:[pubkey]:[rev_slot_num]:[market]:[rev_order_seq_num] => nil
+    order_id_by_pubkey:[pubkey]:[rev_slot_num]:[market]:[rev_order_seq_num] => nil
     // to query a single market for a given pubkey
-    order_market:[market]:[pubkey]:[rev_slot_num]:[rev_order_seq_num] => nil
+    order_id_by_pubkey_market:[market]:[pubkey]:[rev_slot_num]:[rev_order_seq_num] => nil
 
 LastWrittenBlock:
   write:
