@@ -14,6 +14,7 @@ require (
 	github.com/dfuse-io/dlauncher v0.0.0-20201215203933-750a56ede40d
 	github.com/dfuse-io/dmetrics v0.0.0-20200508152325-93e7e9d576bb
 	github.com/dfuse-io/dstore v0.1.1-0.20201124190907-4b1585267864
+	github.com/dfuse-io/jsonpb v0.0.0-20200406211248-c5cf83f0e0c0
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
 	github.com/dfuse-io/logging v0.0.0-20201125153217-f29c382faa42
 	github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37

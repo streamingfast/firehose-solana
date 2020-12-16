@@ -204,6 +204,7 @@ github.com/dfuse-io/dtracing v0.0.0-20200406213603-4b0c0063b125 h1:XvwJj/xDY0TQV
 github.com/dfuse-io/dtracing v0.0.0-20200406213603-4b0c0063b125/go.mod h1:SA/v5q2RIuah2W5uvVldEUwfFprEhGiw66Id0j68rtw=
 github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807 h1:UrLCef4qXSCrHhxbp/YvAVsQtdhAV6OrsEdDGIh7G+o=
 github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
+github.com/dfuse-io/jsonpb v0.0.0-20200406211248-c5cf83f0e0c0 h1:J5o67BQHTqQJsP2krc9770evS3TmkbltKKYMDmq2a3k=
 github.com/dfuse-io/jsonpb v0.0.0-20200406211248-c5cf83f0e0c0/go.mod h1:Qt4EPDfP8T2d/eN96nonFDEyJDMUD3oa/C8LQBX2OAs=
 github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e h1:n2ZdMTCstpa87I8DIHbFAxB1gwKK0vQzhnebHmP3KrU=
 github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e/go.mod h1:X3CqnReRyUXsj/0qhX98RiMisJOD1C3G58dW0h+4gX0=
