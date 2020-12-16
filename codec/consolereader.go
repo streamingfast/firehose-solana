@@ -109,7 +109,7 @@ func (l *ConsoleReader) Close() {
 type parseCtx struct {
 	slot     *pbcodec.Slot
 	trxIndex uint64
-	trxMap   map[string]*trxCtx
+	trxMap   map[string]*pbcodec.Transaction
 
 	conversionOptions []conversionOption
 	finalized         bool
@@ -143,13 +143,13 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 		case strings.HasPrefix(line, "SLOT_FAILED"):
 			err = ctx.readSlotFailed(line)
 
-		case strings.HasPrefix(line, "TRX_S"):
+		case strings.HasPrefix(line, "TRX_START"):
 			err = ctx.readTransactionStart(line)
 
-		case strings.HasPrefix(line, "TRX_E"):
+		case strings.HasPrefix(line, "TRX_END"):
 			err = ctx.readTransactionEnd(line)
 
-		case strings.HasPrefix(line, "TRX_L"):
+		case strings.HasPrefix(line, "TRX_LOG"):
 			err = ctx.readTransactionLog(line)
 
 		case strings.HasPrefix(line, "INST_S"):
@@ -265,11 +265,13 @@ func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error decoding genesis timestamp in seconds: %w", err)
 	}
+	ctx.slot.GenesisUnixTimestamp = uint64(genesisTimestamp)
 
 	clockTimestamp, err := strconv.Atoi(chunks[3])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding sysvar::clock timestamp in seconds: %w", err)
 	}
+	ctx.slot.ClockUnixTimestamp = uint64(clockTimestamp)
 
 	if ctx.slot == nil || uint64(slotNumber) != ctx.slot.Number {
 		return nil, fmt.Errorf("read slot %d end not matching ctx slot %s", slotNumber, ctx.slot)
@@ -305,7 +307,7 @@ func (ctx *parseCtx) readSlotFailed(line string) error {
 	return fmt.Errorf("slot %d failed: %s", slotNumber, msg)
 }
 
-// TRX_S 3XsJkPPXeSCBupg8SyquewZhnDdcch977crSJzXx8NV9SERo9LmUAW36eLokKngzataDvzJ4jwuuW17AkHjpFszu 1 0 3 F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:SysvarS1otHashes111111111111111111111111111:SysvarC1ock11111111111111111111111111111111:Vote111111111111111111111111111111111111111 7FVmHWPFPxzMK3mHx2y7Q8NG3krPiB142ZG3LZiSkHdX
+// TRX_START 3XsJkPPXeSCBupg8SyquewZhnDdcch977crSJzXx8NV9SERo9LmUAW36eLokKngzataDvzJ4jwuuW17AkHjpFszu 1 0 3 F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:SysvarS1otHashes111111111111111111111111111:SysvarC1ock11111111111111111111111111111111:Vote111111111111111111111111111111111111111 7FVmHWPFPxzMK3mHx2y7Q8NG3krPiB142ZG3LZiSkHdX
 func (ctx *parseCtx) readTransactionStart(line string) error {
 	chunks := strings.Split(line, " ")
 	if len(chunks) != 7 {
@@ -383,7 +385,7 @@ func (ctx *parseCtx) readTransactionLog(line string) error {
 	if err != nil {
 		return fmt.Errorf("log line failed hex decoding: %w", err)
 	}
-	trx.LogMessages = append(trx.LogMessages, logLine)
+	trx.LogMessages = append(trx.LogMessages, string(logLine))
 
 	return nil
 }
@@ -431,7 +433,7 @@ func (ctx *parseCtx) readInstructionStart(line string) error {
 		AccountKeys:   accountKeys,
 	}
 
-	err = ctx.recordInstruction(trxID, instructionTrace)
+	err = ctx.recordInstruction(id, instruction)
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: %w", err)
 	}
@@ -475,10 +477,10 @@ func (ctx *parseCtx) readAccountChange(line string) error {
 	}
 
 	accountChange := &pbcodec.AccountChange{
-		Pubkey:   pubKey,
-		PrevData: prevData,
-		NewData:  newData,
-		NewDataLength: len(newData),
+		Pubkey:        pubKey,
+		PrevData:      prevData,
+		NewData:       newData,
+		NewDataLength: uint64(len(newData)),
 	}
 
 	err = ctx.recordAccountChange(trxID, ordinal, accountChange)
