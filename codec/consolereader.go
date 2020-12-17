@@ -23,9 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	bin "github.com/dfuse-io/binary"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/dfuse-io/solana-go"
 	"go.uber.org/zap"
 )
 
@@ -109,9 +107,9 @@ func (l *ConsoleReader) Close() {
 }
 
 type parseCtx struct {
-	slot        *pbcodec.Slot
-	trxIndex    uint64
-	trxTraceMap map[string]*pbcodec.TransactionTrace
+	slot     *pbcodec.Slot
+	trxIndex uint64
+	trxMap   map[string]*pbcodec.Transaction
 
 	conversionOptions []conversionOption
 	finalized         bool
@@ -119,8 +117,8 @@ type parseCtx struct {
 
 func newParseCtx() *parseCtx {
 	return &parseCtx{
-		slot:        &pbcodec.Slot{},
-		trxTraceMap: map[string]*pbcodec.TransactionTrace{},
+		slot:   &pbcodec.Slot{},
+		trxMap: map[string]*pbcodec.Transaction{},
 	}
 }
 
@@ -145,19 +143,22 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 		case strings.HasPrefix(line, "SLOT_FAILED"):
 			err = ctx.readSlotFailed(line)
 
-		case strings.HasPrefix(line, "TRANSACTION START"):
+		case strings.HasPrefix(line, "TRX_START"):
 			err = ctx.readTransactionStart(line)
 
-		case strings.HasPrefix(line, "TRANSACTION END"):
+		case strings.HasPrefix(line, "TRX_END"):
 			err = ctx.readTransactionEnd(line)
 
-		case strings.HasPrefix(line, "INSTRUCTION START"):
-			err = ctx.readInstructionTraceStart(line)
+		case strings.HasPrefix(line, "TRX_LOG"):
+			err = ctx.readTransactionLog(line)
 
-		case strings.HasPrefix(line, "ACCOUNT_CHANGE"):
+		case strings.HasPrefix(line, "INST_S"):
+			err = ctx.readInstructionStart(line)
+
+		case strings.HasPrefix(line, "ACCT_CH"):
 			err = ctx.readAccountChange(line)
 
-		case strings.HasPrefix(line, "LAMPORT_CHANGE"):
+		case strings.HasPrefix(line, "LAMP_CH"):
 			err = ctx.readLamportsChange(line)
 
 		default:
@@ -190,7 +191,7 @@ func (ctx *parseCtx) resetSlot() {
 }
 
 func (ctx *parseCtx) resetTrx() {
-	ctx.trxTraceMap = map[string]*pbcodec.TransactionTrace{}
+	ctx.trxMap = map[string]*pbcodec.Transaction{}
 }
 
 func (ctx *parseCtx) readSlotProcess(line string) error {
@@ -248,10 +249,11 @@ func (ctx *parseCtx) recordSlotProcessPartial(slot *pbcodec.Slot) {
 	ctx.slot = slot
 }
 
+// SLOT_END 3 120938102938 1029830129830192
 func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 2 {
-		return nil, fmt.Errorf("read slot end: expected 2 fields, got %d", len(chunks))
+	if len(chunks) != 4 {
+		return nil, fmt.Errorf("read slot end: expected 4 fields, got %d", len(chunks))
 	}
 
 	slotNumber, err := strconv.Atoi(chunks[1])
@@ -259,15 +261,26 @@ func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 		return nil, fmt.Errorf("read slot end: slotNumber to int: %w", err)
 	}
 
+	genesisTimestamp, err := strconv.Atoi(chunks[2])
+	if err != nil {
+		return nil, fmt.Errorf("error decoding genesis timestamp in seconds: %w", err)
+	}
+	ctx.slot.GenesisUnixTimestamp = uint64(genesisTimestamp)
+
+	clockTimestamp, err := strconv.Atoi(chunks[3])
+	if err != nil {
+		return nil, fmt.Errorf("error decoding sysvar::clock timestamp in seconds: %w", err)
+	}
+	ctx.slot.ClockUnixTimestamp = uint64(clockTimestamp)
+
 	if ctx.slot == nil || uint64(slotNumber) != ctx.slot.Number {
-		return nil, fmt.Errorf("read slot %d end not matching ctx slot %s", slotNumber, ctx.slot)
+		return nil, fmt.Errorf("read slot %d end not matching ctx slot %d", slotNumber, ctx.slot.Number)
 	}
 
 	ctx.slot.TransactionCount = uint32(len(ctx.slot.Transactions))
-	ctx.slot.TransactionTraceCount = uint32(len(ctx.slot.TransactionTraces))
 
-	if len(ctx.trxTraceMap) != 0 {
-		return nil, fmt.Errorf("some transactions are not ended when the slot ends: %q", ctx.trxTraceMap)
+	if len(ctx.trxMap) != 0 {
+		return nil, fmt.Errorf("some transactions are not ended when the slot ends: %q", ctx.trxMap)
 	}
 
 	ctx.finalized = true
@@ -286,7 +299,7 @@ func (ctx *parseCtx) readSlotFailed(line string) error {
 	}
 
 	if ctx.slot == nil || uint64(slotNumber) != ctx.slot.Number {
-		return fmt.Errorf("read slot %d failed not matching ctx slot %s", slotNumber, ctx.slot)
+		return fmt.Errorf("read slot %d failed not matching ctx slot %d", slotNumber, ctx.slot.Number)
 	}
 
 	msg := chunks[2]
@@ -294,137 +307,134 @@ func (ctx *parseCtx) readSlotFailed(line string) error {
 	return fmt.Errorf("slot %d failed: %s", slotNumber, msg)
 }
 
+// TRX_START 3XsJkPPXeSCBupg8SyquewZhnDdcch977crSJzXx8NV9SERo9LmUAW36eLokKngzataDvzJ4jwuuW17AkHjpFszu 1 0 3 F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:SysvarS1otHashes111111111111111111111111111:SysvarC1ock11111111111111111111111111111111:Vote111111111111111111111111111111111111111 7FVmHWPFPxzMK3mHx2y7Q8NG3krPiB142ZG3LZiSkHdX
 func (ctx *parseCtx) readTransactionStart(line string) error {
-	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 4 {
-		return fmt.Errorf("read transaction start: expected 4 fields, got %d", len(chunks))
+	chunks := strings.Split(line, " ")
+	if len(chunks) != 7 {
+		return fmt.Errorf("read transaction start: expected 7 fields, got %d", len(chunks))
 	}
 
-	id := chunks[2]
-	signatures := []string{id}
+	sigs := strings.Split(chunks[1], ":")
+	id := sigs[0]
+	additionalSigs := sigs[1:]
 
-	var solMessage *solana.Message
-	messageData, err := hex.DecodeString(chunks[3])
+	reqSigs, err := strconv.Atoi(chunks[2])
 	if err != nil {
-		return fmt.Errorf("read transaction start: hex decode message: %w", err)
+		return fmt.Errorf("failed decoding num_required_signatures: %w", err)
 	}
-
-	err = bin.NewDecoder(messageData).Decode(&solMessage)
+	roSignedAccts, err := strconv.Atoi(chunks[3])
 	if err != nil {
-		return fmt.Errorf("read transaction start: binary decode message: %w", err)
+		return fmt.Errorf("failed decoding num_readonly_signed_accounts: %w", err)
+	}
+	roUnsignedAccts, err := strconv.Atoi(chunks[4])
+	if err != nil {
+		return fmt.Errorf("failed decoding num_readonly_unsigned_accounts: %w", err)
 	}
 
-	var accountKeys [][]byte
-	for _, k := range solMessage.AccountKeys {
-		accountKeys = append(accountKeys, k[:])
-	}
-
-	var instructions []*pbcodec.CompiledInstruction
-	for _, i := range solMessage.Instructions {
-
-		var accountIdIndexes []uint32
-		for _, i := range i.Accounts {
-			accountIdIndexes = append(accountIdIndexes, uint32(i))
-		}
-
-		instruction := &pbcodec.CompiledInstruction{
-			ProgramIdIndex: uint32(i.ProgramIDIndex),
-			Accounts:       accountIdIndexes,
-			Data:           i.Data,
-		}
-		instructions = append(instructions, instruction)
-	}
-
-	message := &pbcodec.Message{
-		Header: &pbcodec.MessageHeader{
-			NumRequiredSignatures:       uint32(solMessage.Header.NumRequiredSignatures),
-			NumReadonlySignedAccounts:   uint32(solMessage.Header.NumReadonlySignedAccounts),
-			NumReadonlyUnsignedAccounts: uint32(solMessage.Header.NumReadonlyUnsignedAccounts),
-		},
-		AccountKeys:     accountKeys,
-		RecentBlockhash: solMessage.RecentBlockhash[:],
-		Instructions:    instructions,
-	}
+	accountKeys := strings.Split(chunks[5], ":")
 
 	transaction := &pbcodec.Transaction{
-		Id:         id,
-		Index:      ctx.trxIndex,
-		Signatures: signatures,
-		Msg:        message,
+		Id:                   id,
+		Index:                ctx.trxIndex,
+		AdditionalSignatures: additionalSigs,
+		AccountKeys:          accountKeys,
+		Header: &pbcodec.MessageHeader{
+			NumRequiredSignatures:       uint32(reqSigs),
+			NumReadonlySignedAccounts:   uint32(roSignedAccts),
+			NumReadonlyUnsignedAccounts: uint32(roUnsignedAccts),
+		},
+		RecentBlockhash: chunks[6],
+		SlotNum:         uint64(ctx.slot.Number),
+		SlotHash:        ctx.slot.Id,
 	}
+
 	ctx.recordTransaction(transaction)
 
-	transactionTrace := &pbcodec.TransactionTrace{
-		Id:       id,
-		Index:    ctx.trxIndex,
-		SlotNum:  uint64(ctx.slot.Number),
-		SlotHash: ctx.slot.Id,
-	}
-
-	ctx.recordTransactionTrace(transactionTrace)
 	return nil
 }
 
 func (ctx *parseCtx) recordTransaction(trx *pbcodec.Transaction) {
-	ctx.slot.Transactions = append(ctx.slot.Transactions, trx)
-}
-
-func (ctx *parseCtx) recordTransactionTrace(trxTrace *pbcodec.TransactionTrace) {
-	ctx.trxTraceMap[trxTrace.Id] = trxTrace
+	ctx.trxMap[trx.Id] = trx
 	ctx.trxIndex++
-
-	return
 }
 
+// TRX_END signature...
 func (ctx *parseCtx) readTransactionEnd(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 3 {
-		return fmt.Errorf("read transaction start: expected 3 fields, got %d", len(chunks))
+	if len(chunks) != 2 {
+		return fmt.Errorf("read transaction start: expected 2 fields, got %d", len(chunks))
 	}
 
-	id := chunks[2]
-	trx := ctx.trxTraceMap[id]
+	id := chunks[1]
+	trx := ctx.trxMap[id]
 	ctx.recordTransactionEnd(trx)
-	delete(ctx.trxTraceMap, id)
+	delete(ctx.trxMap, id)
 
 	return nil
 }
 
-func (ctx *parseCtx) recordTransactionEnd(trx *pbcodec.TransactionTrace) {
-	ctx.slot.TransactionTraces = append(ctx.slot.TransactionTraces, trx)
+// TRX_L 2iBoCQ16uhu7ZJdb9icuyS5EpRm6m9RvFH43Co9xi6QkduwE6BtmERtUGwwsutR1tt1L9KfJNi1yNXuy855A4Yan 50726f6772616d20566f746531313131313131313131313131313131313131313131313131313131313131313131313131313120696e766f6b65205b315d
+func (ctx *parseCtx) readTransactionLog(line string) error {
+	chunks := strings.Split(line, " ")
+	if len(chunks) != 3 {
+		return fmt.Errorf("read transaction log: expected 3 fields, got %d", len(chunks))
+	}
+
+	id := chunks[1]
+	trx := ctx.trxMap[id]
+	logLine, err := hex.DecodeString(chunks[2])
+	if err != nil {
+		return fmt.Errorf("log line failed hex decoding: %w", err)
+	}
+	trx.LogMessages = append(trx.LogMessages, string(logLine))
+
+	return nil
 }
 
-func (ctx *parseCtx) readInstructionTraceStart(line string) error {
+func (ctx *parseCtx) recordTransactionEnd(trx *pbcodec.Transaction) {
+	ctx.slot.Transactions = append(ctx.slot.Transactions, trx)
+}
+
+// INST_S 27ocnWWBHMWC1ZPfz3kBqyCH1koGsLRNAYe1zp1JhVSeUX3QDniV992yPK7cKFieXViPN9o1bEBEJ55b4wU59WGo 1 0 Vote111111111111111111111111111111111111111 0200000001000000000000000b0000000000000004398c6eecd88cb501e2bd330d15f9810fa76c26f82d165abd0cbb75292ab0e601e64cda5f00000000 Vote111111111111111111111111111111111111111:00;AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:01;SysvarS1otHashes111111111111111111111111111:00;SysvarC1ock11111111111111111111111111111111:00;F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:11
+
+func (ctx *parseCtx) readInstructionStart(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 7 {
 		return fmt.Errorf("read instructionTrace start: expected 7 fields, got %d", len(chunks))
 	}
-	trxID := chunks[2]
-	ordinal, err := strconv.Atoi(chunks[3])
+	id := chunks[1]
+	ordinal, err := strconv.Atoi(chunks[2])
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: ordinal to int: %w", err)
 	}
 
-	parentOrdinal, err := strconv.Atoi(chunks[4])
+	parentOrdinal, err := strconv.Atoi(chunks[3])
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: parent ordinal to int: %w", err)
 	}
 
-	program := chunks[5]
-	data := chunks[6]
+	program := chunks[4]
+	data := chunks[5]
 	hexData, err := hex.DecodeString(data)
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: hex decode data: %w", err)
 	}
 
-	instructionTrace := &pbcodec.InstructionTrace{
+	var accountKeys []string
+	accounts := strings.Split(chunks[6], ";")
+	for _, acct := range accounts {
+		accountKeys = append(accountKeys, strings.Split(acct, ":")[0])
+	}
+
+	instruction := &pbcodec.Instruction{
 		ProgramId:     program,
 		Data:          hexData,
 		Ordinal:       uint32(ordinal),
 		ParentOrdinal: uint32(parentOrdinal),
+		AccountKeys:   accountKeys,
 	}
 
-	err = ctx.recordInstructionTrace(trxID, instructionTrace)
+	err = ctx.recordInstruction(id, instruction)
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: %w", err)
 	}
@@ -432,17 +442,18 @@ func (ctx *parseCtx) readInstructionTraceStart(line string) error {
 	return nil
 }
 
-func (ctx *parseCtx) recordInstructionTrace(trxID string, instruction *pbcodec.InstructionTrace) error {
-	trxTrace := ctx.trxTraceMap[trxID]
-	if trxTrace == nil {
+func (ctx *parseCtx) recordInstruction(trxID string, instruction *pbcodec.Instruction) error {
+	trx := ctx.trxMap[trxID]
+	if trx == nil {
 		return fmt.Errorf("record instruction: transaction trace not found in context: %s", trxID)
 	}
 
-	trxTrace.InstructionTraces = append(trxTrace.InstructionTraces, instruction)
+	trx.Instructions = append(trx.Instructions, instruction)
 
 	return nil
 }
 
+// ACCT_CH 27ocnWWBHMWC1ZPfz3kBqyCH1koGsLRNAYe1zp1JhVSeUX3QDniV992yPK7cKFieXViPN9o1bEBEJ55b4wU59WGo 1 AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG 01000000d1ee412af80c981c82 012333333333323123123123
 func (ctx *parseCtx) readAccountChange(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 6 {
@@ -467,9 +478,10 @@ func (ctx *parseCtx) readAccountChange(line string) error {
 	}
 
 	accountChange := &pbcodec.AccountChange{
-		Pubkey:   pubKey,
-		PrevData: prevData,
-		NewData:  newData,
+		Pubkey:        pubKey,
+		PrevData:      prevData,
+		NewData:       newData,
+		NewDataLength: uint64(len(newData)),
 	}
 
 	err = ctx.recordAccountChange(trxID, ordinal, accountChange)
@@ -481,16 +493,17 @@ func (ctx *parseCtx) readAccountChange(line string) error {
 }
 
 func (ctx *parseCtx) recordAccountChange(trxID string, ordinal int, accountChange *pbcodec.AccountChange) error {
-	trxTrace := ctx.trxTraceMap[trxID]
-	if trxTrace == nil {
+	trx := ctx.trxMap[trxID]
+	if trx == nil {
 		return fmt.Errorf("record account change: transaction trace not found in context: %s", trxID)
 	}
 
-	trxTrace.InstructionTraces[ordinal-1].AccountChanges = append(trxTrace.InstructionTraces[ordinal-1].AccountChanges, accountChange)
+	trx.Instructions[ordinal-1].AccountChanges = append(trx.Instructions[ordinal-1].AccountChanges, accountChange)
 
 	return nil
 }
 
+// LAMP_CH 61hY5LpNSSH3zpnxoLYf5pmStN4JRMJ8H4nt4omyNQgaBb78APUetZRw23QdWpZLWF22KG1rBvNdX9XJcut21HQZ 1 11111111111111111111111111111111 499999892500 494999892500
 func (ctx *parseCtx) readLamportsChange(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 6 {
@@ -529,12 +542,12 @@ func (ctx *parseCtx) readLamportsChange(line string) error {
 }
 
 func (ctx *parseCtx) recordLamportsChange(trxID string, ordinal int, balanceChange *pbcodec.BalanceChange) error {
-	trxTrace := ctx.trxTraceMap[trxID]
-	if trxTrace == nil {
+	trx := ctx.trxMap[trxID]
+	if trx == nil {
 		return fmt.Errorf("record balanace change: transaction trace not found in context: %s", trxID)
 	}
 
-	trxTrace.InstructionTraces[ordinal-1].BalanceChanges = append(trxTrace.InstructionTraces[ordinal-1].BalanceChanges, balanceChange)
+	trx.Instructions[ordinal-1].BalanceChanges = append(trx.Instructions[ordinal-1].BalanceChanges, balanceChange)
 
 	return nil
 }

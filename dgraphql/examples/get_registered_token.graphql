@@ -1,0 +1,13 @@
+query ($account: String!) {
+  registeredToken(address: $account) {
+    address
+    mintAuthority
+    freezeAuthority
+    supply
+    decimals
+    symbol
+    name
+    logo
+    website
+  }
+}

@@ -11,7 +11,8 @@ const (
 	SnapshotsURL           string = "file://{dfuse-data-dir}/storage/snapshots"
 	DmeshDSN               string = "local://"
 	DmeshServiceVersion    string = "v1"
-	NetworkID              string = "sol-local"
+	NetworkID              string = "development"
+	DfuseNetworkID         string = "sol-local"
 
 	APIProxyHTTPListenAddr  string = ":8080"
 	DashboardHTTPListenAddr string = ":8081"
@@ -47,21 +48,25 @@ const (
 
 	// Solana node instance port definitions
 	MinerNodeRPCPort      string = "14100"
+	MinerNodeRPCWSPort    string = "14101"
 	MinerNodeGossipPort   string = "14110"
 	MinerNodeP2PPortStart string = "14111"
 	MinerNodeP2PPortEnd   string = "14199"
 
 	MindreaderNodeRPCPort      string = "14200"
+	MindreaderNodeRPCWSPort    string = "14201"
 	MindreaderNodeGossipPort   string = "14210"
 	MindreaderNodeP2PPortStart string = "14211"
 	MindreaderNodeP2PPortEnd   string = "14299"
 
 	PeeringNodeRPCPort      string = "14300"
+	PeeringNodeRPCWSPort    string = "14301"
 	PeeringNodeGossipPort   string = "14310"
 	PeeringNodeP2PPortStart string = "14311"
 	PeeringNodeP2PPortEnd   string = "14399"
 
 	BackupNodeRPCPort      string = "14400"
+	BackupNodeRPCWSPort    string = "14401"
 	BackupNodeGossipPort   string = "14410"
 	BackupNodeP2PPortStart string = "14411"
 	BackupNodeP2PPortEnd   string = "14499"

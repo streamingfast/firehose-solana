@@ -1,0 +1,7 @@
+type TokenResponse {
+  address: String!
+  mintAuthority: String!
+  freezeAuthority: String!
+  supply: Uint64!
+  decimals: Int!
+}

@@ -1,0 +1,9 @@
+type Query {
+  tokens: [TokenResponse!]!
+  token(address: String!): TokenResponse
+  registeredTokens: [RegisteredTokenResponse!]!
+  registeredToken(address: String!): RegisteredTokenResponse
+}
+
+scalar Uint64
+scalar JSON

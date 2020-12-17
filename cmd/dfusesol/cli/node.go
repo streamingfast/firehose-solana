@@ -323,8 +323,10 @@ func RegisterSolanaNodeApp(kind string) {
 			)
 
 			superviser, err := nodeManagerSol.NewSuperviser(appLogger, nodeLogger, &nodeManagerSol.Options{
-				BinaryPath:          viper.GetString("global-validator-path"),
-				Arguments:           arguments,
+				BinaryPath: viper.GetString("global-validator-path"),
+				Arguments:  arguments,
+				// BinaryPath:          "/bin/bash",
+				// Arguments:           []string{"-c", `cat /tmp/mama.txt /home/abourget/build/solana/validator/dmlog.log; sleep 3600`},
 				DataDirPath:         mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"-data-dir")),
 				DebugDeepMind:       viper.GetBool(app + "-debug-deep-mind"),
 				LogToZap:            viper.GetBool(app + "-log-to-zap"),

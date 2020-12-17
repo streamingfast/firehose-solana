@@ -179,5 +179,5 @@ func setupSysctl() error {
 		}
 	}
 
-	return launcher.SetMaxOpenFilesLimit(1000000, 24576 /* see launcher/setup.go */)
+	return launcher.SetMaxOpenFilesLimit(1000000, 24576)
 }
