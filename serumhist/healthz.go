@@ -1,17 +1,19 @@
 package serumhist
 
-func (l *Loader) setUnhealthy() {
+import "github.com/dfuse-io/dfuse-solana/serumhist/loader"
+
+func (l *loader.Injector) setUnhealthy() {
 	if l.healthy {
 		l.healthy = false
 	}
 }
 
-func (l *Loader) setHealthy() {
+func (l *loader.Injector) setHealthy() {
 	if !l.healthy {
 		l.healthy = true
 	}
 }
 
-func (l *Loader) Healthy() bool {
+func (l *loader.Injector) Healthy() bool {
 	return l.healthy
 }

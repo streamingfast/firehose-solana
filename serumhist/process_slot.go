@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func (l *Loader) PutSlot(slot *pbcodec.Slot) error {
+func (l *Injector) ProcessSlot(slot *pbcodec.Slot) error {
 	if traceEnabled {
 		zlog.Debug("processing slot", zap.String("slot_id", slot.Id))
 	}
@@ -23,7 +23,7 @@ func (l *Loader) PutSlot(slot *pbcodec.Slot) error {
 	return nil
 }
 
-func (l *Loader) processSerumSlot(slot *pbcodec.Slot) error {
+func (l *Injector) processSerumSlot(slot *pbcodec.Slot) error {
 	for _, transaction := range slot.Transactions {
 		for _, instruction := range transaction.Instructions {
 			for _, accountChange := range instruction.AccountChanges {
@@ -49,7 +49,7 @@ func (l *Loader) processSerumSlot(slot *pbcodec.Slot) error {
 
 type processor = func(accountChange *pbcodec.AccountChange) ([]kvdb.KV, error)
 
-func (l *Loader) shouldProcessAccountChange(accountChange *pbcodec.AccountChange) (bool, processor) {
+func (l *Injector) shouldProcessAccountChange(accountChange *pbcodec.AccountChange) (bool, processor) {
 	var f *serum.AccountFlag
 	if err := bin.NewDecoder(accountChange.PrevData).Decode(&f); err != nil {
 		zlog.Warn("unable to decode account flag",
@@ -71,7 +71,7 @@ func (l *Loader) shouldProcessAccountChange(accountChange *pbcodec.AccountChange
 	return false, nil
 }
 
-func (l *Loader) processRequestQueueAccountChange(accountChange *pbcodec.AccountChange) (out []kvdb.KV, err error) {
+func (l *Injector) processRequestQueueAccountChange(accountChange *pbcodec.AccountChange) (out []kvdb.KV, err error) {
 	var oldData *serum.RequestQueue
 	if err := bin.NewDecoder(accountChange.PrevData).Decode(&oldData); err != nil {
 		return out, fmt.Errorf("unable to decode 'event queue' old data: %w", err)
@@ -81,10 +81,16 @@ func (l *Loader) processRequestQueueAccountChange(accountChange *pbcodec.Account
 	if err := bin.NewDecoder(accountChange.NewData).Decode(&newData); err != nil {
 		return out, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
 	}
+
+	market, found := l.requesQueues[accountChange.Pubkey]
+	if !found {
+		return out, fmt.Errorf("unable to find market for request queue: %q", accountChange.Pubkey)
+	}
+
 	return l.getRequestQueueChangeKeys(oldData, newData), nil
 }
 
-func (l *Loader) processEventQueue(accountChange *pbcodec.AccountChange) (out []kvdb.KV, err error) {
+func (l *Injector) processEventQueue(accountChange *pbcodec.AccountChange) (out []kvdb.KV, err error) {
 	var oldData *serum.EventQueue
 	if err := bin.NewDecoder(accountChange.PrevData).Decode(&oldData); err != nil {
 		return out, fmt.Errorf("unable to decode 'request queue' old data: %w", err)
@@ -98,7 +104,7 @@ func (l *Loader) processEventQueue(accountChange *pbcodec.AccountChange) (out []
 	return l.getEventQueueChangeKeys(oldData, newData), nil
 }
 
-func (l *Loader) getRequestQueueChangeKeys(old, new *serum.RequestQueue) (out []kvdb.KV) {
+func (l *Injector) getRequestQueueChangeKeys(old, new *serum.RequestQueue) (out []kvdb.KV) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		fmt.Println("RequestQueue " + event.String())
 		fmt.Println("Path " + event.Path.String())
@@ -106,7 +112,7 @@ func (l *Loader) getRequestQueueChangeKeys(old, new *serum.RequestQueue) (out []
 	return
 }
 
-func (l *Loader) getEventQueueChangeKeys(old, new *serum.EventQueue) (out []kvdb.KV) {
+func (l *Injector) getEventQueueChangeKeys(old, new *serum.EventQueue) (out []kvdb.KV) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		fmt.Println("EventQueue " + event.String())
 		fmt.Println("Path " + event.Path.String())

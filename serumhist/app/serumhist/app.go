@@ -2,9 +2,10 @@ package serumhist
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"net/http"
-	"time"
+
+	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
 
@@ -16,11 +17,13 @@ import (
 )
 
 type Config struct {
-	BlockStreamAddr string
-	BatchSize       uint64
-	StartBlock      uint64
-	KvdbDsn         string
-	HTTPListenAddr  string //  http listen address for /healthz endpoint
+	BlockStreamAddr   string
+	FLushSlotInterval uint64
+	StartBlock        uint64
+	KvdbDsn           string
+	EnableInjector    bool
+	EnableServer      bool
+	GRPCListenAddr    string
 }
 
 type App struct {
@@ -38,75 +41,46 @@ func New(config *Config) *App {
 func (a *App) Run() error {
 	zlog.Info("launching serumhist", zap.Reflect("config", a.Config))
 
+	if err := a.Config.validate(); err != nil {
+		return fmt.Errorf("invalid config: %w", err)
+	}
+
 	kvdb, err := store.New(a.Config.KvdbDsn)
 	if err != nil {
 		zlog.Fatal("could not create kvstore", zap.Error(err))
 	}
-	kvdb = serumhist.NewRWCache(kvdb)
 
-	dmetrics.Register(metrics.Metricset)
-
-	loader := serumhist.NewLoader(a.Config.BlockStreamAddr, kvdb, a.Config.BatchSize)
-	if err := loader.SetupLoader(); err != nil {
-		return fmt.Errorf("unable to create solana loader: %w", err)
+	if a.Config.EnableServer {
+		server := grpc.New(a.Config.GRPCListenAddr, kvdb)
+		a.OnTerminating(server.Terminate)
+		server.OnTerminated(a.Shutdown)
+		go server.Serve()
 	}
 
-	healthzSer, err := a.SetupHealthzServer(a.Config.HTTPListenAddr, loader)
-	if err != nil {
-		return fmt.Errorf("unable to setup health server: %w", err)
-	}
+	if a.Config.EnableInjector {
+		dmetrics.Register(metrics.Metricset)
 
-	zlog.Info("starting webserver", zap.String("http_addr", a.Config.HTTPListenAddr))
-	go healthzSer.ListenAndServe()
-
-	a.OnTerminating(loader.Shutdown)
-	loader.OnTerminated(a.Shutdown)
-
-	go loader.Launch(context.Background(), a.Config.StartBlock)
-	return nil
-}
-
-func (a *App) SetupHealthzServer(HTTPListenAddr string, loader *serumhist.Loader) (*http.Server, error) {
-	healthzHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !loader.Healthy() {
-			http.Error(w, "not ready", http.StatusServiceUnavailable)
-			return
+		injector := serumhist.NewInjector(a.Config.BlockStreamAddr, kvdb, a.Config.FLushSlotInterval)
+		if err := injector.Setup(); err != nil {
+			return fmt.Errorf("unable to create solana injector: %w", err)
 		}
 
-		w.Write([]byte("ready\n"))
-	})
+		zlog.Info("serum history injector setup")
 
-	errorLogger, err := zap.NewStdLogAt(zlog, zap.ErrorLevel)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create error logger: %w", err)
+		a.OnTerminating(injector.Shutdown)
+		injector.OnTerminated(a.Shutdown)
+
+		go injector.Launch(context.Background(), a.Config.StartBlock)
 	}
 
-	httpSrv := &http.Server{
-		Addr:     HTTPListenAddr,
-		Handler:  healthzHandler,
-		ErrorLog: errorLogger,
-	}
-	return httpSrv, nil
+	return nil
+
 }
 
-func (a *App) IsReady() bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-	url := fmt.Sprintf("http://%s/healthz", a.Config.HTTPListenAddr)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		zlog.Warn("is ready request building error", zap.Error(err))
-		return false
-	}
-	client := http.DefaultClient
-	res, err := client.Do(req)
-	if err != nil {
-		zlog.Debug("is ready request execution error", zap.Error(err))
-		return false
+func (c *Config) validate() error {
+	if !c.EnableInjector && !c.EnableServer {
+		return errors.New("both enable injection and enable server were disabled, this is invalid, at least one of them must be enabled, or both")
 	}
 
-	if res.StatusCode == 200 {
-		return true
-	}
-	return false
+	return nil
 }

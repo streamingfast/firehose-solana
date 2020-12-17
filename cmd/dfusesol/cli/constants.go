@@ -2,8 +2,9 @@ package cli
 
 const (
 	//Protocol               pbbstream.Protocol = pbbstream.Protocol_EOS //todo
-	TrxDBDSN               string = "badger://{dfuse-data-dir}/storage/trxdb"   //%s will be replaced by `<data-dir>`
-	FluxDSN                string = "badger://{dfuse-data-dir}/storage/statedb" //%s will be replaced by `<data-dir>/<flux-data-dir>
+	TrxDBDSN               string = "badger://{dfuse-data-dir}/storage/trxdb"     //%s will be replaced by `<data-dir>`
+	FluxDSN                string = "badger://{dfuse-data-dir}/storage/statedb"   //%s will be replaced by `<data-dir>/<flux-data-dir>
+	SerumHistDSN           string = "badger://{dfuse-data-dir}/storage/serumhist" //%s will be replaced by `<data-dir>/<flux-data-dir>
 	MergedBlocksStoreURL   string = "file://{dfuse-data-dir}/storage/merged-blocks"
 	FilteredBlocksStoreURL string = "file://{dfuse-data-dir}/storage/filtered-merged-blocks"
 	IndicesStoreURL        string = "file://{dfuse-data-dir}/storage/indexes"
@@ -44,7 +45,7 @@ const (
 	FilteringRelayerServingAddr   string = ":14024"
 	TokenmetaGRPCServingAddr      string = ":14025"
 	FirehoseGRPCServingAddr       string = ":14026"
-	SolanaLoaderHTTPServingAddr   string = ":14027"
+	SerumHistoryGRPCServingAddr   string = ":14027"
 
 	// Solana node instance port definitions
 	MinerNodeRPCPort      string = "14100"

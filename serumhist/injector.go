@@ -1,4 +1,4 @@
-package solanadb_loader
+package serumhist
 
 import (
 	"context"
@@ -6,56 +6,80 @@ import (
 	"io"
 	"time"
 
-	"github.com/dfuse-io/bstream"
+	"github.com/dfuse-io/kvdb/store"
+
+	"github.com/dfuse-io/solana-go/programs/serum"
+
+	"github.com/dfuse-io/solana-go"
+
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/dfuse-io/dfuse-solana/solanadb"
-	"github.com/dfuse-io/dfuse-solana/solanadb-loader/metrics"
+	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+	"github.com/golang/protobuf/ptypes"
+	"go.uber.org/zap"
+
+	"github.com/dfuse-io/bstream"
 	pbbstream "github.com/dfuse-io/pbgo/dfuse/bstream/v1"
 	"github.com/dfuse-io/shutter"
-	"github.com/golang/protobuf/ptypes"
 	"go.opencensus.io/plugin/ocgrpc"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
-type Loader struct {
+type Injector struct {
 	*shutter.Shutter
-	db                solanadb.DBWriter
-	batchSize         uint64
+	kvdb              store.KVStore
+	flushSlotInterval uint64
 	lastTickBlock     uint64
 	lastTickTime      time.Time
 	blockstreamV2Addr string
 	source            bstream.Source
 	healthy           bool
 	blockStreamClient pbbstream.BlockStreamV2Client
+
+	eventQueues  map[string]solana.PublicKey
+	requesQueues map[string]solana.PublicKey
 }
 
-func SetupLoader(
+func NewInjector(
 	blockstreamV2Addr string,
-	db solanadb.DB,
-	batchSize uint64,
-) (*Loader, error) {
+	kvdb store.KVStore,
+	flushSlotInterval uint64,
+) *Injector {
+	return &Injector{
+		blockstreamV2Addr: blockstreamV2Addr,
+		Shutter:           shutter.New(),
+		flushSlotInterval: flushSlotInterval,
+		eventQueues:       map[string]solana.PublicKey{},
+		requesQueues:      map[string]solana.PublicKey{},
+		kvdb:              kvdb,
+	}
 
+}
+
+func (l *Injector) Setup() error {
 	conn, err := grpc.Dial(
-		blockstreamV2Addr,
+		l.blockstreamV2Addr,
 		grpc.WithInsecure(),
 		grpc.WithStatsHandler(&ocgrpc.ClientHandler{}),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("unexpected block stream dial connection failure: %w", err)
+		return fmt.Errorf("unable to setup loader: %w", err)
 	}
 
-	loader := &Loader{
-		blockstreamV2Addr: blockstreamV2Addr,
-		Shutter:           shutter.New(),
-		batchSize:         batchSize,
-		blockStreamClient: pbbstream.NewBlockStreamV2Client(conn),
-		db:                db,
+	markets, err := serum.KnownMarket()
+	if err != nil {
+		return fmt.Errorf("unable to retrieve known markets: %w", err)
 	}
-	return loader, nil
+
+	for _, market := range markets {
+		l.eventQueues[market.MarketV2.EventQueue.String()] = market.Address
+		l.requesQueues[market.MarketV2.RequestQueue.String()] = market.Address
+	}
+
+	l.blockStreamClient = pbbstream.NewBlockStreamV2Client(conn)
+	return nil
 }
 
-func (l *Loader) Launch(ctx context.Context, startBlockNum uint64) error {
+func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 	req := &pbbstream.BlocksRequestV2{
 		StartBlockNum:     int64(startBlockNum),
 		ExcludeStartBlock: true,
@@ -65,7 +89,7 @@ func (l *Loader) Launch(ctx context.Context, startBlockNum uint64) error {
 			pbbstream.ForkStep_STEP_IRREVERSIBLE,
 		},
 	}
-	zlog.Info("launching serumdb loader",
+	serumhist.zlog.Info("launching serumdb loader",
 		zap.Reflect("blockstream_request", req),
 	)
 
@@ -76,7 +100,7 @@ func (l *Loader) Launch(ctx context.Context, startBlockNum uint64) error {
 	{
 		msg, err := executor.Recv()
 		if err == io.EOF {
-			zlog.Info("received EOF in listening stream, expected a long-running stream here")
+			serumhist.zlog.Info("received EOF in listening stream, expected a long-running stream here")
 			return nil
 		}
 		if err != nil {
@@ -105,7 +129,15 @@ func (l *Loader) Launch(ctx context.Context, startBlockNum uint64) error {
 			)
 		}
 
-		l.db.PutSlot(ctx, slot)
+		l.ProcessSlot(slot)
+
+		if err := l.writeCheckpoint(ctx, slot); err != nil {
+			return fmt.Errorf("error while saving block checkpoint")
+		}
+
+		if err := l.flush(ctx, slot); err != nil {
+			return fmt.Errorf("error while flushing: %w", err)
+		}
 
 		t, err := slot.Time()
 		if err != nil {
@@ -121,7 +153,7 @@ func (l *Loader) Launch(ctx context.Context, startBlockNum uint64) error {
 	return nil
 }
 
-func (l *Loader) DoFlush(slotNum uint64, reason string) error {
+func (l *Injector) DoFlush(slotNum uint64, reason string) error {
 	zlog.Debug("flushing block",
 		zap.Uint64("slot_num", slotNum),
 		zap.String("reason", reason),
@@ -129,15 +161,15 @@ func (l *Loader) DoFlush(slotNum uint64, reason string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	err := l.db.Flush(ctx)
+	err := l.kvdb.FlushPuts(ctx)
 	if err != nil {
 		return fmt.Errorf("db flush: %w", err)
 	}
 	return nil
 }
 
-func (l *Loader) FlushIfNeeded(slotNum uint64, slotTime time.Time) error {
-	batchSizeReached := slotNum%l.batchSize == 0
+func (l *Injector) FlushIfNeeded(slotNum uint64, slotTime time.Time) error {
+	batchSizeReached := slotNum%l.flushSlotInterval == 0
 	closeToHeadBlockTime := time.Since(slotTime) < 25*time.Second
 
 	if batchSizeReached || closeToHeadBlockTime {

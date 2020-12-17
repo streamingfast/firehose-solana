@@ -1,4 +1,4 @@
-package solanadb_loader
+package grpc
 
 import (
 	"github.com/dfuse-io/logging"
@@ -8,5 +8,5 @@ import (
 var zlog *zap.Logger
 
 func init() {
-	logging.Register("github.com/dfuse-io/dfuse-solana/solanadb-loader", &zlog)
+	logging.Register("github.com/dfuse-io/dfuse-solana/serumhist/grpc", &zlog)
 }

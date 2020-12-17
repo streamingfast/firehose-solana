@@ -1,3 +1,3 @@
-generate.sh - Wed 16 Dec 2020 01:35:49 PM EST - abourget
-dfuse-io/proto revision: e3245014456f3c880ab707de875d471a3f295b47
-dfuse-io/proto-solana revision: 3c0bac9090f79254a8f9f4bbb2ad1890793b6e5f
+generate.sh - Thu 17 Dec 2020 09:39:16 EST - julien
+dfuse-io/proto revision: ef66837f403a517d99068686f446708c9a04eb3a
+dfuse-io/proto-solana revision: 56d7840fb504eaeba2d1b69b87e5cd4d0ea81780
