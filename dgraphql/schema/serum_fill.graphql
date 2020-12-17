@@ -1,0 +1,59 @@
+
+"""The Connection type for a SerumFill. See the [GraphQL core concepts](https://docs.dfuse.io/guides/core-concepts/graphql/)"""
+type SerumFillConnection {
+  "A list of edges to SerumFill"
+  edges: [SerumFillEdge]!
+
+  "Information to aid pagination"
+  pageInfo: PageInfo!
+}
+
+"""
+A single SerumFill element of the connection list.
+"""
+type SerumFillEdge {
+  """Query cursor, allowing you to continue fetching results even after interruption of your connection, without missing a beat."""
+  cursor: String!
+
+  """The SerumFill object."""
+  node: SerumFill
+}
+
+type SerumFill {
+  """The order unique identifier for which this SerumFill is bound to."""
+  orderId: String!
+
+  """The owner's public key for this SerumFill, i.e. the one that buy or sell for this market."""
+  pubKey: String!
+
+  """The market for which this SerumFill's order is bound to."""
+  market: SerumMarket!
+
+  """Which side this SerumFill is for, either BID (seller) or ASK (buyer)."""
+  side: SideType!
+
+  """The token this SerumFill starts from."""
+  baseToken: Token!
+
+  """The token this SerumFill ends to."""
+  quoteToken: Token!
+
+  """The number of lot this SerumFill filled the order with, represents the percentage of the order this SerumFill did."""
+  lotCount: Uint64!
+
+  """The price paid for this exact SerumFill."""
+  price: Uint64!
+
+  """The SerumFeeTier level paid for this fill."""
+  feeTier: SerumFeeTier!
+}
+
+enum SerumFeeTier {
+  BASE
+  SRM2
+  SRM3
+  SRM4
+  SRM5
+  SRM6
+  MSRM
+}

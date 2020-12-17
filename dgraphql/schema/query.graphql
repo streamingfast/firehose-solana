@@ -1,8 +1,23 @@
 type Query {
   tokens: [TokenResponse!]!
+
   token(address: String!): TokenResponse
+
   registeredTokens: [RegisteredTokenResponse!]!
+
   registeredToken(address: String!): RegisteredTokenResponse
+
+  """Return last 100 fills for the given account's public key. Returns irreversible only data so live data not yet part of a slot that is in the root set will not be returned when called."""
+  serumFillHistory(pubKey: String!, market: String): SerumFillConnection!
+}
+
+"""Cursors required to continue either forward or backwards from a list of paginated elements"""
+type PageInfo{
+    """cursor of the first element of the list, use it to search in the opposite direction"""
+    startCursor: String!
+
+    """cursor of the last element of the list, use it to continue"""
+    endCursor: String!
 }
 
 scalar Uint64

@@ -16,7 +16,7 @@ func (i *Injector) flush(ctx context.Context, slot *pbcodec.Slot) error {
 
 	t, err := slot.Time()
 	if err != nil {
-		serumhist.zlog.Warn("unable to determine slot time for flush... not relying on it",
+		zlog.Warn("unable to determine slot time for flush... not relying on it",
 			zap.String("slot_id", slot.Id),
 		)
 	} else {

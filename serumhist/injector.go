@@ -6,21 +6,17 @@ import (
 	"io"
 	"time"
 
-	"github.com/dfuse-io/kvdb/store"
-
-	"github.com/dfuse-io/solana-go/programs/serum"
-
-	"github.com/dfuse-io/solana-go"
-
+	"github.com/dfuse-io/bstream"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
-	"github.com/golang/protobuf/ptypes"
-	"go.uber.org/zap"
-
-	"github.com/dfuse-io/bstream"
+	"github.com/dfuse-io/kvdb/store"
 	pbbstream "github.com/dfuse-io/pbgo/dfuse/bstream/v1"
 	"github.com/dfuse-io/shutter"
+	"github.com/dfuse-io/solana-go"
+	"github.com/dfuse-io/solana-go/programs/serum"
+	"github.com/golang/protobuf/ptypes"
 	"go.opencensus.io/plugin/ocgrpc"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
@@ -52,7 +48,6 @@ func NewInjector(
 		requesQueues:      map[string]solana.PublicKey{},
 		kvdb:              kvdb,
 	}
-
 }
 
 func (l *Injector) Setup() error {
@@ -113,7 +108,7 @@ func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 		}
 
 		if msg.Undo {
-			return fmt.Errorf("blockstreamv2 should never send undo signals, irreversible only please!")
+			return fmt.Errorf("blockstreamv2 should never send undo signals, irreversible only please")
 		}
 
 		if msg.Step != pbbstream.ForkStep_STEP_IRREVERSIBLE {
@@ -121,7 +116,7 @@ func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 		}
 
 		if slot.Number%100 == 0 {
-			zlog.Info("Processed slot 1/100",
+			zlog.Info("processed slot 1/100",
 				zap.Uint64("slot_number", slot.Number),
 				zap.String("slot_id", slot.Id),
 				zap.String("previous_id", slot.PreviousId),

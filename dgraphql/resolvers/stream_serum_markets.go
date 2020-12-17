@@ -10,11 +10,11 @@ import (
 	"go.uber.org/zap"
 )
 
-type MarketRequest struct {
+type SerumMarketRequest struct {
 	MarketAddress string
 }
 
-func (r *Root) SubscriptionMarket(ctx context.Context, args *MarketRequest) (<-chan *OrderBook, error) {
+func (r *Root) SubscriptionMarket(ctx context.Context, args *SerumMarketRequest) (<-chan *SerumOrderBook, error) {
 	zlog.Info("entering market subscription.")
 	marketPublicKey := solana.MustPublicKeyFromBase58(args.MarketAddress)
 	wsClient, err := ws.Dial(ctx, r.wsURL)
@@ -34,7 +34,7 @@ func (r *Root) SubscriptionMarket(ctx context.Context, args *MarketRequest) (<-c
 		return nil, fmt.Errorf("order book subscription: unpack market: %w", err)
 	}
 
-	c := make(chan *OrderBook)
+	c := make(chan *SerumOrderBook)
 
 	sub, err := wsClient.AccountSubscribe(market.Asks, "")
 	if err != nil {
@@ -57,10 +57,10 @@ func (r *Root) SubscriptionMarket(ctx context.Context, args *MarketRequest) (<-c
 
 }
 
-type OrderBook struct {
-	Type   SideType
-	Orders []Order
+type SerumOrderBook struct {
+	Type   SerumSideType
+	Orders []SerumOrder
 }
 
-type Order struct {
+type SerumOrder struct {
 }

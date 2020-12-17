@@ -1,0 +1,8 @@
+type SerumMarket  {
+  address: String!
+  name: String!
+
+#   // phase 2
+#   coinToken Token
+#   pcToken Token
+}

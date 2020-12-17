@@ -39,6 +39,7 @@ type Account {
   isSigner:   Boolean!
   isWritable: Boolean!
 }
+
 type SerumNewOrderAccounts {
   market: Account!
   openOrders: Account!
@@ -59,7 +60,6 @@ type SerumNewOrder {
   orderType:   OrderType!
   clientID:    Uint64!
 
-
   accounts: SerumNewOrderAccounts!
 }
 
@@ -72,6 +72,7 @@ type SerumMatchOrderAccounts {
   coinFeeReceivable: Account!
   pcFeeReceivable: Account!
 }
+
 type SerumMatchOrder {
   limit: Uint64!
 
@@ -85,6 +86,7 @@ type SerumConsumeEventsAccounts {
   coinFeeReceivable: Account!
   pcFeeReceivable: Account!
 }
+
 type SerumConsumeEvents {
   limit: Uint64!
 
@@ -96,6 +98,7 @@ type SerumCancelOrderAccounts {
   requestQueue: Account!
   owner: Account!
 }
+
 type SerumCancelOrder {
   side: SideType!
   orderId: String!
@@ -116,6 +119,7 @@ type SerumSettleFundsAccounts{
   splTokenProgram: Account!
   referrerPCWallet: Account
 }
+
 type SerumSettleFunds {
   accounts : SerumSettleFundsAccounts!
 }
@@ -126,6 +130,7 @@ type SerumCancelOrderByClientIdAccounts {
   requestQueue: Account!
   owner: Account!
 }
+
 type SerumCancelOrderByClientId {
   clientID: Uint64!
   accounts: SerumCancelOrderByClientIdAccounts!

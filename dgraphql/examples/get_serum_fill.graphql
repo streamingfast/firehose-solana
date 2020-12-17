@@ -1,0 +1,30 @@
+query ($publicKey: String!, $market: String) {
+  serumFillHistory(pubKey: $publicKey, market: $market) {
+    pageInfo {
+      startCursor
+      endCursor
+    }
+    edges {
+      cursor
+      node {
+        orderId
+        side
+        market {
+          address
+          name
+        }
+        baseToken {
+          address
+          name
+        }
+        quoteToken {
+          address
+          name
+        }
+        lotCount
+        price
+        feeTier
+      }
+    }
+  }
+}

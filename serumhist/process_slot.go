@@ -82,7 +82,7 @@ func (l *Injector) processRequestQueueAccountChange(accountChange *pbcodec.Accou
 		return out, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
 	}
 
-	market, found := l.requesQueues[accountChange.Pubkey]
+	_, found := l.requesQueues[accountChange.Pubkey]
 	if !found {
 		return out, fmt.Errorf("unable to find market for request queue: %q", accountChange.Pubkey)
 	}

@@ -8,48 +8,44 @@ import (
 	"github.com/dfuse-io/solana-go/programs/serum"
 )
 
-type OrderType string
+type SerumOrderType string
 
-//return new EnumLayout({ limit: 0, ioc: 1, postOnly: 2 }, 4, property);
 const (
-	OrderTypeLimit    OrderType = "LIMIT"
-	OrderTypeIOC      OrderType = "IMMEDIATE_OR_CANCEL"
-	OrderTypePostOnly OrderType = "POST_ONLY"
-	OrderTypeUnkown   OrderType = "UNKNOWN"
+	SerumOrderTypeLimit    SerumOrderType = "LIMIT"
+	SerumOrderTypeIOC                     = "IMMEDIATE_OR_CANCEL"
+	SerumOrderTypePostOnly                = "POST_ONLY"
+	SerumOrderTypeUnkown                  = "UNKNOWN"
 )
 
-func NewOrderType(side serum.OrderType) OrderType {
+func NewOrderType(side serum.OrderType) SerumOrderType {
 	switch side {
 	case serum.OrderTypeLimit:
-		return OrderTypeLimit // buy
+		return SerumOrderTypeLimit // buy
 	case serum.OrderTypeImmediateOrCancel:
-		return OrderTypeIOC // buy
+		return SerumOrderTypeIOC // buy
 	case serum.OrderTypePostOnly:
-		return OrderTypePostOnly // buy
+		return SerumOrderTypePostOnly // buy
 	default:
-		return OrderTypeUnkown
+		return SerumOrderTypeUnkown
 	}
 }
 
-type SideType string
+type SerumSideType string
 
-//return new EnumLayout({ buy: 0, sell: 1 }, 4, property);
 const (
-	SideTypeBid     SideType = "BID"
-	SideTypeAsk     SideType = "ASK"
-	SideTypeUnknown SideType = "UNKNOWN"
+	SerumSideTypeBid     SerumSideType = "BID"
+	SerumSideTypeAsk                   = "ASK"
+	SerumSideTypeUnknown               = "UNKNOWN"
 )
 
-//return new EnumLayout({ buy: 0, sell: 1 }, 4, property);
-
-func newSideType(side uint32) SideType {
+func newSideType(side uint32) SerumSideType {
 	switch side {
 	case 0:
-		return SideTypeBid // buy
+		return SerumSideTypeBid // buy
 	case 1:
-		return SideTypeAsk // buy
+		return SerumSideTypeAsk // buy
 	default:
-		return SideTypeUnknown
+		return SerumSideTypeUnknown
 	}
 }
 
@@ -172,10 +168,10 @@ type SerumNewOrderAccounts struct {
 	SRMDiscount     *AccountMeta
 }
 type SerumNewOrder struct {
-	Side        SideType
+	Side        SerumSideType
 	LimitPrice  gtype.Uint64
 	MaxQuantity gtype.Uint64
-	OrderType   OrderType
+	OrderType   SerumOrderType
 	ClientID    gtype.Uint64
 
 	Accounts SerumNewOrderAccounts
@@ -294,7 +290,7 @@ type SerumCancelOrderAccounts struct {
 	Owner        AccountMeta
 }
 type SerumCancelOrder struct {
-	Side          SideType
+	Side          SerumSideType
 	OrderId       string
 	OpenOrders    string
 	OpenOrderSlot gtype.Uint64
