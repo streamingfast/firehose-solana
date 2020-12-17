@@ -2,7 +2,6 @@ package kv
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/dfuse-io/bstream"
 
@@ -22,13 +21,4 @@ func (db *DB) UpdateNowIrreversibleSlot(ctx context.Context, blk *pbcodec.Block)
 }
 
 func (db *DB) PutSlot(ctx context.Context, slot *pbcodec.Slot) error {
-	if traceEnabled {
-		db.logger.Debug("put slot")
-	}
-
-	if err := db.processSerumSlot(ctx, slot); err != nil {
-		return fmt.Errorf("put slot: unable to process serum slot: %w", err)
-	}
-
-	return nil
 }

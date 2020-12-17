@@ -63,7 +63,7 @@ func TestEncodeFillsByPubkey(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb, 0xcc,
 	}
 
-	key := EncodeFillsByPubkey(pubkey, marketkey, 3, 2)
+	key := EncodeOrdersByPubkey(pubkey, marketkey, 3, 2)
 	assert.Equal(t, key, []byte{
 		0x02,
 		0xaa, 0xbb, 0xcc, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -80,7 +80,7 @@ func TestEncodeFillsByPubkey(t *testing.T) {
 }
 
 func TestDecodeFillsByPubkey(t *testing.T) {
-	pubkey, market, orderSeqNum, slotNum := DecodeFillsByPubkey([]byte{
+	pubkey, market, orderSeqNum, slotNum := DecodeOrdersByPubkey([]byte{
 		0x02,
 		0xaa, 0xbb, 0xcc, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -126,7 +126,7 @@ func TestEncodeFillsByMarketPubkey(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb, 0xcc,
 	}
 
-	key := EncodeFillsByMarketPubkey(pubkey, marketkey, 3, 2)
+	key := EncodeOrdersByMarketPubkey(pubkey, marketkey, 3, 2)
 	assert.Equal(t, key, []byte{
 		0x03,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -143,7 +143,7 @@ func TestEncodeFillsByMarketPubkey(t *testing.T) {
 }
 
 func TestDecodeFillsByMarketPubkey(t *testing.T) {
-	pubkey, market, orderSeqNum, slotNum := DecodeFillsByMarketPubkey([]byte{
+	pubkey, market, orderSeqNum, slotNum := DecodeOrdersByMarketPubkey([]byte{
 		0x03,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

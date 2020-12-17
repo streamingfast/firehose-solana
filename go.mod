@@ -21,7 +21,8 @@ require (
 	github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37
 	github.com/dfuse-io/pbgo v0.0.6-0.20201021183128-ec7a7f2c6bff
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
-	github.com/dfuse-io/solana-go v0.2.1-0.20201216203407-2c248b4b007b
+	github.com/dfuse-io/solana-go v0.2.1-0.20201217021608-50f5fc54dd03
+	github.com/eoscanada/eos-go v0.9.1-0.20200506160036-5e090ae689ef
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
@@ -32,10 +33,12 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
+	github.com/test-go/testify v1.1.4
 	go.opencensus.io v0.22.4
 	go.uber.org/atomic v1.6.0
 	go.uber.org/zap v1.16.0
 	google.golang.org/grpc v1.29.1
+	gotest.tools v2.2.0+incompatible
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807
