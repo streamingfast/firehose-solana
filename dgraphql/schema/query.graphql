@@ -1,4 +1,5 @@
 type Query {
+
   tokens: [TokenResponse!]!
   token(address: String!): TokenResponse
   registeredTokens: [RegisteredTokenResponse!]!

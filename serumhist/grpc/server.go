@@ -20,14 +20,14 @@ type Server struct {
 
 	grpcAddr string
 	server   *grpc.Server
-	KVStore  store.KVStore
+	kvStore  store.KVStore
 }
 
 func New(grpcAddr string, kvStore store.KVStore) *Server {
 	return &Server{
 		Shutter:  shutter.New(),
 		grpcAddr: grpcAddr,
-		KVStore:  kvStore,
+		kvStore:  kvStore,
 		server:   dgrpc.NewServer(dgrpc.WithLogger(zlog)),
 	}
 }

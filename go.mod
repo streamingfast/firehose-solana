@@ -22,12 +22,10 @@ require (
 	github.com/dfuse-io/pbgo v0.0.6-0.20201021183128-ec7a7f2c6bff
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
 	github.com/dfuse-io/solana-go v0.2.1-0.20201217021608-50f5fc54dd03
-	github.com/eoscanada/eos-go v0.9.1-0.20200506160036-5e090ae689ef
 	github.com/golang/protobuf v1.4.2
-	github.com/gorilla/handlers v1.5.1
-	github.com/gorilla/mux v1.8.0
-	github.com/gorilla/websocket v1.4.2
-	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
+	github.com/gorilla/handlers v1.5.1 // indirect
+	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653 // indirect
 	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.1.1
