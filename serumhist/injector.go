@@ -89,7 +89,7 @@ func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 			pbbstream.ForkStep_STEP_IRREVERSIBLE,
 		},
 	}
-	serumhist.zlog.Info("launching serumdb loader",
+	zlog.Info("launching serumdb loader",
 		zap.Reflect("blockstream_request", req),
 	)
 
@@ -100,7 +100,7 @@ func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 	{
 		msg, err := executor.Recv()
 		if err == io.EOF {
-			serumhist.zlog.Info("received EOF in listening stream, expected a long-running stream here")
+			zlog.Info("received EOF in listening stream, expected a long-running stream here")
 			return nil
 		}
 		if err != nil {
