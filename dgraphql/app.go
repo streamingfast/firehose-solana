@@ -80,6 +80,10 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 		return nil, fmt.Errorf("unable to launch trx stream: %w", err)
 	}
 
+	if err := tokenRegistry.Load(); err != nil {
+		return nil, fmt.Errorf("unable to load token registry: %w", err)
+	}
+
 	zlog.Info("configuring resolver and parsing schemas")
 	resolver, err := solResolver.NewRoot(
 		rpcClient,
