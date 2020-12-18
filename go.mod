@@ -25,7 +25,7 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653 // indirect
+	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
 	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.1.1

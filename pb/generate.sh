@@ -20,24 +20,14 @@ PROTO=${1:-"$ROOT/../proto"}
 PROTO_SOLANA=${2:-"$ROOT/../proto-solana"}
 
 function main() {
-  echo "Generating"
   set -e
   current_dir="`pwd`"
   trap "cd \"$current_dir\"" EXIT
 
-  echo  $current_dir
-
   pushd "$ROOT/pb" &> /dev/null
-#  generate "dfuse/eosio/abicodec/v1/abicodec.proto"
   generate "dfuse/solana/codec/v1/codec.proto"
   generate "dfuse/solana/serum/v1/rows.proto"
   generate "dfuse/solana/serumhist/v1/serumhist.proto"
-#  generate "dfuse/eosio/statedb/v1/" "statedb.proto" "tablet.proto" "singlet.proto"
-#  generate "dfuse/eosio/trxdb/v1/trxdb.proto"
-#  generate "dfuse/eosio/funnel/v1/funnel.proto"
-#  generate "dfuse/eosio/search/v1/search.proto"
-#  generate "dfuse/eosio/tokenmeta/v1/tokenmeta.proto"
-
 
   echo "generate.sh - `date` - `whoami`" > $ROOT/pb/last_generate.txt
   echo "dfuse-io/proto revision: `GIT_DIR=$PROTO/.git git rev-parse HEAD`" >> $ROOT/pb/last_generate.txt
@@ -48,7 +38,6 @@ function main() {
 # - generate <protoPath>
 # - generate <protoBasePath/> [<file.proto> ...]
 function generate() {
-    echo "generate"
     base=""
     if [[ "$#" -gt 1 ]]; then
       base="$1"; shift

@@ -21,10 +21,12 @@ import (
 	drateLimiter "github.com/dfuse-io/dauth/ratelimiter"
 	solResolver "github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
 	"github.com/dfuse-io/dfuse-solana/dgraphql/trade"
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/token"
 	"github.com/dfuse-io/dfuse-solana/transaction"
 	"github.com/dfuse-io/dgraphql"
 	dgraphqlApp "github.com/dfuse-io/dgraphql/app/dgraphql"
+	"github.com/dfuse-io/dgrpc"
 	"github.com/dfuse-io/solana-go/rpc"
 	"go.uber.org/zap"
 )
@@ -34,6 +36,7 @@ type Config struct {
 	RatelimiterPlugin string
 	RPCEndpointAddr   string
 	RPCWSEndpointAddr string
+	SerumHistoryAddr  string
 	SlotOffset        uint64
 }
 
@@ -60,6 +63,13 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 		return nil, fmt.Errorf("unable to initialize rate limiter: %w", err)
 	}
 
+	zlog.Info("creating serum history client")
+	serumHistoryConn, err := dgrpc.NewInternalClient(f.config.SerumHistoryAddr)
+	if err != nil {
+		return nil, fmt.Errorf("cannot dial to grpc trxstatetracker server: %w", err)
+	}
+	serumHistoryClient := pbserumhist.NewSerumHistoryClient(serumHistoryConn)
+
 	rpcClient := rpc.NewClient(f.config.RPCEndpointAddr)
 	tradeManager := trade.NewManager()
 	trxStream := transaction.NewStream(rpcClient, f.config.RPCWSEndpointAddr, tradeManager, f.config.SlotOffset)
@@ -77,6 +87,7 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 		tradeManager,
 		tokenRegistry,
 		rateLimiter,
+		serumHistoryClient,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create root resolver: %w", err)
