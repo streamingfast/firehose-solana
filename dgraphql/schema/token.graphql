@@ -1,3 +1,8 @@
+type Token {
+  address: String!
+  name: String!
+}
+
 type TokenResponse {
   address: String!
   mintAuthority: String!
