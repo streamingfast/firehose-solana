@@ -22,6 +22,7 @@ func init() {
 			cmd.Flags().Bool("dgraphql-override-trace-id", false, "Flag to override trace id or not")
 			cmd.Flags().String("dgraphql-auth-url", "null://", "Auth URL used to configure the dfuse js client")
 			cmd.Flags().String("dgraphql-api-key", "web_0000", "API key used in GraphiQL")
+			cmd.Flags().String("dgraphql-serum-hist-addr", SerumHistoryGRPCServingAddr, "Address where to reach the Serum History gRPC service")
 			cmd.Flags().Uint64("dgraphql-slot-offset", 100, "Number of slots offset")
 
 			return nil
@@ -33,6 +34,7 @@ func init() {
 				RPCEndpointAddr:   viper.GetString("common-rpc-endpoint"),
 				RPCWSEndpointAddr: viper.GetString("common-rpc-ws-endpoint"),
 				SlotOffset:        viper.GetUint64("dgraphql-slot-offset"),
+				SerumHistoryAddr:  viper.GetString("dgraphql-serum-hist-addr"),
 
 				Config: dgraphqlApp.Config{
 					// Base dgraphql configs

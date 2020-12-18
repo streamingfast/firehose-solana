@@ -151,7 +151,7 @@ retry:
 				}
 				addr := programResult.Value.PubKey.String()
 
-				zlog.Info("Updating token", zap.String("token_address", addr), zap.Uint64("supply", uint64(mint.Supply)))
+				zlog.Info("updating token", zap.String("token_address", addr), zap.Uint64("supply", uint64(mint.Supply)))
 				r.storeLock.Lock()
 				r.store[addr] = &RegisteredToken{
 					Address: address,
@@ -160,7 +160,9 @@ retry:
 				}
 				r.storeLock.Unlock()
 			} else {
-				zlog.Debug("skipping program update, not a mint account")
+				if traceEnabled {
+					zlog.Debug("skipping program update, not a mint account")
+				}
 			}
 		}
 	}

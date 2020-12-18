@@ -43,8 +43,8 @@ func GraphqlExamples() []*static.GraphqlExample {
 			Label:    "Get Serum Fill",
 			Document: graphqlDocument(box, "get_serum_fill.graphql"),
 			Variables: static.GraphqlVariablesByNetwork{
-				"generic": r(`{"publicKey": "YOUR-ACCOUNT-HERE"}`),
-				"mainnet": r(`{"publicKey": "YOUR-ACCOUNT-HERE"}`),
+				"generic": r(`{"trader": "YOUR-ACCOUNT-HERE"}`),
+				"mainnet": r(`{"trader": "YOUR-ACCOUNT-HERE"}`),
 			},
 		},
 		{

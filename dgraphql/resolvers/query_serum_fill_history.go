@@ -2,7 +2,7 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
+	"time"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/solana-go"
@@ -35,9 +35,12 @@ func (r *Root) QuerySerumFillHistory(ctx context.Context, in *SerumFillHistoryRe
 		request.Market = market[:]
 	}
 
-	response, err := r.serumHistoryClient.GetFills(ctx, request)
+	getCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	response, err := r.serumHistoryClient.GetFills(getCtx, request)
 	if err != nil {
-		return nil, fmt.Errorf("backend error: %w", err)
+		return nil, graphqlErrorFromGRPC(getCtx, err)
 	}
 
 	edges := make([]*SerumFillEdge, len(response.Fill))

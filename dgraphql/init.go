@@ -22,6 +22,6 @@ import (
 func init() {
 	zlog.Info("registering schema files")
 	for _, name := range schema.AssetNames() {
-		dgraphql.RegisterSchema("dfuse_ethereum", name, schema.MustAsset(name))
+		dgraphql.RegisterSchema("dfuse_solana", name, schema.MustAsset(name))
 	}
 }
