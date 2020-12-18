@@ -1,11 +1,33 @@
 package resolvers
 
+import (
+	"context"
+
+	pbaccounthist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/dfuse-io/solana-go"
+	gqerrs "github.com/graph-gophers/graphql-go/errors"
+)
+
 type SerumFillHistoryRequest struct {
 	PubKey string
 	Market *string
 }
 
-func (r *Root) QuerySerumFillHistory(request *SerumFillHistoryRequest) (out *SerumFillConnection) {
+func (r *Root) QuerySerumFillHistory(ctx context.Context, request *SerumFillHistoryRequest) (out *SerumFillConnection, err error) {
+	_, err = solana.PublicKeyFromBase58(request.PubKey)
+	if err != nil {
+		return nil, gqerrs.Errorf(`invalid "pubKey" argument %q: %w`, request.PubKey, err)
+	}
+
+	if request.Market != nil {
+		_, err = solana.PublicKeyFromBase58(*request.Market)
+		if err != nil {
+			return nil, gqerrs.Errorf(`invalid "market" argument %q: %w`, *request.Market, err)
+		}
+	}
+
+	r.serumHistoryClient.GetFills(ctx, &pbaccounthist.GetFillsRequest{})
+
 	edges := []*SerumFillEdge{
 		{cursor: "abc", node: &SerumFill{OrderID: "1", PubKey: "a", Market: SerumMarket{Address: "12", Name: "SOL/USD"}, Side: SerumSideTypeBid, BaseToken: Token{Address: "123", Name: "SOL"}, QuoteToken: Token{Address: "123", Name: "USD"}, LotCount: 10, Price: 12, FeeTier: SerumFeeTierBase}},
 		{cursor: "def", node: &SerumFill{OrderID: "2", PubKey: "a", Market: SerumMarket{Address: "34", Name: "SOL/EOS"}, Side: SerumSideTypeBid, BaseToken: Token{Address: "123", Name: "SOL"}, QuoteToken: Token{Address: "456", Name: "EOS"}, LotCount: 20, Price: 15, FeeTier: SerumFeeTierSRM2}},
@@ -17,7 +39,7 @@ func (r *Root) QuerySerumFillHistory(request *SerumFillHistoryRequest) (out *Ser
 	return &SerumFillConnection{
 		Edges:    edges,
 		PageInfo: NewPageInfoFromEdges(edges),
-	}
+	}, nil
 }
 
 type SerumFillEdge struct {
