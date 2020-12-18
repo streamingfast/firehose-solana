@@ -86,6 +86,7 @@ func (l *Injector) processRequestQueueAccountChange(accountChange *pbcodec.Accou
 	if !found {
 		return out, fmt.Errorf("unable to find market for request queue: %q", accountChange.Pubkey)
 	}
+	_ = market
 
 	return l.getRequestQueueChangeKeys(oldData, newData), nil
 }

@@ -6,12 +6,13 @@ package pbaccounthist
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	v1 "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serum/v1"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -26,7 +27,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type GetFillsRequest struct {
-	Pubkey               string   `protobuf:"bytes,1,opt,name=pubkey,proto3" json:"pubkey,omitempty"`
+	Trader               string   `protobuf:"bytes,1,opt,name=pubkey,proto3" json:"pubkey,omitempty"`
 	Market               string   `protobuf:"bytes,2,opt,name=market,proto3" json:"market,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -60,7 +61,7 @@ var xxx_messageInfo_GetFillsRequest proto.InternalMessageInfo
 
 func (m *GetFillsRequest) GetPubkey() string {
 	if m != nil {
-		return m.Pubkey
+		return m.Trader
 	}
 	return ""
 }
