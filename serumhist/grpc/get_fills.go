@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	pbserum "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serum/v1"
 	pbaccounthist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
@@ -15,12 +18,12 @@ func (s *Server) GetFills(ctx context.Context, request *pbaccounthist.GetFillsRe
 
 	market, err := solana.PublicKeyFromBase58(request.Market)
 	if err != nil {
-		return nil, fmt.Errorf("invalid market address: %w", err)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid market address: %s", err)
 	}
 
 	trader, err := solana.PublicKeyFromBase58(request.Trader)
 	if err != nil {
-		return nil, fmt.Errorf("invalid trader address: %w", err)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid trader address: %s", err)
 	}
 
 	orderKeyPrefixes := keyer.EncodeOrdersPrefixByMarketPubkey(trader, market)
@@ -47,6 +50,7 @@ func (s *Server) GetFills(ctx context.Context, request *pbaccounthist.GetFillsRe
 		f := &pbserum.Fill{}
 		err := proto.Unmarshal(v, f)
 		if err != nil {
+			fillsIterator.PushFinished()
 			return nil, fmt.Errorf("failed to unmarshal order: %w", err)
 		}
 		fills = append(fills, f)
