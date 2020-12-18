@@ -1,7 +1,6 @@
 package serumhist
 
 import (
-	"fmt"
 	"testing"
 
 	kvdb "github.com/dfuse-io/kvdb/store"
@@ -60,8 +59,8 @@ func Test_ProcessRequestQueue(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			keyValue := getRequestQueueChangeKeys(test.old, test.new)
-			fmt.Println(keyValue)
+			// keyValue := getRequestQueueChangeKeys(test.old, test.new)
+			// fmt.Println(keyValue)
 		})
 	}
 }

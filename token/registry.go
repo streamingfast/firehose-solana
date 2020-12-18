@@ -121,7 +121,7 @@ func (r *Registry) Load() error {
 }
 
 func (r *Registry) watch(address solana.PublicKey, client *ws.Client) {
-	zlog.Info("watching token ", zap.Stringer("address", address))
+	zlog.Info("watching token", zap.Stringer("address", address))
 	sleep := 0 * time.Second
 
 retry:

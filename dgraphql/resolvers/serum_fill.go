@@ -1,18 +1,29 @@
 package resolvers
 
-import gtype "github.com/dfuse-io/dgraphql/types"
+import (
+	"encoding/hex"
+	"strings"
+
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	gtype "github.com/dfuse-io/dgraphql/types"
+	"github.com/dfuse-io/solana-go"
+)
 
 type SerumFill struct {
-	OrderID    string
-	PubKey     string
-	Market     SerumMarket
-	Side       SerumSideType
-	BaseToken  Token
-	QuoteToken Token
-	LotCount   gtype.Uint64
-	Price      gtype.Uint64
-	FeeTier    SerumFeeTier
+	*pbserumhist.Fill
 }
+
+func (s SerumFill) OrderID() string { return hex.EncodeToString(s.OrderId) }
+func (s SerumFill) Trader() string {
+	return solana.PublicKeyFromBytes(s.Fill.Trader).String()
+}
+func (s SerumFill) Side() string           { return s.Fill.Side.String() }
+func (s SerumFill) Market() *SerumMarket   { return nil }
+func (s SerumFill) BaseToken() *Token      { return nil }
+func (s SerumFill) QuoteToken() *Token     { return nil }
+func (s SerumFill) LotCount() gtype.Uint64 { return 0 }
+func (s SerumFill) Price() gtype.Uint64    { return 0 }
+func (s SerumFill) FeeTier() string        { return strings.ToUpper(s.Fill.FeeTier.String()) }
 
 type SerumFeeTier = string
 

@@ -26,7 +26,6 @@ function main() {
 
   pushd "$ROOT/pb" &> /dev/null
   generate "dfuse/solana/codec/v1/codec.proto"
-  generate "dfuse/solana/serum/v1/rows.proto"
   generate "dfuse/solana/serumhist/v1/serumhist.proto"
 
   echo "generate.sh - `date` - `whoami`" > $ROOT/pb/last_generate.txt
