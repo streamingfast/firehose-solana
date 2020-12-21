@@ -124,7 +124,7 @@ func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 			)
 		}
 
-		l.ProcessSlot(slot)
+		l.ProcessSlot(ctx, slot)
 
 		if err := l.writeCheckpoint(ctx, slot); err != nil {
 			return fmt.Errorf("error while saving block checkpoint")

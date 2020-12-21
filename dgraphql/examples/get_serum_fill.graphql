@@ -1,5 +1,5 @@
-query ($publicKey: String!, $market: String) {
-  serumFillHistory(pubKey: $publicKey, market: $market) {
+query ($trader: String!, $market: String) {
+  serumFillHistory(trader: $trader, market: $market) {
     pageInfo {
       startCursor
       endCursor
