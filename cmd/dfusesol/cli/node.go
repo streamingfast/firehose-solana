@@ -102,6 +102,7 @@ func RegisterSolanaNodeApp(kind string) {
 			cmd.Flags().Bool(app+"-disable-profiler", true, "Disables the node manager profiler")
 			cmd.Flags().Bool(app+"-log-to-zap", true, "Enable all node logs to transit into app's logger directly, when false, prints node logs directly to stdout")
 			cmd.Flags().Bool(app+"-rpc-enable-debug-apis", false, "[DEV] Enable some of the Solana validator RPC APIs that can be used for debugging purposes")
+			cmd.Flags().Duration(app+"-startup-delay", 0, "[DEV] wait time before launching")
 
 			if kind == "mindreader" {
 				cmd.Flags().String(app+"-grpc-listen-addr", MindreaderNodeGRPCAddr, "Address to listen for incoming gRPC requests")
