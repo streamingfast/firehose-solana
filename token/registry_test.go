@@ -7,16 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRegistry_loadName(t *testing.T) {
-
-	r := NewRegistry(nil, "")
-	err := r.loadNames()
-	require.NoError(t, err)
-
-	require.Equal(t, "BTC", r.metas["9n4nbM75f5Ui33ZbPYXn59EwSgE8CGsHtAeTH5YFeJ9E"].Symbol)
-
-}
-
 func TestRegistry_Load(t *testing.T) {
 
 	t.Skip("This test will failed till we register BTC meta on mainnet")
