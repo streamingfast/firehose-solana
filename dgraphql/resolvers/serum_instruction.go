@@ -38,12 +38,12 @@ const (
 	SerumSideTypeUnknown               = "UNKNOWN"
 )
 
-func newSideType(side uint32) SerumSideType {
+func newSideType(side serum.Side) SerumSideType {
 	switch side {
-	case 0:
-		return SerumSideTypeBid // buy
-	case 1:
-		return SerumSideTypeAsk // buy
+	case serum.SideBid:
+		return SerumSideTypeBid
+	case serum.SideAsk:
+		return SerumSideTypeAsk
 	default:
 		return SerumSideTypeUnknown
 	}

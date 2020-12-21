@@ -21,8 +21,9 @@ require (
 	github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37
 	github.com/dfuse-io/pbgo v0.0.6-0.20201021183128-ec7a7f2c6bff
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
-	github.com/dfuse-io/solana-go v0.2.1-0.20201221145946-fd950b41cc0f
+	github.com/dfuse-io/solana-go v0.2.1-0.20201221165115-cf5d0cb9653e
 	github.com/eoscanada/eos-go v0.9.1-0.20200506160036-5e090ae689ef
+	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
@@ -44,5 +45,3 @@ require (
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807
 
 replace github.com/ShinyTrinkets/overseer => github.com/maoueh/overseer v0.2.1-0.20191024193921-39856397cf3f
-
-replace github.com/dfuse-io/solana-go => /Users/julien/codebase/dfuse-io/solana-go

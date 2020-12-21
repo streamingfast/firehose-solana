@@ -1,40 +1,42 @@
 package serumhist
 
 import (
+	"context"
+	"encoding/binary"
 	"fmt"
-	pbserum "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serum/v1"
 
-	"github.com/dfuse-io/solana-go"
-
-	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-
-	"github.com/dfuse-io/solana-go/diff"
+	"github.com/golang/protobuf/proto"
 
 	bin "github.com/dfuse-io/binary"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	kvdb "github.com/dfuse-io/kvdb/store"
+	"github.com/dfuse-io/solana-go"
+	"github.com/dfuse-io/solana-go/diff"
 	"github.com/dfuse-io/solana-go/programs/serum"
 	"go.uber.org/zap"
 )
 
-func (l *Injector) ProcessSlot(slot *pbcodec.Slot) error {
+func (l *Injector) ProcessSlot(ctx context.Context, slot *pbcodec.Slot) error {
 	if traceEnabled {
 		zlog.Debug("processing slot", zap.String("slot_id", slot.Id))
 	}
 
-	if err := l.processSerumSlot(slot); err != nil {
+	if err := l.processSerumSlot(ctx, slot); err != nil {
 		return fmt.Errorf("put slot: unable to process serum slot: %w", err)
 	}
 
 	return nil
 }
 
-func (l *Injector) processSerumSlot(slot *pbcodec.Slot) error {
+func (l *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) error {
 	for _, transaction := range slot.Transactions {
 		for idx, instruction := range transaction.Instructions {
 			if instruction.ProgramId != serum.PROGRAM_ID.String() {
 				if traceEnabled {
 					zlog.Debug("skipping non-serum instruction",
+						zap.Uint64("slot_number", slot.Number),
 						zap.String("transaction_id", transaction.Id),
 						zap.Int("instruction_index", idx),
 						zap.String("program_id", instruction.ProgramId),
@@ -46,24 +48,55 @@ func (l *Injector) processSerumSlot(slot *pbcodec.Slot) error {
 			var serumInstruction *serum.Instruction
 			if err := bin.NewDecoder(instruction.Data).Decode(&serumInstruction); err != nil {
 				zlog.Warn("unable to decode serum instruction skipping",
+					zap.Uint64("slot_number", slot.Number),
 					zap.String("transaction_id", transaction.Id),
 					zap.Int("instruction_index", idx),
 				)
 				continue
 			}
 
+			zlog.Info("processing serum instruction",
+				zap.Uint64("slot_number", slot.Number),
+				zap.Int("instruction_index", idx),
+				zap.String("transaction_id", transaction.Id),
+				zap.Uint32("serum_instruction_variant_index", serumInstruction.TypeID),
+			)
+
+			var out []*kvdb.KV
+			var err error
+
 			// we only care about new order instruction that modify the request queue
 			if newOrder, ok := serumInstruction.Impl.(*serum.InstructionNewOrder); ok {
-				processNewOrderRequestQueue(slot.Number, newOrder, instruction.AccountChanges)
-				continue
+				zlog.Info("processing new order")
+				out, err = processNewOrderRequestQueue(slot.Number, newOrder, instruction.AccountChanges)
+				if err != nil {
+					zlog.Warn("error processing new order",
+						zap.Uint64("slot_number", slot.Number),
+						zap.String("error", err.Error()),
+					)
+					continue
+				}
+
 			}
 
 			// we only care about new order instruction that modify the event queue
 			if mathOrder, ok := serumInstruction.Impl.(*serum.InstructionMatchOrder); ok {
-				processMatchOrderEventQueue(slot.Number, mathOrder, instruction.accountChange)
-				continue
+				zlog.Info("processing match order")
+				out, err = processMatchOrderEventQueue(slot.Number, mathOrder, instruction.AccountChanges)
+				if err != nil {
+					zlog.Warn("error matching order and event queue",
+						zap.Uint64("slot_number", slot.Number),
+						zap.String("error", err.Error()),
+					)
+					continue
+				}
 			}
 
+			for _, kv := range out {
+				if err := l.kvdb.Put(ctx, kv.Key, kv.Value); err != nil {
+					zlog.Warn("failed to write key-value", zap.Error(err))
+				}
+			}
 		}
 	}
 	return nil
@@ -150,55 +183,46 @@ func processMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatch
 	return generateFillKeys(slotNumber, inst.Accounts.Market.PublicKey, old, new), nil
 }
 
-//Flag              EventFlag
-//OwnerSlot         uint8
-//FeeTier           uint8
-//Padding           [5]uint8
-//NativeQtyReleased uint64
-//NativeQtyPaid     uint64
-//NativeFeeOrRebate uint64
-//OrderID           bin.Uint128
-//Owner             solana.PublicKey
-//ClientOrderID     uint64
-
-func generateFillKeys(slotNumber uint64, side serum.Side, owner, market solana.PublicKey, old *serum.EventQueue, new *serum.EventQueue) (out []*kvdb.KV) {
+func generateFillKeys(slotNumber uint64, market solana.PublicKey, old *serum.EventQueue, new *serum.EventQueue) (out []*kvdb.KV) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
-			orderSeqNum := extractOrderSeqNum(side, e.OrderID)
 			switch event.Kind {
 			case diff.KindChanged:
 				// this is probably a partial fill we don't care about this right now
 			case diff.KindAdded:
-				// etiehr a cancel request or ad new order
-				// this should create keys
-				switch e.Flag {
-				//	case serum.EventFlagOut:
-				//	case serum.EventFlagBid:
-				//	case serum.EventFlagMaker:
-				case serum.EventFlagFill:
-					OrderID
-
-					fill := pbserum.Fill{
-						Pubkey:               owner,
-						OrderId:              ,
-						IsAsk:                false,
-						Maker:                false,
-						NativeQtyPaid:        0,
-						NativeQtyReceived:    0,
-						NativeFeeOrRebate:    0,
-						FeeTier:              "",
+				fmt.Println("flag: ", e.Flag)
+				if e.Flag.IsFill() {
+					size := 16
+					buf := make([]byte, size)
+					binary.LittleEndian.PutUint64(buf, e.OrderID.Lo)
+					binary.LittleEndian.PutUint64(buf[(size/2):], e.OrderID.Hi)
+					fill := &pbserumhist.Fill{
+						Trader:            e.Owner[:],
+						OrderId:           buf,
+						Side:              pbserumhist.Side(e.Side()),
+						Maker:             false,
+						NativeQtyPaid:     e.NativeQtyPaid,
+						NativeQtyReceived: e.NativeQtyReleased,
+						NativeFeeOrRebate: e.NativeFeeOrRebate,
+						FeeTier:           pbserumhist.FeeTier(e.FeeTier),
 					}
 
+					if e.Side() == serum.SideAsk {
+						fill.Side = 1
+					}
+
+					cnt, err := proto.Marshal(fill)
+					if err != nil {
+						zlog.Error("unable to marshal to fill", zap.Error(err))
+						return
+					}
+					orderSeqNum := extractOrderSeqNum(e.Side(), e.OrderID)
+
 					out = append(out, &kvdb.KV{
-						Key:   keyer.EncodeOrdersByMarketPubkey(owner, market, orderSeqNum, slotNumber),
-						Value: ,
+						Key:   keyer.EncodeFillData(market, orderSeqNum, slotNumber),
+						Value: cnt,
 					})
-					out = append(out, &kvdb.KV{
-						Key:   keyer.EncodeOrdersByPubkey(owner, market, orderSeqNum, slotNumber),
-						Value: nil,
-					})
-				case serum.RequestFlagCancelOrder:
 				}
 			case diff.KindRemoved:
 				// this is a request that for either canceled or fully filled
