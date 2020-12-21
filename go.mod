@@ -22,7 +22,6 @@ require (
 	github.com/dfuse-io/pbgo v0.0.6-0.20201021183128-ec7a7f2c6bff
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
 	github.com/dfuse-io/solana-go v0.2.1-0.20201221165115-cf5d0cb9653e
-	github.com/eoscanada/eos-go v0.9.1-0.20200506160036-5e090ae689ef
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1 // indirect
