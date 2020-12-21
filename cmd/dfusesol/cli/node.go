@@ -188,7 +188,7 @@ func RegisterSolanaNodeApp(kind string) {
 			}
 
 			network := viper.GetString(app + "-network")
-			startupDelay := time.Duration(0)
+			startupDelay := viper.GetDuration(app + "-startup-delay")
 			extraArguments := getExtraArguments(kind)
 
 			if kind == "peering" || kind == "mindreader" {
