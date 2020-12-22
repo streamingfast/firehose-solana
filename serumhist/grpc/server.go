@@ -5,11 +5,11 @@ import (
 	"net"
 	"time"
 
+	"github.com/dfuse-io/dfuse-solana/serumhist"
+
 	pbaccounthist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-
 	"github.com/dfuse-io/dgrpc"
-
-	"github.com/dfuse-io/kvdb/store"
+	pbhealth "github.com/dfuse-io/pbgo/grpc/health/v1"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -20,20 +20,21 @@ type Server struct {
 
 	grpcAddr string
 	server   *grpc.Server
-	kvStore  store.KVStore
+	manager  *serumhist.Manager
 }
 
-func New(grpcAddr string, kvStore store.KVStore) *Server {
+func New(grpcAddr string, manager *serumhist.Manager) *Server {
 	return &Server{
 		Shutter:  shutter.New(),
 		grpcAddr: grpcAddr,
-		kvStore:  kvStore,
+		manager:  manager,
 		server:   dgrpc.NewServer(dgrpc.WithLogger(zlog)),
 	}
 }
 
 func (s *Server) Serve() {
 	pbaccounthist.RegisterSerumHistoryServer(s.server, s)
+	pbhealth.RegisterHealthServer(s.server, s)
 
 	zlog.Info("listening for serum history",
 		zap.String("addr", s.grpcAddr),

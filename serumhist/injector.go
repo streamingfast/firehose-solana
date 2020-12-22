@@ -70,6 +70,10 @@ func (l *Injector) Setup() error {
 		l.requesQueues[market.MarketV2.RequestQueue.String()] = market.Address
 	}
 
+	l.source.OnTerminated(func(_ error) {
+		l.setUnhealthy()
+	})
+
 	l.blockStreamClient = pbbstream.NewBlockStreamV2Client(conn)
 	return nil
 }
@@ -101,6 +105,8 @@ func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 		if err != nil {
 			return err
 		}
+
+		l.setHealthy()
 
 		slot := &pbcodec.Slot{}
 		if err := ptypes.UnmarshalAny(msg.Block, slot); err != nil {
