@@ -17,6 +17,7 @@ import (
 )
 
 type Config struct {
+	BlockStreamV2Addr string
 	BlockStreamAddr   string
 	FLushSlotInterval uint64
 	StartBlock        uint64
@@ -61,18 +62,29 @@ func (a *App) Run() error {
 	if a.Config.EnableInjector {
 		dmetrics.Register(metrics.Metricset)
 
-		injector := serumhist.NewInjector(a.Config.BlockStreamAddr, kvdb, a.Config.FLushSlotInterval)
+		injector := serumhist.NewInjector(a.Config.BlockStreamV2Addr, a.Config.BlockStreamAddr, kvdb, a.Config.FLushSlotInterval)
 		if err := injector.Setup(); err != nil {
 			return fmt.Errorf("unable to create solana injector: %w", err)
 		}
 
 		zlog.Info("serum history injector setup")
 
-		a.OnTerminating(injector.Shutdown)
+		a.OnTerminating(func(err error) {
+			injector.SetUnhealthy()
+			injector.Shutdown(err)
+		})
 		injector.OnTerminated(a.Shutdown)
 
 		injector.LaunchHealthz(a.Config.HTTPListenAddr)
-		go injector.Launch(context.Background(), a.Config.StartBlock)
+		go func() {
+			err := injector.Launch(context.Background(), a.Config.StartBlock)
+			if err != nil {
+				zlog.Error("injector terminated with error")
+				injector.Shutdown(err)
+			} else {
+				zlog.Info("injector terminated without error")
+			}
+		}()
 	}
 
 	return nil

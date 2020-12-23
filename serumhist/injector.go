@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dfuse-io/bstream"
+
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/kvdb/store"
@@ -14,7 +15,6 @@ import (
 	"github.com/dfuse-io/shutter"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/programs/serum"
-	"github.com/golang/protobuf/ptypes"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -26,10 +26,11 @@ type Injector struct {
 	flushSlotInterval uint64
 	lastTickBlock     uint64
 	lastTickTime      time.Time
-	blockstreamV2Addr string
-	source            bstream.Source
+	blockStreamV2Addr string
+	blockstreamAddr   string
 	healthy           bool
-	blockStreamClient pbbstream.BlockStreamV2Client
+	firehoseClient    pbbstream.BlockStreamV2Client
+	blockStreamClient pbbstream.BlockStreamClient // temp used to
 
 	eventQueues  map[string]solana.PublicKey
 	requesQueues map[string]solana.PublicKey
@@ -37,11 +38,13 @@ type Injector struct {
 
 func NewInjector(
 	blockstreamV2Addr string,
+	blockstreamAddr string,
 	kvdb store.KVStore,
 	flushSlotInterval uint64,
 ) *Injector {
 	return &Injector{
-		blockstreamV2Addr: blockstreamV2Addr,
+		blockStreamV2Addr: blockstreamV2Addr,
+		blockstreamAddr:   blockstreamAddr,
 		Shutter:           shutter.New(),
 		flushSlotInterval: flushSlotInterval,
 		eventQueues:       map[string]solana.PublicKey{},
@@ -52,7 +55,7 @@ func NewInjector(
 
 func (l *Injector) Setup() error {
 	conn, err := grpc.Dial(
-		l.blockstreamV2Addr,
+		l.blockstreamAddr,
 		grpc.WithInsecure(),
 		grpc.WithStatsHandler(&ocgrpc.ClientHandler{}),
 	)
@@ -70,31 +73,33 @@ func (l *Injector) Setup() error {
 		l.requesQueues[market.MarketV2.RequestQueue.String()] = market.Address
 	}
 
-	l.source.OnTerminated(func(_ error) {
-		l.setUnhealthy()
-	})
-
-	l.blockStreamClient = pbbstream.NewBlockStreamV2Client(conn)
+	l.blockStreamClient = pbbstream.NewBlockStreamClient(conn)
 	return nil
 }
 
 func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
-	req := &pbbstream.BlocksRequestV2{
-		StartBlockNum:     int64(startBlockNum),
-		ExcludeStartBlock: true,
-		Decoded:           true,
-		HandleForks:       true,
-		HandleForksSteps: []pbbstream.ForkStep{
-			pbbstream.ForkStep_STEP_IRREVERSIBLE,
-		},
+	//req := &pbbstream.BlocksRequestV2{
+	//	StartBlockNum:     int64(startBlockNum),
+	//	ExcludeStartBlock: true,
+	//	Decoded:           true,
+	//	HandleForks:       true,
+	//	HandleForksSteps: []pbbstream.ForkStep{
+	//		pbbstream.ForkStep_STEP_IRREVERSIBLE,
+	//	},
+	//}
+	req := &pbbstream.BlockRequest{
+		Burst:       100,
+		ContentType: "sol",
+		Requester:   "serumhist",
 	}
 	zlog.Info("launching serumdb loader",
 		zap.Reflect("blockstream_request", req),
 	)
 
+	// executor, err := l.firehoseClient.Blocks(ctx, req)
 	executor, err := l.blockStreamClient.Blocks(ctx, req)
 	if err != nil {
-		return fmt.Errorf("")
+		return fmt.Errorf("unable to setup block stream client: %w", err)
 	}
 	{
 		msg, err := executor.Recv()
@@ -108,27 +113,28 @@ func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 
 		l.setHealthy()
 
-		slot := &pbcodec.Slot{}
-		if err := ptypes.UnmarshalAny(msg.Block, slot); err != nil {
-			return fmt.Errorf("decoding any of type %q: %w", msg.Block.TypeUrl, err)
+		blk, err := bstream.BlockFromProto(msg)
+		if err != nil {
+			return fmt.Errorf("unable to transform to bstream.Block: %w", err)
 		}
+		slot := blk.ToNative().(*pbcodec.Slot)
 
-		if msg.Undo {
-			return fmt.Errorf("blockstreamv2 should never send undo signals, irreversible only please")
-		}
+		//if msg.Undo {
+		//	return fmt.Errorf("blockstreamv2 should never send undo signals, irreversible only please")
+		//}
+		//
+		//if msg.Step != pbbstream.ForkStep_STEP_IRREVERSIBLE {
+		//	return fmt.Errorf("blockstreamv2 should never pass something that is not irreversible")
+		//}
 
-		if msg.Step != pbbstream.ForkStep_STEP_IRREVERSIBLE {
-			return fmt.Errorf("blockstreamv2 should never pass something that is not irreversible")
-		}
-
-		if slot.Number%100 == 0 {
-			zlog.Info("processed slot 1/100",
-				zap.Uint64("slot_number", slot.Number),
-				zap.String("slot_id", slot.Id),
-				zap.String("previous_id", slot.PreviousId),
-				zap.Uint32("transaction_count", slot.TransactionCount),
-			)
-		}
+		//if slot.Number%100 == 0 {
+		zlog.Info("processed slot 1",
+			zap.Uint64("slot_number", slot.Number),
+			zap.String("slot_id", slot.Id),
+			zap.String("previous_id", slot.PreviousId),
+			zap.Uint32("transaction_count", slot.TransactionCount),
+		)
+		//}
 
 		l.ProcessSlot(ctx, slot)
 
