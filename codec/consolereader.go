@@ -107,12 +107,13 @@ func (l *ConsoleReader) Close() {
 }
 
 type parseCtx struct {
-	slot     *pbcodec.Slot
-	trxIndex uint64
-	trxMap   map[string]*pbcodec.Transaction
+	slot *pbcodec.Slot
+
+	lastSeenSlotNum uint64
+	trxIndex        uint64
+	trxMap          map[string]*pbcodec.Transaction
 
 	conversionOptions []conversionOption
-	finalized         bool
 }
 
 func newParseCtx() *parseCtx {
@@ -138,7 +139,19 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 			err = ctx.readSlotProcess(line)
 
 		case strings.HasPrefix(line, "SLOT_END"):
-			return ctx.readSlotEnd(line)
+			var slot *pbcodec.Slot
+			slot, err = ctx.readSlotEnd(line)
+			if slot == nil && err == nil {
+				// We just read a slot_end that was not continuous based on the last seen slot num before it, skipping it
+				continue
+			}
+
+			if slot != nil && err == nil {
+				// We read slot_end that is correct, return it to reader of "blocks"
+				return slot, nil
+			}
+
+			// All other cases means err != nil, let it be handled at the end of switch
 
 		case strings.HasPrefix(line, "SLOT_FAILED"):
 			err = ctx.readSlotFailed(line)
@@ -182,27 +195,23 @@ func (l *ConsoleReader) formatError(line string, err error) error {
 	return fmt.Errorf("%s: %s (line %q)", chunks[0], err, line)
 }
 
-func (ctx *parseCtx) resetSlot() {
-	if ctx.slot != nil {
-		ctx.resetTrx()
-	}
-	ctx.finalized = false
-	ctx.slot = nil
-}
-
 func (ctx *parseCtx) resetTrx() {
 	ctx.trxMap = map[string]*pbcodec.Transaction{}
 }
 
 func (ctx *parseCtx) readSlotProcess(line string) error {
-	zlog.Debug("reading slot process:", zap.String("line", line))
+	zlog.Debug("reading slot process", zap.String("line", line))
+
+	if len(ctx.trxMap) != 0 {
+		return fmt.Errorf("all transactions should have ended when processing SLOT_PROCESS line: %q", ctx.trxMap)
+	}
 
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 16 {
 		return fmt.Errorf("read transaction provcess: expected 16 fields, got %d", len(chunks))
 	}
 
-	full := chunks[1] == "full"
+	isFull := chunks[1] == "full"
 	slotID := chunks[3]
 	slotPreviousID := chunks[4]
 
@@ -211,13 +220,9 @@ func (ctx *parseCtx) readSlotProcess(line string) error {
 		return fmt.Errorf("read transaction provcess: slotNumber to int: %w", err)
 	}
 
-	if uint64(slotNumber) < ctx.slot.Number {
-		zlog.Warn("skipping back in time slot", zap.Int("slot", slotNumber), zap.Uint64("", ctx.slot.Number))
+	if uint64(slotNumber) < ctx.lastSeenSlotNum {
+		zlog.Warn("skipping back in time slot", zap.Int("slot", slotNumber), zap.Uint64("last_seen_slot_num", ctx.lastSeenSlotNum), zap.String("line", line))
 		return nil
-	}
-
-	if ctx.finalized {
-		ctx.resetSlot()
 	}
 
 	rootSlotNum, err := strconv.Atoi(chunks[8])
@@ -225,39 +230,27 @@ func (ctx *parseCtx) readSlotProcess(line string) error {
 		return fmt.Errorf("read transaction provcess: slotNumber to int: %w", err)
 	}
 
-	slot := &pbcodec.Slot{
-		Version:    1,
-		Number:     uint64(slotNumber),
-		PreviousId: slotPreviousID, //from fist full or partial
-		Block:      nil,
+	if ctx.slot == nil {
+		ctx.slot = &pbcodec.Slot{
+			Version:    1,
+			Number:     uint64(slotNumber),
+			PreviousId: slotPreviousID, //from fist full or partial
+			Block:      nil,
 
-		RootSlotNum: uint64(rootSlotNum),
+			RootSlotNum: uint64(rootSlotNum),
+		}
 	}
 
-	if full {
-		ctx.recordSlotProcessFull(slotID, slot)
-	} else {
-		ctx.recordSlotProcessPartial(slot)
+	if isFull {
+		ctx.slot.Id = slotID
 	}
 
 	return nil
 }
 
-func (ctx *parseCtx) recordSlotProcessFull(slotID string, slot *pbcodec.Slot) {
-	if ctx.slot == nil {
-		ctx.slot = slot
-	}
-	ctx.slot.Id = slotID
-}
-
-func (ctx *parseCtx) recordSlotProcessPartial(slot *pbcodec.Slot) {
-	ctx.resetTrx()
-	ctx.slot = slot
-}
-
 // SLOT_END 3 120938102938 1029830129830192
 func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
-	zlog.Debug("reading slot end:", zap.String("line", line))
+	zlog.Debug("reading slot end", zap.String("line", line))
 
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 4 {
@@ -267,6 +260,11 @@ func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 	slotNumber, err := strconv.Atoi(chunks[1])
 	if err != nil {
 		return nil, fmt.Errorf("read slot end: slotNumber to int: %w", err)
+	}
+
+	if uint64(slotNumber) != ctx.lastSeenSlotNum {
+		zlog.Warn("skipping back in time slot end", zap.Int("slot", slotNumber), zap.Uint64("last_seen_slot_num", ctx.lastSeenSlotNum), zap.String("line", line))
+		return nil, nil
 	}
 
 	genesisTimestamp, err := strconv.Atoi(chunks[2])
@@ -291,8 +289,12 @@ func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 		return nil, fmt.Errorf("some transactions are not ended when the slot ends: %q", ctx.trxMap)
 	}
 
-	ctx.finalized = true
-	return ctx.slot, nil
+	slot := ctx.slot
+
+	ctx.slot = nil
+	ctx.lastSeenSlotNum = slot.Number
+
+	return slot, nil
 }
 
 func (ctx *parseCtx) readSlotFailed(line string) error {
@@ -311,9 +313,7 @@ func (ctx *parseCtx) readSlotFailed(line string) error {
 		return fmt.Errorf("read slot %d failed not matching ctx slot %d", slotNumber, ctx.slot.Number)
 	}
 
-	msg := chunks[2]
-	ctx.finalized = true
-	return fmt.Errorf("slot %d failed: %s", slotNumber, msg)
+	return fmt.Errorf("slot %d failed: %s", slotNumber, chunks[2])
 }
 
 // TRX_START 3XsJkPPXeSCBupg8SyquewZhnDdcch977crSJzXx8NV9SERo9LmUAW36eLokKngzataDvzJ4jwuuW17AkHjpFszu 1 0 3 F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:SysvarS1otHashes111111111111111111111111111:SysvarC1ock11111111111111111111111111111111:Vote111111111111111111111111111111111111111 7FVmHWPFPxzMK3mHx2y7Q8NG3krPiB142ZG3LZiSkHdX
