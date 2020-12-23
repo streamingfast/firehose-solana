@@ -58,6 +58,16 @@ func EncodeOrdersByPubkey(trader, market solana.PublicKey, orderSeqNum uint64, s
 
 }
 
+// order_pubkey:[pubkey]
+func EncodeOrdersPrefixByPubkey(trader solana.PublicKey) []byte {
+	key := make([]byte, 1+32)
+
+	key[0] = PrefixOrdersByPubkey
+	copy(key[1:], trader[:])
+
+	return key
+}
+
 func DecodeOrdersByPubkey(key []byte) (trader, market solana.PublicKey, orderSeqNum uint64, slotNum uint64) {
 	copy(trader[:], key[1:])
 	slotNum = ^binary.BigEndian.Uint64(key[33:])
@@ -89,7 +99,6 @@ func EncodeOrdersPrefixByMarketPubkey(trader, market solana.PublicKey) []byte {
 	copy(key[33:], trader[:])
 
 	return key
-
 }
 
 func DecodeOrdersByMarketPubkey(key []byte) (trader, market solana.PublicKey, orderSeqNum uint64, slotNum uint64) {

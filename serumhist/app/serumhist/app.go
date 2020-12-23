@@ -24,6 +24,7 @@ type Config struct {
 	EnableInjector    bool
 	EnableServer      bool
 	GRPCListenAddr    string
+	HTTPListenAddr    string
 }
 
 type App struct {
@@ -51,7 +52,7 @@ func (a *App) Run() error {
 	}
 
 	if a.Config.EnableServer {
-		server := grpc.New(a.Config.GRPCListenAddr, kvdb)
+		server := grpc.New(a.Config.GRPCListenAddr, serumhist.NewManager(kvdb))
 		a.OnTerminating(server.Terminate)
 		server.OnTerminated(a.Shutdown)
 		go server.Serve()
@@ -70,6 +71,7 @@ func (a *App) Run() error {
 		a.OnTerminating(injector.Shutdown)
 		injector.OnTerminated(a.Shutdown)
 
+		injector.LaunchHealthz(a.Config.HTTPListenAddr)
 		go injector.Launch(context.Background(), a.Config.StartBlock)
 	}
 

@@ -46,6 +46,7 @@ const (
 	TokenmetaGRPCServingAddr      string = ":14025"
 	FirehoseGRPCServingAddr       string = ":14026"
 	SerumHistoryGRPCServingAddr   string = ":14027"
+	SerumHistoryHTTPServingAddr   string = ":14028"
 
 	// Solana node instance port definitions
 	MinerNodeRPCPort      string = "14100"
