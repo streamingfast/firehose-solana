@@ -196,9 +196,6 @@ func (ctx *parseCtx) resetTrx() {
 
 func (ctx *parseCtx) readSlotProcess(line string) error {
 	zlog.Debug("reading slot process:", zap.String("line", line))
-	if ctx.finalized {
-		ctx.resetSlot()
-	}
 
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 16 {
@@ -212,6 +209,15 @@ func (ctx *parseCtx) readSlotProcess(line string) error {
 	slotNumber, err := strconv.Atoi(chunks[2])
 	if err != nil {
 		return fmt.Errorf("read transaction provcess: slotNumber to int: %w", err)
+	}
+
+	if uint64(slotNumber) < ctx.slot.Number {
+		zlog.Warn("skipping back in time slot", zap.Int("slot", slotNumber), zap.Uint64("", ctx.slot.Number))
+		return nil
+	}
+
+	if ctx.finalized {
+		ctx.resetSlot()
 	}
 
 	rootSlotNum, err := strconv.Atoi(chunks[8])
