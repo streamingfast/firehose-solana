@@ -99,7 +99,7 @@ func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 	// executor, err := l.firehoseClient.Blocks(ctx, req)
 	executor, err := l.blockStreamClient.Blocks(ctx, req)
 	if err != nil {
-		return fmt.Errorf("")
+		return fmt.Errorf("unable to setup block stream client: %w", err)
 	}
 	{
 		msg, err := executor.Recv()

@@ -76,7 +76,15 @@ func (a *App) Run() error {
 		injector.OnTerminated(a.Shutdown)
 
 		injector.LaunchHealthz(a.Config.HTTPListenAddr)
-		go injector.Launch(context.Background(), a.Config.StartBlock)
+		go func() {
+			err := injector.Launch(context.Background(), a.Config.StartBlock)
+			if err != nil {
+				zlog.Error("injector terminated with error")
+				injector.Shutdown(err)
+			} else {
+				zlog.Info("injector terminated without error")
+			}
+		}()
 	}
 
 	return nil
