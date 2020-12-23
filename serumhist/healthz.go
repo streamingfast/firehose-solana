@@ -27,7 +27,7 @@ func (i *Injector) healthz(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ready\n"))
 }
 
-func (i *Injector) setUnhealthy() {
+func (i *Injector) SetUnhealthy() {
 	if i.healthy {
 		i.healthy = false
 	}

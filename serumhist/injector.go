@@ -6,7 +6,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/dfuse-io/bstream"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/kvdb/store"
@@ -27,7 +26,6 @@ type Injector struct {
 	lastTickBlock     uint64
 	lastTickTime      time.Time
 	blockstreamV2Addr string
-	source            bstream.Source
 	healthy           bool
 	blockStreamClient pbbstream.BlockStreamV2Client
 
@@ -69,10 +67,6 @@ func (l *Injector) Setup() error {
 		l.eventQueues[market.MarketV2.EventQueue.String()] = market.Address
 		l.requesQueues[market.MarketV2.RequestQueue.String()] = market.Address
 	}
-
-	l.source.OnTerminated(func(_ error) {
-		l.setUnhealthy()
-	})
 
 	l.blockStreamClient = pbbstream.NewBlockStreamV2Client(conn)
 	return nil

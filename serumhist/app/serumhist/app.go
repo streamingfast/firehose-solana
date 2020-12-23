@@ -68,7 +68,10 @@ func (a *App) Run() error {
 
 		zlog.Info("serum history injector setup")
 
-		a.OnTerminating(injector.Shutdown)
+		a.OnTerminating(func(err error) {
+			injector.SetUnhealthy()
+			injector.Shutdown(err)
+		})
 		injector.OnTerminated(a.Shutdown)
 
 		injector.LaunchHealthz(a.Config.HTTPListenAddr)
