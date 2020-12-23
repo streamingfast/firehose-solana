@@ -127,14 +127,14 @@ func (l *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 		//	return fmt.Errorf("blockstreamv2 should never pass something that is not irreversible")
 		//}
 
-		if slot.Number%100 == 0 {
-			zlog.Info("processed slot 1/100",
-				zap.Uint64("slot_number", slot.Number),
-				zap.String("slot_id", slot.Id),
-				zap.String("previous_id", slot.PreviousId),
-				zap.Uint32("transaction_count", slot.TransactionCount),
-			)
-		}
+		//if slot.Number%100 == 0 {
+		zlog.Info("processed slot 1",
+			zap.Uint64("slot_number", slot.Number),
+			zap.String("slot_id", slot.Id),
+			zap.String("previous_id", slot.PreviousId),
+			zap.Uint32("transaction_count", slot.TransactionCount),
+		)
+		//}
 
 		l.ProcessSlot(ctx, slot)
 
