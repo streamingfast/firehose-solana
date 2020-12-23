@@ -251,6 +251,8 @@ func (ctx *parseCtx) recordSlotProcessPartial(slot *pbcodec.Slot) {
 
 // SLOT_END 3 120938102938 1029830129830192
 func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
+	zlog.Debug("reading slot end:", zap.String("line", line))
+
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 4 {
 		return nil, fmt.Errorf("read slot end: expected 4 fields, got %d", len(chunks))
@@ -288,6 +290,7 @@ func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 }
 
 func (ctx *parseCtx) readSlotFailed(line string) error {
+	zlog.Debug("reading slot failed:", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 3 {
 		return fmt.Errorf("read slot failed: expected 3 fields, got %d", len(chunks))
