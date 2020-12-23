@@ -15,15 +15,70 @@
 package codec
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"testing"
 
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-
 	"github.com/dfuse-io/solana-go/text"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func Test_ReadSlot(t *testing.T) {
+	tests := []struct {
+		name              string
+		line              string
+		expectedSlotCount int
+		expectedErr       []error
+	}{
+		{
+			"received slot num before last seen one",
+			`
+DMLOG SLOT_PROCESS full 56967947 51gDaR9uZ6reFhg4C9fTytbjoadr3yjzwbwJrQ2GNebp FmvgPghmjenKAb4ysiRywQL7AkAviTSic322NMstpayr FmvgPghmjenKAb4ysiRywQL7AkAviTSic322NMstpayr 3645948608 53156012 56967482 56967947 337 56967482 56967898 526 483 399
+DMLOG SLOT_END 56967947 1607156118 1608747966
+DMLOG SLOT_PROCESS partial 56967924 11111111111111111111111111111111 E7Af21AZxcuUg5jH9FbKYnF5eUbgG8QVbHeuPpa8PL9C E7Af21AZxcuUg5jH9FbKYnF5eUbgG8QVbHeuPpa8PL9C 3645947136 53155993 56967485 56967924 317 56967485 56967899 0 0 0
+DMLOG SLOT_PROCESS full 56967948 3eoAssxZszc6X8XZkjVJmYgsXiHgrLEfSMtpPoMEuViS 51gDaR9uZ6reFhg4C9fTytbjoadr3yjzwbwJrQ2GNebp 51gDaR9uZ6reFhg4C9fTytbjoadr3yjzwbwJrQ2GNebp 3645948672 53156013 56967485 56967948 337 56967485 56967899 457 402 355
+			`,
+			1,
+			nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			buf := bytes.NewBufferString(test.line)
+
+			cr, err := NewConsoleReader(buf)
+			require.NoError(t, err)
+
+			slotCount := 0
+			for {
+				o, err := cr.Read()
+				if err == io.EOF {
+					break
+				}
+
+				if test.expectedErr == nil {
+					require.NoError(t, err)
+				} else if slotCount < len(test.expectedErr) {
+					require.Equal(t, test.expectedErr[slotCount], err)
+				}
+
+				fmt.Println(o)
+				slotCount++
+			}
+
+			assert.Equal(t, test.expectedSlotCount, slotCount, "Expected to have read %d slot, read only %d", test.expectedSlotCount, slotCount)
+
+			if test.expectedErr != nil {
+				require.Equal(t, len(test.expectedErr), slotCount, "Your test expected errors does not match amount of slot read, read %d slots, but you have %d errors defined", slotCount)
+			}
+		})
+	}
+}
 
 func Test_readSlot_Process(t *testing.T) {
 	tests := []struct {
@@ -53,10 +108,10 @@ func Test_readSlot_Process(t *testing.T) {
 			err = text.NewEncoder(os.Stdout).Encode(ctx.slot, nil)
 			require.NoError(t, err)
 			//fmt.Println("out:", string(buf.Bytes()))
-
 		})
 	}
 }
+
 func Test_readTransaction_Start(t *testing.T) {
 	t.Skip("Seems this test is not in line with deep mind output")
 

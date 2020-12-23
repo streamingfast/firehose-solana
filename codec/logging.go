@@ -15,19 +15,13 @@
 package codec
 
 import (
-	"os"
-
 	"github.com/dfuse-io/logging"
 	"go.uber.org/zap"
 )
 
-var traceEnabled = false
-var zlog *zap.Logger
+var traceEnabled = logging.IsTraceEnabled("codec", "github.com/dfuse-io/dfuse-solana/codec")
+var zlog *zap.Logger = zap.NewNop()
 
 func init() {
 	logging.Register("github.com/dfuse-io/dfuse-solana/codec", &zlog)
-
-	if os.Getenv("TRACE") == "true" {
-		traceEnabled = true
-	}
 }
