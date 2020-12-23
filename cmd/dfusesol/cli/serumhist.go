@@ -28,6 +28,7 @@ func init() {
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
 			dfuseDataDir := runtime.AbsDataDir
 			return serumhistApp.New(&serumhistApp.Config{
+				BlockStreamV2Addr: viper.GetString("common-firehose-addr"),
 				BlockStreamAddr:   viper.GetString("common-blockstream-addr"),
 				FLushSlotInterval: viper.GetUint64("serumhist-flush-slots-interval"),
 				StartBlock:        viper.GetUint64("serumhist-start-block-num"),

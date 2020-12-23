@@ -21,6 +21,7 @@ func init() {
 		// Service addresses
 		cmd.Flags().String("common-blockmeta-addr", BlockmetaServingAddr, "[COMMON]gRPC endpoint to reach the Blockmeta. Used by: search-indexer, search-router, search-live, eosws, dgraphql")
 		cmd.Flags().String("common-blockstream-addr", RelayerServingAddr, "[COMMON]gRPC endpoint to get real-time blocks")
+		cmd.Flags().String("common-firehose-addr", FirehoseGRPCServingAddr, "[COMMON]gRPC endpoint to get firehose blocks")
 
 		//// Authentication, metering and rate limiter plugins
 		cmd.Flags().String("common-auth-plugin", "null://", "[COMMON] Auth plugin URI, see dfuse-io/dauth repository")

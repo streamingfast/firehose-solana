@@ -17,6 +17,7 @@ import (
 )
 
 type Config struct {
+	BlockStreamV2Addr string
 	BlockStreamAddr   string
 	FLushSlotInterval uint64
 	StartBlock        uint64
@@ -61,7 +62,7 @@ func (a *App) Run() error {
 	if a.Config.EnableInjector {
 		dmetrics.Register(metrics.Metricset)
 
-		injector := serumhist.NewInjector(a.Config.BlockStreamAddr, kvdb, a.Config.FLushSlotInterval)
+		injector := serumhist.NewInjector(a.Config.BlockStreamV2Addr, a.Config.BlockStreamAddr, kvdb, a.Config.FLushSlotInterval)
 		if err := injector.Setup(); err != nil {
 			return fmt.Errorf("unable to create solana injector: %w", err)
 		}
