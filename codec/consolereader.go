@@ -106,20 +106,75 @@ func (l *ConsoleReader) Close() {
 	l.close()
 }
 
+type activeSlot struct {
+	slot     *pbcodec.Slot
+	trxMap   map[string]*pbcodec.Transaction
+	trxIndex uint64
+}
+
+func newActiveSlot(slot *pbcodec.Slot) *activeSlot {
+	return &activeSlot{
+		slot:   slot,
+		trxMap: map[string]*pbcodec.Transaction{},
+	}
+}
+
+func (a *activeSlot) recordTransaction(trx *pbcodec.Transaction) {
+	a.trxMap[trx.Id] = trx
+	a.trxIndex++
+}
+
+func (a *activeSlot) recordTransactionEnd(trx *pbcodec.Transaction) {
+	a.slot.Transactions = append(a.slot.Transactions, trx)
+}
+
+func (a *activeSlot) recordInstruction(trxID string, instruction *pbcodec.Instruction) error {
+	trx := a.trxMap[trxID]
+	if trx == nil {
+		return fmt.Errorf("record instruction: transaction trace not found in context: %s", trxID)
+	}
+
+	trx.Instructions = append(trx.Instructions, instruction)
+	return nil
+}
+
+func (a *activeSlot) recordAccountChange(trxID string, ordinal int, accountChange *pbcodec.AccountChange) error {
+	trx := a.trxMap[trxID]
+	if trx == nil {
+		return fmt.Errorf("record account change: transaction trace not found in context: %s", trxID)
+	}
+
+	trx.Instructions[ordinal-1].AccountChanges = append(trx.Instructions[ordinal-1].AccountChanges, accountChange)
+	return nil
+}
+
+func (a *activeSlot) recordLamportsChange(trxID string, ordinal int, balanceChange *pbcodec.BalanceChange) error {
+	trx := a.trxMap[trxID]
+	if trx == nil {
+		return fmt.Errorf("record balanace change: transaction trace not found in context: %s", trxID)
+	}
+
+	trx.Instructions[ordinal-1].BalanceChanges = append(trx.Instructions[ordinal-1].BalanceChanges, balanceChange)
+
+	return nil
+}
+
 type parseCtx struct {
-	slot *pbcodec.Slot
-
-	lastSeenSlotNum uint64
-	trxIndex        uint64
-	trxMap          map[string]*pbcodec.Transaction
-
+	activeSlots       map[uint64]*activeSlot
+	lastEndedSlot     uint64
 	conversionOptions []conversionOption
+}
+
+func (p *parseCtx) getActiveSlot(slotNumber int) *activeSlot {
+	if s, found := p.activeSlots[uint64(slotNumber)]; found {
+		return s
+	}
+	return nil
 }
 
 func newParseCtx() *parseCtx {
 	return &parseCtx{
-		slot:   nil,
-		trxMap: map[string]*pbcodec.Transaction{},
+		activeSlots: map[uint64]*activeSlot{},
 	}
 }
 
@@ -130,7 +185,7 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 		line = line[6:]
 
 		if traceEnabled {
-			zlog.Debug("extracing deep mind data from line", zap.String("line", line))
+			zlog.Debug("extracting deep mind data from line", zap.String("line", line))
 		}
 
 		// Order of conditions is based (approximately) on those that will appear more often
@@ -195,10 +250,6 @@ func (l *ConsoleReader) formatError(line string, err error) error {
 	return fmt.Errorf("%s: %s (line %q)", chunks[0], err, line)
 }
 
-func (ctx *parseCtx) resetTrx() {
-	ctx.trxMap = map[string]*pbcodec.Transaction{}
-}
-
 func (ctx *parseCtx) readSlotProcess(line string) error {
 	zlog.Debug("reading slot process", zap.String("line", line))
 
@@ -216,14 +267,13 @@ func (ctx *parseCtx) readSlotProcess(line string) error {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
-	if ctx.lastSeenSlotNum != 0 && uint64(slotNumber) < ctx.lastSeenSlotNum {
-		zlog.Warn("skipping slot process not directly following last seen slot", zap.Int("received_slot_num", slotNumber), zap.Uint64("last_seen_slot_num", ctx.lastSeenSlotNum), zap.String("line", line))
+	if ctx.lastEndedSlot != 0 && uint64(slotNumber) < ctx.lastEndedSlot {
+		zlog.Warn("skipping slot process not greater then last seen slot",
+			zap.Int("received_slot_num", slotNumber),
+			zap.Uint64("last_ended_slot_num", ctx.lastEndedSlot),
+			zap.String("line", line),
+		)
 		return nil
-	}
-
-	// We check after the other conditions above to ensure we do not check the map when receiving some out of order SLOT_PROCESS message
-	if len(ctx.trxMap) != 0 {
-		return fmt.Errorf("all transactions should have ended when processing SLOT_PROCESS line: %q", ctx.trxMap)
 	}
 
 	rootSlotNum, err := strconv.Atoi(chunks[8])
@@ -231,29 +281,36 @@ func (ctx *parseCtx) readSlotProcess(line string) error {
 		return fmt.Errorf("root slot num to int: %w", err)
 	}
 
-	if ctx.slot == nil {
-		ctx.slot = &pbcodec.Slot{
-			Version:    1,
-			Number:     uint64(slotNumber),
-			PreviousId: slotPreviousID, //from fist full or partial
-			Block:      nil,
-
+	var activeSlot *activeSlot
+	if activeSlot = ctx.getActiveSlot(slotNumber); activeSlot == nil {
+		activeSlot = newActiveSlot(&pbcodec.Slot{
+			Version:     1,
+			Number:      uint64(slotNumber),
+			PreviousId:  slotPreviousID, //from fist full or partial
+			Block:       nil,
 			RootSlotNum: uint64(rootSlotNum),
-		}
+		})
+		ctx.activeSlots[uint64(slotNumber)] = activeSlot
+	}
+
+	// We check after the other conditions above to ensure we do not check the map
+	// when receiving some out of order SLOT_PROCESS message
+	if len(activeSlot.trxMap) != 0 {
+		return fmt.Errorf("all transactions should have ended when processing SLOT_PROCESS line: %q", activeSlot.trxMap)
 	}
 
 	if isFull {
-		ctx.slot.Id = slotID
+		activeSlot.slot.Id = slotID
 	}
 
 	return nil
 }
 
-// SLOT_END 3 120938102938 1029830129830192
+// SLOT_END SLOT_NUM GENESIS_UNIX_TIMESTAMP CLOCK_UNIX_TIMESTAMP
 func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 	zlog.Debug("reading slot end", zap.String("line", line))
 
-	if ctx.slot == nil {
+	if len(ctx.activeSlots) == 0 {
 		return nil, fmt.Errorf("received slot end while no slot is active in context")
 	}
 
@@ -267,41 +324,42 @@ func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
 		return nil, fmt.Errorf("slotNumber to int: %w", err)
 	}
 
-	if uint64(slotNumber) != ctx.slot.Number {
-		return nil, fmt.Errorf("received slot num (end) not matching active slot number (%d) in context", ctx.slot.Number)
+	activeSlot := ctx.getActiveSlot(slotNumber)
+	if activeSlot == nil {
+		return nil, fmt.Errorf("slot end: received slot num (%d) not matching any active slot number in context", slotNumber)
 	}
 
 	// We check after the other conditions above to ensure we do not check the map when receiving some out of order SLOT_END message
-	if len(ctx.trxMap) != 0 {
-		return nil, fmt.Errorf("some transactions are not ended when the slot ends: %q", ctx.trxMap)
+	if len(activeSlot.trxMap) != 0 {
+		return nil, fmt.Errorf("some transactions are not ended when the slot (%d) ends: %q", slotNumber, activeSlot.trxMap)
 	}
 
+	slot := activeSlot.slot
 	genesisTimestamp, err := strconv.Atoi(chunks[2])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding genesis timestamp in seconds: %w", err)
 	}
-	ctx.slot.GenesisUnixTimestamp = uint64(genesisTimestamp)
+	activeSlot.slot.GenesisUnixTimestamp = uint64(genesisTimestamp)
 
 	clockTimestamp, err := strconv.Atoi(chunks[3])
 	if err != nil {
 		return nil, fmt.Errorf("error decoding sysvar::clock timestamp in seconds: %w", err)
 	}
 
-	ctx.slot.ClockUnixTimestamp = uint64(clockTimestamp)
-	ctx.slot.TransactionCount = uint32(len(ctx.slot.Transactions))
+	slot.ClockUnixTimestamp = uint64(clockTimestamp)
+	slot.TransactionCount = uint32(len(activeSlot.slot.Transactions))
 
-	slot := ctx.slot
-
-	ctx.slot = nil
-	ctx.lastSeenSlotNum = slot.Number
+	delete(ctx.activeSlots, slot.Number)
+	ctx.lastEndedSlot = slot.Number
 
 	return slot, nil
 }
 
+// SLOT_FAILED SLOT_NUM REASON
 func (ctx *parseCtx) readSlotFailed(line string) error {
 	zlog.Debug("reading slot failed", zap.String("line", line))
 
-	if ctx.slot == nil {
+	if len(ctx.activeSlots) == 0 {
 		return fmt.Errorf("received slot failed while no slot is active in context")
 	}
 
@@ -315,42 +373,54 @@ func (ctx *parseCtx) readSlotFailed(line string) error {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
-	if uint64(slotNumber) != ctx.slot.Number {
-		return fmt.Errorf("received slot num (failed) not matching active slot number (%d) in context", ctx.slot.Number)
+	activeSlot := ctx.getActiveSlot(slotNumber)
+	if activeSlot == nil {
+		return fmt.Errorf("slot failed: received slot num (%d) not matching any active slot number in context", slotNumber)
 	}
 
 	return fmt.Errorf("slot %d failed: %s", slotNumber, chunks[2])
 }
 
-// TRX_START 3XsJkPPXeSCBupg8SyquewZhnDdcch977crSJzXx8NV9SERo9LmUAW36eLokKngzataDvzJ4jwuuW17AkHjpFszu 1 0 3 F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:SysvarS1otHashes111111111111111111111111111:SysvarC1ock11111111111111111111111111111111:Vote111111111111111111111111111111111111111 7FVmHWPFPxzMK3mHx2y7Q8NG3krPiB142ZG3LZiSkHdX
+// TRX_START SLOT_NUM SIG1:SIG2:SIG3 NUM_REQUIRED_SIGN NUM_READONLY_SIGN_ACT NUM_READONLY_UNSIGNED_ACT ACTKEY1:ACTKEY2:ACTKEY3 RECENT_BLOCKHASH
 func (ctx *parseCtx) readTransactionStart(line string) error {
 	chunks := strings.Split(line, " ")
-	if len(chunks) != 7 {
-		return fmt.Errorf("read transaction start: expected 7 fields, got %d", len(chunks))
+	if len(chunks) != 8 {
+		return fmt.Errorf("read transaction start: expected 8 fields, got %d", len(chunks))
 	}
 
-	sigs := strings.Split(chunks[1], ":")
+	slotNumber, err := strconv.Atoi(chunks[1])
+	if err != nil {
+		return fmt.Errorf("slot num to int: %w", err)
+	}
+
+	activeSlot := ctx.getActiveSlot(slotNumber)
+	if activeSlot == nil {
+		return fmt.Errorf("transaction start: received slot num (%d) not matching any active slot number in context", slotNumber)
+	}
+
+	sigs := strings.Split(chunks[2], ":")
 	id := sigs[0]
 	additionalSigs := sigs[1:]
 
-	reqSigs, err := strconv.Atoi(chunks[2])
+	reqSigs, err := strconv.Atoi(chunks[3])
 	if err != nil {
 		return fmt.Errorf("failed decoding num_required_signatures: %w", err)
 	}
-	roSignedAccts, err := strconv.Atoi(chunks[3])
+	roSignedAccts, err := strconv.Atoi(chunks[4])
 	if err != nil {
 		return fmt.Errorf("failed decoding num_readonly_signed_accounts: %w", err)
 	}
-	roUnsignedAccts, err := strconv.Atoi(chunks[4])
+	roUnsignedAccts, err := strconv.Atoi(chunks[5])
 	if err != nil {
 		return fmt.Errorf("failed decoding num_readonly_unsigned_accounts: %w", err)
 	}
 
-	accountKeys := strings.Split(chunks[5], ":")
+	accountKeys := strings.Split(chunks[6], ":")
+	recentBlockHash := chunks[7]
 
 	transaction := &pbcodec.Transaction{
 		Id:                   id,
-		Index:                ctx.trxIndex,
+		Index:                activeSlot.trxIndex,
 		AdditionalSignatures: additionalSigs,
 		AccountKeys:          accountKeys,
 		Header: &pbcodec.MessageHeader{
@@ -358,46 +428,61 @@ func (ctx *parseCtx) readTransactionStart(line string) error {
 			NumReadonlySignedAccounts:   uint32(roSignedAccts),
 			NumReadonlyUnsignedAccounts: uint32(roUnsignedAccts),
 		},
-		RecentBlockhash: chunks[6],
-		SlotNum:         uint64(ctx.slot.Number),
-		SlotHash:        ctx.slot.Id,
+		RecentBlockhash: recentBlockHash,
+		SlotNum:         uint64(activeSlot.slot.Number),
+		SlotHash:        activeSlot.slot.Id,
 	}
 
-	ctx.recordTransaction(transaction)
+	activeSlot.recordTransaction(transaction)
 
 	return nil
 }
 
-func (ctx *parseCtx) recordTransaction(trx *pbcodec.Transaction) {
-	ctx.trxMap[trx.Id] = trx
-	ctx.trxIndex++
-}
-
-// TRX_END signature...
+// TRX_END SLOT_NUM TX_SIGNATURE
 func (ctx *parseCtx) readTransactionEnd(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 2 {
+	if len(chunks) != 3 {
 		return fmt.Errorf("read transaction start: expected 2 fields, got %d", len(chunks))
 	}
 
-	id := chunks[1]
-	trx := ctx.trxMap[id]
-	ctx.recordTransactionEnd(trx)
-	delete(ctx.trxMap, id)
+	slotNumber, err := strconv.Atoi(chunks[1])
+	if err != nil {
+		return fmt.Errorf("slot num to int: %w", err)
+	}
+
+	activeSlot := ctx.getActiveSlot(slotNumber)
+	if activeSlot == nil {
+		return fmt.Errorf("transaction end: received slot num (%d) not matching any active slot number in context", slotNumber)
+	}
+
+	id := chunks[2]
+	trx := activeSlot.trxMap[id]
+	activeSlot.recordTransactionEnd(trx)
+	delete(activeSlot.trxMap, id)
 
 	return nil
 }
 
-// TRX_L 2iBoCQ16uhu7ZJdb9icuyS5EpRm6m9RvFH43Co9xi6QkduwE6BtmERtUGwwsutR1tt1L9KfJNi1yNXuy855A4Yan 50726f6772616d20566f746531313131313131313131313131313131313131313131313131313131313131313131313131313120696e766f6b65205b315d
+// TRX_L SLOT_NUM TX_SIGNATURE LOG_IN_HEX
 func (ctx *parseCtx) readTransactionLog(line string) error {
 	chunks := strings.Split(line, " ")
-	if len(chunks) != 3 {
-		return fmt.Errorf("read transaction log: expected 3 fields, got %d", len(chunks))
+	if len(chunks) != 4 {
+		return fmt.Errorf("read transaction log: expected 4 fields, got %d", len(chunks))
 	}
 
-	id := chunks[1]
-	trx := ctx.trxMap[id]
-	logLine, err := hex.DecodeString(chunks[2])
+	slotNumber, err := strconv.Atoi(chunks[1])
+	if err != nil {
+		return fmt.Errorf("slot num to int: %w", err)
+	}
+
+	activeSlot := ctx.getActiveSlot(slotNumber)
+	if activeSlot == nil {
+		return fmt.Errorf("transaction end: received slot num (%d) not matching any active slot number in context", slotNumber)
+	}
+
+	id := chunks[2]
+	trx := activeSlot.trxMap[id]
+	logLine, err := hex.DecodeString(chunks[3])
 	if err != nil {
 		return fmt.Errorf("log line failed hex decoding: %w", err)
 	}
@@ -406,37 +491,43 @@ func (ctx *parseCtx) readTransactionLog(line string) error {
 	return nil
 }
 
-func (ctx *parseCtx) recordTransactionEnd(trx *pbcodec.Transaction) {
-	ctx.slot.Transactions = append(ctx.slot.Transactions, trx)
-}
-
-// INST_S 27ocnWWBHMWC1ZPfz3kBqyCH1koGsLRNAYe1zp1JhVSeUX3QDniV992yPK7cKFieXViPN9o1bEBEJ55b4wU59WGo 1 0 Vote111111111111111111111111111111111111111 0200000001000000000000000b0000000000000004398c6eecd88cb501e2bd330d15f9810fa76c26f82d165abd0cbb75292ab0e601e64cda5f00000000 Vote111111111111111111111111111111111111111:00;AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:01;SysvarS1otHashes111111111111111111111111111:00;SysvarC1ock11111111111111111111111111111111:00;F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:11
-
+// INST_S 10 aaa 1 0 Vote111111111111111111111111111111111111111 0200000001000000000000000b0000000000000004398c6eecd88cb501e2bd330d15f9810fa76c26f82d165abd0cbb75292ab0e601e64cda5f00000000 Vote111111111111111111111111111111111111111:00;AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:01;SysvarS1otHashes111111111111111111111111111:00;SysvarC1ock11111111111111111111111111111111:00;F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:11
 func (ctx *parseCtx) readInstructionStart(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 7 {
-		return fmt.Errorf("read instructionTrace start: expected 7 fields, got %d", len(chunks))
+	if len(chunks) != 8 {
+		return fmt.Errorf("read instructionTrace start: expected 8 fields, got %d", len(chunks))
 	}
-	id := chunks[1]
-	ordinal, err := strconv.Atoi(chunks[2])
+
+	slotNumber, err := strconv.Atoi(chunks[1])
+	if err != nil {
+		return fmt.Errorf("slot num to int: %w", err)
+	}
+
+	activeSlot := ctx.getActiveSlot(slotNumber)
+	if activeSlot == nil {
+		return fmt.Errorf("instruction start: received slot num (%d) not matching any active slot number in context", slotNumber)
+	}
+
+	id := chunks[2]
+	ordinal, err := strconv.Atoi(chunks[3])
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: ordinal to int: %w", err)
 	}
 
-	parentOrdinal, err := strconv.Atoi(chunks[3])
+	parentOrdinal, err := strconv.Atoi(chunks[4])
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: parent ordinal to int: %w", err)
 	}
 
-	program := chunks[4]
-	data := chunks[5]
+	program := chunks[5]
+	data := chunks[6]
 	hexData, err := hex.DecodeString(data)
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: hex decode data: %w", err)
 	}
 
 	var accountKeys []string
-	accounts := strings.Split(chunks[6], ";")
+	accounts := strings.Split(chunks[7], ";")
 	for _, acct := range accounts {
 		accountKeys = append(accountKeys, strings.Split(acct, ":")[0])
 	}
@@ -449,7 +540,7 @@ func (ctx *parseCtx) readInstructionStart(line string) error {
 		AccountKeys:   accountKeys,
 	}
 
-	err = ctx.recordInstruction(id, instruction)
+	err = activeSlot.recordInstruction(id, instruction)
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: %w", err)
 	}
@@ -457,37 +548,37 @@ func (ctx *parseCtx) readInstructionStart(line string) error {
 	return nil
 }
 
-func (ctx *parseCtx) recordInstruction(trxID string, instruction *pbcodec.Instruction) error {
-	trx := ctx.trxMap[trxID]
-	if trx == nil {
-		return fmt.Errorf("record instruction: transaction trace not found in context: %s", trxID)
-	}
-
-	trx.Instructions = append(trx.Instructions, instruction)
-
-	return nil
-}
-
-// ACCT_CH 27ocnWWBHMWC1ZPfz3kBqyCH1koGsLRNAYe1zp1JhVSeUX3QDniV992yPK7cKFieXViPN9o1bEBEJ55b4wU59WGo 1 AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG 01000000d1ee412af80c981c82 012333333333323123123123
+// ACCT_CH 10 aaa 1 AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG 01000000d1ee412af80c981c82 012333333333323123123123
 func (ctx *parseCtx) readAccountChange(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 6 {
-		return fmt.Errorf("read account change: expected 6 fields, got %d", len(chunks))
+	if len(chunks) != 7 {
+		return fmt.Errorf("read account change: expected 7 fields, got %d", len(chunks))
 	}
-	trxID := chunks[1]
-	ordinal, err := strconv.Atoi(chunks[2])
+
+	slotNumber, err := strconv.Atoi(chunks[1])
+	if err != nil {
+		return fmt.Errorf("slot num to int: %w", err)
+	}
+
+	activeSlot := ctx.getActiveSlot(slotNumber)
+	if activeSlot == nil {
+		return fmt.Errorf("account change: received slot num (%d) not matching any active slot number in context", slotNumber)
+	}
+
+	trxID := chunks[2]
+	ordinal, err := strconv.Atoi(chunks[3])
 	if err != nil {
 		return fmt.Errorf("read account change: ordinal to int: %w", err)
 	}
 
-	pubKey := chunks[3]
+	pubKey := chunks[4]
 
-	prevData, err := hex.DecodeString(chunks[4])
+	prevData, err := hex.DecodeString(chunks[5])
 	if err != nil {
 		return fmt.Errorf("read account change: hex decode prev data: %w", err)
 	}
 
-	newData, err := hex.DecodeString(chunks[5])
+	newData, err := hex.DecodeString(chunks[6])
 	if err != nil {
 		return fmt.Errorf("read account change: hex decode new data: %w", err)
 	}
@@ -499,7 +590,7 @@ func (ctx *parseCtx) readAccountChange(line string) error {
 		NewDataLength: uint64(len(newData)),
 	}
 
-	err = ctx.recordAccountChange(trxID, ordinal, accountChange)
+	err = activeSlot.recordAccountChange(trxID, ordinal, accountChange)
 	if err != nil {
 		return fmt.Errorf("read account change: %w", err)
 	}
@@ -507,37 +598,37 @@ func (ctx *parseCtx) readAccountChange(line string) error {
 	return nil
 }
 
-func (ctx *parseCtx) recordAccountChange(trxID string, ordinal int, accountChange *pbcodec.AccountChange) error {
-	trx := ctx.trxMap[trxID]
-	if trx == nil {
-		return fmt.Errorf("record account change: transaction trace not found in context: %s", trxID)
-	}
-
-	trx.Instructions[ordinal-1].AccountChanges = append(trx.Instructions[ordinal-1].AccountChanges, accountChange)
-
-	return nil
-}
-
-// LAMP_CH 61hY5LpNSSH3zpnxoLYf5pmStN4JRMJ8H4nt4omyNQgaBb78APUetZRw23QdWpZLWF22KG1rBvNdX9XJcut21HQZ 1 11111111111111111111111111111111 499999892500 494999892500
+// LAMP_CH 10 aaa 61hY5LpNSSH3zpnxoLYf5pmStN4JRMJ8H4nt4omyNQgaBb78APUetZRw23QdWpZLWF22KG1rBvNdX9XJcut21HQZ 1 11111111111111111111111111111111 499999892500 494999892500
 func (ctx *parseCtx) readLamportsChange(line string) error {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 6 {
-		return fmt.Errorf("read lamport change: expected 6 fields, got %d", len(chunks))
+	if len(chunks) != 7 {
+		return fmt.Errorf("read lamport change: expected 7 fields, got %d", len(chunks))
 	}
-	trxID := chunks[1]
-	ordinal, err := strconv.Atoi(chunks[2])
+
+	slotNumber, err := strconv.Atoi(chunks[1])
+	if err != nil {
+		return fmt.Errorf("slot num to int: %w", err)
+	}
+
+	activeSlot := ctx.getActiveSlot(slotNumber)
+	if activeSlot == nil {
+		return fmt.Errorf("account change: received slot num (%d) not matching any active slot number in context", slotNumber)
+	}
+
+	trxID := chunks[2]
+	ordinal, err := strconv.Atoi(chunks[3])
 	if err != nil {
 		return fmt.Errorf("read lamport change: ordinal to int: %w", err)
 	}
 
-	owner := chunks[3]
+	owner := chunks[4]
 
-	prevLamports, err := strconv.Atoi(chunks[4])
+	prevLamports, err := strconv.Atoi(chunks[5])
 	if err != nil {
 		return fmt.Errorf("read lamport change: hex decode prev lamports data: %w", err)
 	}
 
-	newLamports, err := strconv.Atoi(chunks[5])
+	newLamports, err := strconv.Atoi(chunks[6])
 	if err != nil {
 		return fmt.Errorf("read lamport change: hex decode new lamports data: %w", err)
 	}
@@ -548,21 +639,10 @@ func (ctx *parseCtx) readLamportsChange(line string) error {
 		NewLamports:  uint64(newLamports),
 	}
 
-	err = ctx.recordLamportsChange(trxID, ordinal, balanceChange)
+	err = activeSlot.recordLamportsChange(trxID, ordinal, balanceChange)
 	if err != nil {
 		return fmt.Errorf("read lamports change: %w", err)
 	}
-
-	return nil
-}
-
-func (ctx *parseCtx) recordLamportsChange(trxID string, ordinal int, balanceChange *pbcodec.BalanceChange) error {
-	trx := ctx.trxMap[trxID]
-	if trx == nil {
-		return fmt.Errorf("record balanace change: transaction trace not found in context: %s", trxID)
-	}
-
-	trx.Instructions[ordinal-1].BalanceChanges = append(trx.Instructions[ordinal-1].BalanceChanges, balanceChange)
 
 	return nil
 }
