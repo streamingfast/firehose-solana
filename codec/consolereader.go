@@ -267,14 +267,14 @@ func (ctx *parseCtx) readSlotProcess(line string) error {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
-	if ctx.lastEndedSlot != 0 && uint64(slotNumber) < ctx.lastEndedSlot {
-		zlog.Warn("skipping slot process not greater then last seen slot",
-			zap.Int("received_slot_num", slotNumber),
-			zap.Uint64("last_ended_slot_num", ctx.lastEndedSlot),
-			zap.String("line", line),
-		)
-		return nil
-	}
+	//if ctx.lastEndedSlot != 0 && uint64(slotNumber) < ctx.lastEndedSlot {
+	//	zlog.Warn("skipping slot process not greater then last seen slot",
+	//		zap.Int("received_slot_num", slotNumber),
+	//		zap.Uint64("last_ended_slot_num", ctx.lastEndedSlot),
+	//		zap.String("line", line),
+	//	)
+	//	return nil
+	//}
 
 	rootSlotNum, err := strconv.Atoi(chunks[8])
 	if err != nil {

@@ -105,18 +105,18 @@ func Test_readSlotProcess(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "process slot num before last ended slot",
-			ctx: &parseCtx{
-				activeSlots:   map[uint64]*activeSlot{},
-				lastEndedSlot: 11,
-			},
-			line: "SLOT_PROCESS partial 10 bb aa aa 3654731136 53246259 7 10 336 7 57105130 648 601 479",
-			expectCtx: &parseCtx{
-				activeSlots:   map[uint64]*activeSlot{},
-				lastEndedSlot: 11,
-			},
-		},
+		//{
+		//	name: "process slot num before last ended slot",
+		//	ctx: &parseCtx{
+		//		activeSlots:   map[uint64]*activeSlot{},
+		//		lastEndedSlot: 11,
+		//	},
+		//	line: "SLOT_PROCESS partial 10 bb aa aa 3654731136 53246259 7 10 336 7 57105130 648 601 479",
+		//	expectCtx: &parseCtx{
+		//		activeSlots:   map[uint64]*activeSlot{},
+		//		lastEndedSlot: 11,
+		//	},
+		//},
 		{
 			name: "process multiple out of order slots",
 			ctx: &parseCtx{
