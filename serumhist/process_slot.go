@@ -65,8 +65,18 @@ func (l *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 			var out []*kvdb.KV
 			var err error
 
+			instructionAccountIndexes := instructionAccountIndexes(transaction.AccountKeys, instruction.AccountKeys)
+			accounts, err := transaction.AccountMetaList()
+			if err != nil {
+				return fmt.Errorf("process serum slot: get trx account meta list: %w", err)
+			}
+
 			// we only care about new order instruction that modify the request queue
 			if newOrder, ok := serumInstruction.Impl.(*serum.InstructionNewOrder); ok {
+				err := newOrder.SetAccounts(accounts, instructionAccountIndexes)
+				if err != nil {
+					return fmt.Errorf("process serum slot: match order: set account metas: %w", err)
+				}
 				zlog.Info("processing new order")
 				out, err = processNewOrderRequestQueue(slot.Number, newOrder, instruction.AccountChanges)
 				if err != nil {
@@ -81,7 +91,11 @@ func (l *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 
 			// we only care about new order instruction that modify the event queue
 			if mathOrder, ok := serumInstruction.Impl.(*serum.InstructionMatchOrder); ok {
-				zlog.Info("processing match order", zap.Reflect("match order", mathOrder))
+				err := mathOrder.SetAccounts(accounts, instructionAccountIndexes)
+				if err != nil {
+					return fmt.Errorf("process serum slot: match order: set account metas: %w", err)
+				}
+				zlog.Info("processing match order")
 				out, err = processMatchOrderEventQueue(slot.Number, mathOrder, instruction.AccountChanges)
 				if err != nil {
 					zlog.Warn("error matching order and event queue",
@@ -100,6 +114,18 @@ func (l *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 		}
 	}
 	return nil
+}
+
+func instructionAccountIndexes(trxAccounts []string, instructionAccounts []string) []uint8 {
+	var out []uint8
+	for _, ia := range instructionAccounts {
+		for i, ta := range trxAccounts {
+			if ta == ia {
+				out = append(out, uint8(i))
+			}
+		}
+	}
+	return out
 }
 
 func getAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {
