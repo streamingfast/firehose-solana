@@ -3,7 +3,10 @@ package serumhist
 import (
 	"context"
 	"fmt"
-	"github.com/dfuse-io/dgrpc"
+	"go.opencensus.io/plugin/ocgrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
+	"google.golang.org/grpc/keepalive"
 	"io"
 	"time"
 
@@ -53,10 +56,19 @@ func NewInjector(
 }
 
 func (l *Injector) Setup() error {
-	conn, err := dgrpc.NewInternalClient(l.blockstreamAddr)
-	if err != nil {
-		return fmt.Errorf("unable to setup loader: %w", err)
-	}
+
+	conn, err := grpc.Dial(
+		l.blockstreamAddr,
+		grpc.WithStatsHandler(&ocgrpc.ClientHandler{}),
+		grpc.WithBalancerName(roundrobin.Name),
+		grpc.WithInsecure(),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                30 * time.Second, // send pings every (x seconds) there is no activity
+			Timeout:             10 * time.Second, // wait that amount of time for ping ack before considering the connection dead
+			PermitWithoutStream: true,             // send pings even without active streams
+		}),
+		grpc.WithDefaultCallOptions([]grpc.CallOption{grpc.MaxCallRecvMsgSize(1024 * 1024 * 300), grpc.WaitForReady(true)}...),
+	)
 
 	markets, err := serum.KnownMarket()
 	if err != nil {
