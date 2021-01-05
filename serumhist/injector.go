@@ -3,6 +3,7 @@ package serumhist
 import (
 	"context"
 	"fmt"
+	"github.com/dfuse-io/dgrpc"
 	"io"
 	"time"
 
@@ -15,9 +16,7 @@ import (
 	"github.com/dfuse-io/shutter"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/programs/serum"
-	"go.opencensus.io/plugin/ocgrpc"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 type Injector struct {
@@ -54,11 +53,7 @@ func NewInjector(
 }
 
 func (l *Injector) Setup() error {
-	conn, err := grpc.Dial(
-		l.blockstreamAddr,
-		grpc.WithInsecure(),
-		grpc.WithStatsHandler(&ocgrpc.ClientHandler{}),
-	)
+	conn, err := dgrpc.NewInternalClient(l.blockstreamAddr)
 	if err != nil {
 		return fmt.Errorf("unable to setup loader: %w", err)
 	}
