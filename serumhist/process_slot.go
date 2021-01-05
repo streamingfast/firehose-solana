@@ -81,7 +81,7 @@ func (l *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 
 			// we only care about new order instruction that modify the event queue
 			if mathOrder, ok := serumInstruction.Impl.(*serum.InstructionMatchOrder); ok {
-				zlog.Info("processing match order")
+				zlog.Info("processing match order", zap.Reflect("match order", mathOrder))
 				out, err = processMatchOrderEventQueue(slot.Number, mathOrder, instruction.AccountChanges)
 				if err != nil {
 					zlog.Warn("error matching order and event queue",
