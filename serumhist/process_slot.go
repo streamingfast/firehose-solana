@@ -193,8 +193,9 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market sola
 }
 
 func processMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	eventQueueAccountChange, err := getAccountChange(accountChanges, func(f *serum.AccountFlag) bool {
-		return f.Is(serum.AccountFlagInitialized) && f.Is(serum.AccountFlagEventQueue)
+	eventQueueAccountChange, err := getAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
+		zlog.Debug("checking account change flag", zap.Stringer("flag", flag))
+		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
 	})
 
 	if eventQueueAccountChange == nil {
