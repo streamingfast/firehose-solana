@@ -16,8 +16,8 @@ package codec
 
 import (
 	"encoding/hex"
-	"fmt"
-	"os"
+	"io"
+	"strings"
 	"testing"
 
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
@@ -25,7 +25,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_readSlotProcess(t *testing.T) {
+func Test_bank_sortTrx(t *testing.T) {
+	b := &bank{
+		trxAggregator: map[string]*pbcodec.Transaction{
+			"d": {
+				Id: "d",
+			},
+			"a": {
+				Id: "a",
+			},
+			"b": {
+				Id: "b",
+			},
+			"c": {
+				Id: "c",
+			},
+		},
+	}
+	b.sortTrx()
+	assert.Equal(t, []*pbcodec.Transaction{
+		{Id: "a"},
+		{Id: "b"},
+		{Id: "c"},
+		{Id: "d"},
+	}, b.sortedTrx)
+}
+
+func Test_readSlotWork(t *testing.T) {
 	tests := []struct {
 		name       string
 		ctx        *parseCtx
@@ -34,136 +60,190 @@ func Test_readSlotProcess(t *testing.T) {
 		expecError bool
 	}{
 		{
-			name: "process full slot",
+			name: "new full slot work",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{},
+				banks: map[uint64]*bank{},
 			},
-			line: "SLOT_PROCESS full 10 bb aa aa 3654731136 53246259 7 10 336 7 57105130 648 601 479",
+			line: "SLOT_WORK 55295939 55295941 full 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 51936825 932 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0",
 			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxMap: map[string]*pbcodec.Transaction{},
-						slot: &pbcodec.Slot{
-							Id:          "bb",
-							Number:      10,
-							PreviousId:  "aa",
-							Version:     1,
-							RootSlotNum: 7,
+				banks: map[uint64]*bank{
+					55295941: &bank{
+						blockNum:       55295941,
+						parentSlotNum:  55295939,
+						trxCount:       932,
+						trxAggregator:  map[string]*pbcodec.Transaction{},
+						previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						sortedTrx:      []*pbcodec.Transaction{},
+						blk: &pbcodec.Block{
+							Number:            55295941,
+							BlockHeight:       51936825,
+							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							PreviousBlockSlot: 55295939,
 						},
+					},
+				},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					trxAggregator:  map[string]*pbcodec.Transaction{},
+					previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+					sortedTrx:      []*pbcodec.Transaction{},
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
 					},
 				},
 			},
 		},
 		{
-			name: "process partial slot",
+			name: "new partial slot work",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{},
+				banks: map[uint64]*bank{},
 			},
-			line: "SLOT_PROCESS partial 10 bb aa aa 3654731136 53246259 7 10 336 7 57105130 648 601 479",
+			line: "SLOT_WORK 55295939 55295941 partial 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 51936825 932 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0",
 			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxMap: map[string]*pbcodec.Transaction{},
-						slot: &pbcodec.Slot{
-							Number:      10,
-							PreviousId:  "aa",
-							Version:     1,
-							RootSlotNum: 7,
+				banks: map[uint64]*bank{
+					55295941: &bank{
+						blockNum:       55295941,
+						parentSlotNum:  55295939,
+						trxCount:       932,
+						previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						sortedTrx:      []*pbcodec.Transaction{},
+						trxAggregator:  map[string]*pbcodec.Transaction{},
+						blk: &pbcodec.Block{
+							Number:            55295941,
+							BlockHeight:       51936825,
+							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							PreviousBlockSlot: 55295939,
 						},
+					},
+				},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+					sortedTrx:      []*pbcodec.Transaction{},
+					trxAggregator:  map[string]*pbcodec.Transaction{},
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
 					},
 				},
 			},
 		},
 		{
-			name: "full slot should complete id",
+			name: "known partial slot work",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxMap: map[string]*pbcodec.Transaction{},
-						slot: &pbcodec.Slot{
-							Number:      10,
-							PreviousId:  "aa",
-							Version:     1,
-							RootSlotNum: 7,
+				banks: map[uint64]*bank{
+					55295941: &bank{
+						blockNum:       55295941,
+						parentSlotNum:  55295939,
+						trxCount:       932,
+						trxAggregator:  map[string]*pbcodec.Transaction{},
+						previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						blk: &pbcodec.Block{
+							Number:            55295941,
+							BlockHeight:       51936825,
+							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							PreviousBlockSlot: 55295939,
 						},
 					},
 				},
 			},
-			line: "SLOT_PROCESS full 10 cc bb bb 3654731136 53246259 7 10 336 7 57105130 648 601 479",
+			line: "SLOT_WORK 55295939 55295941 partial 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 51936825 423 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0",
 			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxMap: map[string]*pbcodec.Transaction{},
-						slot: &pbcodec.Slot{
-							Id:          "cc",
-							Number:      10,
-							PreviousId:  "aa",
-							Version:     1,
-							RootSlotNum: 7,
+				banks: map[uint64]*bank{
+					55295941: &bank{
+						blockNum:       55295941,
+						parentSlotNum:  55295939,
+						trxCount:       1355,
+						trxAggregator:  map[string]*pbcodec.Transaction{},
+						previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						blk: &pbcodec.Block{
+							Number:            55295941,
+							BlockHeight:       51936825,
+							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							PreviousBlockSlot: 55295939,
 						},
+					},
+				},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       1355,
+					trxAggregator:  map[string]*pbcodec.Transaction{},
+					previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
 					},
 				},
 			},
 		},
-		//{
-		//	name: "process slot num before last ended slot",
-		//	ctx: &parseCtx{
-		//		activeSlots:   map[uint64]*activeSlot{},
-		//		lastEndedSlot: 11,
-		//	},
-		//	line: "SLOT_PROCESS partial 10 bb aa aa 3654731136 53246259 7 10 336 7 57105130 648 601 479",
-		//	expectCtx: &parseCtx{
-		//		activeSlots:   map[uint64]*activeSlot{},
-		//		lastEndedSlot: 11,
-		//	},
-		//},
 		{
-			name: "process multiple out of order slots",
+			name: "known full slot work",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					14: {
-						trxMap: map[string]*pbcodec.Transaction{},
-						slot: &pbcodec.Slot{
-							Id:         "ff",
-							Number:     14,
-							PreviousId: "ee",
-							Version:    1,
+				banks: map[uint64]*bank{
+					55295941: &bank{
+						blockNum:       55295941,
+						parentSlotNum:  55295939,
+						trxCount:       932,
+						trxAggregator:  map[string]*pbcodec.Transaction{},
+						previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						blk: &pbcodec.Block{
+							Number:            55295941,
+							BlockHeight:       51936825,
+							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							PreviousBlockSlot: 55295939,
 						},
 					},
 				},
-				lastEndedSlot: 9,
 			},
-			line: "SLOT_PROCESS full 10 bb aa aa 3654731136 53246259 7 10 336 7 57105130 648 601 479",
+			line: "SLOT_WORK 55295939 55295941 full 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 51936825 423 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0",
 			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					14: {
-						trxMap: map[string]*pbcodec.Transaction{},
-						slot: &pbcodec.Slot{
-							Id:         "ff",
-							Number:     14,
-							PreviousId: "ee",
-							Version:    1,
-						},
-					},
-					10: {
-						trxMap: map[string]*pbcodec.Transaction{},
-						slot: &pbcodec.Slot{
-							RootSlotNum: 7,
-							Id:          "bb",
-							Number:      10,
-							PreviousId:  "aa",
-							Version:     1,
+				banks: map[uint64]*bank{
+					55295941: &bank{
+						blockNum:       55295941,
+						parentSlotNum:  55295939,
+						trxCount:       1355,
+						trxAggregator:  map[string]*pbcodec.Transaction{},
+						previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						blk: &pbcodec.Block{
+							Number:            55295941,
+							BlockHeight:       51936825,
+							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							PreviousBlockSlot: 55295939,
 						},
 					},
 				},
-				lastEndedSlot: 9,
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       1355,
+					trxAggregator:  map[string]*pbcodec.Transaction{},
+					previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+				},
 			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.ctx.readSlotProcess(test.line)
+			err := test.ctx.readSlotWork(test.line)
 			if test.expecError {
 				require.Error(t, err)
 			} else {
@@ -176,109 +256,129 @@ func Test_readSlotProcess(t *testing.T) {
 
 func Test_readSlotEnd(t *testing.T) {
 	tests := []struct {
-		name               string
-		ctx                *parseCtx
-		line               string
-		expectSlot         *pbcodec.Slot
-		expectLastSlotSeen uint64
-		expecError         bool
+		name        string
+		ctx         *parseCtx
+		line        string
+		expectSlot  *pbcodec.Slot
+		expectCtx   *parseCtx
+		expectError bool
 	}{
 		{
 			name: "end slot",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						slot: &pbcodec.Slot{
-							Id:          "bb",
-							Number:      10,
-							PreviousId:  "aa",
-							Version:     1,
-							RootSlotNum: 1,
-							Transactions: []*pbcodec.Transaction{
-								{Id: "aaa"},
-								{Id: "bbb"},
-							},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
+					sortedTrx:      trxSlice([]string{"a", "b", "c", "d"}),
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+				},
+				banks: map[uint64]*bank{
+					55295941: &bank{
+						blockNum:       55295941,
+						parentSlotNum:  55295939,
+						trxCount:       932,
+						previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+						blk: &pbcodec.Block{
+							Number:            55295941,
+							BlockHeight:       51936825,
+							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							PreviousBlockSlot: 55295939,
 						},
 					},
 				},
-				lastEndedSlot: 9,
 			},
-			line: "SLOT_END 10 1607211012 1608814366",
+			line: "SLOT_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",
 			expectSlot: &pbcodec.Slot{
-				Id:                   "bb",
-				Number:               10,
-				PreviousId:           "aa",
+				Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+				Number:               55295941,
+				PreviousId:           "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
 				Version:              1,
-				RootSlotNum:          1,
-				GenesisUnixTimestamp: 1607211012,
-				ClockUnixTimestamp:   1608814366,
+				GenesisUnixTimestamp: 1606487316,
+				ClockUnixTimestamp:   1606487316,
 				Transactions: []*pbcodec.Transaction{
-					{Id: "aaa"},
-					{Id: "bbb"},
+					{Id: "a", Index: 0, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
+					{Id: "b", Index: 1, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
+					{Id: "c", Index: 2, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
+					{Id: "d", Index: 3, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
 				},
-				TransactionCount: 2,
+				TransactionCount: 4,
+				Block: &pbcodec.Block{
+					Id:                "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					Number:            55295941,
+					BlockHeight:       51936825,
+					PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+					PreviousBlockSlot: 55295939,
+				},
 			},
-			expectLastSlotSeen: 10,
-		},
-		{
-			name: "end slot that is not active",
-			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{},
+			expectCtx: &parseCtx{
+				activeBank: nil,
+				banks:      map[uint64]*bank{},
 			},
-			line:       "SLOT_END 10 1607211012 1608814366",
-			expecError: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			slot, err := test.ctx.readSlotEnd(test.line)
-			if test.expecError {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, test.expectSlot, slot)
-			}
+			require.NoError(t, err)
+			assert.Equal(t, test.expectSlot, slot)
 		})
 	}
 }
 
-func Test_readSlotFailed(t *testing.T) {
+func Test_readSlotBound(t *testing.T) {
 	tests := []struct {
-		name   string
-		ctx    *parseCtx
-		line   string
-		expect error
+		name        string
+		ctx         *parseCtx
+		line        string
+		expectSlot  *pbcodec.Slot
+		expectCtx   *parseCtx
+		expectError bool
 	}{
 		{
-			name: "slot failed",
+			name: "end slot",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						slot: &pbcodec.Slot{
-							Id:          "bb",
-							Number:      10,
-							PreviousId:  "aa",
-							Version:     1,
-							RootSlotNum: 1,
-							Transactions: []*pbcodec.Transaction{
-								{Id: "aaa"},
-								{Id: "bbb"},
-							},
-						},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+					sortedTrx:      []*pbcodec.Transaction{},
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
 					},
 				},
-				lastEndedSlot: 1,
 			},
-			line:   "SLOT_FAILED 10 unknown",
-			expect: fmt.Errorf("slot 10 failed: unknown"),
+			line: "SLOT_BOUND 55295940 5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
+			expectSlot: &pbcodec.Slot{
+				Id:               "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
+				Number:           55295940,
+				PreviousId:       "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+				Version:          1,
+				TransactionCount: 0,
+			},
+			expectCtx: &parseCtx{
+				activeBank: nil,
+				banks:      map[uint64]*bank{},
+			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.ctx.readSlotFailed(test.line)
-			assert.Equal(t, test.expect, err)
+			slot, err := test.ctx.readSlotBound(test.line)
+			require.NoError(t, err)
+			assert.Equal(t, test.expectSlot, slot)
 		})
 	}
 }
@@ -294,46 +394,50 @@ func Test_readTransactionStart(t *testing.T) {
 		{
 			name: "golden path",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 0,
-						trxMap:   map[string]*pbcodec.Transaction{},
-						slot: &pbcodec.Slot{
-							Id:     "bb",
-							Number: 10,
-						},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
 					},
+					trxAggregator: map[string]*pbcodec.Transaction{},
 				},
 			},
-			line: "TRX_START 10 aaa:bbb:ccc 1 1 2 F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:SysvarS1otHashes111111111111111111111111111:SysvarC1ock11111111111111111111111111111111:Vote111111111111111111111111111111111111111 dd",
+			line: "TRX_START 55295941 3JwX7ifk5BYZWdBK1o9Zs4wEZ6HP8MWbxhgZD7u1PzSDbaDLrZZbhBnvQJsVMPpWdpaTAFiUiQWZcbEdc3Nfj9Sq 1 0 3 3rqEEEGjHRyndHuduBcjkf17rX3hgmGACpYTQYeZ5Ltk:8xV77wuFP5BkMDdb1845hRRWZNbDNAbcV75BjMuViWpf:SysvarS1otHashes111111111111111111111111111:SysvarC1ock11111111111111111111111111111111:Vote111111111111111111111111111111111111111 2pE6pkNJzuMz4r8owVi4hrCctEvGyrg1g3SLD4nbcsxz",
 			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 1,
-						slot: &pbcodec.Slot{
-							Id:     "bb",
-							Number: 10,
-						},
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id:                   "aaa",
-								SlotNum:              10,
-								SlotHash:             "bb",
-								AdditionalSignatures: []string{"bbb", "ccc"},
-								Header: &pbcodec.MessageHeader{
-									NumRequiredSignatures:       1,
-									NumReadonlySignedAccounts:   1,
-									NumReadonlyUnsignedAccounts: 2,
-								},
-								AccountKeys: []string{
-									"F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9",
-									"AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG",
-									"SysvarS1otHashes111111111111111111111111111",
-									"SysvarC1ock11111111111111111111111111111111",
-									"Vote111111111111111111111111111111111111111",
-								},
-								RecentBlockhash: "dd",
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+					trxAggregator: map[string]*pbcodec.Transaction{
+						"3JwX7ifk5BYZWdBK1o9Zs4wEZ6HP8MWbxhgZD7u1PzSDbaDLrZZbhBnvQJsVMPpWdpaTAFiUiQWZcbEdc3Nfj9Sq": {
+							Id:                   "3JwX7ifk5BYZWdBK1o9Zs4wEZ6HP8MWbxhgZD7u1PzSDbaDLrZZbhBnvQJsVMPpWdpaTAFiUiQWZcbEdc3Nfj9Sq",
+							AdditionalSignatures: []string{},
+							Header: &pbcodec.MessageHeader{
+								NumRequiredSignatures:       1,
+								NumReadonlySignedAccounts:   0,
+								NumReadonlyUnsignedAccounts: 3,
 							},
+							AccountKeys: []string{
+								"3rqEEEGjHRyndHuduBcjkf17rX3hgmGACpYTQYeZ5Ltk",
+								"8xV77wuFP5BkMDdb1845hRRWZNbDNAbcV75BjMuViWpf",
+								"SysvarS1otHashes111111111111111111111111111",
+								"SysvarC1ock11111111111111111111111111111111",
+								"Vote111111111111111111111111111111111111111",
+							},
+							RecentBlockhash: "2pE6pkNJzuMz4r8owVi4hrCctEvGyrg1g3SLD4nbcsxz",
 						},
 					},
 				},
@@ -344,61 +448,6 @@ func Test_readTransactionStart(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.ctx.readTransactionStart(test.line)
-			if test.expectError {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, test.expectCtx, test.ctx)
-			}
-		})
-	}
-}
-
-func Test_readTransactionEnd(t *testing.T) {
-	tests := []struct {
-		name        string
-		ctx         *parseCtx
-		line        string
-		expectCtx   *parseCtx
-		expectError bool
-	}{
-		{
-			name: "golden path",
-			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id: "aaa",
-							},
-						},
-						trxIndex: 1,
-						slot: &pbcodec.Slot{
-							Transactions: []*pbcodec.Transaction{},
-						},
-					},
-				},
-			},
-			line: "TRX_END 10 aaa",
-			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxMap:   map[string]*pbcodec.Transaction{},
-						trxIndex: 1,
-						slot: &pbcodec.Slot{
-							Transactions: []*pbcodec.Transaction{
-								{Id: "aaa"},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := test.ctx.readTransactionEnd(test.line)
 			if test.expectError {
 				require.Error(t, err)
 			} else {
@@ -420,27 +469,42 @@ func Test_readTransactionLog(t *testing.T) {
 		{
 			name: "golden path",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 1,
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id:          "aaa",
-								LogMessages: []string{},
-							},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+					trxAggregator: map[string]*pbcodec.Transaction{
+						"aaa": {
+							Id: "aaa",
 						},
 					},
 				},
 			},
-			line: "TRX_L 10 aaa aabbcc",
+			line: "TRX_L 55295941 aaa aabbcc",
 			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 1,
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id:          "aaa",
-								LogMessages: []string{"\xaa\xbb\xcc"},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+					trxAggregator: map[string]*pbcodec.Transaction{
+						"aaa": {
+							Id: "aaa",
+							LogMessages: []string{
+								"\xaa\xbb\xcc",
 							},
 						},
 					},
@@ -473,39 +537,52 @@ func Test_readInstructionStart(t *testing.T) {
 		{
 			name: "golden path",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 1,
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id:           "aaa",
-								Instructions: []*pbcodec.Instruction{},
-							},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+					trxAggregator: map[string]*pbcodec.Transaction{
+						"S5eYZCYnXoa3858MJ2cvdXCXRW8xiTagWXM4WNggt96A5qm2NoHtYro56GGwygCgfKJzN733PxMBEEH7TAoHRYh": {
+							Id: "S5eYZCYnXoa3858MJ2cvdXCXRW8xiTagWXM4WNggt96A5qm2NoHtYro56GGwygCgfKJzN733PxMBEEH7TAoHRYh",
 						},
 					},
 				},
 			},
-			line: "INST_S 10 aaa 1 0 Vote111111111111111111111111111111111111111 0200000001000000000000000b0000000000000004398c6eecd88cb501e2bd330d15f9810fa76c26f82d165abd0cbb75292ab0e601e64cda5f00000000 Vote111111111111111111111111111111111111111:00;AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:01;SysvarS1otHashes111111111111111111111111111:00;SysvarC1ock11111111111111111111111111111111:00;F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:11",
+			line: "INST_S 55295941 S5eYZCYnXoa3858MJ2cvdXCXRW8xiTagWXM4WNggt96A5qm2NoHtYro56GGwygCgfKJzN733PxMBEEH7TAoHRYh 1 0 Vote111111111111111111111111111111111111111 020000000200000000000000adbf4b0300000000aebf4b03000000000e060473b5c277d1949ddc92c7a92e2d835008d70fd4817b5110611c11d52aa801c214d85f00000000 Vote111111111111111111111111111111111111111:00;9SE5oHdQ88rVFPcJZjn7fNGSXhU7JQfZ5Vks1h5VNCWj:01;SysvarS1otHashes111111111111111111111111111:00;SysvarC1ock11111111111111111111111111111111:00;AHg5MDTTPKvfCxYy8Zb3NpRYG7ixsx2uTT1MUs7DwzEu:11",
 			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 1,
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id: "aaa",
-								Instructions: []*pbcodec.Instruction{
-									{
-										ProgramId: "Vote111111111111111111111111111111111111111",
-										AccountKeys: []string{
-											"Vote111111111111111111111111111111111111111",
-											"AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG",
-											"SysvarS1otHashes111111111111111111111111111",
-											"SysvarC1ock11111111111111111111111111111111",
-											"F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9",
-										},
-										Data:    mustHexDecode("0200000001000000000000000b0000000000000004398c6eecd88cb501e2bd330d15f9810fa76c26f82d165abd0cbb75292ab0e601e64cda5f00000000"),
-										Ordinal: 1,
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+					trxAggregator: map[string]*pbcodec.Transaction{
+						"S5eYZCYnXoa3858MJ2cvdXCXRW8xiTagWXM4WNggt96A5qm2NoHtYro56GGwygCgfKJzN733PxMBEEH7TAoHRYh": {
+							Id: "S5eYZCYnXoa3858MJ2cvdXCXRW8xiTagWXM4WNggt96A5qm2NoHtYro56GGwygCgfKJzN733PxMBEEH7TAoHRYh",
+							Instructions: []*pbcodec.Instruction{
+								{
+									ProgramId: "Vote111111111111111111111111111111111111111",
+									AccountKeys: []string{
+										"Vote111111111111111111111111111111111111111",
+										"9SE5oHdQ88rVFPcJZjn7fNGSXhU7JQfZ5Vks1h5VNCWj",
+										"SysvarS1otHashes111111111111111111111111111",
+										"SysvarC1ock11111111111111111111111111111111",
+										"AHg5MDTTPKvfCxYy8Zb3NpRYG7ixsx2uTT1MUs7DwzEu",
 									},
+									Data:    mustHexDecode("020000000200000000000000adbf4b0300000000aebf4b03000000000e060473b5c277d1949ddc92c7a92e2d835008d70fd4817b5110611c11d52aa801c214d85f00000000"),
+									Ordinal: 1,
 								},
 							},
 						},
@@ -539,39 +616,53 @@ func Test_readAccountChange(t *testing.T) {
 		{
 			name: "golden path",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 0,
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id: "aaa",
-								Instructions: []*pbcodec.Instruction{
-									{
-										AccountChanges: []*pbcodec.AccountChange{},
-									},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+					trxAggregator: map[string]*pbcodec.Transaction{
+						"4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i": {
+							Id: "4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i",
+							Instructions: []*pbcodec.Instruction{
+								{
+									AccountChanges: []*pbcodec.AccountChange{},
 								},
 							},
 						},
 					},
 				},
 			},
-			line: "ACCT_CH 10 aaa 1 AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG 01000000d1ee412af80c981c82 012333333333323123123123",
+			line: "ACCT_CH 55295941 4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i 1 2xjAQsHLsV36NLFkxdApzLg4SNqm15mNqYaBQ4xp5joh 01000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e95ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950a1f000000000000007abf4b03000000001f0000007bbf4b03000000001e0000007cbf4b03000000001d0000008cbf4b03000000001c0000008dbf4b03000000001b0000008ebf4b03000000001a0000008fbf4b03000000001900000091bf4b03000000001800000092bf4b03000000001700000093bf4b03000000001600000094bf4b03000000001500000095bf4b03000000001400000096bf4b03000000001300000097bf4b03000000001200000098bf4b03000000001100000099bf4b0300000000100000009abf4b03000000000f0000009bbf4b03000000000e0000009cbf4b03000000000d0000009dbf4b03000000000c0000009ebf4b03000000000b0000009fbf4b03000000000a000000a0bf4b030000000009000000a1bf4b030000000008000000a2bf4b030000000007000000a3bf4b030000000006000000a4bf4b030000000005000000a5bf4b030000000004000000a6bf4b030000000003000000a7bf4b030000000002000000a8bf4b0300000000010000000179bf4b030000000001000000000000007f00000000000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f000000000000000112000000000000006e00000000000000fa9601000000000000000000000000006f00000000000000e175070000000000fa9601000000000070000000000000002c7b0d0000000000e175070000000000710000000000000000531300000000002c7b0d0000000000720000000000000093081900000000000053130000000000730000000000000026cb1e000000000093081900000000007400000000000000b60624000000000026cb1e00000000007500000000000000b6fb280000000000b6062400000000007600000000000000a9332e0000000000b6fb28000000000077000000000000002631330000000000a9332e00000000007800000000000000ba4738000000000026313300000000007900000000000000219b3c0000000000ba473800000000007a0000000000000025a6410000000000219b3c00000000007b00000000000000f71847000000000025a64100000000007c00000000000000e68f4c0000000000f7184700000000007d0000000000000075d74f0000000000e68f4c00000000007e00000000000000e78253000000000075d74f00000000007f000000000000000c96570000000000e782530000000000a8bf4b0300000000bf14d85f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 01000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e95ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950a1f000000000000007bbf4b03000000001f0000007cbf4b03000000001e0000008cbf4b03000000001d0000008dbf4b03000000001c0000008ebf4b03000000001b0000008fbf4b03000000001a00000091bf4b03000000001900000092bf4b03000000001800000093bf4b03000000001700000094bf4b03000000001600000095bf4b03000000001500000096bf4b03000000001400000097bf4b03000000001300000098bf4b03000000001200000099bf4b0300000000110000009abf4b0300000000100000009bbf4b03000000000f0000009cbf4b03000000000e0000009dbf4b03000000000d0000009ebf4b03000000000c0000009fbf4b03000000000b000000a0bf4b03000000000a000000a1bf4b030000000009000000a2bf4b030000000008000000a3bf4b030000000007000000a4bf4b030000000006000000a5bf4b030000000005000000a6bf4b030000000004000000a7bf4b030000000003000000a8bf4b030000000002000000a9bf4b030000000001000000017abf4b030000000001000000000000007f00000000000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f000000000000000112000000000000006e00000000000000fa9601000000000000000000000000006f00000000000000e175070000000000fa9601000000000070000000000000002c7b0d0000000000e175070000000000710000000000000000531300000000002c7b0d0000000000720000000000000093081900000000000053130000000000730000000000000026cb1e000000000093081900000000007400000000000000b60624000000000026cb1e00000000007500000000000000b6fb280000000000b6062400000000007600000000000000a9332e0000000000b6fb28000000000077000000000000002631330000000000a9332e00000000007800000000000000ba4738000000000026313300000000007900000000000000219b3c0000000000ba473800000000007a0000000000000025a6410000000000219b3c00000000007b00000000000000f71847000000000025a64100000000007c00000000000000e68f4c0000000000f7184700000000007d0000000000000075d74f0000000000e68f4c00000000007e00000000000000e78253000000000075d74f00000000007f000000000000000d96570000000000e782530000000000a9bf4b0300000000bf14d85f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 0,
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id: "aaa",
-								Instructions: []*pbcodec.Instruction{
-									{
-										AccountChanges: []*pbcodec.AccountChange{
-											{
-												Pubkey:        "AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG",
-												PrevData:      mustHexDecode("01000000d1ee412af80c981c82"),
-												NewData:       mustHexDecode("012333333333323123123123"),
-												NewDataLength: 12,
-											},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+					trxAggregator: map[string]*pbcodec.Transaction{
+						"4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i": {
+							Id: "4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i",
+							Instructions: []*pbcodec.Instruction{
+								{
+									AccountChanges: []*pbcodec.AccountChange{
+										{
+											Pubkey:        "2xjAQsHLsV36NLFkxdApzLg4SNqm15mNqYaBQ4xp5joh",
+											PrevData:      mustHexDecode("01000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e95ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950a1f000000000000007abf4b03000000001f0000007bbf4b03000000001e0000007cbf4b03000000001d0000008cbf4b03000000001c0000008dbf4b03000000001b0000008ebf4b03000000001a0000008fbf4b03000000001900000091bf4b03000000001800000092bf4b03000000001700000093bf4b03000000001600000094bf4b03000000001500000095bf4b03000000001400000096bf4b03000000001300000097bf4b03000000001200000098bf4b03000000001100000099bf4b0300000000100000009abf4b03000000000f0000009bbf4b03000000000e0000009cbf4b03000000000d0000009dbf4b03000000000c0000009ebf4b03000000000b0000009fbf4b03000000000a000000a0bf4b030000000009000000a1bf4b030000000008000000a2bf4b030000000007000000a3bf4b030000000006000000a4bf4b030000000005000000a5bf4b030000000004000000a6bf4b030000000003000000a7bf4b030000000002000000a8bf4b0300000000010000000179bf4b030000000001000000000000007f00000000000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f000000000000000112000000000000006e00000000000000fa9601000000000000000000000000006f00000000000000e175070000000000fa9601000000000070000000000000002c7b0d0000000000e175070000000000710000000000000000531300000000002c7b0d0000000000720000000000000093081900000000000053130000000000730000000000000026cb1e000000000093081900000000007400000000000000b60624000000000026cb1e00000000007500000000000000b6fb280000000000b6062400000000007600000000000000a9332e0000000000b6fb28000000000077000000000000002631330000000000a9332e00000000007800000000000000ba4738000000000026313300000000007900000000000000219b3c0000000000ba473800000000007a0000000000000025a6410000000000219b3c00000000007b00000000000000f71847000000000025a64100000000007c00000000000000e68f4c0000000000f7184700000000007d0000000000000075d74f0000000000e68f4c00000000007e00000000000000e78253000000000075d74f00000000007f000000000000000c96570000000000e782530000000000a8bf4b0300000000bf14d85f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+											NewData:       mustHexDecode("01000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e95ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950a1f000000000000007bbf4b03000000001f0000007cbf4b03000000001e0000008cbf4b03000000001d0000008dbf4b03000000001c0000008ebf4b03000000001b0000008fbf4b03000000001a00000091bf4b03000000001900000092bf4b03000000001800000093bf4b03000000001700000094bf4b03000000001600000095bf4b03000000001500000096bf4b03000000001400000097bf4b03000000001300000098bf4b03000000001200000099bf4b0300000000110000009abf4b0300000000100000009bbf4b03000000000f0000009cbf4b03000000000e0000009dbf4b03000000000d0000009ebf4b03000000000c0000009fbf4b03000000000b000000a0bf4b03000000000a000000a1bf4b030000000009000000a2bf4b030000000008000000a3bf4b030000000007000000a4bf4b030000000006000000a5bf4b030000000005000000a6bf4b030000000004000000a7bf4b030000000003000000a8bf4b030000000002000000a9bf4b030000000001000000017abf4b030000000001000000000000007f00000000000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f000000000000000112000000000000006e00000000000000fa9601000000000000000000000000006f00000000000000e175070000000000fa9601000000000070000000000000002c7b0d0000000000e175070000000000710000000000000000531300000000002c7b0d0000000000720000000000000093081900000000000053130000000000730000000000000026cb1e000000000093081900000000007400000000000000b60624000000000026cb1e00000000007500000000000000b6fb280000000000b6062400000000007600000000000000a9332e0000000000b6fb28000000000077000000000000002631330000000000a9332e00000000007800000000000000ba4738000000000026313300000000007900000000000000219b3c0000000000ba473800000000007a0000000000000025a6410000000000219b3c00000000007b00000000000000f71847000000000025a64100000000007c00000000000000e68f4c0000000000f7184700000000007d0000000000000075d74f0000000000e68f4c00000000007e00000000000000e78253000000000075d74f00000000007f000000000000000d96570000000000e782530000000000a9bf4b0300000000bf14d85f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+											NewDataLength: 3731,
 										},
 									},
 								},
@@ -607,38 +698,52 @@ func Test_readLamportsChange(t *testing.T) {
 		{
 			name: "golden path",
 			ctx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 0,
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id: "aaa",
-								Instructions: []*pbcodec.Instruction{
-									{
-										BalanceChanges: []*pbcodec.BalanceChange{},
-									},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+					trxAggregator: map[string]*pbcodec.Transaction{
+						"4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i": {
+							Id: "4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i",
+							Instructions: []*pbcodec.Instruction{
+								{
+									BalanceChanges: []*pbcodec.BalanceChange{},
 								},
 							},
 						},
 					},
 				},
 			},
-			line: "LAMP_CH 10 aaa 1 11111111111111111111111111111111 499999892500 494999892500",
+			line: "LAMP_CH 55295941 4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i 1 11111111111111111111111111111111 499999892500 494999892500",
 			expectCtx: &parseCtx{
-				activeSlots: map[uint64]*activeSlot{
-					10: {
-						trxIndex: 0,
-						trxMap: map[string]*pbcodec.Transaction{
-							"aaa": {
-								Id: "aaa",
-								Instructions: []*pbcodec.Instruction{
-									{
-										BalanceChanges: []*pbcodec.BalanceChange{
-											{
-												Pubkey:       "11111111111111111111111111111111",
-												PrevLamports: 499999892500,
-												NewLamports:  494999892500,
-											},
+				activeBank: &bank{
+					blockNum:       55295941,
+					parentSlotNum:  55295939,
+					trxCount:       932,
+					previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+					blk: &pbcodec.Block{
+						Number:            55295941,
+						BlockHeight:       51936825,
+						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						PreviousBlockSlot: 55295939,
+					},
+					trxAggregator: map[string]*pbcodec.Transaction{
+						"4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i": {
+							Id: "4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i",
+							Instructions: []*pbcodec.Instruction{
+								{
+									BalanceChanges: []*pbcodec.BalanceChange{
+										{
+											Pubkey:       "11111111111111111111111111111111",
+											PrevLamports: 499999892500,
+											NewLamports:  494999892500,
 										},
 									},
 								},
@@ -663,18 +768,46 @@ func Test_readLamportsChange(t *testing.T) {
 	}
 }
 
-func Test_fromFile(t *testing.T) {
-	t.Skip("Seems this test is not in line with deep mind output")
+func Test_SimpleSlotWithBound(t *testing.T) {
+	expectSlots := []*pbcodec.Slot{
+		{
+			Id:         "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
+			Number:     55295940,
+			PreviousId: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+			Version:    1,
+		},
+		{
+			Id:         "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+			Number:     55295941,
+			PreviousId: "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
+			Version:    1,
+			Block: &pbcodec.Block{
+				Id:                "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+				Number:            55295941,
+				BlockHeight:       51936825,
+				PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+				PreviousBlockSlot: 55295939,
+			},
+			GenesisUnixTimestamp: 1606487316,
+			ClockUnixTimestamp:   1606487316,
+		},
+	}
+	cnt := `
+DMLOG SLOT_WORK 55295939 55295941 full 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 51936825 932 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0
+DMLOG SLOT_BOUND 55295940 5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae
+DMLOG SLOT_BOUND 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz
+DMLOG SLOT_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316
+`
 
-	f, err := os.Open("./test_data/syncer.dmlog")
+	cr, err := NewConsoleReader(strings.NewReader(cnt))
 	require.NoError(t, err)
 
-	cr, err := NewConsoleReader(f)
-	require.NoError(t, err)
-	for {
+	for _, expectSlot := range expectSlots {
 		o, err := cr.Read()
-		require.NoError(t, err)
-		fmt.Println(o)
+		if err != io.EOF {
+			require.NoError(t, err)
+		}
+		assert.Equal(t, expectSlot, o)
 	}
 }
 
@@ -684,4 +817,11 @@ func mustHexDecode(d string) []byte {
 		panic(e)
 	}
 	return b
+}
+
+func trxSlice(trxIDs []string) (out []*pbcodec.Transaction) {
+	for _, trxID := range trxIDs {
+		out = append(out, &pbcodec.Transaction{Id: trxID})
+	}
+	return
 }

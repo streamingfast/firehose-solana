@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -30,6 +31,7 @@ import (
 var supportedVersions = []string{"1", "1"}
 
 type conversionOption interface{}
+
 type ConsoleReaderOption interface {
 	apply(reader *ConsoleReader)
 }
@@ -106,80 +108,21 @@ func (l *ConsoleReader) Close() {
 	l.close()
 }
 
-type activeSlot struct {
-	slot     *pbcodec.Slot
-	trxMap   map[string]*pbcodec.Transaction
-	trxIndex uint64
-}
-
-func newActiveSlot(slot *pbcodec.Slot) *activeSlot {
-	return &activeSlot{
-		slot:   slot,
-		trxMap: map[string]*pbcodec.Transaction{},
-	}
-}
-
-func (a *activeSlot) recordTransaction(trx *pbcodec.Transaction) {
-	a.trxMap[trx.Id] = trx
-	a.trxIndex++
-}
-
-func (a *activeSlot) recordTransactionEnd(trx *pbcodec.Transaction) {
-	a.slot.Transactions = append(a.slot.Transactions, trx)
-}
-
-func (a *activeSlot) recordInstruction(trxID string, instruction *pbcodec.Instruction) error {
-	trx := a.trxMap[trxID]
-	if trx == nil {
-		return fmt.Errorf("record instruction: transaction trace not found in context: %s", trxID)
-	}
-
-	trx.Instructions = append(trx.Instructions, instruction)
-	return nil
-}
-
-func (a *activeSlot) recordAccountChange(trxID string, ordinal int, accountChange *pbcodec.AccountChange) error {
-	trx := a.trxMap[trxID]
-	if trx == nil {
-		return fmt.Errorf("record account change: transaction trace not found in context: %s", trxID)
-	}
-
-	trx.Instructions[ordinal-1].AccountChanges = append(trx.Instructions[ordinal-1].AccountChanges, accountChange)
-	return nil
-}
-
-func (a *activeSlot) recordLamportsChange(trxID string, ordinal int, balanceChange *pbcodec.BalanceChange) error {
-	trx := a.trxMap[trxID]
-	if trx == nil {
-		return fmt.Errorf("record balanace change: transaction trace not found in context: %s", trxID)
-	}
-
-	trx.Instructions[ordinal-1].BalanceChanges = append(trx.Instructions[ordinal-1].BalanceChanges, balanceChange)
-
-	return nil
-}
-
 type parseCtx struct {
-	activeSlots       map[uint64]*activeSlot
-	lastEndedSlot     uint64
+	activeBank        *bank
+	banks             map[uint64]*bank
 	conversionOptions []conversionOption
-}
-
-func (p *parseCtx) getActiveSlot(slotNumber int) *activeSlot {
-	if s, found := p.activeSlots[uint64(slotNumber)]; found {
-		return s
-	}
-	return nil
 }
 
 func newParseCtx() *parseCtx {
 	return &parseCtx{
-		activeSlots: map[uint64]*activeSlot{},
+		banks: map[uint64]*bank{},
 	}
 }
 
 func (l *ConsoleReader) Read() (out interface{}, err error) {
 	ctx := l.ctx
+
 	zlog.Debug("start reading new slot.")
 	for line := range l.readBuffer {
 		line = line[6:]
@@ -190,8 +133,23 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 
 		// Order of conditions is based (approximately) on those that will appear more often
 		switch {
-		case strings.HasPrefix(line, "SLOT_PROCESS"):
-			err = ctx.readSlotProcess(line)
+		case strings.HasPrefix(line, "SLOT_WORK"):
+			err = ctx.readSlotWork(line)
+
+		case strings.HasPrefix(line, "SLOT_BOUND"):
+			var slot *pbcodec.Slot
+			slot, err = ctx.readSlotBound(line)
+			if slot == nil && err == nil {
+				// We just read a slot_end that was not continuous based on the last seen slot num before it, skipping it
+				continue
+			}
+			if slot != nil && err == nil {
+				// We read slot_end that is correct, return it to reader of "blocks"
+				return slot, nil
+			}
+
+		case strings.HasPrefix(line, "BATCH_SORT"):
+			err = ctx.readBatchSort(line)
 
 		case strings.HasPrefix(line, "SLOT_END"):
 			var slot *pbcodec.Slot
@@ -250,177 +208,307 @@ func (l *ConsoleReader) formatError(line string, err error) error {
 	return fmt.Errorf("%s: %s (line %q)", chunks[0], err, line)
 }
 
-func (ctx *parseCtx) readSlotProcess(line string) error {
-	zlog.Debug("reading slot process", zap.String("line", line))
+const (
+	SlotWorkChunkSize   = 14
+	SlotEndChunkSize    = 5
+	SlotBoundChunkSize  = 3
+	SlotFailedChunkSize = 3
+	TrxStartChunkSize   = 8
+	TrxLogChunkSize     = 4
+	InsStartChunkSize   = 8
+)
 
-	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 16 {
-		return fmt.Errorf("expected 16 fields got %d", len(chunks))
+type bank struct {
+	blockNum        uint64
+	parentSlotNum   uint64
+	trxCount        uint64
+	processTrxCount uint64
+	previousSlotID  string
+	blk             *pbcodec.Block
+	sortedTrx       []*pbcodec.Transaction
+	trxAggregator   map[string]*pbcodec.Transaction
+}
+
+func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID string) *bank {
+	return &bank{
+		blockNum:       blockNum,
+		parentSlotNum:  parentSlotNumber,
+		previousSlotID: previousSlotID,
+		sortedTrx:      []*pbcodec.Transaction{},
+		trxAggregator:  map[string]*pbcodec.Transaction{},
+		blk: &pbcodec.Block{
+			Number:            blockNum,
+			BlockHeight:       blockHeight,
+			PreviousId:        previousSlotID,
+			PreviousBlockSlot: parentSlotNumber,
+		},
+	}
+}
+
+func (b *bank) sortTrx() {
+	trxs := make([]*pbcodec.Transaction, len(b.trxAggregator))
+	i := 0
+	for _, trx := range b.trxAggregator {
+		trxs[i] = trx
+		i = i + 1
+	}
+	sort.Slice(trxs, func(i, j int) bool {
+		return strings.Compare(trxs[i].Id, trxs[j].Id) < 0
+	})
+	b.sortedTrx = append(b.sortedTrx, trxs...)
+}
+
+func (b *bank) createSlot(slotNum uint64, slotID string) *pbcodec.Slot {
+	s := &pbcodec.Slot{
+		Id:               slotID,
+		Number:           slotNum,
+		PreviousId:       b.previousSlotID,
+		Version:          1,
+		TransactionCount: uint32(len(b.sortedTrx)),
 	}
 
-	isFull := chunks[1] == "full"
-	slotID := chunks[3]
-	slotPreviousID := chunks[4]
+	for idx, trx := range b.sortedTrx {
+		trx.Index = uint64(idx)
+		trx.SlotNum = uint64(slotNum)
+		trx.SlotHash = slotID
+		s.Transactions = append(s.Transactions, trx)
+	}
+	b.previousSlotID = slotID
+	return s
+}
 
-	slotNumber, err := strconv.Atoi(chunks[2])
-	if err != nil {
-		return fmt.Errorf("slot num to int: %w", err)
+func (b *bank) recordTransaction(trx *pbcodec.Transaction) {
+	b.trxAggregator[trx.Id] = trx
+}
+
+func (b *bank) recordInstruction(trxID string, instruction *pbcodec.Instruction) error {
+	trx := b.trxAggregator[trxID]
+	if trx == nil {
+		return fmt.Errorf("record instruction: transaction trace not found in context: %s", trxID)
 	}
 
-	//if ctx.lastEndedSlot != 0 && uint64(slotNumber) < ctx.lastEndedSlot {
-	//	zlog.Warn("skipping slot process not greater then last seen slot",
-	//		zap.Int("received_slot_num", slotNumber),
-	//		zap.Uint64("last_ended_slot_num", ctx.lastEndedSlot),
-	//		zap.String("line", line),
-	//	)
-	//	return nil
-	//}
-
-	rootSlotNum, err := strconv.Atoi(chunks[8])
-	if err != nil {
-		return fmt.Errorf("root slot num to int: %w", err)
-	}
-
-	var activeSlot *activeSlot
-	if activeSlot = ctx.getActiveSlot(slotNumber); activeSlot == nil {
-		activeSlot = newActiveSlot(&pbcodec.Slot{
-			Version:     1,
-			Number:      uint64(slotNumber),
-			PreviousId:  slotPreviousID, //from fist full or partial
-			Block:       nil,
-			RootSlotNum: uint64(rootSlotNum),
-		})
-		ctx.activeSlots[uint64(slotNumber)] = activeSlot
-	}
-
-	// We check after the other conditions above to ensure we do not check the map
-	// when receiving some out of order SLOT_PROCESS message
-	if len(activeSlot.trxMap) != 0 {
-		return fmt.Errorf("all transactions should have ended when processing SLOT_PROCESS line: %q", activeSlot.trxMap)
-	}
-
-	if isFull {
-		activeSlot.slot.Id = slotID
-	}
-
+	trx.Instructions = append(trx.Instructions, instruction)
 	return nil
 }
 
-// SLOT_END SLOT_NUM GENESIS_UNIX_TIMESTAMP CLOCK_UNIX_TIMESTAMP
-func (ctx *parseCtx) readSlotEnd(line string) (*pbcodec.Slot, error) {
+func (b *bank) recordAccountChange(trxID string, ordinal int, accountChange *pbcodec.AccountChange) error {
+	trx := b.trxAggregator[trxID]
+	if trx == nil {
+		return fmt.Errorf("record account change: transaction trace not found in context: %s", trxID)
+	}
+
+	trx.Instructions[ordinal-1].AccountChanges = append(trx.Instructions[ordinal-1].AccountChanges, accountChange)
+	return nil
+}
+
+func (b *bank) recordLamportsChange(trxID string, ordinal int, balanceChange *pbcodec.BalanceChange) error {
+	trx := b.trxAggregator[trxID]
+	if trx == nil {
+		return fmt.Errorf("record balanace change: transaction trace not found in context: %s", trxID)
+	}
+
+	trx.Instructions[ordinal-1].BalanceChanges = append(trx.Instructions[ordinal-1].BalanceChanges, balanceChange)
+	return nil
+}
+
+// BATCH_SORT
+func (ctx *parseCtx) readBatchSort(line string) (err error) {
+	if ctx.activeBank == nil {
+		return fmt.Errorf("received slot end while no active bank in context")
+	}
+
+	ctx.activeBank.sortTrx()
+	return nil
+}
+
+// SLOT_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 51936823 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0
+// SLOT_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID BLOCK_HEIGHT NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT
+func (ctx *parseCtx) readSlotWork(line string) (err error) {
+	zlog.Debug("reading slot work", zap.String("line", line))
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != SlotWorkChunkSize {
+		return fmt.Errorf("expected %d fields got %d", SlotWorkChunkSize, len(chunks))
+	}
+
+	var blockNum, parentSlotNumber, blockHeight, trxCount int
+	if blockNum, err = strconv.Atoi(chunks[2]); err != nil {
+		return fmt.Errorf("slot num to int: %w", err)
+	}
+
+	if parentSlotNumber, err = strconv.Atoi(chunks[1]); err != nil {
+		return fmt.Errorf("parent slot num to int: %w", err)
+	}
+
+	if blockHeight, err = strconv.Atoi(chunks[5]); err != nil {
+		return fmt.Errorf("parent slot num to int: %w", err)
+	}
+
+	if trxCount, err = strconv.Atoi(chunks[6]); err != nil {
+		return fmt.Errorf("transaction count: %w", err)
+	}
+
+	previousSlotID := chunks[4]
+
+	var b *bank
+	var found bool
+	if b, found = ctx.banks[uint64(blockNum)]; !found {
+		zlog.Info("creating a new bank",
+			zap.Int("parent_slot_number", parentSlotNumber),
+			zap.Int("slot_number", blockNum),
+		)
+		b = newBank(uint64(blockNum), uint64(parentSlotNumber), uint64(blockHeight), previousSlotID)
+		ctx.banks[uint64(blockNum)] = b
+	}
+	b.trxCount = b.trxCount + uint64(trxCount)
+
+	ctx.activeBank = b
+	return nil
+}
+
+// SLOT_BOUND 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz
+// SLOT_BOUND BLOCK_NUM SLOT_ID
+func (ctx *parseCtx) readSlotBound(line string) (slot *pbcodec.Slot, err error) {
+	zlog.Debug("reading slot bound", zap.String("line", line))
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != SlotBoundChunkSize {
+		return nil, fmt.Errorf("expected %d fields got %d", SlotBoundChunkSize, len(chunks))
+	}
+
+	var blockNum int
+	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
+		return nil, fmt.Errorf("slot num to int: %w", err)
+	}
+
+	if ctx.activeBank == nil {
+		return nil, fmt.Errorf("received slot bound while no active bank in context")
+	}
+
+	//if ctx.activeBank.blockNum != uint64(blockNum) {
+	//	return nil, fmt.Errorf("slot bound's active bank does not match context's active bank")
+	//}
+
+	slotId := chunks[2]
+
+	if uint64(blockNum) == ctx.activeBank.blockNum {
+		zlog.Debug("received slot bound matching active bank's slot number, we will create this slot at the on 'SLOT_END'")
+		return nil, nil
+	}
+
+	return ctx.activeBank.createSlot(uint64(blockNum), slotId), nil
+}
+
+// SLOT_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316
+// SLOT_END BLOCK_NUM LAST_ENTRY_HASH GENESIS_UNIX_TIMESTAMP CLOCK_UNIX_TIMESTAMP
+func (ctx *parseCtx) readSlotEnd(line string) (s *pbcodec.Slot, err error) {
 	zlog.Debug("reading slot end", zap.String("line", line))
 
-	if len(ctx.activeSlots) == 0 {
-		return nil, fmt.Errorf("received slot end while no slot is active in context")
-	}
-
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 4 {
-		return nil, fmt.Errorf("expected 4 fields, got %d", len(chunks))
+	if len(chunks) != SlotEndChunkSize {
+		return nil, fmt.Errorf("expected %d fields, got %d", SlotEndChunkSize, len(chunks))
 	}
 
-	slotNumber, err := strconv.Atoi(chunks[1])
-	if err != nil {
+	var blockNum, clockTimestamp, genesisTimestamp int
+	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
 		return nil, fmt.Errorf("slotNumber to int: %w", err)
 	}
 
-	activeSlot := ctx.getActiveSlot(slotNumber)
-	if activeSlot == nil {
-		return nil, fmt.Errorf("slot end: received slot num (%d) not matching any active slot number in context", slotNumber)
-	}
-
-	// We check after the other conditions above to ensure we do not check the map when receiving some out of order SLOT_END message
-	if len(activeSlot.trxMap) != 0 {
-		return nil, fmt.Errorf("some transactions are not ended when the slot (%d) ends: %q", slotNumber, activeSlot.trxMap)
-	}
-
-	slot := activeSlot.slot
-	genesisTimestamp, err := strconv.Atoi(chunks[2])
-	if err != nil {
-		return nil, fmt.Errorf("error decoding genesis timestamp in seconds: %w", err)
-	}
-	activeSlot.slot.GenesisUnixTimestamp = uint64(genesisTimestamp)
-
-	clockTimestamp, err := strconv.Atoi(chunks[3])
-	if err != nil {
+	if clockTimestamp, err = strconv.Atoi(chunks[3]); err != nil {
 		return nil, fmt.Errorf("error decoding sysvar::clock timestamp in seconds: %w", err)
 	}
 
-	slot.ClockUnixTimestamp = uint64(clockTimestamp)
-	slot.TransactionCount = uint32(len(activeSlot.slot.Transactions))
+	if genesisTimestamp, err = strconv.Atoi(chunks[4]); err != nil {
+		return nil, fmt.Errorf("error decoding genesis timestamp in seconds: %w", err)
+	}
 
-	delete(ctx.activeSlots, slot.Number)
-	ctx.lastEndedSlot = slot.Number
+	if ctx.activeBank == nil {
+		return nil, fmt.Errorf("received slot end while no active bank in context")
+	}
 
-	return slot, nil
+	if ctx.activeBank.blockNum != uint64(blockNum) {
+		return nil, fmt.Errorf("slot end's active bank does not match context's active bank")
+	}
+
+	slotID := chunks[2]
+
+	s = ctx.activeBank.createSlot(uint64(blockNum), slotID)
+	s.Block = ctx.activeBank.blk
+	s.Block.Id = slotID
+	s.GenesisUnixTimestamp = uint64(genesisTimestamp)
+	s.ClockUnixTimestamp = uint64(clockTimestamp)
+
+	//TODO: check transaction counts..
+
+	ctx.activeBank = nil
+	delete(ctx.banks, uint64(blockNum))
+
+	return s, nil
 }
 
 // SLOT_FAILED SLOT_NUM REASON
-func (ctx *parseCtx) readSlotFailed(line string) error {
+func (ctx *parseCtx) readSlotFailed(line string) (err error) {
 	zlog.Debug("reading slot failed", zap.String("line", line))
-
-	if len(ctx.activeSlots) == 0 {
-		return fmt.Errorf("received slot failed while no slot is active in context")
-	}
-
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 3 {
-		return fmt.Errorf("read slot failed: expected 3 fields, got %d", len(chunks))
+	if len(chunks) != SlotFailedChunkSize {
+		return fmt.Errorf("expected %d fields got %d", SlotFailedChunkSize, len(chunks))
 	}
 
-	slotNumber, err := strconv.Atoi(chunks[1])
-	if err != nil {
+	var blockNum int
+	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
-	activeSlot := ctx.getActiveSlot(slotNumber)
-	if activeSlot == nil {
-		return fmt.Errorf("slot failed: received slot num (%d) not matching any active slot number in context", slotNumber)
+	if ctx.activeBank == nil {
+		return fmt.Errorf("slot failed start while no active bank in context")
 	}
 
-	return fmt.Errorf("slot %d failed: %s", slotNumber, chunks[2])
+	if ctx.activeBank.blockNum != uint64(blockNum) {
+		return fmt.Errorf("slot failed's active bank does not match context's active bank")
+	}
+
+	return fmt.Errorf("slot %d failed: %s", blockNum, chunks[2])
 }
 
-// TRX_START SLOT_NUM SIG1:SIG2:SIG3 NUM_REQUIRED_SIGN NUM_READONLY_SIGN_ACT NUM_READONLY_UNSIGNED_ACT ACTKEY1:ACTKEY2:ACTKEY3 RECENT_BLOCKHASH
-func (ctx *parseCtx) readTransactionStart(line string) error {
+// TRX_START 55295915 3JwX7ifk5BYZWdBK1o9Zs4wEZ6HP8MWbxhgZD7u1PzSDbaDLrZZbhBnvQJsVMPpWdpaTAFiUiQWZcbEdc3Nfj9Sq 1 0 3 3rqEEEGjHRyndHuduBcjkf17rX3hgmGACpYTQYeZ5Ltk:8xV77wuFP5BkMDdb1845hRRWZNbDNAbcV75BjMuViWpf:SysvarS1otHashes111111111111111111111111111:SysvarC1ock11111111111111111111111111111111:Vote111111111111111111111111111111111111111 2pE6pkNJzuMz4r8owVi4hrCctEvGyrg1g3SLD4nbcsxz
+// TRX_START BLOCK_NUM SIG1:SIG2:SIG3 NUM_REQUIRED_SIGN NUM_READONLY_SIGN_ACT NUM_READONLY_UNSIGNED_ACT ACTKEY1:ACTKEY2:ACTKEY3 RECENT_BLOCKHASH
+func (ctx *parseCtx) readTransactionStart(line string) (err error) {
 	chunks := strings.Split(line, " ")
-	if len(chunks) != 8 {
-		return fmt.Errorf("read transaction start: expected 8 fields, got %d", len(chunks))
+	if len(chunks) != TrxStartChunkSize {
+		return fmt.Errorf("expected %d fields got %d", TrxStartChunkSize, len(chunks))
 	}
 
-	slotNumber, err := strconv.Atoi(chunks[1])
-	if err != nil {
+	var blockNum, roSignedAccts, roUnsignedAccts, reqSigs int
+
+	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
-	activeSlot := ctx.getActiveSlot(slotNumber)
-	if activeSlot == nil {
-		return fmt.Errorf("transaction start: received slot num (%d) not matching any active slot number in context", slotNumber)
+	if ctx.activeBank == nil {
+		return fmt.Errorf("received transaction start while no active bank in context")
+	}
+
+	if ctx.activeBank.blockNum != uint64(blockNum) {
+		return fmt.Errorf("transaction start's active bank does not match context's active bank")
 	}
 
 	sigs := strings.Split(chunks[2], ":")
 	id := sigs[0]
 	additionalSigs := sigs[1:]
 
-	reqSigs, err := strconv.Atoi(chunks[3])
-	if err != nil {
+	if reqSigs, err = strconv.Atoi(chunks[3]); err != nil {
 		return fmt.Errorf("failed decoding num_required_signatures: %w", err)
 	}
-	roSignedAccts, err := strconv.Atoi(chunks[4])
-	if err != nil {
+	if roSignedAccts, err = strconv.Atoi(chunks[4]); err != nil {
 		return fmt.Errorf("failed decoding num_readonly_signed_accounts: %w", err)
 	}
-	roUnsignedAccts, err := strconv.Atoi(chunks[5])
-	if err != nil {
+	if roUnsignedAccts, err = strconv.Atoi(chunks[5]); err != nil {
 		return fmt.Errorf("failed decoding num_readonly_unsigned_accounts: %w", err)
 	}
 
 	accountKeys := strings.Split(chunks[6], ":")
 	recentBlockHash := chunks[7]
-
+	fmt.Println("ID ", id)
 	transaction := &pbcodec.Transaction{
 		Id:                   id,
-		Index:                activeSlot.trxIndex,
 		AdditionalSignatures: additionalSigs,
 		AccountKeys:          accountKeys,
 		Header: &pbcodec.MessageHeader{
@@ -429,83 +517,72 @@ func (ctx *parseCtx) readTransactionStart(line string) error {
 			NumReadonlyUnsignedAccounts: uint32(roUnsignedAccts),
 		},
 		RecentBlockhash: recentBlockHash,
-		SlotNum:         uint64(activeSlot.slot.Number),
-		SlotHash:        activeSlot.slot.Id,
 	}
 
-	activeSlot.recordTransaction(transaction)
+	ctx.activeBank.recordTransaction(transaction)
 
 	return nil
 }
 
+// TRX_END 55295915 51noDfuFBWCvunwvNrUKL4gHVZLDrAp4ihdecoNRirD5zdLsxSn3PZWj1bLQ52rQ9MpAKgbNyd76sdnzq5CM6cFG
 // TRX_END SLOT_NUM TX_SIGNATURE
 func (ctx *parseCtx) readTransactionEnd(line string) error {
-	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != 3 {
-		return fmt.Errorf("read transaction start: expected 2 fields, got %d", len(chunks))
-	}
-
-	slotNumber, err := strconv.Atoi(chunks[1])
-	if err != nil {
-		return fmt.Errorf("slot num to int: %w", err)
-	}
-
-	activeSlot := ctx.getActiveSlot(slotNumber)
-	if activeSlot == nil {
-		return fmt.Errorf("transaction end: received slot num (%d) not matching any active slot number in context", slotNumber)
-	}
-
-	id := chunks[2]
-	trx := activeSlot.trxMap[id]
-	activeSlot.recordTransactionEnd(trx)
-	delete(activeSlot.trxMap, id)
-
 	return nil
 }
 
 // TRX_L SLOT_NUM TX_SIGNATURE LOG_IN_HEX
-func (ctx *parseCtx) readTransactionLog(line string) error {
+func (ctx *parseCtx) readTransactionLog(line string) (err error) {
 	chunks := strings.Split(line, " ")
-	if len(chunks) != 4 {
-		return fmt.Errorf("read transaction log: expected 4 fields, got %d", len(chunks))
+	if len(chunks) != TrxLogChunkSize {
+		return fmt.Errorf("expected %d fields got %d", TrxLogChunkSize, len(chunks))
 	}
 
-	slotNumber, err := strconv.Atoi(chunks[1])
-	if err != nil {
+	var blockNum int
+	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
-	activeSlot := ctx.getActiveSlot(slotNumber)
-	if activeSlot == nil {
-		return fmt.Errorf("transaction end: received slot num (%d) not matching any active slot number in context", slotNumber)
+	if ctx.activeBank == nil {
+		return fmt.Errorf("received transaction log while no active bank in context")
+	}
+
+	if ctx.activeBank.blockNum != uint64(blockNum) {
+		return fmt.Errorf("transaction log's active bank does not match context's active bank")
 	}
 
 	id := chunks[2]
-	trx := activeSlot.trxMap[id]
+	trx := ctx.activeBank.trxAggregator[id]
 	logLine, err := hex.DecodeString(chunks[3])
 	if err != nil {
 		return fmt.Errorf("log line failed hex decoding: %w", err)
 	}
 	trx.LogMessages = append(trx.LogMessages, string(logLine))
-
 	return nil
 }
 
-// INST_S 10 aaa 1 0 Vote111111111111111111111111111111111111111 0200000001000000000000000b0000000000000004398c6eecd88cb501e2bd330d15f9810fa76c26f82d165abd0cbb75292ab0e601e64cda5f00000000 Vote111111111111111111111111111111111111111:00;AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG:01;SysvarS1otHashes111111111111111111111111111:00;SysvarC1ock11111111111111111111111111111111:00;F8UvVsKnzWyp2nF8aDcqvQ2GVcRpqT91WDsAtvBKCMt9:11
-func (ctx *parseCtx) readInstructionStart(line string) error {
+// INST_S 55295920 S5eYZCYnXoa3858MJ2cvdXCXRW8xiTagWXM4WNggt96A5qm2NoHtYro56GGwygCgfKJzN733PxMBEEH7TAoHRYh 1 0 Vote111111111111111111111111111111111111111 020000000200000000000000adbf4b0300000000aebf4b03000000000e060473b5c277d1949ddc92c7a92e2d835008d70fd4817b5110611c11d52aa801c214d85f00000000 Vote111111111111111111111111111111111111111:00;9SE5oHdQ88rVFPcJZjn7fNGSXhU7JQfZ5Vks1h5VNCWj:01;SysvarS1otHashes111111111111111111111111111:00;SysvarC1ock11111111111111111111111111111111:00;AHg5MDTTPKvfCxYy8Zb3NpRYG7ixsx2uTT1MUs7DwzEu:11
+// INST_S BLOCK_NUM TRX_ID ORDINAL PARENT_ORDINAL PROGRAM_ID DATA ACCOUNTS
+func (ctx *parseCtx) readInstructionStart(line string) (err error) {
 	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != InsStartChunkSize {
+		return fmt.Errorf("expected %d fields got %d", InsStartChunkSize, len(chunks))
+	}
+
 	if len(chunks) != 8 {
 		return fmt.Errorf("read instructionTrace start: expected 8 fields, got %d", len(chunks))
 	}
 
-	slotNumber, err := strconv.Atoi(chunks[1])
-	if err != nil {
+	var blockNum int
+	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
-	activeSlot := ctx.getActiveSlot(slotNumber)
-	if activeSlot == nil {
-		return fmt.Errorf("instruction start: received slot num (%d) not matching any active slot number in context", slotNumber)
+	if ctx.activeBank == nil {
+		return fmt.Errorf("received instruction start log while no active bank in context")
+	}
+
+	if ctx.activeBank.blockNum != uint64(blockNum) {
+		return fmt.Errorf("instruction start's active bank does not match context's active bank")
 	}
 
 	id := chunks[2]
@@ -540,7 +617,7 @@ func (ctx *parseCtx) readInstructionStart(line string) error {
 		AccountKeys:   accountKeys,
 	}
 
-	err = activeSlot.recordInstruction(id, instruction)
+	err = ctx.activeBank.recordInstruction(id, instruction)
 	if err != nil {
 		return fmt.Errorf("read instructionTrace start: %w", err)
 	}
@@ -548,38 +625,40 @@ func (ctx *parseCtx) readInstructionStart(line string) error {
 	return nil
 }
 
-// ACCT_CH 10 aaa 1 AVLN9vwtAtvDFWZJH1jmHi9p2XrRnQKM3bqGy738DKhG 01000000d1ee412af80c981c82 012333333333323123123123
-func (ctx *parseCtx) readAccountChange(line string) error {
+// ACCT_CH 55295915 4YU3GFLmzR7b58YDgNCwHD3YfEHTLq7b13gSr3zWHWa4W7FuvBrWQgLnvQT4kfxJ5ZTULokJK7x2d7nfKU3UWd8i 1 2xjAQsHLsV36NLFkxdApzLg4SNqm15mNqYaBQ4xp5joh 01000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e95ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950a1f000000000000007abf4b03000000001f0000007bbf4b03000000001e0000007cbf4b03000000001d0000008cbf4b03000000001c0000008dbf4b03000000001b0000008ebf4b03000000001a0000008fbf4b03000000001900000091bf4b03000000001800000092bf4b03000000001700000093bf4b03000000001600000094bf4b03000000001500000095bf4b03000000001400000096bf4b03000000001300000097bf4b03000000001200000098bf4b03000000001100000099bf4b0300000000100000009abf4b03000000000f0000009bbf4b03000000000e0000009cbf4b03000000000d0000009dbf4b03000000000c0000009ebf4b03000000000b0000009fbf4b03000000000a000000a0bf4b030000000009000000a1bf4b030000000008000000a2bf4b030000000007000000a3bf4b030000000006000000a4bf4b030000000005000000a5bf4b030000000004000000a6bf4b030000000003000000a7bf4b030000000002000000a8bf4b0300000000010000000179bf4b030000000001000000000000007f00000000000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f000000000000000112000000000000006e00000000000000fa9601000000000000000000000000006f00000000000000e175070000000000fa9601000000000070000000000000002c7b0d0000000000e175070000000000710000000000000000531300000000002c7b0d0000000000720000000000000093081900000000000053130000000000730000000000000026cb1e000000000093081900000000007400000000000000b60624000000000026cb1e00000000007500000000000000b6fb280000000000b6062400000000007600000000000000a9332e0000000000b6fb28000000000077000000000000002631330000000000a9332e00000000007800000000000000ba4738000000000026313300000000007900000000000000219b3c0000000000ba473800000000007a0000000000000025a6410000000000219b3c00000000007b00000000000000f71847000000000025a64100000000007c00000000000000e68f4c0000000000f7184700000000007d0000000000000075d74f0000000000e68f4c00000000007e00000000000000e78253000000000075d74f00000000007f000000000000000c96570000000000e782530000000000a8bf4b0300000000bf14d85f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 01000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e95ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950a1f000000000000007bbf4b03000000001f0000007cbf4b03000000001e0000008cbf4b03000000001d0000008dbf4b03000000001c0000008ebf4b03000000001b0000008fbf4b03000000001a00000091bf4b03000000001900000092bf4b03000000001800000093bf4b03000000001700000094bf4b03000000001600000095bf4b03000000001500000096bf4b03000000001400000097bf4b03000000001300000098bf4b03000000001200000099bf4b0300000000110000009abf4b0300000000100000009bbf4b03000000000f0000009cbf4b03000000000e0000009dbf4b03000000000d0000009ebf4b03000000000c0000009fbf4b03000000000b000000a0bf4b03000000000a000000a1bf4b030000000009000000a2bf4b030000000008000000a3bf4b030000000007000000a4bf4b030000000006000000a5bf4b030000000005000000a6bf4b030000000004000000a7bf4b030000000003000000a8bf4b030000000002000000a9bf4b030000000001000000017abf4b030000000001000000000000007f00000000000000ed76cf23520b41e64596066fc8dbf63e94e1b5e97add78d9501f796142b17e950000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f000000000000000112000000000000006e00000000000000fa9601000000000000000000000000006f00000000000000e175070000000000fa9601000000000070000000000000002c7b0d0000000000e175070000000000710000000000000000531300000000002c7b0d0000000000720000000000000093081900000000000053130000000000730000000000000026cb1e000000000093081900000000007400000000000000b60624000000000026cb1e00000000007500000000000000b6fb280000000000b6062400000000007600000000000000a9332e0000000000b6fb28000000000077000000000000002631330000000000a9332e00000000007800000000000000ba4738000000000026313300000000007900000000000000219b3c0000000000ba473800000000007a0000000000000025a6410000000000219b3c00000000007b00000000000000f71847000000000025a64100000000007c00000000000000e68f4c0000000000f7184700000000007d0000000000000075d74f0000000000e68f4c00000000007e00000000000000e78253000000000075d74f00000000007f000000000000000d96570000000000e782530000000000a9bf4b0300000000bf14d85f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+// ACCT_CH BLOCK_NUM TRX_ID ORDINAL PUBKEY PREV_DATA NEW_DATA
+func (ctx *parseCtx) readAccountChange(line string) (err error) {
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 7 {
 		return fmt.Errorf("read account change: expected 7 fields, got %d", len(chunks))
 	}
 
-	slotNumber, err := strconv.Atoi(chunks[1])
-	if err != nil {
+	var blockNum, ordinal int
+	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
-	activeSlot := ctx.getActiveSlot(slotNumber)
-	if activeSlot == nil {
-		return fmt.Errorf("account change: received slot num (%d) not matching any active slot number in context", slotNumber)
+	if ctx.activeBank == nil {
+		return fmt.Errorf("received account change log while no active bank in context")
 	}
 
-	trxID := chunks[2]
-	ordinal, err := strconv.Atoi(chunks[3])
-	if err != nil {
+	if ctx.activeBank.blockNum != uint64(blockNum) {
+		return fmt.Errorf("account change's active bank does not match context's active bank")
+	}
+
+	if ordinal, err = strconv.Atoi(chunks[3]); err != nil {
 		return fmt.Errorf("read account change: ordinal to int: %w", err)
 	}
 
+	trxID := chunks[2]
 	pubKey := chunks[4]
+	var prevData, newData []byte
 
-	prevData, err := hex.DecodeString(chunks[5])
-	if err != nil {
+	if prevData, err = hex.DecodeString(chunks[5]); err != nil {
 		return fmt.Errorf("read account change: hex decode prev data: %w", err)
 	}
 
-	newData, err := hex.DecodeString(chunks[6])
-	if err != nil {
+	if newData, err = hex.DecodeString(chunks[6]); err != nil {
 		return fmt.Errorf("read account change: hex decode new data: %w", err)
 	}
 
@@ -590,8 +669,7 @@ func (ctx *parseCtx) readAccountChange(line string) error {
 		NewDataLength: uint64(len(newData)),
 	}
 
-	err = activeSlot.recordAccountChange(trxID, ordinal, accountChange)
-	if err != nil {
+	if err = ctx.activeBank.recordAccountChange(trxID, ordinal, accountChange); err != nil {
 		return fmt.Errorf("read account change: %w", err)
 	}
 
@@ -599,37 +677,38 @@ func (ctx *parseCtx) readAccountChange(line string) error {
 }
 
 // LAMP_CH 10 aaa 61hY5LpNSSH3zpnxoLYf5pmStN4JRMJ8H4nt4omyNQgaBb78APUetZRw23QdWpZLWF22KG1rBvNdX9XJcut21HQZ 1 11111111111111111111111111111111 499999892500 494999892500
-func (ctx *parseCtx) readLamportsChange(line string) error {
+// LAMP_CH BLOCK_NUM TRX_ID OWNER 1 11111111111111111111111111111111 499999892500 494999892500
+func (ctx *parseCtx) readLamportsChange(line string) (err error) {
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != 7 {
 		return fmt.Errorf("read lamport change: expected 7 fields, got %d", len(chunks))
 	}
 
-	slotNumber, err := strconv.Atoi(chunks[1])
-	if err != nil {
+	var blockNum, ordinal, prevLamports, newLamports int
+	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
-	activeSlot := ctx.getActiveSlot(slotNumber)
-	if activeSlot == nil {
-		return fmt.Errorf("account change: received slot num (%d) not matching any active slot number in context", slotNumber)
+	if ctx.activeBank == nil {
+		return fmt.Errorf("received lamport change log while no active bank in context")
 	}
 
-	trxID := chunks[2]
-	ordinal, err := strconv.Atoi(chunks[3])
-	if err != nil {
+	if ctx.activeBank.blockNum != uint64(blockNum) {
+		return fmt.Errorf("lamport change's active bank does not match context's active bank")
+	}
+
+	if ordinal, err = strconv.Atoi(chunks[3]); err != nil {
 		return fmt.Errorf("read lamport change: ordinal to int: %w", err)
 	}
 
+	trxID := chunks[2]
 	owner := chunks[4]
 
-	prevLamports, err := strconv.Atoi(chunks[5])
-	if err != nil {
+	if prevLamports, err = strconv.Atoi(chunks[5]); err != nil {
 		return fmt.Errorf("read lamport change: hex decode prev lamports data: %w", err)
 	}
 
-	newLamports, err := strconv.Atoi(chunks[6])
-	if err != nil {
+	if newLamports, err = strconv.Atoi(chunks[6]); err != nil {
 		return fmt.Errorf("read lamport change: hex decode new lamports data: %w", err)
 	}
 
@@ -639,8 +718,7 @@ func (ctx *parseCtx) readLamportsChange(line string) error {
 		NewLamports:  uint64(newLamports),
 	}
 
-	err = activeSlot.recordLamportsChange(trxID, ordinal, balanceChange)
-	if err != nil {
+	if err = ctx.activeBank.recordLamportsChange(trxID, ordinal, balanceChange); err != nil {
 		return fmt.Errorf("read lamports change: %w", err)
 	}
 
