@@ -256,6 +256,7 @@ func (b *bank) sortTrx() {
 		return strings.Compare(trxs[i].Id, trxs[j].Id) < 0
 	})
 	b.sortedTrx = append(b.sortedTrx, trxs...)
+	b.trxAggregator = map[string]*pbcodec.Transaction{}
 }
 
 func (b *bank) createSlot(slotNum uint64, slotID string) *pbcodec.Slot {

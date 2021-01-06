@@ -17,6 +17,7 @@ package codec
 import (
 	"encoding/hex"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -809,6 +810,30 @@ DMLOG SLOT_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 
 		}
 		assert.Equal(t, expectSlot, o)
 	}
+}
+
+func Test_fromFile(t *testing.T) {
+	f, err := os.Open("./test_data/55295915.dmlog")
+	require.NoError(t, err)
+
+	cr, err := NewConsoleReader(f)
+	require.NoError(t, err)
+
+	s, err := cr.Read()
+	require.NoError(t, err)
+
+	slot := s.(*pbcodec.Slot)
+	// TODO: add more testing
+	assert.Equal(t, "HGRz1p4Eh4wvxWFq8Ki1Jj2uatx2XashQMZhhyMsqNtB", slot.Id)
+	assert.Equal(t, "BhGksZQu7eNNRYm9A2ZafCAgGTKwubN4FF68Y2VYq4ET", slot.PreviousId)
+	assert.Equal(t, uint64(55295915), slot.Num())
+	assert.Equal(t, uint32(465), slot.TransactionCount)
+	transaction := slot.Transactions[0]
+	assert.Equal(t, "22yEKbnjpxVJQY7RMuvJEYc5PoBVFEFYJCT6Ak2xrtNT7ppzePwneGGuzK2BNEdvdFsvUQHu1qnS688VccHPVKxJ", transaction.Id)
+	assert.Equal(t, 1, len(transaction.Instructions))
+
+	_, err = cr.Read()
+	assert.Equal(t, err, io.EOF)
 }
 
 func mustHexDecode(d string) []byte {

@@ -47,7 +47,7 @@ func (r *Root) SubscriptionMarket(ctx context.Context, args *SerumMarketRequest)
 				zlog.Error("sub.")
 				//return nil, fmt.Errorf("order book subscription: subscribe account info: %w", err)
 			}
-			account := result.(*ws.AccountResult).Value.Account
+			//account := result.(*ws.AccountResult).Value.Account
 			fmt.Println("account owner:", account.Owner)
 			fmt.Println("account data:", account.Data.String())
 		}
