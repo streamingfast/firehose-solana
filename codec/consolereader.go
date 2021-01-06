@@ -506,7 +506,6 @@ func (ctx *parseCtx) readTransactionStart(line string) (err error) {
 
 	accountKeys := strings.Split(chunks[6], ":")
 	recentBlockHash := chunks[7]
-	fmt.Println("ID ", id)
 	transaction := &pbcodec.Transaction{
 		Id:                   id,
 		AdditionalSignatures: additionalSigs,
