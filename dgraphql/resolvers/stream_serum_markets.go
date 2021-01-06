@@ -48,6 +48,8 @@ func (r *Root) SubscriptionMarket(ctx context.Context, args *SerumMarketRequest)
 				//return nil, fmt.Errorf("order book subscription: subscribe account info: %w", err)
 			}
 			account := result.(*ws.AccountResult).Value.Account
+			fmt.Println("account owner:", account.Owner)
+			fmt.Println("account data:", account.Data.String())
 		}
 	}()
 
