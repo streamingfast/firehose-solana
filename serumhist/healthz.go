@@ -6,10 +6,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func (l *Injector) LaunchHealthz(httpListenAddr string) {
+func (i *Injector) LaunchHealthz(httpListenAddr string) {
 	httpSrv := &http.Server{
 		Addr:    httpListenAddr,
-		Handler: http.HandlerFunc(l.healthz),
+		Handler: http.HandlerFunc(i.healthz),
 	}
 	zlog.Info("starting serum histoy injector http health server",
 		zap.String("http_addr", httpListenAddr),

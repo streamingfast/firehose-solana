@@ -18,19 +18,19 @@ import (
 	"go.uber.org/zap"
 )
 
-func (l *Injector) ProcessSlot(ctx context.Context, slot *pbcodec.Slot) error {
+func (i *Injector) ProcessSlot(ctx context.Context, slot *pbcodec.Slot) error {
 	if traceEnabled {
 		zlog.Debug("processing slot", zap.String("slot_id", slot.Id))
 	}
 
-	if err := l.processSerumSlot(ctx, slot); err != nil {
+	if err := i.processSerumSlot(ctx, slot); err != nil {
 		return fmt.Errorf("put slot: unable to process serum slot: %w", err)
 	}
 
 	return nil
 }
 
-func (l *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) error {
+func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) error {
 	for _, transaction := range slot.Transactions {
 		for idx, instruction := range transaction.Instructions {
 			if instruction.ProgramId != serum.PROGRAM_ID.String() {
@@ -107,7 +107,7 @@ func (l *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 			}
 
 			for _, kv := range out {
-				if err := l.kvdb.Put(ctx, kv.Key, kv.Value); err != nil {
+				if err := i.kvdb.Put(ctx, kv.Key, kv.Value); err != nil {
 					zlog.Warn("failed to write key-value", zap.Error(err))
 				}
 			}
