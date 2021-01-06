@@ -68,7 +68,7 @@ func (i *Injector) Setup() error {
 			Timeout:             10 * time.Second, // wait that amount of time for ping ack before considering the connection dead
 			PermitWithoutStream: true,             // send pings even without active streams
 		}),
-		grpc.WithDefaultCallOptions([]grpc.CallOption{grpc.MaxCallRecvMsgSize(1024 * 1024 * 300), grpc.WaitForReady(true)}...),
+		grpc.WithDefaultCallOptions([]grpc.CallOption{grpc.MaxCallRecvMsgSize(1024 * 1024 * 1024), grpc.WaitForReady(true)}...),
 	)
 
 	markets, err := serum.KnownMarket()
