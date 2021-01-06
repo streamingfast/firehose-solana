@@ -148,8 +148,8 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 				return slot, nil
 			}
 
-		case strings.HasPrefix(line, "BATCH_SORT"):
-			err = ctx.readBatchSort(line)
+		case strings.HasPrefix(line, "BATCH_END"):
+			err = ctx.readBatchEnd(line)
 
 		case strings.HasPrefix(line, "SLOT_END"):
 			var slot *pbcodec.Slot
@@ -311,10 +311,10 @@ func (b *bank) recordLamportsChange(trxID string, ordinal int, balanceChange *pb
 	return nil
 }
 
-// BATCH_SORT
-func (ctx *parseCtx) readBatchSort(line string) (err error) {
+// BATCH_END
+func (ctx *parseCtx) readBatchEnd(line string) (err error) {
 	if ctx.activeBank == nil {
-		return fmt.Errorf("received slot end while no active bank in context")
+		return fmt.Errorf("received batch end while no active bank in context")
 	}
 
 	ctx.activeBank.sortTrx()
