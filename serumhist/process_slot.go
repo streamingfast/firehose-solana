@@ -132,8 +132,7 @@ func instructionAccountIndexes(trxAccounts []string, instructionAccounts []strin
 func getAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {
 	for _, accountChange := range accountChanges {
 		var f *serum.AccountFlag
-		//assumption data should begin with serum prefix "736572756d"
-		if err := bin.NewDecoder(accountChange.PrevData[5:]).Decode(&f); err != nil {
+		if err := bin.NewDecoder(accountChange.PrevData).Decode(&f); err != nil {
 			return nil, fmt.Errorf("unable to deocde account flag: %w", err)
 		}
 
@@ -270,13 +269,6 @@ func extractOrderSeqNum(side serum.Side, orderID bin.Uint128) uint64 {
 }
 
 func decodeEventQueue(accountChange *pbcodec.AccountChange) (old *serum.EventQueue, new *serum.EventQueue, err error) {
-	defer func() {
-		if err := recover(); err != nil {
-			zlog.Error("decoder panic recover", zap.String("data", hex.EncodeToString(accountChange.PrevData)))
-			panic(err)
-		}
-	}()
-
 	if err := bin.NewDecoder(accountChange.PrevData).Decode(&old); err != nil {
 		zlog.Warn("unable to decode 'event queue' old data", zap.String("data", hex.EncodeToString(accountChange.PrevData)))
 		return nil, nil, fmt.Errorf("unable to decode 'event queue' old data: %w", err)
