@@ -197,7 +197,6 @@ func RegisterSolanaNodeApp(kind string) {
 				arguments = append(arguments,
 					"--halt-on-trusted-validators-accounts-hash-mismatch",
 					"--limit-ledger-size",
-					"--no-untrusted-rpc",
 					"--no-voting",
 					"--private-rpc",
 					"--wal-recovery-mode", "skip_any_corrupted_record",
