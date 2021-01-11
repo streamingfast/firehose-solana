@@ -24,7 +24,8 @@ func init() {
 			cmd.Flags().String("dgraphql-api-key", "web_0000", "API key used in GraphiQL")
 			cmd.Flags().String("dgraphql-serum-hist-addr", SerumHistoryGRPCServingAddr, "Address where to reach the Serum History gRPC service")
 			cmd.Flags().Uint64("dgraphql-slot-offset", 100, "Number of slots offset")
-
+			cmd.Flags().String("dgraphql-api-key", "web_0000", "API key used in GraphiQL")
+			cmd.Flags().String("dgraphql-token-list-url", "gs://staging.dfuseio-global.appspot.com/sol-tokens/sol-mainnet-v1.jsonl", "JSONL file containing list of known tokens")
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
@@ -35,7 +36,7 @@ func init() {
 				RPCWSEndpointAddr: viper.GetString("common-rpc-ws-endpoint"),
 				SlotOffset:        viper.GetUint64("dgraphql-slot-offset"),
 				SerumHistoryAddr:  viper.GetString("dgraphql-serum-hist-addr"),
-
+				TokenListURL:      viper.GetString("dgraphql-token-list-url"),
 				Config: dgraphqlApp.Config{
 					// Base dgraphql configs
 					Protocol:        "sol",

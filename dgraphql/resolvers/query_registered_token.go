@@ -1,14 +1,14 @@
 package resolvers
 
 import (
-	"github.com/dfuse-io/dfuse-solana/token"
+	"github.com/dfuse-io/dfuse-solana/md"
 	"github.com/dfuse-io/dgraphql/types"
 	"github.com/dfuse-io/solana-go"
 )
 
 func (r *Root) QueryRegisteredTokens() (out []*RegisteredTokensResponse) {
 	out = []*RegisteredTokensResponse{}
-	for _, t := range r.tokenRegistry.GetTokens() {
+	for _, t := range r.mdServer.GetTokens() {
 		if t.Meta != nil {
 			out = append(out, RegisteredTokensResponseFromRegistryEntry(t))
 		}
@@ -21,14 +21,14 @@ func (r *Root) QueryRegisteredToken(req *TokenRequest) (*RegisteredTokensRespons
 	if err != nil {
 		return nil, err
 	}
-	t := r.tokenRegistry.GetToken(&pubKey)
+	t := r.mdServer.GetToken(&pubKey)
 	if t == nil || t.Meta == nil {
 		return nil, nil
 	}
 	return RegisteredTokensResponseFromRegistryEntry(t), nil
 }
 
-func RegisteredTokensResponseFromRegistryEntry(token *token.RegisteredToken) *RegisteredTokensResponse {
+func RegisteredTokensResponseFromRegistryEntry(token *md.RegisteredToken) *RegisteredTokensResponse {
 	r := &RegisteredTokensResponse{
 		Address:         token.Address.String(),
 		MintAuthority:   token.MintAuthority.String(),

@@ -1,4 +1,4 @@
-package token
+package md
 
 import (
 	"github.com/dfuse-io/logging"

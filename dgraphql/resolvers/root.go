@@ -3,8 +3,8 @@ package resolvers
 import (
 	"github.com/dfuse-io/dauth/ratelimiter"
 	"github.com/dfuse-io/dfuse-solana/dgraphql/trade"
+	"github.com/dfuse-io/dfuse-solana/md"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/token"
 	"github.com/dfuse-io/solana-go/rpc"
 )
 
@@ -13,7 +13,7 @@ type Root struct {
 	rpcClient          *rpc.Client
 	tradeManager       *trade.Manager
 	wsURL              string
-	tokenRegistry      *token.Registry
+	mdServer           *md.Server
 	requestRateLimiter ratelimiter.RateLimiter
 	serumHistoryClient pbserumhist.SerumHistoryClient
 }
@@ -22,7 +22,7 @@ func NewRoot(
 	rpcClient *rpc.Client,
 	wsURL string,
 	manager *trade.Manager,
-	tokenRegistry *token.Registry,
+	mdServer *md.Server,
 	requestRateLimiter ratelimiter.RateLimiter,
 	serumHistoryClient pbserumhist.SerumHistoryClient,
 ) (*Root, error) {
@@ -30,7 +30,7 @@ func NewRoot(
 		rpcClient:          rpcClient,
 		wsURL:              wsURL,
 		tradeManager:       manager,
-		tokenRegistry:      tokenRegistry,
+		mdServer:           mdServer,
 		requestRateLimiter: requestRateLimiter,
 		serumHistoryClient: serumHistoryClient,
 	}, nil

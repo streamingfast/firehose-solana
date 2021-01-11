@@ -21,8 +21,8 @@ import (
 	drateLimiter "github.com/dfuse-io/dauth/ratelimiter"
 	solResolver "github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
 	"github.com/dfuse-io/dfuse-solana/dgraphql/trade"
+	"github.com/dfuse-io/dfuse-solana/md"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/token"
 	"github.com/dfuse-io/dfuse-solana/transaction"
 	"github.com/dfuse-io/dgraphql"
 	dgraphqlApp "github.com/dfuse-io/dgraphql/app/dgraphql"
@@ -33,6 +33,7 @@ import (
 
 type Config struct {
 	dgraphqlApp.Config
+	TokenListURL      string
 	RatelimiterPlugin string
 	RPCEndpointAddr   string
 	RPCWSEndpointAddr string
@@ -73,14 +74,14 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 	rpcClient := rpc.NewClient(f.config.RPCEndpointAddr)
 	tradeManager := trade.NewManager()
 	trxStream := transaction.NewStream(rpcClient, f.config.RPCWSEndpointAddr, tradeManager, f.config.SlotOffset)
-	tokenRegistry := token.NewRegistry(rpcClient, f.config.RPCWSEndpointAddr)
+	tokenRegistry := md.NewServer(rpcClient, f.config.TokenListURL, f.config.RPCWSEndpointAddr)
 
 	err = trxStream.Launch(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to launch trx stream: %w", err)
 	}
 
-	if err := tokenRegistry.Load(); err != nil {
+	if err := tokenRegistry.Launch(false); err != nil {
 		return nil, fmt.Errorf("unable to load token registry: %w", err)
 	}
 
