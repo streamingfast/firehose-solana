@@ -1,0 +1,10 @@
+#!/bin/bash
+
+port=${MANAGER_API_PORT:-8890}
+
+# get chain head
+F=$(solana -u https://api.mainnet-beta.solana.com slot)
+N=$(solana -u http://localhost:$port slot)
+
+echo "Foundation:               " $F
+echo "Node:                     " $N "($(expr $F - $N) behind)"
