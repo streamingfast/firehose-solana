@@ -24,7 +24,6 @@ func init() {
 			cmd.Flags().String("dgraphql-api-key", "web_0000", "API key used in GraphiQL")
 			cmd.Flags().String("dgraphql-serum-hist-addr", SerumHistoryGRPCServingAddr, "Address where to reach the Serum History gRPC service")
 			cmd.Flags().Uint64("dgraphql-slot-offset", 100, "Number of slots offset")
-			cmd.Flags().String("dgraphql-api-key", "web_0000", "API key used in GraphiQL")
 			cmd.Flags().String("dgraphql-tokens-file-url", "gs://staging.dfuseio-global.appspot.com/sol-tokens/sol-mainnet-v1.jsonl", "JSONL file containing list of known tokens")
 			return nil
 		},
