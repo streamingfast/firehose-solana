@@ -76,12 +76,31 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 			if newOrder, ok := serumInstruction.Impl.(*serum.InstructionNewOrder); ok {
 				err := newOrder.SetAccounts(accounts, instructionAccountIndexes)
 				if err != nil {
-					return fmt.Errorf("process serum slot: match order: set account metas: %w", err)
+					return fmt.Errorf("process serum slot: new order v1: set account metas: %w", err)
 				}
-				zlog.Info("processing new order")
-				out, err = processNewOrderRequestQueue(slot.Number, newOrder, instruction.AccountChanges)
+				zlog.Info("processing new order v1")
+
+				out, err = processNewOrderRequestQueue(slot.Number, newOrder.Side, newOrder.Accounts.Owner.PublicKey, newOrder.Accounts.Market.PublicKey, instruction.AccountChanges)
 				if err != nil {
 					zlog.Warn("error processing new order",
+						zap.Uint64("slot_number", slot.Number),
+						zap.String("error", err.Error()),
+					)
+					continue
+				}
+
+			}
+
+			// we only care about new order instruction that modify the request queue
+			if newOrderV2, ok := serumInstruction.Impl.(*serum.InstructionNewOrderV2); ok {
+				err := newOrderV2.SetAccounts(accounts, instructionAccountIndexes)
+				if err != nil {
+					return fmt.Errorf("process serum slot: new order v2: set account metas: %w", err)
+				}
+				zlog.Info("processing new order v2")
+				out, err = processNewOrderRequestQueue(slot.Number, newOrderV2.Side, newOrderV2.Accounts.Owner.PublicKey, newOrderV2.Accounts.Market.PublicKey, instruction.AccountChanges)
+				if err != nil {
+					zlog.Warn("error processing new order v2",
 						zap.Uint64("slot_number", slot.Number),
 						zap.String("error", err.Error()),
 					)
@@ -143,7 +162,7 @@ func getAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *se
 	return nil, nil
 }
 
-func processNewOrderRequestQueue(slotNumber uint64, inst *serum.InstructionNewOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
+func processNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
 	requestQueueAccountChange, err := getAccountChange(accountChanges, func(f *serum.AccountFlag) bool {
 		return f.Is(serum.AccountFlagInitialized) && f.Is(serum.AccountFlagRequestQueue)
 	})
@@ -157,7 +176,7 @@ func processNewOrderRequestQueue(slotNumber uint64, inst *serum.InstructionNewOr
 		return nil, fmt.Errorf("unable to decode request queue change: %w", err)
 	}
 
-	return generateNewOrderKeys(slotNumber, inst.Side, inst.Accounts.Owner.PublicKey, inst.Accounts.Market.PublicKey, old, new), nil
+	return generateNewOrderKeys(slotNumber, side, trader, market, old, new), nil
 }
 
 func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market solana.PublicKey, old *serum.RequestQueue, new *serum.RequestQueue) (out []*kvdb.KV) {
@@ -219,7 +238,6 @@ func generateFillKeys(slotNumber uint64, market solana.PublicKey, old *serum.Eve
 			case diff.KindChanged:
 				// this is probably a partial fill we don't care about this right now
 			case diff.KindAdded:
-				fmt.Println("flag: ", e.Flag)
 				if e.Flag.IsFill() {
 					size := 16
 					buf := make([]byte, size)
@@ -246,7 +264,6 @@ func generateFillKeys(slotNumber uint64, market solana.PublicKey, old *serum.Eve
 						return
 					}
 					orderSeqNum := extractOrderSeqNum(e.Side(), e.OrderID)
-
 					out = append(out, &kvdb.KV{
 						Key:   keyer.EncodeFillData(market, orderSeqNum, slotNumber),
 						Value: cnt,
