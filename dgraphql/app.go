@@ -15,15 +15,12 @@
 package dgraphql
 
 import (
-	"context"
 	"fmt"
 
 	drateLimiter "github.com/dfuse-io/dauth/ratelimiter"
 	solResolver "github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
-	"github.com/dfuse-io/dfuse-solana/dgraphql/trade"
 	"github.com/dfuse-io/dfuse-solana/md"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/transaction"
 	"github.com/dfuse-io/dgraphql"
 	dgraphqlApp "github.com/dfuse-io/dgraphql/app/dgraphql"
 	"github.com/dfuse-io/dgrpc"
@@ -56,9 +53,6 @@ type SchemaFactory struct {
 }
 
 func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
-	// FIXME: The context should be provided by the caller of `Schemas` which should be tied to the app lifecycle
-	ctx := context.Background()
-
 	rateLimiter, err := drateLimiter.New(f.config.RatelimiterPlugin)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize rate limiter: %w", err)
@@ -72,14 +66,7 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 	serumHistoryClient := pbserumhist.NewSerumHistoryClient(serumHistoryConn)
 
 	rpcClient := rpc.NewClient(f.config.RPCEndpointAddr)
-	tradeManager := trade.NewManager()
-	trxStream := transaction.NewStream(rpcClient, f.config.RPCWSEndpointAddr, tradeManager, f.config.SlotOffset)
 	tokenRegistry := md.NewServer(rpcClient, f.config.TokensFileURL, f.config.RPCWSEndpointAddr)
-
-	err = trxStream.Launch(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to launch trx stream: %w", err)
-	}
 
 	if err := tokenRegistry.Launch(false); err != nil {
 		return nil, fmt.Errorf("unable to load token registry: %w", err)
@@ -89,7 +76,6 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 	resolver, err := solResolver.NewRoot(
 		rpcClient,
 		f.config.RPCWSEndpointAddr,
-		tradeManager,
 		tokenRegistry,
 		rateLimiter,
 		serumHistoryClient,

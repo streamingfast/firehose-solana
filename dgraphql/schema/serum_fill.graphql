@@ -57,3 +57,10 @@ enum SerumFeeTier {
   SRM6
   MSRM
 }
+
+enum SideType {
+  ASK
+  BID
+  UNKNOWN
+}
+

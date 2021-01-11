@@ -1,3 +1,2 @@
 type Subscription {
-    serumInstructionHistory(account: String!): SerumInstructionResponse
 }

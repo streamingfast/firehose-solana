@@ -64,3 +64,11 @@ type SerumOrderBook struct {
 
 type SerumOrder struct {
 }
+
+type SerumSideType string
+
+const (
+	SerumSideTypeBid     SerumSideType = "BID"
+	SerumSideTypeAsk                   = "ASK"
+	SerumSideTypeUnknown               = "UNKNOWN"
+)
