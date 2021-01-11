@@ -33,7 +33,7 @@ import (
 
 type Config struct {
 	dgraphqlApp.Config
-	TokenListURL      string
+	TokensFileURL     string
 	RatelimiterPlugin string
 	RPCEndpointAddr   string
 	RPCWSEndpointAddr string
@@ -74,7 +74,7 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 	rpcClient := rpc.NewClient(f.config.RPCEndpointAddr)
 	tradeManager := trade.NewManager()
 	trxStream := transaction.NewStream(rpcClient, f.config.RPCWSEndpointAddr, tradeManager, f.config.SlotOffset)
-	tokenRegistry := md.NewServer(rpcClient, f.config.TokenListURL, f.config.RPCWSEndpointAddr)
+	tokenRegistry := md.NewServer(rpcClient, f.config.TokensFileURL, f.config.RPCWSEndpointAddr)
 
 	err = trxStream.Launch(ctx)
 	if err != nil {
