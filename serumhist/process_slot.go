@@ -192,17 +192,21 @@ func processNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, mar
 func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market solana.PublicKey, old *serum.RequestQueue, new *serum.RequestQueue) (out []*kvdb.KV) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Requests[#]"); match {
+			zlog.Debug("match Requests[#]")
 			request := event.Element().Interface().(*serum.Request)
 			orderSeqNum := extractOrderSeqNum(side, request.OrderID)
 			switch event.Kind {
 			case diff.KindChanged:
+				zlog.Debug("event KindChanged")
 				// this is probably a partial fill we don't care about this right now
 			case diff.KindAdded:
+				zlog.Debug("event KindAdded")
 				// either a cancel request or ad new order
 				// this should create keys
 				switch request.RequestFlags {
 
 				case serum.RequestFlagNewOrder:
+					zlog.Debug("serum.RequestFlagNewOrder")
 					out = append(out, &kvdb.KV{
 						Key:   keyer.EncodeOrdersByMarketPubkey(owner, market, orderSeqNum, slotNumber),
 						Value: nil,
@@ -212,9 +216,11 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market sola
 						Value: nil,
 					})
 				case serum.RequestFlagCancelOrder:
+					zlog.Debug("serum.RequestFlagCancelOrder")
 				}
 			case diff.KindRemoved:
 				// this is a request that for either canceled or fully filled
+				zlog.Debug("diff.KindRemoved")
 			default:
 			}
 		}
