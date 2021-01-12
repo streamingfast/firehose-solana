@@ -6,8 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
-
 	bin "github.com/dfuse-io/binary"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
@@ -16,6 +14,7 @@ import (
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/diff"
 	"github.com/dfuse-io/solana-go/programs/serum"
+	"github.com/golang/protobuf/proto"
 	"go.uber.org/zap"
 )
 
@@ -165,11 +164,15 @@ func getAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *se
 
 func processNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
 	requestQueueAccountChange, err := getAccountChange(accountChanges, func(f *serum.AccountFlag) bool {
+		zlog.Debug("filtering account flag", zap.Stringer("account_flags", f))
 		return f.Is(serum.AccountFlagInitialized) && f.Is(serum.AccountFlagRequestQueue)
 	})
 
 	if requestQueueAccountChange == nil {
-		return nil, fmt.Errorf("unable to retrieve Request Queue Account: %w", err)
+		zlog.Warn("error processing new order",
+			zap.Uint64("slot_number", slotNumber),
+			zap.String("error", err.Error()),
+		)
 	}
 
 	old, new, err := decodeRequestQueue(requestQueueAccountChange)
