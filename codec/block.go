@@ -9,10 +9,7 @@ import (
 )
 
 func BlockFromProto(slot *pbcodec.Slot) (*bstream.Block, error) {
-	blockTime, err := slot.Time()
-	if err != nil {
-		return nil, err
-	}
+	blockTime := slot.Block.Time()
 
 	content, err := proto.Marshal(slot)
 	if err != nil {

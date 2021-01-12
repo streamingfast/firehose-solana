@@ -155,10 +155,7 @@ func (i *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 			return fmt.Errorf("error while flushing: %w", err)
 		}
 
-		t, err := slot.Time()
-		if err != nil {
-			return fmt.Errorf("unable to resolve slot time for slot %q: %w", slot.Number, err)
-		}
+		t := slot.Block.Time()
 
 		err = i.FlushIfNeeded(slot.Number, t)
 		if err != nil {

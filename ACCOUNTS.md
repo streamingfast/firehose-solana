@@ -25,14 +25,14 @@ STRUCTURE:
                 (account_meta_ptr as *const u8, mem::size_of::<AccountMeta>()),     PARTIALLY
                 (hash_ptr as *const u8, mem::size_of::<Hash>()),                    FOUND
                 (data_ptr, data_len),                                               FOUND
-
+ 
 
 
 accounts/ files:
 
 
 00000000   5B AD 9A D9  05 00 00 00
-                                     A5 00 00 00  00 00 00 00  [...............  -> DATA_LEN (165)
+                                     A5 00 00 00  00 00 00 00  [...............  -> DATA_LEN (165) 
 00000010   FA 5A 35 34  39 06 38 15  1B 33 6A 74  2F 64 8E 48  .Z549.8..3jt/d.H
 00000020   38 5D 01 54  CF 90 F1 CA  55 DA 8D E9  75 B1 5C 28  8].T....U...u.\(  -> pubkey de l'account
                                                                                     HrGhscadmYEhMu6tLqjFhTz3RkJm1kgzNzggh6NTopiK
