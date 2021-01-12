@@ -147,7 +147,8 @@ func instructionAccountIndexes(trxAccounts []string, instructionAccounts []strin
 	return out
 }
 
-func getAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {
+func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {
+	zlog.Debug("filtering account change", zap.Int("account_change_count", len(accountChanges)))
 	for _, accountChange := range accountChanges {
 		var f *serum.AccountFlag
 		//assumption data should begin with serum prefix "736572756d"
@@ -163,7 +164,7 @@ func getAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *se
 }
 
 func processNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	requestQueueAccountChange, err := getAccountChange(accountChanges, func(f *serum.AccountFlag) bool {
+	requestQueueAccountChange, err := filterAccountChange(accountChanges, func(f *serum.AccountFlag) bool {
 		zlog.Info("filtering account flag", zap.Stringer("account_flags", f))
 		return f.Is(serum.AccountFlagInitialized) && f.Is(serum.AccountFlagRequestQueue)
 	})
@@ -221,7 +222,7 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market sola
 }
 
 func processMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	eventQueueAccountChange, err := getAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
+	eventQueueAccountChange, err := filterAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
 		zlog.Debug("checking account change flags", zap.Stringer("flag", flag))
 		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
 	})
