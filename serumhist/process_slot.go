@@ -62,7 +62,7 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 				zap.Uint32("serum_instruction_variant_index", serumInstruction.TypeID),
 			)
 
-			var out []*kvdb.KV
+			var kvs []*kvdb.KV
 			var err error
 
 			instructionAccountIndexes := instructionAccountIndexes(transaction.AccountKeys, instruction.AccountKeys)
@@ -77,9 +77,8 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 				if err != nil {
 					return fmt.Errorf("process serum slot: new order v1: set account metas: %w", err)
 				}
-				zlog.Info("processing new order v1")
-
-				out, err = processNewOrderRequestQueue(slot.Number, newOrder.Side, newOrder.Accounts.Owner.PublicKey, newOrder.Accounts.Market.PublicKey, instruction.AccountChanges)
+				zlog.Info("processing new order v1", zap.Uint64("slot_number", slot.Number), zap.String("trx_id", transaction.Id), zap.Uint32("instruction ordinal", instruction.Ordinal))
+				kvs, err = kvsForNewOrderRequestQueue(slot.Number, newOrder.Side, newOrder.Accounts.Owner.PublicKey, newOrder.Accounts.Market.PublicKey, instruction.AccountChanges)
 				if err != nil {
 					zlog.Warn("error processing new order",
 						zap.Uint64("slot_number", slot.Number),
@@ -87,7 +86,6 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 					)
 					continue
 				}
-
 			}
 
 			// we only care about new order instruction that modify the request queue
@@ -96,8 +94,8 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 				if err != nil {
 					return fmt.Errorf("process serum slot: new order v2: set account metas: %w", err)
 				}
-				zlog.Info("processing new order v2")
-				out, err = processNewOrderRequestQueue(slot.Number, newOrderV2.Side, newOrderV2.Accounts.Owner.PublicKey, newOrderV2.Accounts.Market.PublicKey, instruction.AccountChanges)
+				zlog.Info("processing new order v2", zap.Uint64("slot_number", slot.Number), zap.String("trx_id", transaction.Id), zap.Uint32("instruction ordinal", instruction.Ordinal))
+				kvs, err = kvsForNewOrderRequestQueue(slot.Number, newOrderV2.Side, newOrderV2.Accounts.Owner.PublicKey, newOrderV2.Accounts.Market.PublicKey, instruction.AccountChanges)
 				if err != nil {
 					zlog.Warn("error processing new order v2",
 						zap.Uint64("slot_number", slot.Number),
@@ -115,7 +113,7 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 					return fmt.Errorf("process serum slot: match order: set account metas: %w", err)
 				}
 				zlog.Info("processing match order")
-				out, err = processMatchOrderEventQueue(slot.Number, mathOrder, instruction.AccountChanges)
+				kvs, err = kvsForMatchOrderEventQueue(slot.Number, mathOrder, instruction.AccountChanges)
 				if err != nil {
 					zlog.Warn("error matching order and event queue",
 						zap.Uint64("slot_number", slot.Number),
@@ -125,7 +123,7 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 				}
 			}
 
-			for _, kv := range out {
+			for _, kv := range kvs {
 				zlog.Debug("putting kv", zap.String("key", hex.EncodeToString(kv.Key)))
 				if err := i.kvdb.Put(ctx, kv.Key, kv.Value); err != nil {
 					zlog.Warn("failed to write key-value", zap.Error(err))
@@ -164,7 +162,7 @@ func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f 
 	return nil, nil
 }
 
-func processNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
+func kvsForNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
 	requestQueueAccountChange, err := filterAccountChange(accountChanges, func(f *serum.AccountFlag) bool {
 		zlog.Info("filtering account flag", zap.Stringer("account_flags", f))
 		return f.Is(serum.AccountFlagInitialized) && f.Is(serum.AccountFlagRequestQueue)
@@ -230,7 +228,7 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market sola
 	return out
 }
 
-func processMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
+func kvsForMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
 	eventQueueAccountChange, err := filterAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
 		zlog.Debug("checking account change flags", zap.Stringer("flag", flag))
 		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
