@@ -155,7 +155,7 @@ func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f 
 		if err := bin.NewDecoder(accountChange.PrevData[5:]).Decode(&f); err != nil {
 			return nil, fmt.Errorf("get account change: unable to deocde account flag: %w", err)
 		}
-
+		zlog.Debug("about to call filtering func")
 		if filter(f) {
 			return accountChange, nil
 		}
