@@ -47,14 +47,6 @@ func GraphqlExamples() []*static.GraphqlExample {
 				"mainnet": r(`{"trader": "YOUR-ACCOUNT-HERE"}`),
 			},
 		},
-		{
-			Label:    "Stream Serum Instructions",
-			Document: graphqlDocument(box, "stream_serum_instructions.graphql"),
-			Variables: static.GraphqlVariablesByNetwork{
-				"generic": r(`{"account": "YOUR-ACCOUNT-HERE"}`),
-				"mainnet": r(`{"account": "YOUR-ACCOUNT-HERE"}`),
-			},
-		},
 	}
 }
 
