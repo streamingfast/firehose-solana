@@ -168,10 +168,13 @@ func processNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, mar
 		return f.Is(serum.AccountFlagInitialized) && f.Is(serum.AccountFlagRequestQueue)
 	})
 
+	if err != nil {
+		return nil, fmt.Errorf("process new order request queue: get account change: %w", err)
+	}
+
 	if requestQueueAccountChange == nil {
-		zlog.Warn("error processing new order",
+		zlog.Warn("got a nil requestQueueAccountChange",
 			zap.Uint64("slot_number", slotNumber),
-			zap.String("error", err.Error()),
 		)
 	}
 
