@@ -126,6 +126,7 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 			}
 
 			for _, kv := range out {
+				zlog.Debug("putting kv", zap.String("key", hex.EncodeToString(kv.Key)))
 				if err := i.kvdb.Put(ctx, kv.Key, kv.Value); err != nil {
 					zlog.Warn("failed to write key-value", zap.Error(err))
 				}
@@ -197,7 +198,7 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market sola
 			case diff.KindChanged:
 				// this is probably a partial fill we don't care about this right now
 			case diff.KindAdded:
-				// etiehr a cancel request or ad new order
+				// either a cancel request or ad new order
 				// this should create keys
 				switch request.RequestFlags {
 
