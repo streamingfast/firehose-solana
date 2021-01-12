@@ -152,7 +152,7 @@ func getAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *se
 		var f *serum.AccountFlag
 		//assumption data should begin with serum prefix "736572756d"
 		if err := bin.NewDecoder(accountChange.PrevData[5:]).Decode(&f); err != nil {
-			return nil, fmt.Errorf("unable to deocde account flag: %w", err)
+			return nil, fmt.Errorf("get account change: unable to deocde account flag: %w", err)
 		}
 
 		if filter(f) {
@@ -164,7 +164,7 @@ func getAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *se
 
 func processNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
 	requestQueueAccountChange, err := getAccountChange(accountChanges, func(f *serum.AccountFlag) bool {
-		zlog.Debug("filtering account flag", zap.Stringer("account_flags", f))
+		zlog.Info("filtering account flag", zap.Stringer("account_flags", f))
 		return f.Is(serum.AccountFlagInitialized) && f.Is(serum.AccountFlagRequestQueue)
 	})
 
@@ -176,6 +176,7 @@ func processNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, mar
 		zlog.Warn("got a nil requestQueueAccountChange",
 			zap.Uint64("slot_number", slotNumber),
 		)
+		return
 	}
 
 	old, new, err := decodeRequestQueue(requestQueueAccountChange)
