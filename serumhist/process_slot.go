@@ -190,6 +190,7 @@ func processNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, mar
 }
 
 func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market solana.PublicKey, old *serum.RequestQueue, new *serum.RequestQueue) (out []*kvdb.KV) {
+	zlog.Debug("generate new order kv")
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Requests[#]"); match {
 			zlog.Debug("match Requests[#]")
@@ -225,6 +226,7 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market sola
 			}
 		}
 	}))
+	zlog.Debug("generated new order kv", zap.Int("kv_count", len(out)))
 	return out
 }
 
