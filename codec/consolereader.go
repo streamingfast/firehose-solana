@@ -146,55 +146,71 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 
 		line = line[6:]
 
-		// Order of conditions is based (approximately) on those that will appear more often
-		switch {
-		case strings.HasPrefix(line, "SLOT_WORK"):
-			err = ctx.readSlotWork(line)
-
-		case strings.HasPrefix(line, "SLOT_BOUND"):
-			err = ctx.readSlotBound(line)
-
-		case strings.HasPrefix(line, "BATCH_END"):
-			err = ctx.readBatchEnd(line)
-
-		case strings.HasPrefix(line, "SLOT_END"):
-			err = ctx.readSlotEnd(line)
-
-		case strings.HasPrefix(line, "SLOT_FAILED"):
-			err = ctx.readSlotFailed(line)
-
-		case strings.HasPrefix(line, "TRX_START"):
-			err = ctx.readTransactionStart(line)
-
-		case strings.HasPrefix(line, "TRX_END"):
-			err = ctx.readTransactionEnd(line)
-
-		case strings.HasPrefix(line, "TRX_LOG"):
-			err = ctx.readTransactionLog(line)
-
-		case strings.HasPrefix(line, "INST_S"):
-			err = ctx.readInstructionStart(line)
-
-		case strings.HasPrefix(line, "ACCT_CH"):
-			err = ctx.readAccountChange(line)
-
-		case strings.HasPrefix(line, "LAMP_CH"):
-			err = ctx.readLamportsChange(line)
-
-		default:
-			zlog.Warn("unknown log line", zap.String("line", line))
-		}
-
-		if err != nil {
-
+		if err = l.parseLine(line); err != nil {
 			return nil, l.formatError(line, err)
 		}
 	}
 }
 
+func (l *ConsoleReader) parseLine(line string) (err error) {
+	// Order of conditions is based (approximately) on those that will appear more often
+	switch {
+	case strings.HasPrefix(line, "BATCH"):
+		err = ctx.readBatchFile(line)
+
+	case strings.HasPrefix(line, "SLOT_WORK"):
+		err = ctx.readSlotWork(line)
+
+	case strings.HasPrefix(line, "SLOT_BOUND"):
+		err = ctx.readSlotBound(line)
+
+	case strings.HasPrefix(line, "BATCH_END"):
+		err = ctx.readBatchEnd(line)
+
+	case strings.HasPrefix(line, "SLOT_END"):
+		err = ctx.readSlotEnd(line)
+
+	case strings.HasPrefix(line, "SLOT_FAILED"):
+		err = ctx.readSlotFailed(line)
+
+	case strings.HasPrefix(line, "TRX_START"):
+		err = ctx.readTransactionStart(line)
+
+	case strings.HasPrefix(line, "TRX_END"):
+		err = ctx.readTransactionEnd(line)
+
+	case strings.HasPrefix(line, "TRX_LOG"):
+		err = ctx.readTransactionLog(line)
+
+	case strings.HasPrefix(line, "INST_S"):
+		err = ctx.readInstructionStart(line)
+
+	case strings.HasPrefix(line, "ACCT_CH"):
+		err = ctx.readAccountChange(line)
+
+	case strings.HasPrefix(line, "LAMP_CH"):
+		err = ctx.readLamportsChange(line)
+
+	default:
+		zlog.Warn("unknown log line", zap.String("line", line))
+	}
+	return
+}
+
 func (l *ConsoleReader) formatError(line string, err error) error {
 	chunks := strings.SplitN(line, " ", 2)
 	return fmt.Errorf("%s: %s (line %q)", chunks[0], err, line)
+}
+
+func (ctx *parseCtx) readBatchFile(line string) (err error) {
+	chunks := strings.Split(line, " ")
+	if len(chunks) != 2 {
+		return fmt.Errorf("read batch file: expected 2 fields, got %d", len(chunks))
+	}
+
+	// OPEN THE FILE, read EACH LINE and pass it back into `l.parseLine()`
+
+	return nil
 }
 
 const (
