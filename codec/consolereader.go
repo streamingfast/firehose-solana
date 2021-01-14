@@ -19,14 +19,32 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"go.uber.org/zap"
 )
+
+var MaxTokenSize uint64
+
+func init() {
+
+	MaxTokenSize = uint64(50 * 1024 * 1024)
+	if maxBufferSize := os.Getenv("MINDREADER_MAX_TOKEN_SIZE"); maxBufferSize != "" {
+		bs, err := strconv.ParseUint(maxBufferSize, 10, 64)
+		if err != nil {
+			zlog.Error("environment variable 'MINDREADER_MAX_TOKEN_SIZE' is set but invalid parse uint", zap.Error(err))
+		} else {
+			zlog.Info("setting max_token_size from environment variable MINDREADER_MAX_TOKEN_SIZE", zap.Uint64("max_token_size", bs))
+			MaxTokenSize = bs
+		}
+	}
+}
 
 var supportedVersions = []string{"1", "1"}
 
@@ -45,7 +63,8 @@ type ConsoleReader struct {
 	readBuffer chan string
 	done       chan interface{}
 
-	ctx *parseCtx
+	ctx          *parseCtx
+	maxTokenSize uint64
 }
 
 func NewConsoleReader(reader io.Reader, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
@@ -64,33 +83,41 @@ func NewConsoleReader(reader io.Reader, opts ...ConsoleReaderOption) (*ConsoleRe
 	return l, nil
 }
 
-func (l *ConsoleReader) setupScanner() {
-	maxTokenSize := uint64(50 * 1024 * 1024)
-	if maxBufferSize := os.Getenv("MINDREADER_MAX_TOKEN_SIZE"); maxBufferSize != "" {
-		bs, err := strconv.ParseUint(maxBufferSize, 10, 64)
+func newScanner(maxTokenSize uint64, reader io.Reader) *bufio.Scanner {
+	buf := make([]byte, maxTokenSize)
+	scanner := bufio.NewScanner(reader)
+	scanner.Buffer(buf, len(buf))
+	return scanner
+}
+
+func scan(scanner *bufio.Scanner, handleLine func(line string) error) error {
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, "DMLOG ") {
+			continue
+		}
+		err := handleLine(line)
 		if err != nil {
-			zlog.Error("environment variable 'MINDREADER_MAX_TOKEN_SIZE' is set but invalid parse uint", zap.Error(err))
-		} else {
-			zlog.Info("setting max_token_size from environment variable MINDREADER_MAX_TOKEN_SIZE", zap.Uint64("max_token_size", bs))
-			maxTokenSize = bs
+			return fmt.Errorf("scan: handle line: %w", err)
 		}
 	}
-	buf := make([]byte, maxTokenSize)
-	scanner := bufio.NewScanner(l.src)
-	scanner.Buffer(buf, len(buf))
-	l.scanner = scanner
+	return nil
+}
+
+func (l *ConsoleReader) setupScanner() {
+	l.scanner = newScanner(l.maxTokenSize, l.src)
 	l.readBuffer = make(chan string, 2000)
 
 	go func() {
-		for l.scanner.Scan() {
-			line := l.scanner.Text()
-			if !strings.HasPrefix(line, "DMLOG ") {
-				continue
-			}
+		err := scan(l.scanner, func(line string) error {
 			l.readBuffer <- line
+			return nil
+		})
+
+		if err == nil {
+			err = l.scanner.Err()
 		}
 
-		err := l.scanner.Err()
 		if err != nil && err != io.EOF {
 			zlog.Error("console read line scanner encountered an error", zap.Error(err))
 		}
@@ -113,6 +140,7 @@ type parseCtx struct {
 	banks             map[uint64]*bank
 	conversionOptions []conversionOption
 	slotBuffer        chan *pbcodec.Slot
+	batchWG           sync.WaitGroup
 }
 
 func newParseCtx() *parseCtx {
@@ -124,7 +152,6 @@ func newParseCtx() *parseCtx {
 
 func (l *ConsoleReader) Read() (out interface{}, err error) {
 	ctx := l.ctx
-
 	for {
 		select {
 		case s := <-ctx.slotBuffer:
@@ -132,27 +159,23 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 		default:
 		}
 
-		if traceEnabled {
-			zlog.Debug("start reading new line")
-		}
 		line, ok := <-l.readBuffer
 		if !ok {
 			if l.scanner.Err() == nil {
 				return nil, io.EOF
 			}
-
 			return nil, l.scanner.Err()
 		}
 
 		line = line[6:]
 
-		if err = l.parseLine(ctx, line); err != nil {
+		if err = parseLine(ctx, line); err != nil {
 			return nil, l.formatError(line, err)
 		}
 	}
 }
 
-func (l *ConsoleReader) parseLine(ctx *parseCtx, line string) (err error) {
+func parseLine(ctx *parseCtx, line string) (err error) {
 	// Order of conditions is based (approximately) on those that will appear more often
 	switch {
 	case strings.HasPrefix(line, "BATCH"):
@@ -203,12 +226,30 @@ func (l *ConsoleReader) formatError(line string, err error) error {
 }
 
 func (ctx *parseCtx) readBatchFile(line string) (err error) {
+
 	chunks := strings.Split(line, " ")
 	if len(chunks) != 2 {
 		return fmt.Errorf("read batch file: expected 2 fields, got %d", len(chunks))
 	}
 
-	// OPEN THE FILE, read EACH LINE and pass it back into `l.parseLine()`
+	file, err := os.Open(chunks[1])
+	if err != nil {
+		return fmt.Errorf(": %w", err)
+	}
+	defer file.Close()
+
+	dmlogScanner := newScanner(MaxTokenSize, file)
+	err = scan(dmlogScanner, func(line string) error {
+		return parseLine(ctx, line)
+	})
+
+	if err == nil {
+		err = dmlogScanner.Err()
+	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return nil
 }
