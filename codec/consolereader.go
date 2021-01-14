@@ -146,13 +146,13 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 
 		line = line[6:]
 
-		if err = l.parseLine(line); err != nil {
+		if err = l.parseLine(ctx, line); err != nil {
 			return nil, l.formatError(line, err)
 		}
 	}
 }
 
-func (l *ConsoleReader) parseLine(line string) (err error) {
+func (l *ConsoleReader) parseLine(ctx *parseCtx, line string) (err error) {
 	// Order of conditions is based (approximately) on those that will appear more often
 	switch {
 	case strings.HasPrefix(line, "BATCH"):
