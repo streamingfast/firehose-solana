@@ -15,16 +15,49 @@
 package codec
 
 import (
-	"encoding/hex"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
-	"strings"
+	"path"
 	"testing"
 
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"gotest.tools/assert"
+
+	"github.com/test-go/testify/require"
 )
+
+func Test_readFromFile(t *testing.T) {
+	filepath := "syncer_20210118"
+
+	cleanup, testdir, err := copyTestDir(filepath)
+	require.NoError(t, err)
+	defer func() {
+		cleanup()
+	}()
+
+	f, err := os.Open(fmt.Sprintf("./test_data/%s/syncer.dmlog", filepath))
+	require.NoError(t, err)
+
+	cr, err := NewConsoleReader(f, testdir)
+	require.NoError(t, err)
+
+	s, err := cr.Read()
+	require.NoError(t, err)
+
+	slot := s.(*pbcodec.Slot)
+
+	// TODO: add more testing
+	assert.Equal(t, "2ZwtXX1yPiDXDsxDLwsG9p6ke72scfkJbbG1h2K7xBqq", slot.Id)
+	assert.Equal(t, uint64(59), slot.Number)
+	assert.Equal(t, "Ho2qjE5jVTH6QmLaSFZSDwwtnKiHQ8dvGJkHbAiGtt3x", slot.PreviousId)
+	assert.Equal(t, uint32(1), slot.Version)
+	assert.Equal(t, uint32(1), slot.TransactionCount)
+	transaction := slot.Transactions[0]
+	assert.Equal(t, "4SKNsnqZzfbMmUBV3nSws1Fa1ZZ4Y2ipJjr9cztAsu9JHHZa8edcQXw51nxTpMVwG7isK2nPa9XgcMasKf9vP9ap", transaction.Id)
+	assert.Equal(t, 1, len(transaction.Instructions))
+}
 
 func Test_bank_sortTrx(t *testing.T) {
 	b := &bank{
@@ -424,129 +457,64 @@ func Test_readSlotBound(t *testing.T) {
 	}
 }
 
-func Test_SimpleSlotWithBound(t *testing.T) {
-	expectSlots := []*pbcodec.Slot{
-		{
-			Id:         "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
-			Number:     55295940,
-			PreviousId: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-			Version:    1,
-			Block: &pbcodec.Block{
-				Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
-				Number:               55295941,
-				Height:               51936825,
-				PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-				PreviousBlockSlot:    55295939,
-				GenesisUnixTimestamp: 1606487316,
-				ClockUnixTimestamp:   1606487316,
-			},
-		},
-		{
-			Id:         "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
-			Number:     55295941,
-			PreviousId: "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
-			Version:    1,
-			Block: &pbcodec.Block{
-				Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
-				Number:               55295941,
-				Height:               51936825,
-				PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-				PreviousBlockSlot:    55295939,
-				GenesisUnixTimestamp: 1606487316,
-				ClockUnixTimestamp:   1606487316,
-			},
-		},
-	}
-	cnt := `
-DMLOG SLOT_WORK 55295939 55295941 full 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 51936825 932 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0
-DMLOG SLOT_BOUND 55295940 5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae
-DMLOG SLOT_BOUND 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz
-DMLOG SLOT_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316
-`
-
-	cr, err := NewConsoleReader(strings.NewReader(cnt))
-	require.NoError(t, err)
-
-	for _, expectSlot := range expectSlots {
-		o, err := cr.Read()
-		if err != io.EOF {
-			require.NoError(t, err)
-		}
-		assert.Equal(t, expectSlot, o)
-	}
-}
-
-func Test_SimpleSlotFromFile(t *testing.T) {
-	t.Skip("till we got new dmlog")
-	f, err := os.Open("./test_data/simple.55295915.dmlog")
-	require.NoError(t, err)
-
-	cr, err := NewConsoleReader(f)
-	require.NoError(t, err)
-
-	s, err := cr.Read()
-	require.NoError(t, err)
-
-	slot := s.(*pbcodec.Slot)
-	// TODO: add more testing
-	assert.Equal(t, "HGRz1p4Eh4wvxWFq8Ki1Jj2uatx2XashQMZhhyMsqNtB", slot.Id)
-	assert.Equal(t, "BhGksZQu7eNNRYm9A2ZafCAgGTKwubN4FF68Y2VYq4ET", slot.PreviousId)
-	assert.Equal(t, uint64(55295915), slot.Num())
-	assert.Equal(t, uint32(465), slot.TransactionCount)
-	transaction := slot.Transactions[0]
-	assert.Equal(t, "22yEKbnjpxVJQY7RMuvJEYc5PoBVFEFYJCT6Ak2xrtNT7ppzePwneGGuzK2BNEdvdFsvUQHu1qnS688VccHPVKxJ", transaction.Id)
-	assert.Equal(t, 1, len(transaction.Instructions))
-
-	_, err = cr.Read()
-	assert.Equal(t, err, io.EOF)
-}
-
-func Test_VirtualSlotFromFile(t *testing.T) {
-	t.Skip("till we got new dmlog")
-	f, err := os.Open("./test_data/dual.55295925.dmlog")
-	require.NoError(t, err)
-
-	cr, err := NewConsoleReader(f)
-	require.NoError(t, err)
-
-	s, err := cr.Read()
-	require.NoError(t, err)
-
-	slot := s.(*pbcodec.Slot)
-	// TODO: add more testing
-	assert.Equal(t, "7DDxS2s6AUJLG66V1SmeQ1zhM8o7vaGAVZvr87TVdYDm", slot.Id)
-	assert.Equal(t, "72P3ABBhVV1zR25DxUdFAMmfXf8EMAoSBBZ3tnqJK9nh", slot.PreviousId)
-	assert.Equal(t, uint64(55295924), slot.Num())
-	assert.Equal(t, uint32(0), slot.TransactionCount)
-
-	s, err = cr.Read()
-	require.NoError(t, err)
-	slot = s.(*pbcodec.Slot)
-
-	// TODO: add more testing
-	assert.Equal(t, "2vyQNcg2ppuEEdV8M9tKouQMNi1iUmgqWTdtLiepyFhJ", slot.Id)
-	assert.Equal(t, "7DDxS2s6AUJLG66V1SmeQ1zhM8o7vaGAVZvr87TVdYDm", slot.PreviousId)
-	assert.Equal(t, uint64(55295925), slot.Num())
-	assert.Equal(t, uint32(538), slot.TransactionCount)
-	transaction := slot.Transactions[0]
-	assert.Equal(t, "2C2196XJ7seoTfVxa8ToTfPemdW5gzo9i8wyKPEfZ9zL9wxz1PKJRhqZDRNqNQcXKZqZPuGUtDk6MKi8sddZD6Nt", transaction.Id)
-	assert.Equal(t, 1, len(transaction.Instructions))
-
-	_, err = cr.Read()
-	assert.Equal(t, err, io.EOF)
-}
-
-func mustHexDecode(d string) []byte {
-	b, e := hex.DecodeString(d)
-	if e != nil {
-		panic(e)
-	}
-	return b
-}
-
 func trxSlice(trxIDs []string) (out []*pbcodec.Transaction) {
 	for _, trxID := range trxIDs {
 		out = append(out, &pbcodec.Transaction{Id: trxID})
 	}
 	return
+}
+
+func copyTestDir(test string) (func(), string, error) {
+	var err error
+	var fds []os.FileInfo
+
+	src := fmt.Sprintf("./test_data/%s/dmlogs", test)
+	dst, err := ioutil.TempDir("", test)
+	if err != nil {
+		return func() {}, "", fmt.Errorf("unable to create test directory: %w", err)
+	}
+
+	cleanup := func() {
+		os.RemoveAll(dst)
+	}
+
+	if fds, err = ioutil.ReadDir(src); err != nil {
+		return cleanup, "", fmt.Errorf("unable to read test data")
+	}
+
+	for _, fd := range fds {
+		srcfp := path.Join(src, fd.Name())
+		dstfp := path.Join(dst, fd.Name())
+		if !fd.IsDir() {
+			if err = copyFile(srcfp, dstfp); err != nil {
+				return cleanup, "", fmt.Errorf("unable to copy test file %q to tmp dir %q: %w", srcfp, dstfp, err)
+			}
+		}
+	}
+	return cleanup, dst, nil
+}
+
+func copyFile(src, dst string) error {
+	var err error
+	var srcfd *os.File
+	var dstfd *os.File
+	var srcinfo os.FileInfo
+
+	if srcfd, err = os.Open(src); err != nil {
+		return err
+	}
+	defer srcfd.Close()
+
+	if dstfd, err = os.Create(dst); err != nil {
+		return err
+	}
+	defer dstfd.Close()
+
+	if _, err = io.Copy(dstfd, srcfd); err != nil {
+		return err
+	}
+	if srcinfo, err = os.Stat(src); err != nil {
+		return err
+	}
+	return os.Chmod(dst, srcinfo.Mode())
 }
