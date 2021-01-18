@@ -144,7 +144,7 @@ type parseCtx struct {
 func newParseCtx() *parseCtx {
 	return &parseCtx{
 		banks:      map[uint64]*bank{},
-		slotBuffer: make(chan *pbcodec.Slot, 100),
+		slotBuffer: make(chan *pbcodec.Slot, 10000),
 	}
 }
 
@@ -500,9 +500,15 @@ func (ctx *parseCtx) readSlotEnd(line string) (err error) {
 	blk.Id = slotID
 	blk.GenesisUnixTimestamp = uint64(genesisTimestamp)
 	blk.ClockUnixTimestamp = uint64(clockTimestamp)
-	for _, slot := range ctx.activeBank.slots {
 
+	for _, slot := range ctx.activeBank.slots {
 		slot.Block = blk
+		for i, t := range slot.Transactions {
+			t.Index = uint64(i)
+			t.SlotHash = slot.Id
+			t.SlotNum = slot.Number
+		}
+
 		if len(ctx.slotBuffer) == cap(ctx.slotBuffer) {
 			return fmt.Errorf("unable to put slot in buffer reached buffer capacity size %q", cap(ctx.slotBuffer))
 		}
