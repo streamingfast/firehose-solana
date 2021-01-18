@@ -9,7 +9,10 @@ import (
 )
 
 func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequest) (*pbserumhist.FillsResponse, error) {
-	trader := solana.PublicKeyFromBytes(request.Trader)
+	trader, err := solana.PublicKeyFromBase58(request.Trader)
+	if err != nil {
+		return nil, fmt.Errorf("invalid trader addresss:%s : %w", request.Trader, err)
+	}
 
 	if len(request.Market) == 0 {
 		fills, err := s.manager.GetFillsByTrader(ctx, trader)
@@ -21,7 +24,10 @@ func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequ
 		}, nil
 	}
 
-	market := solana.PublicKeyFromBytes(request.Market)
+	market, err := solana.PublicKeyFromBase58(request.Market)
+	if err != nil {
+		return nil, fmt.Errorf("invalid Market addresss:%s : %w", request.Trader, err)
+	}
 	f, err := s.manager.GetFillsByTraderAndMarket(ctx, trader, market)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve fills: %w", err)

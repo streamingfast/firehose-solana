@@ -260,8 +260,8 @@ func generateFillKeys(slotNumber uint64, market solana.PublicKey, old *serum.Eve
 					binary.LittleEndian.PutUint64(buf, e.OrderID.Lo)
 					binary.LittleEndian.PutUint64(buf[(size/2):], e.OrderID.Hi)
 					fill := &pbserumhist.Fill{
-						Trader:            e.Owner[:],
-						OrderId:           buf,
+						Trader:            e.Owner.String(),
+						OrderId:           hex.EncodeToString(buf),
 						Side:              pbserumhist.Side(e.Side()),
 						Maker:             false,
 						NativeQtyPaid:     e.NativeQtyPaid,

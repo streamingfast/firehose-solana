@@ -1,7 +1,11 @@
 package keyer
 
 import (
+	"encoding/hex"
+	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 
@@ -171,4 +175,12 @@ func TestDecodeFillsByMarketPubkey(t *testing.T) {
 	})
 	assert.Equal(t, orderSeqNum, uint64(3))
 	assert.Equal(t, slotNum, uint64(2))
+}
+
+func TestHexToBase58String(t *testing.T) {
+	hx := "f4043a717d41ee6196ffff1c74e7f663f92cd690e5e5624c084b5fc3c464b5ea"
+	data, err := hex.DecodeString(hx)
+	require.NoError(t, err)
+	pk := solana.PublicKeyFromBytes(data)
+	fmt.Println(pk)
 }

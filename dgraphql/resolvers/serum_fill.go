@@ -1,21 +1,19 @@
 package resolvers
 
 import (
-	"encoding/hex"
 	"strings"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	gtype "github.com/dfuse-io/dgraphql/types"
-	"github.com/dfuse-io/solana-go"
 )
 
 type SerumFill struct {
 	*pbserumhist.Fill
 }
 
-func (s SerumFill) OrderID() string { return hex.EncodeToString(s.OrderId) }
+func (s SerumFill) OrderID() string { return s.OrderId }
 func (s SerumFill) Trader() string {
-	return solana.PublicKeyFromBytes(s.Fill.Trader).String()
+	return s.Fill.Trader
 }
 func (s SerumFill) Side() string           { return s.Fill.Side.String() }
 func (s SerumFill) Market() *SerumMarket   { return nil }

@@ -2,6 +2,7 @@ package serumhist
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"testing"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
@@ -279,8 +280,8 @@ func Test_generateFillKeys(t *testing.T) {
 
 					0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
 				}, Value: mustProto(&pbserumhist.Fill{
-					Trader:            pubkeyToSlice("HHrRXVr6nDDbi3oupMh24bXdzdm6nNAZ9yG3ZA4zBQCV"),
-					OrderId:           uint128ToByte(bin.Uint128{0xfffffffffffff93b, 1720}),
+					Trader:            "HHrRXVr6nDDbi3oupMh24bXdzdm6nNAZ9yG3ZA4zBQCV",
+					OrderId:           hex.EncodeToString(uint128ToByte(bin.Uint128{Lo: 0xfffffffffffff93b, Hi: 1720})),
 					Side:              0,
 					Maker:             false,
 					NativeQtyPaid:     4,

@@ -30,9 +30,9 @@ func (r *Root) QuerySerumFillHistory(ctx context.Context, in *SerumFillHistoryRe
 		market = &marketKey
 	}
 
-	request := &pbserumhist.GetFillsRequest{Trader: trader[:]}
+	request := &pbserumhist.GetFillsRequest{Trader: trader.String()}
 	if market != nil {
-		request.Market = market[:]
+		request.Market = market.String()
 	}
 
 	getCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
