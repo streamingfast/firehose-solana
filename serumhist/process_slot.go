@@ -293,6 +293,7 @@ func generateFillKeys(slotNumber uint64, market solana.PublicKey, old *serum.Eve
 				zlog.Debug("diff event remove")
 				// this is a request that for either canceled or fully filled
 			default:
+				zlog.Debug("diff event default")
 			}
 		}
 	}))
