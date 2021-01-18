@@ -176,7 +176,7 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 func parseLine(ctx *parseCtx, line string) (err error) {
 	// Order of conditions is based (approximately) on those that will appear more often
 	switch {
-	case strings.HasPrefix(line, "BATCH"):
+	case strings.HasPrefix(line, "BATCH_FILE"):
 		err = ctx.readBatchFile(line)
 
 	case strings.HasPrefix(line, "SLOT_WORK"):
