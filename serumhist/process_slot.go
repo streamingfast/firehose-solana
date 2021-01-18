@@ -247,14 +247,18 @@ func kvsForMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchO
 }
 
 func generateFillKeys(slotNumber uint64, market solana.PublicKey, old *serum.EventQueue, new *serum.EventQueue) (out []*kvdb.KV) {
+	zlog.Debug("generate fill keys")
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
 			switch event.Kind {
 			case diff.KindChanged:
+				zlog.Debug("diff event change")
 				// this is probably a partial fill we don't care about this right now
 			case diff.KindAdded:
+				zlog.Debug("diff event added")
 				if e.Flag.IsFill() {
+					zlog.Debug("it is a fill")
 					size := 16
 					buf := make([]byte, size)
 					binary.LittleEndian.PutUint64(buf, e.OrderID.Lo)
@@ -286,6 +290,7 @@ func generateFillKeys(slotNumber uint64, market solana.PublicKey, old *serum.Eve
 					})
 				}
 			case diff.KindRemoved:
+				zlog.Debug("diff event remove")
 				// this is a request that for either canceled or fully filled
 			default:
 			}

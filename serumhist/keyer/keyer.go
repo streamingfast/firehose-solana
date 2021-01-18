@@ -17,7 +17,6 @@ const (
 
 // orders:[market]:[order_seq_num]:[slot_num] => FillData(side)
 func EncodeFillData(market solana.PublicKey, orderSeqNum uint64, slotNum uint64) []byte {
-
 	key := make([]byte, 1+32+8+8)
 
 	key[0] = PrefixFillData
@@ -35,7 +34,6 @@ func DecodeFillData(key []byte) (market solana.PublicKey, orderSeqNum uint64, sl
 }
 
 func EncodeGetFillData(market solana.PublicKey, orderSeqNum uint64) []byte {
-
 	key := make([]byte, 1+32+8)
 
 	key[0] = PrefixFillData
