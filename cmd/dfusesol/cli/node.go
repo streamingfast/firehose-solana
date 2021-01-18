@@ -115,6 +115,7 @@ func RegisterSolanaNodeApp(kind string) {
 				cmd.Flags().Duration(app+"-merge-threshold-block-age", time.Duration(math.MaxInt64), "When processing blocks with a blocktime older than this threshold, they will be automatically merged")
 				cmd.Flags().String(app+"-oneblock-suffix", "", "If non-empty, the oneblock files will be appended with that suffix, so that mindreaders can each write their file for a given block instead of competing for writes.")
 				cmd.Flags().Bool(app+"-debug-deep-mind", false, "[DEV] Prints deep mind instrumentation logs to standard output, should be use for debugging purposes only")
+				cmd.Flags().String(app+"-deepmind-batch-files-path", "/tmp/", "Path where deepmind enabled nodes will write the dmlog batch files, and where the console log will read /tmp/")
 				cmd.Flags().Bool(app+"-merge-and-store-directly", false, "[BATCH] When enabled, do not write oneblock files, sidestep the merger and write the merged 100-blocks logs directly to --common-blocks-store-url")
 				cmd.Flags().Uint(app+"-start-block-num", 0, "[BATCH] Blocks that were produced with smaller block number then the given block num are skipped")
 				cmd.Flags().Uint(app+"-stop-block-num", 0, "[BATCH] Shutdown when we the following 'stop-block-num' has been reached, inclusively.")
@@ -358,7 +359,7 @@ func RegisterSolanaNodeApp(kind string) {
 				oneBlockStoreURL := mustReplaceDataDir(dfuseDataDir, viper.GetString("common-oneblock-store-url"))
 				mergedBlocksStoreURL := mustReplaceDataDir(dfuseDataDir, viper.GetString("common-blocks-store-url"))
 				consoleReaderFactory := func(reader io.Reader) (mindreader.ConsolerReader, error) {
-					return codec.NewConsoleReader(reader)
+					return codec.NewConsoleReader(reader, viper.GetString(app+"-deepmind-batch-files-path"))
 				}
 
 				consoleReaderBlockTransformer := func(obj interface{}) (*bstream.Block, error) {

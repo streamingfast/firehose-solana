@@ -23,8 +23,7 @@ import (
 	"testing"
 
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"gotest.tools/assert"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/test-go/testify/require"
 )
 
