@@ -212,11 +212,18 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 		return fmt.Errorf("read batch file: expected 2 fields, got %d", len(chunks))
 	}
 
-	file, err := os.Open(chunks[1])
+	filePath := chunks[1]
+	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf(": %w", err)
 	}
-	defer file.Close()
+
+	defer func() {
+		_ = file.Close()
+		if err := os.Remove(filePath); err != nil {
+			zlog.Warn("failed to delete file", zap.String("file_path", filePath))
+		}
+	}()
 
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
