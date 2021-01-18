@@ -20,6 +20,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -33,7 +34,6 @@ import (
 var MaxTokenSize uint64
 
 func init() {
-
 	MaxTokenSize = uint64(50 * 1024 * 1024)
 	if maxBufferSize := os.Getenv("MINDREADER_MAX_TOKEN_SIZE"); maxBufferSize != "" {
 		bs, err := strconv.ParseUint(maxBufferSize, 10, 64)
@@ -57,19 +57,20 @@ type ConsoleReaderOption interface {
 // ConsoleReader is what reads the `nodeos` output directly. It builds
 // up some LogEntry objects. See `LogReader to read those entries .
 type ConsoleReader struct {
-	src        io.Reader
-	scanner    *bufio.Scanner
-	close      func()
-	readBuffer chan string
-	done       chan interface{}
-	ctx        *parseCtx
+	src            io.Reader
+	scanner        *bufio.Scanner
+	close          func()
+	readBuffer     chan string
+	done           chan interface{}
+	ctx            *parseCtx
+	batchFilesPath string
 }
 
-func NewConsoleReader(reader io.Reader, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
+func NewConsoleReader(reader io.Reader, batchFilesPath string, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
 	l := &ConsoleReader{
 		src:   reader,
 		close: func() {},
-		ctx:   newParseCtx(),
+		ctx:   newParseCtx(batchFilesPath),
 		done:  make(chan interface{}),
 	}
 
@@ -139,12 +140,14 @@ type parseCtx struct {
 	conversionOptions []conversionOption
 	slotBuffer        chan *pbcodec.Slot
 	batchWG           sync.WaitGroup
+	batchFilesPath    string
 }
 
-func newParseCtx() *parseCtx {
+func newParseCtx(batchFilesPath string) *parseCtx {
 	return &parseCtx{
-		banks:      map[uint64]*bank{},
-		slotBuffer: make(chan *pbcodec.Slot, 10000),
+		banks:          map[uint64]*bank{},
+		slotBuffer:     make(chan *pbcodec.Slot, 10000),
+		batchFilesPath: batchFilesPath,
 	}
 }
 
@@ -212,7 +215,8 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 		return fmt.Errorf("read batch file: expected 2 fields, got %d", len(chunks))
 	}
 
-	filePath := chunks[1]
+	filename := chunks[1]
+	filePath := filepath.Join(ctx.batchFilesPath, filename)
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf(": %w", err)
