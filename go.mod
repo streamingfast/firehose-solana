@@ -6,7 +6,7 @@ require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/dfuse-io/binary v0.0.0-20201216050955-b339f1d2cdbe
-	github.com/dfuse-io/bstream v0.0.2-0.20201211183633-b20d54adfd3d
+	github.com/dfuse-io/bstream v0.0.2-0.20210118170643-057893cea2ef
 	github.com/dfuse-io/dauth v0.0.0-20200529171443-21c0e2d262c2
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
@@ -18,8 +18,10 @@ require (
 	github.com/dfuse-io/jsonpb v0.0.0-20200406211248-c5cf83f0e0c0
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
 	github.com/dfuse-io/logging v0.0.0-20201125153217-f29c382faa42
+	github.com/dfuse-io/merger v0.0.3-0.20210104194844-46a615b93bef
 	github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37
-	github.com/dfuse-io/pbgo v0.0.6-0.20201021183128-ec7a7f2c6bff
+	github.com/dfuse-io/pbgo v0.0.6-0.20210108215028-712d6889e94a
+	github.com/dfuse-io/relayer v0.0.2-0.20201029161257-ec97edca50d7
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
 	github.com/dfuse-io/solana-go v0.2.1-0.20201221165115-cf5d0cb9653e
 	github.com/dustin/go-humanize v1.0.0

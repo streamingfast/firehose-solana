@@ -238,6 +238,9 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 
 	ctx.activeBank.batchAggregator = append(ctx.activeBank.batchAggregator, batch.Transactions)
 
+	// TODO: do the fixups, `depth` setting, addition of the `Slot` and other data
+	// that is not written by the batch writer.
+
 	return nil
 }
 
