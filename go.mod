@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
-	github.com/dfuse-io/binary v0.0.0-20201216050955-b339f1d2cdbe
+	github.com/dfuse-io/binary v0.0.0-20210119182726-f245aa830ba8
 	github.com/dfuse-io/bstream v0.0.2-0.20210118170643-057893cea2ef
 	github.com/dfuse-io/dauth v0.0.0-20200529171443-21c0e2d262c2
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
@@ -23,7 +23,7 @@ require (
 	github.com/dfuse-io/pbgo v0.0.6-0.20210108215028-712d6889e94a
 	github.com/dfuse-io/relayer v0.0.2-0.20201029161257-ec97edca50d7
 	github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f
-	github.com/dfuse-io/solana-go v0.2.1-0.20210119135317-040197a63121
+	github.com/dfuse-io/solana-go v0.2.1-0.20210119190242-57bebed0dae0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
