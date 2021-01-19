@@ -256,7 +256,7 @@ func generateFillKeyValue(slotNumber uint64, market solana.PublicKey, old *serum
 				zlog.Debug("diff event change")
 				// this is probably a partial fill we don't care about this right now
 			case diff.KindAdded:
-				zlog.Debug("diff event added", zap.Bool("flag_fill", e.Flag.IsFill()), zap.Uint8("flag", uint8(e.Flag)))
+				zlog.Debug("diff event added", zap.Stringer("flag_string", e.Flag), zap.Uint8("flag", uint8(e.Flag)))
 				if e.Flag.IsFill() {
 					zlog.Debug("it is a fill")
 					size := 16
