@@ -294,7 +294,7 @@ func Test_generateFillKeys(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			keyValues := generateFillKeys(test.slotNumber, test.market, test.old, test.new)
+			keyValues := generateFillKeyValue(test.slotNumber, test.market, test.old, test.new)
 			assert.Equal(t, test.expect, keyValues)
 		})
 	}

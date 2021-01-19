@@ -243,10 +243,10 @@ func kvsForMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchO
 		return nil, fmt.Errorf("unable to decode event queue change: %w", err)
 	}
 
-	return generateFillKeys(slotNumber, inst.Accounts.Market.PublicKey, old, new), nil
+	return generateFillKeyValue(slotNumber, inst.Accounts.Market.PublicKey, old, new), nil
 }
 
-func generateFillKeys(slotNumber uint64, market solana.PublicKey, old *serum.EventQueue, new *serum.EventQueue) (out []*kvdb.KV) {
+func generateFillKeyValue(slotNumber uint64, market solana.PublicKey, old *serum.EventQueue, new *serum.EventQueue) (out []*kvdb.KV) {
 	zlog.Debug("generate fill keys")
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
@@ -256,7 +256,7 @@ func generateFillKeys(slotNumber uint64, market solana.PublicKey, old *serum.Eve
 				zlog.Debug("diff event change")
 				// this is probably a partial fill we don't care about this right now
 			case diff.KindAdded:
-				zlog.Debug("diff event added")
+				zlog.Debug("diff event added", zap.Bool("flag_fill", e.Flag.IsFill()), zap.Uint8("flag", uint8(e.Flag)))
 				if e.Flag.IsFill() {
 					zlog.Debug("it is a fill")
 					size := 16
