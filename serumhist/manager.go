@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/solana-go"
 	"github.com/golang/protobuf/proto"
+	"go.uber.org/zap"
 )
 
 type Manager struct {

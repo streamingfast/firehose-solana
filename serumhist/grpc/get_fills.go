@@ -12,10 +12,10 @@ import (
 
 func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequest) (*pbserumhist.FillsResponse, error) {
 	trader, err := solana.PublicKeyFromBase58(request.Trader)
-	zlog.Debug("get fills", zap.Stringer("trader_address", trader))
 	if err != nil {
 		return nil, fmt.Errorf("invalid trader addresss:%s : %w", request.Trader, err)
 	}
+	zlog.Debug("get fills", zap.Stringer("trader_address", trader))
 
 	if len(request.Market) == 0 {
 		fills, err := s.manager.GetFillsByTrader(ctx, trader)
