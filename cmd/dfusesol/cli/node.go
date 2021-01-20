@@ -519,7 +519,7 @@ func setupNodeSysctl(logger *zap.Logger) error {
 	}
 
 	if val < 500000 {
-		return fmt.Errorf("vm.max_map_count too low, set it to at least 500000")
+		return fmt.Errorf("vm.max_map_count too low, set it to at least 500000 (sysctl -w vm.max_map_count=500000)")
 	}
 
 	return nil
