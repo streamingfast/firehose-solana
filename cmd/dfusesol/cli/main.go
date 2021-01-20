@@ -19,13 +19,17 @@ import (
 	"sort"
 	"strings"
 
+	// Needs to be in this file which is the main entry of wrapper binary
+	_ "github.com/dfuse-io/dauth/authenticator/null"   // auth null plugin
+	_ "github.com/dfuse-io/dauth/authenticator/secret" // auth secret/hard-coded plugin
+	_ "github.com/dfuse-io/dauth/ratelimiter/null"     // ratelimiter plugin
+
 	"github.com/dfuse-io/derr"
 	"github.com/dfuse-io/dlauncher/flags"
 	launcher "github.com/dfuse-io/dlauncher/launcher"
 	"github.com/spf13/cobra"
 )
 
-// Root of the `dfusesol` command
 var RootCmd = &cobra.Command{Use: "dfusesol", Short: "dfuse for Solana"}
 var allFlags = make(map[string]bool) // used as global because of async access to cobra init functions
 
