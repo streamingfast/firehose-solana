@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"math"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,6 +25,7 @@ import (
 	"github.com/dfuse-io/node-manager/operator"
 	"github.com/dfuse-io/node-manager/profiler"
 	solana "github.com/dfuse-io/solana-go"
+	"github.com/lorenzosaino/go-sysctl"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -127,6 +130,10 @@ func RegisterSolanaNodeApp(kind string) {
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
+			if err := setupNodeSysctl(appLogger); err != nil {
+				return nil, fmt.Errorf("systcl configuration for %s failed: %w", app, err)
+			}
+
 			dfuseDataDir := runtime.AbsDataDir
 
 			dataDir := mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"-data-dir"))
@@ -493,4 +500,27 @@ func hasExtraArgument(arguments []string, flag string) bool {
 	}
 
 	return false
+}
+
+func setupNodeSysctl(logger *zap.Logger) error {
+	if runtime.GOOS == "darwin" {
+		logger.Debug("skipping sysctl vm.max_map_count checks for Darwin OSs (Mac OS X)")
+		return nil
+	}
+
+	out, err := sysctl.Get("vm.max_map_count")
+	if err != nil {
+		return fmt.Errorf("can't retrieve value for vm.max_map_count sysctl: %w", err)
+	}
+
+	val, err := strconv.Atoi(out)
+	if err != nil {
+		return fmt.Errorf("can't convert value %q of vm.max_map_count: %w", out, err)
+	}
+
+	if val < 500000 {
+		return fmt.Errorf("vm.max_map_count too low, set it to at least 500000")
+	}
+
+	return nil
 }

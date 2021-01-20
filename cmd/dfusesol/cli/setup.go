@@ -18,13 +18,10 @@ import (
 	"fmt"
 	_ "net/http/pprof"
 	"os"
-	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/dfuse-io/dgrpc"
 	"github.com/dfuse-io/dlauncher/launcher"
-	"github.com/lorenzosaino/go-sysctl"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -87,7 +84,7 @@ func setupCmd(cmd *cobra.Command) error {
 	launcher.SetupTracing()
 	launcher.SetupAnalyticsMetrics(viper.GetString("global-metrics-listen-addr"), viper.GetString("global-pprof-listen-addr"))
 
-	if err := setupSysctl(); err != nil {
+	if err := launcher.SetMaxOpenFilesLimit(1000000, 24576); err != nil {
 		return fmt.Errorf("sysctl setup: %w", err)
 	}
 
@@ -159,25 +156,4 @@ func fileExists(file string) (bool, error) {
 	}
 
 	return !stat.IsDir(), nil
-}
-
-func setupSysctl() error {
-
-	if runtime.GOOS != "darwin" {
-		out, err := sysctl.Get("vm.max_map_count")
-		if err != nil {
-			return fmt.Errorf("can't retrieve value for vm.max_map_count sysctl: %w", err)
-		}
-
-		val, err := strconv.Atoi(out)
-		if err != nil {
-			return fmt.Errorf("can't convert value %q of vm.max_map_count: %w", out, err)
-		}
-
-		if val < 500000 {
-			return fmt.Errorf("vm.max_map_count too low, set it to at least 500000")
-		}
-	}
-
-	return launcher.SetMaxOpenFilesLimit(1000000, 24576)
 }

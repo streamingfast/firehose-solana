@@ -237,6 +237,8 @@ github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70 h1:CuJS05R9jmNlUK
 github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70/go.mod h1:EoK/8RFbMEteaCaz89uessDTnCWjbbcr+DXcBh4el5o=
 github.com/dfuse-io/merger v0.0.3-0.20210104194844-46a615b93bef h1:azUMFNcEZYl2Scpgz+edFRaVra5t7ZzX/lgo7/WvB0E=
 github.com/dfuse-io/merger v0.0.3-0.20210104194844-46a615b93bef/go.mod h1:Dp769aARRjBQ9Ur3K5Rl8cQmB29XWueudFa9JOH2f8Q=
+github.com/dfuse-io/merger v0.0.3-0.20210120192023-4faaf201eee9 h1:nREDyLUZgAl8zm11t57Z+9/GxdGhcJdpl2pFSTC5Fl8=
+github.com/dfuse-io/merger v0.0.3-0.20210120192023-4faaf201eee9/go.mod h1:Dp769aARRjBQ9Ur3K5Rl8cQmB29XWueudFa9JOH2f8Q=
 github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37 h1:zHI48+k2WPt4QZOwWISiMaZlyLnbl4n9bUNGkm4fCaM=
 github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37/go.mod h1:41xyeLWKtU90QH1uBvfDWAJzZbP+gmDmrxR3Dh5n+gU=
 github.com/dfuse-io/opaque v0.0.0-20200407012705-75c4ca372d71 h1:4sHaW1PpyHN2akafVagucu/t+4RqCJQ3WEuowxhdudk=
