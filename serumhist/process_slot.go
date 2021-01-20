@@ -250,6 +250,7 @@ func debugHelper(accountChanges []*pbcodec.AccountChange) {
 	zlog.Debug("attempting to process event query account change",
 		zap.Int("account_change_count", len(accountChanges)),
 	)
+
 	for _, accChange := range accountChanges {
 		zlog.Debug("account change",
 			zap.String("account_key", accChange.Pubkey),

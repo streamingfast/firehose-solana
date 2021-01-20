@@ -3,6 +3,7 @@ package keyer
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/dfuse-io/solana-go"
 )
@@ -35,7 +36,19 @@ func EncodeFillData(market solana.PublicKey, orderSeqNum uint64, slotNum uint64)
 	return key
 }
 
+func GetPrefixFillData(market solana.PublicKey, orderSeqNum uint64) []byte {
+	key := make([]byte, 1+32+8)
+
+	key[0] = PrefixFillData
+	copy(key[1:], market[:])
+	binary.BigEndian.PutUint64(key[33:], orderSeqNum)
+	return key
+}
+
 func DecodeFillData(key Key) (market solana.PublicKey, orderSeqNum uint64, slotNum uint64) {
+	if key[0] != PrefixFillData {
+		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillData))
+	}
 	copy(market[:], key[1:])
 	orderSeqNum = binary.BigEndian.Uint64(key[33:])
 	slotNum = binary.BigEndian.Uint64(key[41:])
@@ -66,6 +79,9 @@ func EncodeOrdersPrefixByPubkey(trader solana.PublicKey) Prefix {
 }
 
 func DecodeOrdersByPubkey(key Key) (trader, market solana.PublicKey, orderSeqNum uint64, slotNum uint64) {
+	if key[0] != PrefixOrdersByPubkey {
+		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixOrdersByPubkey))
+	}
 	copy(trader[:], key[1:])
 	slotNum = ^binary.BigEndian.Uint64(key[33:])
 	copy(market[:], key[41:])
@@ -99,6 +115,9 @@ func EncodeOrdersPrefixByMarketPubkey(trader, market solana.PublicKey) Prefix {
 }
 
 func DecodeOrdersByMarketPubkey(key Key) (trader, market solana.PublicKey, orderSeqNum uint64, slotNum uint64) {
+	if key[0] != PrefixOrdersByMarketPubkey {
+		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixOrdersByMarketPubkey))
+	}
 	copy(market[:], key[1:])
 	copy(trader[:], key[33:])
 	slotNum = ^binary.BigEndian.Uint64(key[65:])

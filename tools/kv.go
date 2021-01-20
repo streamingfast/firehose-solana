@@ -8,7 +8,6 @@ import (
 	"os"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-
 	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	"github.com/dfuse-io/jsonpb"
 	"github.com/dfuse-io/kvdb/store"
@@ -141,8 +140,7 @@ func printKVEntity(key, val []byte, asHex bool, indented bool) (err error) {
 	row := map[string]interface{}{
 		"key": hex.EncodeToString(key),
 	}
-
-	row["data"], err = decodeKey(key[0], val)
+	row["data"], err = decodeValue(key[0], val)
 
 	cnt, err := json.Marshal(row)
 	if err != nil {
@@ -152,7 +150,7 @@ func printKVEntity(key, val []byte, asHex bool, indented bool) (err error) {
 	return nil
 }
 
-func decodeKey(keyPrefix byte, val []byte) (out interface{}, err error) {
+func decodeValue(keyPrefix byte, val []byte) (out interface{}, err error) {
 	pbmarsh := jsonpb.Marshaler{
 		EnumsAsInts:  false,
 		EmitDefaults: true,

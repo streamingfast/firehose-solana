@@ -5,16 +5,13 @@ import (
 	"encoding/hex"
 	"testing"
 
+	bin "github.com/dfuse-io/binary"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/gogo/protobuf/proto"
-
 	kvdb "github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/solana-go"
-
-	"github.com/test-go/testify/assert"
-
-	bin "github.com/dfuse-io/binary"
 	"github.com/dfuse-io/solana-go/programs/serum"
+	"github.com/test-go/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func Test_extractOrderSeqNum(t *testing.T) {

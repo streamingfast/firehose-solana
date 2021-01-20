@@ -27,7 +27,6 @@ require (
 	github.com/dfuse-io/shutter v1.4.1
 	github.com/dfuse-io/solana-go v0.2.1-0.20210119190242-57bebed0dae0
 	github.com/dustin/go-humanize v1.0.0
-	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
