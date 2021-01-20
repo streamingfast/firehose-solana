@@ -241,7 +241,7 @@ func debugHelper(accountChanges []*pbcodec.AccountChange) {
 	}
 }
 func kvsForMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	debugHelper(accountChanges)
+	//debugHelper(accountChanges)
 	eventQueueAccountChange, err := filterAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
 		zlog.Debug("checking account change flags", zap.Stringer("flag", flag))
 		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
@@ -251,11 +251,11 @@ func kvsForMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchO
 		return nil, fmt.Errorf("unable to Event Queue Account: %w", err)
 	}
 
-	zlog.Debug("processing event queue account change",
-		zap.String("account_key", eventQueueAccountChange.Pubkey),
-		zap.String("prev_data", hex.EncodeToString(eventQueueAccountChange.NewData)),
-		zap.String("current_data", hex.EncodeToString(eventQueueAccountChange.PrevData)),
-	)
+	//zlog.Debug("processing event queue account change",
+	//	zap.String("account_key", eventQueueAccountChange.Pubkey),
+	//	zap.String("prev_data", hex.EncodeToString(eventQueueAccountChange.NewData)),
+	//	zap.String("current_data", hex.EncodeToString(eventQueueAccountChange.PrevData)),
+	//)
 
 	old, new, err := decodeEventQueue(eventQueueAccountChange)
 	if err != nil {
