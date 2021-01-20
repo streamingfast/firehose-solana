@@ -42,15 +42,6 @@ func DecodeFillData(key Key) (market solana.PublicKey, orderSeqNum uint64, slotN
 	return
 }
 
-func EncodeGetFillData(market solana.PublicKey, orderSeqNum uint64) Key {
-	key := make([]byte, 1+32+8)
-
-	key[0] = PrefixFillData
-	copy(key[1:], market[:])
-	binary.BigEndian.PutUint64(key[33:], orderSeqNum)
-	return key
-}
-
 // order_pubkey:[pubkey]:[rev_slot_num]:[market]:[rev_order_seq_num] => nil
 func EncodeOrdersByPubkey(trader, market solana.PublicKey, orderSeqNum uint64, slotNum uint64) Key {
 	key := make([]byte, 1+32+32+8+8)

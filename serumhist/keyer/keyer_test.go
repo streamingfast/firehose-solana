@@ -185,3 +185,10 @@ func TestHexToBase58String(t *testing.T) {
 	pk := solana.PublicKeyFromBytes(data)
 	fmt.Println(pk)
 }
+
+func TestDecodeFillData_FOO(t *testing.T) {
+	keyData, err := hex.DecodeString("01c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf40000000000531e3b0000000003a88707")
+	require.NoError(t, err)
+	market, order, slot := DecodeFillData(keyData)
+	fmt.Println("market:", market, " order:", order, " slot:", slot)
+}

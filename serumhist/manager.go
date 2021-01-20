@@ -43,6 +43,7 @@ func (m *Manager) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, li
 		k := orderIterator.Item().Key
 		_, market, orderSeqNum, slotNum := keyer.DecodeOrdersByMarketPubkey(k)
 		fk := keyer.EncodeFillData(market, orderSeqNum, slotNum)
+		zlog.Debug("order key", zap.Stringer("key", fk))
 		fillKeys = append(fillKeys, fk)
 	}
 
