@@ -188,10 +188,10 @@ func TestHexToBase58String(t *testing.T) {
 
 func TestDecodeOrdersByMarketPubkey(t *testing.T) {
 
-	k, err := hex.DecodeString("029e15d3e14fc95b91c2341a900b5be817ef0174dfaeaa6202f8444827694e2a5afffffffffc5500f9c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf400000000005ef563")
+	k, err := hex.DecodeString("029e15d3e14fc95b91c2341a900b5be817ef0174dfaeaa6202f8444827694e2a5afffffffffc576667c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf400000000005d8343")
 	require.NoError(t, err)
 
-	trader, market, order, slot := DecodeOrdersByMarketPubkey(k)
+	trader, market, order, slot := DecodeOrdersByPubkey(k)
 	fmt.Println("trader:", trader, " market:", market, " order:", order, " slot:", slot)
 
 }
@@ -205,15 +205,19 @@ func TestEncodeOrdersByPubkey(t *testing.T) {
 
 func TestDecodeFillData_FOO(t *testing.T) {
 
-	key := EncodeFillData(solana.MustPublicKeyFromBase58("2mMXswJ7yyLwTHfv9YeZoKoEC8yeKxfFT8Qxx1g5cGo5"), 100, 1000)
-	market, order, slot := DecodeFillData(key)
+	//key := EncodeFillData(solana.MustPublicKeyFromBase58("2mMXswJ7yyLwTHfv9YeZoKoEC8yeKxfFT8Qxx1g5cGo5"), 100, 1000)
+	//market, order, slot := DecodeFillData(key)
+	//
+	//assert.Equal(t, solana.MustPublicKeyFromBase58("2mMXswJ7yyLwTHfv9YeZoKoEC8yeKxfFT8Qxx1g5cGo5"), market)
+	//assert.Equal(t, uint64(100), order)
+	//assert.Equal(t, uint64(1000), slot)
 
-	assert.Equal(t, solana.MustPublicKeyFromBase58("2mMXswJ7yyLwTHfv9YeZoKoEC8yeKxfFT8Qxx1g5cGo5"), market)
-	assert.Equal(t, uint64(100), order)
-	assert.Equal(t, uint64(1000), slot)
+	key := EncodeFillData(solana.MustPublicKeyFromBase58("EUqojwWA2rd19FZrzeBncJsm38Jm1hEhE3zsmX3bRc2o"), 18446744073703424000, 61381014)
+	require.Equal(t, "01c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf4ffffffffffa27cbc0000000003a89996", hex.EncodeToString(key))
 
-	//keyData, err := hex.DecodeString("011a387564848c21834eb4cdde0db9e23ec9a42fba5e5ee8c017c2bebe65defd24ffffffffff8be22b5146a68432c1030b")
-	//require.NoError(t, err)
-	//market, order, slot := DecodeFillData(keyData)
-	//fmt.Println("market:", market, " order:", order, " slot:", slot)
+	keyData, err := hex.DecodeString("01c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf4ffffffffffa27cbc0000000003a89996")
+	//keyData, err := hex.DecodeString("01c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf4ffffffffffa27cbc0000000003a89998")
+	require.NoError(t, err)
+	market, order, slot := DecodeFillData(keyData)
+	fmt.Println("market:", market, " order:", order, " slot:", slot)
 }

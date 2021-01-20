@@ -78,6 +78,7 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 					return fmt.Errorf("process serum slot: new order v1: set account metas: %w", err)
 				}
 				zlog.Info("processing new order v1", zap.Uint64("slot_number", slot.Number), zap.String("trx_id", transaction.Id), zap.Uint32("instruction ordinal", instruction.Ordinal))
+				//kvs, err = kvsForNewOrderRequestQueue(slot.Number, newOrder.Side, newOrder.Accounts.Owner.PublicKey, newOrder.Accounts.Market.PublicKey, instruction.AccountChanges)
 				kvs, err = kvsForNewOrderRequestQueue(slot.Number, newOrder.Side, newOrder.Accounts.Owner.PublicKey, newOrder.Accounts.Market.PublicKey, instruction.AccountChanges)
 				if err != nil {
 					zlog.Warn("error processing new order",
@@ -94,7 +95,13 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 				if err != nil {
 					return fmt.Errorf("process serum slot: new order v2: set account metas: %w", err)
 				}
-				zlog.Info("processing new order v2", zap.Uint64("slot_number", slot.Number), zap.String("trx_id", transaction.Id), zap.Uint32("instruction ordinal", instruction.Ordinal))
+				zlog.Info("processing new order v2",
+					zap.Uint64("slot_number", slot.Number),
+					zap.String("trx_id", transaction.Id),
+					zap.Uint32("instruction ordinal", instruction.Ordinal),
+					zap.Strings("instruction_accounts", instruction.AccountKeys),
+					zap.Strings("transaction_accounts", transaction.AccountKeys),
+				)
 				kvs, err = kvsForNewOrderRequestQueue(slot.Number, newOrderV2.Side, newOrderV2.Accounts.Owner.PublicKey, newOrderV2.Accounts.Market.PublicKey, instruction.AccountChanges)
 				if err != nil {
 					zlog.Warn("error processing new order v2",

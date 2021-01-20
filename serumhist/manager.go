@@ -44,7 +44,7 @@ func (m *Manager) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, li
 		_, market, orderSeqNum, slotNum := keyer.DecodeOrdersByPubkey(k)
 		fk := keyer.EncodeFillData(market, orderSeqNum, slotNum)
 		if traceEnabled {
-			zlog.Debug("order key", zap.Stringer("key", fk), zap.Stringer("market", market), zap.Uint64("order_seq_num", orderSeqNum), zap.Uint64("slot_num", slotNum), zap.Stringer("fill_key", keyer.Key(k)))
+			zlog.Debug("order key", zap.Stringer("key", fk), zap.Stringer("market", market), zap.Uint64("order_seq_num", orderSeqNum), zap.Uint64("slot_num", slotNum), zap.Stringer("order_key", keyer.Key(k)))
 		}
 		fillKeys = append(fillKeys, fk)
 	}
