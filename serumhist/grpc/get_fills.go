@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/solana-go"
 )
 
 func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequest) (*pbserumhist.FillsResponse, error) {
 	trader, err := solana.PublicKeyFromBase58(request.Trader)
+	zlog.Debug("get fills", zap.Stringer("trader_address", trader))
 	if err != nil {
 		return nil, fmt.Errorf("invalid trader addresss:%s : %w", request.Trader, err)
 	}
