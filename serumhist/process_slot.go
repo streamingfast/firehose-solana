@@ -205,13 +205,24 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, trader, market sol
 				switch request.RequestFlags {
 
 				case serum.RequestFlagNewOrder:
-					zlog.Debug("serum RequestFlagNewOrder", zap.Stringer("trader", trader), zap.Stringer("market", market), zap.Uint64("order_seq_num", orderSeqNum), zap.Uint64("slot_num", slotNumber))
+					orderByMarketPubKey := keyer.EncodeOrdersByMarketPubkey(trader, market, orderSeqNum, slotNumber)
+					orderByPubKey := keyer.EncodeOrdersByPubkey(trader, market, orderSeqNum, slotNumber)
+
+					zlog.Debug("serum RequestFlagNewOrder",
+						zap.Stringer("trader", trader),
+						zap.Stringer("market", market),
+						zap.Uint64("order_seq_num", orderSeqNum),
+						zap.Uint64("slot_num", slotNumber),
+						zap.Stringer("order_by_market_pub_key", orderByMarketPubKey),
+						zap.Stringer("order_by_pub_key", orderByPubKey),
+					)
+
 					out = append(out, &kvdb.KV{
-						Key:   keyer.EncodeOrdersByMarketPubkey(trader, market, orderSeqNum, slotNumber),
+						Key:   orderByMarketPubKey,
 						Value: nil,
 					})
 					out = append(out, &kvdb.KV{
-						Key:   keyer.EncodeOrdersByPubkey(trader, market, orderSeqNum, slotNumber),
+						Key:   orderByPubKey,
 						Value: nil,
 					})
 				case serum.RequestFlagCancelOrder:
