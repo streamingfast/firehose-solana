@@ -187,7 +187,7 @@ func kvsForNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, mark
 	return generateNewOrderKeys(slotNumber, side, trader, market, old, new), nil
 }
 
-func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market solana.PublicKey, old *serum.RequestQueue, new *serum.RequestQueue) (out []*kvdb.KV) {
+func generateNewOrderKeys(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, old *serum.RequestQueue, new *serum.RequestQueue) (out []*kvdb.KV) {
 	zlog.Debug("generate new order kv")
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Requests[#]"); match {
@@ -205,13 +205,13 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, owner, market sola
 				switch request.RequestFlags {
 
 				case serum.RequestFlagNewOrder:
-					zlog.Debug("serum.RequestFlagNewOrder")
+					zlog.Debug("serum RequestFlagNewOrder", zap.Stringer("trader", trader), zap.Stringer("market", market), zap.Uint64("order_seq_num", orderSeqNum), zap.Uint64("slot_num", slotNumber))
 					out = append(out, &kvdb.KV{
-						Key:   keyer.EncodeOrdersByMarketPubkey(owner, market, orderSeqNum, slotNumber),
+						Key:   keyer.EncodeOrdersByMarketPubkey(trader, market, orderSeqNum, slotNumber),
 						Value: nil,
 					})
 					out = append(out, &kvdb.KV{
-						Key:   keyer.EncodeOrdersByPubkey(owner, market, orderSeqNum, slotNumber),
+						Key:   keyer.EncodeOrdersByPubkey(trader, market, orderSeqNum, slotNumber),
 						Value: nil,
 					})
 				case serum.RequestFlagCancelOrder:
