@@ -187,8 +187,15 @@ func TestHexToBase58String(t *testing.T) {
 }
 
 func TestDecodeFillData_FOO(t *testing.T) {
-	keyData, err := hex.DecodeString("011a387564848c21834eb4cdde0db9e23ec9a42fba5e5ee8c017c2bebe65defd24ffffffffff8be22b5146a68432c1030b")
-	require.NoError(t, err)
-	market, order, slot := DecodeFillData(keyData)
-	fmt.Println("market:", market, " order:", order, " slot:", slot)
+	key := EncodeFillData(solana.MustPublicKeyFromBase58("2mMXswJ7yyLwTHfv9YeZoKoEC8yeKxfFT8Qxx1g5cGo5"), 100, 1000)
+	market, order, slot := DecodeFillData(key)
+
+	assert.Equal(t, solana.MustPublicKeyFromBase58("2mMXswJ7yyLwTHfv9YeZoKoEC8yeKxfFT8Qxx1g5cGo5"), market)
+	assert.Equal(t, uint64(100), order)
+	assert.Equal(t, uint64(1000), slot)
+
+	//keyData, err := hex.DecodeString("011a387564848c21834eb4cdde0db9e23ec9a42fba5e5ee8c017c2bebe65defd24ffffffffff8be22b5146a68432c1030b")
+	//require.NoError(t, err)
+	//market, order, slot := DecodeFillData(keyData)
+	//fmt.Println("market:", market, " order:", order, " slot:", slot)
 }
