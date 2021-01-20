@@ -188,7 +188,7 @@ func TestHexToBase58String(t *testing.T) {
 
 func TestDecodeOrdersByMarketPubkey(t *testing.T) {
 
-	k, err := hex.DecodeString("021a387564848c21834eb4cdde0db9e23ec9a42fba5e5ee8c017c2bebe65defd24fffffffffc58fbd6c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf4000000000075eb56")
+	k, err := hex.DecodeString("029e15d3e14fc95b91c2341a900b5be817ef0174dfaeaa6202f8444827694e2a5afffffffffc5500f9c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf400000000005ef563")
 	require.NoError(t, err)
 
 	trader, market, order, slot := DecodeOrdersByMarketPubkey(k)
@@ -197,9 +197,9 @@ func TestDecodeOrdersByMarketPubkey(t *testing.T) {
 }
 
 func TestEncodeOrdersByPubkey(t *testing.T) {
-	key := EncodeOrdersByMarketPubkey(solana.MustPublicKeyFromBase58("JEKNVniRRUh2JLBzRUBbcFebFjnBEa8UhoyoYNbPCueg"), solana.MustPublicKeyFromBase58("2mMXswJ7yyLwTHfv9YeZoKoEC8yeKxfFT8Qxx1g5cGo5"), 100, 1000)
-
-	trader, market, order, slot := DecodeOrdersByMarketPubkey(key)
+	key := EncodeOrdersByPubkey(solana.MustPublicKeyFromBase58("Be6ioZME5o2x57cN47tVfYits5kE9vcUxFmfv7TUSseR"), solana.MustPublicKeyFromBase58("EUqojwWA2rd19FZrzeBncJsm38Jm1hEhE3zsmX3bRc2o"), 18446744073703328412, 61538054)
+	//require.Equal(t, "029e15d3e14fc95b91c2341a900b5be817ef0174dfaeaa6202f8444827694e2a5afffffffffc5500f9c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf400000000005ef563", hex.EncodeToString(key))
+	trader, market, order, slot := DecodeOrdersByPubkey(key)
 	fmt.Println("trader:", trader, " market:", market, " order:", order, " slot:", slot)
 }
 
