@@ -99,7 +99,6 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, trader, market sol
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Requests[#]"); match {
 			request := event.Element().Interface().(*serum.Request)
-			orderSeqNum := extractOrderSeqNum(side, request.OrderID)
 			switch event.Kind {
 			case diff.KindAdded:
 				// either a cancel request or ad new order
@@ -110,6 +109,7 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, trader, market sol
 				)
 
 				if request.RequestFlags.IsNewOrder() {
+					orderSeqNum := extractOrderSeqNum(side, request.OrderID)
 					orderByMarketPubKey := keyer.EncodeOrdersByMarketPubkey(trader, market, orderSeqNum, slotNumber)
 					orderByPubKey := keyer.EncodeOrdersByPubkey(trader, market, orderSeqNum, slotNumber)
 
@@ -165,15 +165,12 @@ func generateFillKeyValue(slotNumber uint64, market solana.PublicKey, old *serum
 						FeeTier:           pbserumhist.FeeTier(e.FeeTier),
 					}
 
-					if e.Side() == serum.SideAsk {
-						fill.Side = 1
-					}
-
 					cnt, err := proto.Marshal(fill)
 					if err != nil {
 						zlog.Error("unable to marshal to fill", zap.Error(err))
 						return
 					}
+
 					orderSeqNum := extractOrderSeqNum(e.Side(), e.OrderID)
 
 					zlog.Debug("serum new fill",
