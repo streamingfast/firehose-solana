@@ -20,6 +20,10 @@ import (
 
 func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) error {
 	for _, transaction := range slot.Transactions {
+		zlog.Debug("processing new transaction",
+			zap.String("transaction_id", transaction.Id),
+			zap.Int("instruction_count", len(transaction.Instructions)),
+		)
 		for idx, instruction := range transaction.Instructions {
 			if instruction.ProgramId != serum.PROGRAM_ID.String() {
 				if traceEnabled {
@@ -43,7 +47,7 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 				continue
 			}
 
-			zlog.Info("processing serum instruction",
+			zlog.Debug("processing serum instruction",
 				zap.Uint64("slot_number", slot.Number),
 				zap.Int("instruction_index", idx),
 				zap.String("transaction_id", transaction.Id),
@@ -77,14 +81,12 @@ func instructionAccountIndexes(trxAccounts []string, instructionAccounts []strin
 }
 
 func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {
-	zlog.Debug("filtering account change", zap.Int("account_change_count", len(accountChanges)))
 	for _, accountChange := range accountChanges {
 		var f *serum.AccountFlag
 		//assumption data should begin with serum prefix "736572756d"
 		if err := bin.NewDecoder(accountChange.PrevData[5:]).Decode(&f); err != nil {
 			return nil, fmt.Errorf("get account change: unable to deocde account flag: %w", err)
 		}
-		zlog.Debug("about to call filtering func")
 		if filter(f) {
 			return accountChange, nil
 		}
@@ -93,27 +95,25 @@ func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f 
 }
 
 func generateNewOrderKeys(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, old *serum.RequestQueue, new *serum.RequestQueue) (out []*kvdb.KV) {
-	zlog.Debug("generate new order kv")
+	zlog.Debug("generating new order keys from account change")
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Requests[#]"); match {
-			zlog.Debug("match Requests[#]")
 			request := event.Element().Interface().(*serum.Request)
 			orderSeqNum := extractOrderSeqNum(side, request.OrderID)
 			switch event.Kind {
-			case diff.KindChanged:
-				zlog.Debug("event KindChanged")
-				// this is probably a partial fill we don't care about this right now
 			case diff.KindAdded:
-				zlog.Debug("event KindAdded")
 				// either a cancel request or ad new order
 				// this should create keys
-				switch request.RequestFlags {
+				zlog.Debug("found a diff",
+					zap.Stringer("diff_kind", event.Kind),
+					zap.Stringer("request_flag", request.RequestFlags),
+				)
 
-				case serum.RequestFlagNewOrder:
+				if request.RequestFlags.IsNewOrder() {
 					orderByMarketPubKey := keyer.EncodeOrdersByMarketPubkey(trader, market, orderSeqNum, slotNumber)
 					orderByPubKey := keyer.EncodeOrdersByPubkey(trader, market, orderSeqNum, slotNumber)
 
-					zlog.Debug("serum RequestFlagNewOrder",
+					zlog.Debug("serum new order",
 						zap.Stringer("trader", trader),
 						zap.Stringer("market", market),
 						zap.Uint64("order_seq_num", orderSeqNum),
@@ -130,33 +130,26 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, trader, market sol
 						Key:   orderByPubKey,
 						Value: nil,
 					})
-				case serum.RequestFlagCancelOrder:
-					zlog.Debug("serum.RequestFlagCancelOrder")
+
 				}
-			case diff.KindRemoved:
-				// this is a request that for either canceled or fully filled
-				zlog.Debug("diff.KindRemoved")
-			default:
 			}
 		}
 	}))
-	zlog.Debug("generated new order kv", zap.Int("kv_count", len(out)))
 	return out
 }
 
 func generateFillKeyValue(slotNumber uint64, market solana.PublicKey, old *serum.EventQueue, new *serum.EventQueue) (out []*kvdb.KV) {
-	zlog.Debug("generate fill keys")
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
 			switch event.Kind {
-			case diff.KindChanged:
-				zlog.Debug("diff event change")
-				// this is probably a partial fill we don't care about this right now
 			case diff.KindAdded:
-				zlog.Debug("diff event added", zap.Stringer("flag_string", e.Flag), zap.Uint8("flag", uint8(e.Flag)))
+				zlog.Debug("found a diff",
+					zap.Stringer("diff_kind", event.Kind),
+					zap.Stringer("event_flag", e.Flag),
+				)
+
 				if e.Flag.IsFill() {
-					zlog.Debug("it is a fill")
 					size := 16
 					buf := make([]byte, size)
 					binary.LittleEndian.PutUint64(buf, e.OrderID.Lo)
@@ -182,16 +175,19 @@ func generateFillKeyValue(slotNumber uint64, market solana.PublicKey, old *serum
 						return
 					}
 					orderSeqNum := extractOrderSeqNum(e.Side(), e.OrderID)
+
+					zlog.Debug("serum new fill",
+						zap.Stringer("market", market),
+						zap.Uint64("order_seq_num", orderSeqNum),
+						zap.Uint64("slot_num", slotNumber),
+					)
+
 					out = append(out, &kvdb.KV{
 						Key:   keyer.EncodeFillData(market, orderSeqNum, slotNumber),
 						Value: cnt,
 					})
 				}
-			case diff.KindRemoved:
-				zlog.Debug("diff event remove")
-				// this is a request that for either canceled or fully filled
 			default:
-				zlog.Debug("diff event default")
 			}
 		}
 	}))
