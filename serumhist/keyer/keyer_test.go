@@ -190,3 +190,14 @@ func TestEncodeOrdersByPubkey(t *testing.T) {
 	trader, market, order, slot := DecodeOrdersByPubkey(key)
 	fmt.Println("trader:", trader, " market:", market, " order:", order, " slot:", slot)
 }
+
+func TestHexToBase58String(t *testing.T) {
+
+	hx := "1a387564848c21834eb4cdde0db9e23ec9a42fba5e5ee8c017c2bebe65defd24"
+	//hx := "c849cbfee98c362c717fe8ad198d43e26db4965c28ab60f1aeb9597bcd3efcf4"
+	//hx := "f4043a717d41ee6196ffff1c74e7f663f92cd690e5e5624c084b5fc3c464b5ea"
+	data, err := hex.DecodeString(hx)
+	require.NoError(t, err)
+	pk := solana.PublicKeyFromBytes(data)
+	fmt.Println(pk)
+}

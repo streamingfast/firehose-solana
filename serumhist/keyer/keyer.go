@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/dfuse-io/solana-go"
 )
 
@@ -33,15 +35,32 @@ func EncodeFillData(market solana.PublicKey, orderSeqNum uint64, slotNum uint64)
 	copy(key[1:], market[:])
 	binary.BigEndian.PutUint64(key[33:], orderSeqNum)
 	binary.BigEndian.PutUint64(key[41:], slotNum)
+
+	if traceEnabled {
+		zlog.Debug("fill data encoded",
+			zap.Stringer("market", market),
+			zap.Uint64("order_seq_num", orderSeqNum),
+			zap.Uint64("slot_num", slotNum),
+			zap.Stringer("prefix", Key(key)))
+	}
+
 	return key
 }
 
-func GetPrefixFillData(market solana.PublicKey, orderSeqNum uint64) []byte {
+func EncodedPrefixFillData(market solana.PublicKey, orderSeqNum uint64) Prefix {
 	key := make([]byte, 1+32+8)
 
 	key[0] = PrefixFillData
 	copy(key[1:], market[:])
 	binary.BigEndian.PutUint64(key[33:], orderSeqNum)
+
+	if traceEnabled {
+		zlog.Debug("fill data prefix encoded",
+			zap.Stringer("market", market),
+			zap.Uint64("order_seq_num", orderSeqNum),
+			zap.Stringer("prefix", Key(key)))
+	}
+
 	return key
 }
 
@@ -52,6 +71,15 @@ func DecodeFillData(key Key) (market solana.PublicKey, orderSeqNum uint64, slotN
 	copy(market[:], key[1:])
 	orderSeqNum = binary.BigEndian.Uint64(key[33:])
 	slotNum = binary.BigEndian.Uint64(key[41:])
+
+	if traceEnabled {
+		zlog.Debug("fill data key decoded",
+			zap.Stringer("market", market),
+			zap.Uint64("order_seq_num", orderSeqNum),
+			zap.Uint64("slot_num", slotNum),
+			zap.Stringer("key", key))
+	}
+
 	return
 }
 
@@ -65,6 +93,16 @@ func EncodeOrdersByPubkey(trader, market solana.PublicKey, orderSeqNum uint64, s
 	copy(key[41:], market[:])
 	binary.BigEndian.PutUint64(key[73:], ^orderSeqNum)
 
+	if traceEnabled {
+		zlog.Debug("orders by pub key encoded",
+			zap.Stringer("trader", trader),
+			zap.Stringer("market", market),
+			zap.Uint64("order_seq_num", orderSeqNum),
+			zap.Uint64("slot_num", slotNum),
+			zap.Stringer("key", Key(key)),
+		)
+	}
+
 	return key
 }
 
@@ -74,6 +112,13 @@ func EncodeOrdersPrefixByPubkey(trader solana.PublicKey) Prefix {
 
 	key[0] = PrefixOrdersByPubkey
 	copy(key[1:], trader[:])
+
+	if traceEnabled {
+		zlog.Debug("orders by pub  prefix encoded",
+			zap.Stringer("trader", trader),
+			zap.Stringer("key", Key(key)),
+		)
+	}
 
 	return key
 }
@@ -86,6 +131,17 @@ func DecodeOrdersByPubkey(key Key) (trader, market solana.PublicKey, orderSeqNum
 	slotNum = ^binary.BigEndian.Uint64(key[33:])
 	copy(market[:], key[41:])
 	orderSeqNum = ^binary.BigEndian.Uint64(key[73:])
+
+	if traceEnabled {
+		zlog.Debug("orders by pub key decoded",
+			zap.Stringer("trader", trader),
+			zap.Stringer("marker", market),
+			zap.Uint64("order_seq_num", orderSeqNum),
+			zap.Uint64("slot_num", slotNum),
+			zap.Stringer("key", key),
+		)
+	}
+
 	return
 }
 
@@ -99,8 +155,17 @@ func EncodeOrdersByMarketPubkey(trader, market solana.PublicKey, orderSeqNum uin
 	binary.BigEndian.PutUint64(key[65:], ^slotNum)
 	binary.BigEndian.PutUint64(key[73:], ^orderSeqNum)
 
-	return key
+	if traceEnabled {
+		zlog.Debug("orders by market pub key encoded",
+			zap.Stringer("trader", trader),
+			zap.Stringer("marker", market),
+			zap.Uint64("order_seq_num", orderSeqNum),
+			zap.Uint64("slot_num", slotNum),
+			zap.Stringer("key", Key(key)),
+		)
+	}
 
+	return key
 }
 
 // order_market:[market]:[pubkey]
@@ -110,6 +175,14 @@ func EncodeOrdersPrefixByMarketPubkey(trader, market solana.PublicKey) Prefix {
 	key[0] = PrefixOrdersByMarketPubkey
 	copy(key[1:], market[:])
 	copy(key[33:], trader[:])
+
+	if traceEnabled {
+		zlog.Debug("orders by market pub prefix encoded",
+			zap.Stringer("trader", trader),
+			zap.Stringer("marker", market),
+			zap.Stringer("key", Key(key)),
+		)
+	}
 
 	return key
 }
@@ -122,6 +195,17 @@ func DecodeOrdersByMarketPubkey(key Key) (trader, market solana.PublicKey, order
 	copy(trader[:], key[33:])
 	slotNum = ^binary.BigEndian.Uint64(key[65:])
 	orderSeqNum = ^binary.BigEndian.Uint64(key[73:])
+
+	if traceEnabled {
+		zlog.Debug("orders by market pub key decoded",
+			zap.Stringer("trader", trader),
+			zap.Stringer("marker", market),
+			zap.Uint64("order_seq_num", orderSeqNum),
+			zap.Uint64("slot_num", slotNum),
+			zap.Stringer("key", key),
+		)
+	}
+
 	return
 }
 

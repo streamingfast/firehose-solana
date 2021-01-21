@@ -30,9 +30,8 @@ func (m *Manager) GetFillsByTrader(ctx context.Context, trader solana.PublicKey)
 		zap.Stringer("trader", trader),
 	)
 	return m.getFillsForPrefix(ctx, prefix, 100, func(d []byte) []byte {
-		fmt.Println("generating fill prefix", hex.EncodeToString(d))
 		_, market, orderSeqNum, _ := keyer.DecodeOrdersByPubkey(d)
-		return keyer.GetPrefixFillData(market, orderSeqNum)
+		return keyer.EncodedPrefixFillData(market, orderSeqNum)
 	})
 }
 
@@ -47,7 +46,7 @@ func (m *Manager) GetFillsByTraderAndMarket(ctx context.Context, trader, market 
 	return m.getFillsForPrefix(ctx, prefix, 100, func(d []byte) []byte {
 		fmt.Println("generating fill prefix", hex.EncodeToString(d))
 		_, market, orderSeqNum, _ := keyer.DecodeOrdersByMarketPubkey(d)
-		return keyer.GetPrefixFillData(market, orderSeqNum)
+		return keyer.EncodedPrefixFillData(market, orderSeqNum)
 	})
 }
 
