@@ -18,18 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-func (i *Injector) ProcessSlot(ctx context.Context, slot *pbcodec.Slot) error {
-	if traceEnabled {
-		zlog.Debug("processing slot", zap.String("slot_id", slot.Id))
-	}
-
-	if err := i.processSerumSlot(ctx, slot); err != nil {
-		return fmt.Errorf("put slot: unable to process serum slot: %w", err)
-	}
-
-	return nil
-}
-
 func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) error {
 	for _, transaction := range slot.Transactions {
 		for idx, instruction := range transaction.Instructions {
@@ -62,79 +50,14 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 				zap.Uint32("serum_instruction_variant_index", serumInstruction.TypeID),
 			)
 
-			var kvs []*kvdb.KV
-			var err error
-
-			instructionAccountIndexes := instructionAccountIndexes(transaction.AccountKeys, instruction.AccountKeys)
+			instAccIndexes := instructionAccountIndexes(transaction.AccountKeys, instruction.AccountKeys)
 			accounts, err := transaction.AccountMetaList()
 			if err != nil {
-				return fmt.Errorf("process serum slot: get trx account meta list: %w", err)
+				return fmt.Errorf("get trx account meta list: %w", err)
 			}
 
-			// we only care about new order instruction that modify the request queue
-			if newOrder, ok := serumInstruction.Impl.(*serum.InstructionNewOrder); ok {
-				err := newOrder.SetAccounts(accounts, instructionAccountIndexes)
-				if err != nil {
-					return fmt.Errorf("process serum slot: new order v1: set account metas: %w", err)
-				}
-				zlog.Info("processing new order v1", zap.Uint64("slot_number", slot.Number), zap.String("trx_id", transaction.Id), zap.Uint32("instruction ordinal", instruction.Ordinal))
-				//kvs, err = kvsForNewOrderRequestQueue(slot.Number, newOrder.Side, newOrder.Accounts.Owner.PublicKey, newOrder.Accounts.Market.PublicKey, instruction.AccountChanges)
-				kvs, err = kvsForNewOrderRequestQueue(slot.Number, newOrder.Side, newOrder.Accounts.Owner.PublicKey, newOrder.Accounts.Market.PublicKey, instruction.AccountChanges)
-				if err != nil {
-					zlog.Warn("error processing new order",
-						zap.Uint64("slot_number", slot.Number),
-						zap.String("error", err.Error()),
-					)
-					continue
-				}
-			}
-
-			// we only care about new order instruction that modify the request queue
-			if newOrderV2, ok := serumInstruction.Impl.(*serum.InstructionNewOrderV2); ok {
-				err := newOrderV2.SetAccounts(accounts, instructionAccountIndexes)
-				if err != nil {
-					return fmt.Errorf("process serum slot: new order v2: set account metas: %w", err)
-				}
-				zlog.Info("processing new order v2",
-					zap.Uint64("slot_number", slot.Number),
-					zap.String("trx_id", transaction.Id),
-					zap.Uint32("instruction ordinal", instruction.Ordinal),
-					zap.Strings("instruction_accounts", instruction.AccountKeys),
-					zap.Strings("transaction_accounts", transaction.AccountKeys),
-				)
-				kvs, err = kvsForNewOrderRequestQueue(slot.Number, newOrderV2.Side, newOrderV2.Accounts.Owner.PublicKey, newOrderV2.Accounts.Market.PublicKey, instruction.AccountChanges)
-				if err != nil {
-					zlog.Warn("error processing new order v2",
-						zap.Uint64("slot_number", slot.Number),
-						zap.String("error", err.Error()),
-					)
-					continue
-				}
-
-			}
-
-			// we only care about new order instruction that modify the event queue
-			if mathOrder, ok := serumInstruction.Impl.(*serum.InstructionMatchOrder); ok {
-				err := mathOrder.SetAccounts(accounts, instructionAccountIndexes)
-				if err != nil {
-					return fmt.Errorf("process serum slot: match order: set account metas: %w", err)
-				}
-				zlog.Info("processing match order")
-				kvs, err = kvsForMatchOrderEventQueue(slot.Number, mathOrder, instruction.AccountChanges)
-				if err != nil {
-					zlog.Warn("error matching order and event queue",
-						zap.Uint64("slot_number", slot.Number),
-						zap.String("error", err.Error()),
-					)
-					continue
-				}
-			}
-
-			for _, kv := range kvs {
-				zlog.Debug("putting kv", zap.String("key", hex.EncodeToString(kv.Key)))
-				if err := i.kvdb.Put(ctx, kv.Key, kv.Value); err != nil {
-					zlog.Warn("failed to write key-value", zap.Error(err))
-				}
+			if err = i.processInstruction(ctx, slot.Number, transaction.Id, instruction, serumInstruction, instAccIndexes, accounts); err != nil {
+				return fmt.Errorf("process serum instruction: %w", err)
 			}
 		}
 	}
@@ -167,31 +90,6 @@ func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f 
 		}
 	}
 	return nil, nil
-}
-
-func kvsForNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	requestQueueAccountChange, err := filterAccountChange(accountChanges, func(f *serum.AccountFlag) bool {
-		zlog.Info("filtering account flag", zap.Stringer("account_flags", f))
-		return f.Is(serum.AccountFlagInitialized) && f.Is(serum.AccountFlagRequestQueue)
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("process new order request queue: get account change: %w", err)
-	}
-
-	if requestQueueAccountChange == nil {
-		zlog.Warn("got a nil requestQueueAccountChange",
-			zap.Uint64("slot_number", slotNumber),
-		)
-		return
-	}
-
-	old, new, err := decodeRequestQueue(requestQueueAccountChange)
-	if err != nil {
-		return nil, fmt.Errorf("unable to decode request queue change: %w", err)
-	}
-
-	return generateNewOrderKeys(slotNumber, side, trader, market, old, new), nil
 }
 
 func generateNewOrderKeys(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, old *serum.RequestQueue, new *serum.RequestQueue) (out []*kvdb.KV) {
@@ -244,44 +142,6 @@ func generateNewOrderKeys(slotNumber uint64, side serum.Side, trader, market sol
 	}))
 	zlog.Debug("generated new order kv", zap.Int("kv_count", len(out)))
 	return out
-}
-
-func debugHelper(accountChanges []*pbcodec.AccountChange) {
-	zlog.Debug("attempting to process event query account change",
-		zap.Int("account_change_count", len(accountChanges)),
-	)
-
-	for _, accChange := range accountChanges {
-		zlog.Debug("account change",
-			zap.String("account_key", accChange.Pubkey),
-			zap.String("prev_account_data_flag", hex.EncodeToString(accChange.PrevData[0:8])),
-			zap.String("new_account_data_flag", hex.EncodeToString(accChange.NewData[0:8])),
-		)
-	}
-}
-func kvsForMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	//debugHelper(accountChanges)
-	eventQueueAccountChange, err := filterAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
-		zlog.Debug("checking account change flags", zap.Stringer("flag", flag))
-		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
-	})
-
-	if eventQueueAccountChange == nil {
-		return nil, fmt.Errorf("unable to Event Queue Account: %w", err)
-	}
-
-	//zlog.Debug("processing event queue account change",
-	//	zap.String("account_key", eventQueueAccountChange.Pubkey),
-	//	zap.String("prev_data", hex.EncodeToString(eventQueueAccountChange.NewData)),
-	//	zap.String("current_data", hex.EncodeToString(eventQueueAccountChange.PrevData)),
-	//)
-
-	old, new, err := decodeEventQueue(eventQueueAccountChange)
-	if err != nil {
-		return nil, fmt.Errorf("unable to decode event queue change: %w", err)
-	}
-
-	return generateFillKeyValue(slotNumber, inst.Accounts.Market.PublicKey, old, new), nil
 }
 
 func generateFillKeyValue(slotNumber uint64, market solana.PublicKey, old *serum.EventQueue, new *serum.EventQueue) (out []*kvdb.KV) {
@@ -356,17 +216,6 @@ func decodeEventQueue(accountChange *pbcodec.AccountChange) (old *serum.EventQue
 		return nil, nil, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
 	}
 
-	return
-}
-
-func decodeOpenOrder(accountChange *pbcodec.AccountChange) (old *serum.OpenOrdersV2, new *serum.OpenOrdersV2, err error) {
-	if err := bin.NewDecoder(accountChange.PrevData).Decode(&old); err != nil {
-		return nil, nil, fmt.Errorf("unable to decode 'open orders' old data: %w", err)
-	}
-
-	if err := bin.NewDecoder(accountChange.NewData).Decode(&new); err != nil {
-		return nil, nil, fmt.Errorf("unable to decode 'open orders' new data: %w", err)
-	}
 	return
 }
 

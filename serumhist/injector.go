@@ -145,7 +145,13 @@ func (i *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
 		)
 		//}
 
-		i.ProcessSlot(ctx, slot)
+		if traceEnabled {
+			zlog.Debug("processing slot", zap.String("slot_id", slot.Id))
+		}
+
+		if err := i.processSerumSlot(ctx, slot); err != nil {
+			return fmt.Errorf("process serum slot: %w", err)
+		}
 
 		if err := i.writeCheckpoint(ctx, slot); err != nil {
 			return fmt.Errorf("error while saving block checkpoint")
