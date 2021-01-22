@@ -240,6 +240,14 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 		return fmt.Errorf("read batch: proto unmarshall: %w", err)
 	}
 
+	for _, tx := range batch.Transactions {
+		for _, i := range tx.Instructions {
+			if i.ProgramId == "Vote111111111111111111111111111111111111111" {
+				i.AccountChanges = nil
+			}
+		}
+	}
+
 	ctx.activeBank.batchAggregator = append(ctx.activeBank.batchAggregator, batch.Transactions)
 
 	// TODO: do the fixups, `depth` setting, addition of the `Slot` and other data
