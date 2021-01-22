@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	PrefixFillByTrader       = byte(0x01)
-	PrefixFillByMarketTrader = byte(0x02)
-	PrefixTradingAccount     = byte(0x05)
+	PrefixFillByTrader       = byte(0x01) // 01:[trader]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[market]:[rev_order_seq_num] =>  FillData(side)
+	PrefixFillByMarketTrader = byte(0x02) // 02:[trader]:[market]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[rev_order_seq_num] =>  =>
+	PrefixTradingAccount     = byte(0x05) // 05:[trading_account] => [trader]
 	PrefixCheckpoint         = byte(0x10)
 )
 

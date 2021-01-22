@@ -1,6 +1,7 @@
 package keyer
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/dfuse-io/solana-go"
@@ -188,4 +189,18 @@ func TestDecodeTradingAccount(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	}, tradingAccount)
 
+}
+
+func TestEncodeDecodeFillByTrader(t *testing.T) {
+	k := EncodeFillByTrader(solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111"), solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111112"), 123, 456, 789, 101112)
+	trader, market, slotNum, trxIdx, instIdx, orderSeqNum := DecodeFillByTrader(k)
+
+	fmt.Println("key", k)
+
+	assert.Equal(t, solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111"), trader)
+	assert.Equal(t, solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111112"), market)
+	assert.Equal(t, uint64(123), slotNum)
+	assert.Equal(t, uint64(456), trxIdx)
+	assert.Equal(t, uint64(789), instIdx)
+	assert.Equal(t, uint64(101112), orderSeqNum)
 }

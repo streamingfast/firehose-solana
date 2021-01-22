@@ -15,8 +15,13 @@ func (s SerumFill) OrderID() string { return s.OrderId }
 func (s SerumFill) Trader() string {
 	return s.Fill.Trader
 }
-func (s SerumFill) Side() string           { return s.Fill.Side.String() }
-func (s SerumFill) Market() *SerumMarket   { return nil }
+func (s SerumFill) Side() string { return s.Fill.Side.String() }
+func (s SerumFill) Market() *SerumMarket {
+	return &SerumMarket{
+		Address: s.Fill.Trader,
+		Name:    "TODO",
+	}
+}
 func (s SerumFill) BaseToken() *Token      { return nil }
 func (s SerumFill) QuoteToken() *Token     { return nil }
 func (s SerumFill) LotCount() gtype.Uint64 { return 0 }

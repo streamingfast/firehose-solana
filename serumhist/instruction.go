@@ -130,6 +130,7 @@ func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber, trxIdx, ins
 					binary.LittleEndian.PutUint64(buf[(size/2):], e.OrderID.Hi)
 					fill := &pbserumhist.Fill{
 						Trader:            e.Owner.String(),
+						Market:            market.String(),
 						OrderId:           hex.EncodeToString(buf),
 						Side:              pbserumhist.Side(e.Side()),
 						Maker:             false,

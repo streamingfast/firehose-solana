@@ -140,7 +140,7 @@ func printKVEntity(key, val []byte, asHex bool, indented bool) (err error) {
 	row := map[string]interface{}{
 		"key": hex.EncodeToString(key),
 	}
-	row["data"], err = decodeValue(key[0], val)
+	//row["data"], err = decodeValue(key[0], val)
 
 	cnt, err := json.Marshal(row)
 	if err != nil {

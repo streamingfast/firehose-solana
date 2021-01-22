@@ -38,13 +38,13 @@ func (r *Root) QuerySerumFillHistory(ctx context.Context, in *SerumFillHistoryRe
 	getCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	response, err := r.serumHistoryClient.GetFills(getCtx, request)
+	fillsResponse, err := r.serumHistoryClient.GetFills(getCtx, request)
 	if err != nil {
 		return nil, graphqlErrorFromGRPC(getCtx, err)
 	}
 
-	edges := make([]*SerumFillEdge, len(response.Fill))
-	for i, fill := range response.Fill {
+	edges := make([]*SerumFillEdge, len(fillsResponse.Fill))
+	for i, fill := range fillsResponse.Fill {
 		edges[i] = &SerumFillEdge{cursor: "", node: SerumFill{Fill: fill}}
 	}
 
