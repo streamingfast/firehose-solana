@@ -2,7 +2,16 @@ package serumhist
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+
+	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
+
+	bin "github.com/dfuse-io/binary"
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/dfuse-io/solana-go/diff"
+	"github.com/golang/protobuf/proto"
 
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	kvdb "github.com/dfuse-io/kvdb/store"
@@ -13,7 +22,15 @@ import (
 
 // TODO: this is very repetitive we need to optimze the account setting in solana go
 // once that is done we can clean all this up!
-func (i *Injector) processInstruction(ctx context.Context, slotNumber uint64, trxID string, inst *pbcodec.Instruction, serumInstruction *serum.Instruction, instAccountIndexes []uint8, trxAccounts []*solana.AccountMeta) error {
+func (i *Injector) processInstruction(
+	ctx context.Context,
+	slotNumber uint64,
+	trxIdx uint64,
+	instIdx uint64,
+	trxID string,
+	inst *pbcodec.Instruction,
+	serumInstruction *serum.Instruction,
+) error {
 	var kvs []*kvdb.KV
 	var err error
 
@@ -22,32 +39,26 @@ func (i *Injector) processInstruction(ctx context.Context, slotNumber uint64, tr
 		zlog.Debug("processing new order v1",
 			zap.Uint64("slot_number", slotNumber),
 			zap.String("trx_id", trxID),
-			zap.Uint32("instruction_ordinal", inst.Ordinal),
 		)
-
-		if kvs, err = processNewOrderV1(slotNumber, newOrder, instAccountIndexes, trxAccounts, inst.AccountChanges); err != nil {
-			return fmt.Errorf("processing new order v1 instructions: %w", err)
-		}
+		trader := newOrder.Accounts.Owner.PublicKey
+		tradingAccount := newOrder.Accounts.OpenOrders.PublicKey
+		i.cache.setTradingAccount(ctx, tradingAccount, trader)
 	} else if newOrderV2, ok := serumInstruction.Impl.(*serum.InstructionNewOrderV2); ok {
 		zlog.Debug("processing new order v2",
 			zap.Uint64("slot_number", slotNumber),
 			zap.String("trx_id", trxID),
-			zap.Uint32("instruction_ordinal", inst.Ordinal),
 		)
-
-		if kvs, err = processNewOrderV2(slotNumber, newOrderV2, instAccountIndexes, trxAccounts, inst.AccountChanges); err != nil {
-			return fmt.Errorf("processing new order v2 instructions: %w", err)
-		}
+		trader := newOrderV2.Accounts.Owner.PublicKey
+		tradingAccount := newOrderV2.Accounts.OpenOrders.PublicKey
+		i.cache.setTradingAccount(ctx, tradingAccount, trader)
 	} else if mathOrder, ok := serumInstruction.Impl.(*serum.InstructionMatchOrder); ok {
-
 		zlog.Debug("processing match order",
 			zap.Uint64("slot_number", slotNumber),
 			zap.String("trx_id", trxID),
-			zap.Uint32("instruction_ordinal", inst.Ordinal),
 		)
 
-		if kvs, err = processMatchOrder(slotNumber, mathOrder, instAccountIndexes, trxAccounts, inst.AccountChanges); err != nil {
-			return fmt.Errorf("processing match order instructions: %w", err)
+		if kvs, err = i.processMatchOrderInstruction(ctx, slotNumber, trxIdx, instIdx, mathOrder, inst.AccountChanges); err != nil {
+			return fmt.Errorf("generating serumhist keys: %w", err)
 		}
 	} else {
 		zlog.Debug("unhandled serum instruction",
@@ -73,64 +84,7 @@ func (i *Injector) processInstruction(ctx context.Context, slotNumber uint64, tr
 	return nil
 }
 
-func processNewOrderV1(slotNum uint64, inst *serum.InstructionNewOrder, instAccountIndexes []uint8, trxAccounts []*solana.AccountMeta, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	if err = inst.SetAccounts(trxAccounts, instAccountIndexes); err != nil {
-		return nil, fmt.Errorf("set account metas: %w", err)
-	}
-
-	if out, err = kvsForNewOrderRequestQueue(slotNum, inst.Side, inst.Accounts.Owner.PublicKey, inst.Accounts.Market.PublicKey, accountChanges); err != nil {
-		return nil, fmt.Errorf("generating serumhist keys: %w", err)
-	}
-
-	return out, nil
-}
-
-func processNewOrderV2(slotNum uint64, inst *serum.InstructionNewOrderV2, instAccountIndexes []uint8, trxAccounts []*solana.AccountMeta, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	if err = inst.SetAccounts(trxAccounts, instAccountIndexes); err != nil {
-		return nil, fmt.Errorf("set account metas: %w", err)
-	}
-
-	if out, err = kvsForNewOrderRequestQueue(slotNum, inst.Side, inst.Accounts.Owner.PublicKey, inst.Accounts.Market.PublicKey, accountChanges); err != nil {
-		return nil, fmt.Errorf("generating serumhist keys: %w", err)
-	}
-
-	return out, nil
-}
-
-func processMatchOrder(slotNum uint64, inst *serum.InstructionMatchOrder, instAccountIndexes []uint8, trxAccounts []*solana.AccountMeta, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	if err := inst.SetAccounts(trxAccounts, instAccountIndexes); err != nil {
-		return nil, fmt.Errorf("set account metas: %w", err)
-	}
-
-	if out, err = kvsForMatchOrderEventQueue(slotNum, inst, accountChanges); err != nil {
-		return nil, fmt.Errorf("generating serumhist keys: %w", err)
-	}
-
-	return out, nil
-}
-
-func kvsForNewOrderRequestQueue(slotNumber uint64, side serum.Side, trader, market solana.PublicKey, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	requestQueueAccountChange, err := filterAccountChange(accountChanges, func(f *serum.AccountFlag) bool {
-		return f.Is(serum.AccountFlagInitialized) && f.Is(serum.AccountFlagRequestQueue)
-	})
-	if err != nil {
-		return nil, fmt.Errorf("process new order request queue: get account change: %w", err)
-	}
-
-	if requestQueueAccountChange == nil {
-		return nil, nil
-	}
-
-	old, new, err := decodeRequestQueue(requestQueueAccountChange)
-	if err != nil {
-		return nil, fmt.Errorf("unable to decode request queue change: %w", err)
-	}
-
-	return generateNewOrderKeys(slotNumber, side, trader, market, old, new), nil
-}
-
-func kvsForMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
-	//debugHelper(accountChanges)
+func (i *Injector) processMatchOrderInstruction(ctx context.Context, slotNumber, trxIdx, instIdx uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
 	eventQueueAccountChange, err := filterAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
 		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
 	})
@@ -144,5 +98,99 @@ func kvsForMatchOrderEventQueue(slotNumber uint64, inst *serum.InstructionMatchO
 		return nil, fmt.Errorf("unable to decode event queue change: %w", err)
 	}
 
-	return generateFillKeyValue(slotNumber, inst.Accounts.Market.PublicKey, old, new), nil
+	return i.getFillKeyValues(ctx, slotNumber, trxIdx, instIdx, inst.Accounts.Market.PublicKey, old, new)
+}
+
+func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber, trxIdx, instIdx uint64, market solana.PublicKey, old, new *serum.EventQueue) (out []*kvdb.KV, err error) {
+	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
+		if match, _ := event.Match("Events[#]"); match {
+			e := event.Element().Interface().(*serum.Event)
+			switch event.Kind {
+			case diff.KindAdded:
+				zlog.Debug("found a diff",
+					zap.Stringer("diff_kind", event.Kind),
+					zap.Stringer("event_flag", e.Flag),
+				)
+
+				if e.Flag.IsFill() {
+
+					tradingAccount := e.Owner
+					trader, err := i.cache.getTrader(ctx, tradingAccount)
+					if err != nil {
+						zlog.Error("error retrieving trader key",
+							zap.Error(err),
+							zap.Stringer("trading_account", tradingAccount),
+						)
+						return
+					}
+
+					size := 16
+					buf := make([]byte, size)
+					binary.LittleEndian.PutUint64(buf, e.OrderID.Lo)
+					binary.LittleEndian.PutUint64(buf[(size/2):], e.OrderID.Hi)
+					fill := &pbserumhist.Fill{
+						Trader:            e.Owner.String(),
+						OrderId:           hex.EncodeToString(buf),
+						Side:              pbserumhist.Side(e.Side()),
+						Maker:             false,
+						NativeQtyPaid:     e.NativeQtyPaid,
+						NativeQtyReceived: e.NativeQtyReleased,
+						NativeFeeOrRebate: e.NativeFeeOrRebate,
+						FeeTier:           pbserumhist.FeeTier(e.FeeTier),
+					}
+
+					cnt, err := proto.Marshal(fill)
+					if err != nil {
+						zlog.Error("unable to marshal to fill", zap.Error(err))
+						return
+					}
+
+					orderSeqNum := extractOrderSeqNum(e.Side(), e.OrderID)
+
+					zlog.Debug("serum new fill",
+						zap.Uint32("side", uint32(e.Side())),
+						zap.Stringer("market", market),
+						zap.Stringer("trader", trader),
+						zap.Stringer("trading_Account", tradingAccount),
+						zap.Uint64("order_seq_num", orderSeqNum),
+						zap.Uint64("slot_num", slotNumber),
+					)
+
+					out = append(out,
+						&kvdb.KV{
+							Key:   keyer.EncodeFillByTrader(*trader, market, slotNumber, trxIdx, instIdx, orderSeqNum),
+							Value: cnt,
+						},
+						&kvdb.KV{
+							Key:   keyer.EncodeFillByTrader(*trader, market, slotNumber, trxIdx, instIdx, orderSeqNum),
+							Value: cnt,
+						},
+					)
+				}
+			default:
+			}
+		}
+	}))
+	return out, nil
+}
+
+func extractOrderSeqNum(side serum.Side, orderID bin.Uint128) uint64 {
+	if side == serum.SideBid {
+		return ^orderID.Lo
+	}
+	return orderID.Lo
+}
+
+func decodeEventQueue(accountChange *pbcodec.AccountChange) (old *serum.EventQueue, new *serum.EventQueue, err error) {
+	if err := bin.NewDecoder(accountChange.PrevData).Decode(&old); err != nil {
+		zlog.Warn("unable to decode 'event queue' old data", zap.String("data", hex.EncodeToString(accountChange.PrevData)))
+		return nil, nil, fmt.Errorf("unable to decode 'event queue' old data: %w", err)
+	}
+
+	if err := bin.NewDecoder(accountChange.NewData).Decode(&new); err != nil {
+		zlog.Warn("unable to decode 'event queue' new data", zap.String("data", hex.EncodeToString(accountChange.NewData)))
+		return nil, nil, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
+	}
+
+	return
 }

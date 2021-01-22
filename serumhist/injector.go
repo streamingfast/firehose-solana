@@ -18,8 +18,6 @@ import (
 	"github.com/dfuse-io/kvdb/store"
 	pbbstream "github.com/dfuse-io/pbgo/dfuse/bstream/v1"
 	"github.com/dfuse-io/shutter"
-	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/programs/serum"
 	"go.uber.org/zap"
 )
 
@@ -35,8 +33,7 @@ type Injector struct {
 	firehoseClient    pbbstream.BlockStreamV2Client
 	blockStreamClient pbbstream.BlockStreamClient // temp used to
 
-	eventQueues  map[string]solana.PublicKey
-	requesQueues map[string]solana.PublicKey
+	cache *tradingAccountCache
 }
 
 func NewInjector(
@@ -50,14 +47,12 @@ func NewInjector(
 		blockstreamAddr:   blockstreamAddr,
 		Shutter:           shutter.New(),
 		flushSlotInterval: flushSlotInterval,
-		eventQueues:       map[string]solana.PublicKey{},
-		requesQueues:      map[string]solana.PublicKey{},
 		kvdb:              kvdb,
+		cache:             newTradingAccountCache(kvdb),
 	}
 }
 
 func (i *Injector) Setup() error {
-
 	conn, err := grpc.Dial(
 		i.blockstreamAddr,
 		grpc.WithStatsHandler(&ocgrpc.ClientHandler{}),
@@ -70,18 +65,13 @@ func (i *Injector) Setup() error {
 		}),
 		grpc.WithDefaultCallOptions([]grpc.CallOption{grpc.MaxCallRecvMsgSize(1024 * 1024 * 1024), grpc.WaitForReady(true)}...),
 	)
-
-	markets, err := serum.KnownMarket()
 	if err != nil {
-		return fmt.Errorf("unable to retrieve known markets: %w", err)
+		return fmt.Errorf("unable to connecto blockstream: %w", err)
 	}
 
-	for _, market := range markets {
-		i.eventQueues[market.MarketV2.EventQueue.String()] = market.Address
-		i.requesQueues[market.MarketV2.RequestQueue.String()] = market.Address
-	}
-
+	i.cache.load(context.Background())
 	i.blockStreamClient = pbbstream.NewBlockStreamClient(conn)
+
 	return nil
 }
 

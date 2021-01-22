@@ -53,3 +53,18 @@ func (t *Transaction) AccountMetaList() (out []*solana.AccountMeta, err error) {
 	}
 	return out, nil
 }
+
+func (t *Transaction) InstructionAccountMetaList(i *Instruction) (out []*solana.AccountMeta, err error) {
+	for _, acc := range i.AccountKeys {
+		account, err := solana.PublicKeyFromBase58(acc)
+		if err != nil {
+			return nil, fmt.Errorf("account meta list: account to pub key: %w", err)
+		}
+		out = append(out, &solana.AccountMeta{
+			PublicKey:  account,
+			IsSigner:   t.IsSigner(acc),
+			IsWritable: t.IsWritable(acc),
+		})
+	}
+	return out, nil
+}

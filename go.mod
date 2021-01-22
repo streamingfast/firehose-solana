@@ -26,7 +26,7 @@ require (
 	github.com/dfuse-io/pbgo v0.0.6-0.20210108215028-712d6889e94a
 	github.com/dfuse-io/relayer v0.0.2-0.20201029161257-ec97edca50d7
 	github.com/dfuse-io/shutter v1.4.1
-	github.com/dfuse-io/solana-go v0.2.1-0.20210121192012-282082e39e17
+	github.com/dfuse-io/solana-go v0.2.1-0.20210121235036-2fb4cfbfd6bc
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1 // indirect

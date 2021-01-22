@@ -52,26 +52,28 @@ func decoderKeyerE(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("unable to decode key: %w", err)
 	}
 	switch key[0] {
-	case serumhistkeyer.PrefixFillData:
-		market, orderSeqNum, slotNum := serumhistkeyer.DecodeFillData(key)
-		fmt.Println("Fill Data Key:")
-		fmt.Println("Marker:", market.String())
-		fmt.Println("Order Seq Num:", orderSeqNum)
-		fmt.Println("Slot Num:", slotNum)
-	case serumhistkeyer.PrefixOrdersByMarketPubkey:
-		trader, market, orderSeqNum, slotNum := serumhistkeyer.DecodeOrdersByMarketPubkey(key)
-		fmt.Println("Orders By Market And Trader Key:")
-		fmt.Println("Marker:", market.String())
+	case serumhistkeyer.PrefixFillByTrader:
+		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByTrader(key)
+		fmt.Println("Fill By Trader Key:")
 		fmt.Println("Trader:", trader.String())
-		fmt.Println("Order Seq Num:", orderSeqNum)
-		fmt.Println("Slot Num:", slotNum)
-	case serumhistkeyer.PrefixOrdersByPubkey:
-		trader, market, orderSeqNum, slotNum := serumhistkeyer.DecodeOrdersByPubkey(key)
-		fmt.Println("Orders By Trader Key:")
 		fmt.Println("Marker:", market.String())
-		fmt.Println("Trader:", trader.String())
-		fmt.Println("Order Seq Num:", orderSeqNum)
 		fmt.Println("Slot Num:", slotNum)
+		fmt.Println("Trx idx:", trxIdx)
+		fmt.Println("Inst idx:", instIdx)
+		fmt.Println("Order Seq Num:", orderSeqNum)
+	case serumhistkeyer.PrefixFillByMarketTrader:
+		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByMarketTrader(key)
+		fmt.Println("Fill By Trader Key:")
+		fmt.Println("Trader:", trader.String())
+		fmt.Println("Marker:", market.String())
+		fmt.Println("Slot Num:", slotNum)
+		fmt.Println("Trx idx:", trxIdx)
+		fmt.Println("Inst idx:", instIdx)
+		fmt.Println("Order Seq Num:", orderSeqNum)
+	case serumhistkeyer.PrefixTradingAccount:
+		traderAccount := serumhistkeyer.DecodeTradingAccount(key)
+		fmt.Println("Trading Account Key :")
+		fmt.Println("Marker:", traderAccount.String())
 	}
 	return nil
 }

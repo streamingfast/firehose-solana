@@ -2,7 +2,6 @@ package serumhist
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
@@ -24,69 +23,43 @@ func NewManager(store store.KVStore) *Manager {
 }
 
 func (m *Manager) GetFillsByTrader(ctx context.Context, trader solana.PublicKey) ([]*pbserumhist.Fill, error) {
-	prefix := keyer.EncodeOrdersPrefixByPubkey(trader)
+	prefix := keyer.EncodeFillByTraderPrefix(trader)
 	zlog.Debug("get fills by trader",
 		zap.Stringer("prefix", prefix),
 		zap.Stringer("trader", trader),
 	)
-	return m.getFillsForPrefix(ctx, prefix, 100, func(d []byte) []byte {
-		_, market, orderSeqNum, _ := keyer.DecodeOrdersByPubkey(d)
-		return keyer.EncodedPrefixFillData(market, orderSeqNum)
-	})
+	return m.getFillsForPrefix(ctx, prefix, 100)
 }
 
 func (m *Manager) GetFillsByTraderAndMarket(ctx context.Context, trader, market solana.PublicKey) ([]*pbserumhist.Fill, error) {
-	fmt.Println("GetFillsByTraderAndMarket ", trader.String(), market.String())
-	prefix := keyer.EncodeOrdersPrefixByMarketPubkey(trader, market)
+	prefix := keyer.EncodeFillByTraderMarketPrefix(trader, market)
 	zlog.Debug("get fills by trader and market",
 		zap.Stringer("prefix", prefix),
 		zap.Stringer("trader", trader),
 		zap.Stringer("market", market),
 	)
-	return m.getFillsForPrefix(ctx, prefix, 100, func(d []byte) []byte {
-		fmt.Println("generating fill prefix", hex.EncodeToString(d))
-		_, market, orderSeqNum, _ := keyer.DecodeOrdersByMarketPubkey(d)
-		return keyer.EncodedPrefixFillData(market, orderSeqNum)
-	})
+	return m.getFillsForPrefix(ctx, prefix, 100)
 }
 
-func (m *Manager) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, limit int, fillKeyFactory func([]byte) []byte) ([]*pbserumhist.Fill, error) {
-	zlog.Debug("get fills for prefix", zap.Stringer("prefix", prefix))
+func (m *Manager) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, limit int) (out []*pbserumhist.Fill, err error) {
+	zlog.Debug("get fills for prefix",
+		zap.Stringer("prefix", prefix),
+	)
 	orderIterator := m.store.Prefix(ctx, prefix, limit)
 
-	var fillPrefix [][]byte
 	for orderIterator.Next() {
-		k := orderIterator.Item().Key
-		fk := fillKeyFactory(k)
-		fillPrefix = append(fillPrefix, fk)
-	}
-
-	if err := orderIterator.Err(); err != nil {
-		return nil, fmt.Errorf("failed to iterate orders: %w", err)
-	}
-
-	zlog.Debug("found fills keys", zap.Int("count", len(fillPrefix)))
-	getFillsCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	fillsIterator := m.store.BatchPrefix(getFillsCtx, fillPrefix, limit)
-
-	var fills []*pbserumhist.Fill
-	for fillsIterator.Next() {
 		f := &pbserumhist.Fill{}
 		err := proto.Unmarshal(orderIterator.Item().Value, f)
 		if err != nil {
-			fillsIterator.PushFinished()
 			return nil, fmt.Errorf("failed to unmarshal order: %w", err)
 		}
 
-		fills = append(fills, f)
+		out = append(out, f)
 	}
-
 	if err := orderIterator.Err(); err != nil {
 		return nil, fmt.Errorf("failed to iterate fills: %w", err)
 	}
-	zlog.Debug("found fills ", zap.Int("count", len(fills)))
+	zlog.Debug("found fills ", zap.Int("count", len(out)))
 
-	return fills, nil
+	return out, nil
 }

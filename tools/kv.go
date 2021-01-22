@@ -160,7 +160,7 @@ func decodeValue(keyPrefix byte, val []byte) (out interface{}, err error) {
 	switch viper.GetString("keyer") {
 	case "serumhist":
 		switch keyPrefix {
-		case serumhistkeyer.PrefixFillData:
+		case serumhistkeyer.PrefixFillByTrader, serumhistkeyer.PrefixFillByMarketTrader:
 			protoMessage := &pbserumhist.Fill{}
 			out, err = decodePayload(pbmarsh, protoMessage, val)
 		case serumhistkeyer.PrefixCheckpoint:
