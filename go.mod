@@ -6,7 +6,7 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.4 // indirect
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
-	github.com/dfuse-io/binary v0.0.0-20210119182726-f245aa830ba8
+	github.com/dfuse-io/binary v0.0.0-20210122184003-f928bf9f54c1
 	github.com/dfuse-io/bstream v0.0.2-0.20210118170643-057893cea2ef
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
@@ -26,7 +26,7 @@ require (
 	github.com/dfuse-io/pbgo v0.0.6-0.20210108215028-712d6889e94a
 	github.com/dfuse-io/relayer v0.0.2-0.20201029161257-ec97edca50d7
 	github.com/dfuse-io/shutter v1.4.1
-	github.com/dfuse-io/solana-go v0.2.1-0.20210122124834-000b72b16930
+	github.com/dfuse-io/solana-go v0.2.1-0.20210122184128-38880c3785cd
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1 // indirect
