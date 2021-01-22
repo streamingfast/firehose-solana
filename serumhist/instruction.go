@@ -60,12 +60,6 @@ func (i *Injector) processInstruction(
 		if kvs, err = i.processMatchOrderInstruction(ctx, slotNumber, trxIdx, instIdx, mathOrder, inst.AccountChanges); err != nil {
 			return fmt.Errorf("generating serumhist keys: %w", err)
 		}
-	} else {
-		zlog.Debug("unhandled serum instruction",
-			zap.Uint64("slot_number", slotNumber),
-			zap.String("trx_id", trxID),
-			zap.Uint32("instruction_ordinal", inst.Ordinal),
-		)
 	}
 
 	if len(kvs) == 0 {
@@ -184,12 +178,10 @@ func extractOrderSeqNum(side serum.Side, orderID bin.Uint128) uint64 {
 
 func decodeEventQueue(accountChange *pbcodec.AccountChange) (old *serum.EventQueue, new *serum.EventQueue, err error) {
 	if err := bin.NewDecoder(accountChange.PrevData).Decode(&old); err != nil {
-		zlog.Warn("unable to decode 'event queue' old data")
 		return nil, nil, fmt.Errorf("unable to decode 'event queue' old data: %w", err)
 	}
 
 	if err := bin.NewDecoder(accountChange.NewData).Decode(&new); err != nil {
-		zlog.Warn("unable to decode 'event queue' new data")
 		return nil, nil, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
 	}
 

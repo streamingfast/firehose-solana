@@ -98,6 +98,7 @@ func DecodeTradingAccount(key Key) (tradingAccount solana.PublicKey) {
 		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByMarketTrader))
 	}
 
+	key[0] = PrefixTradingAccount
 	copy(tradingAccount[:], key[1:])
 	return
 }

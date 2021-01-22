@@ -13,10 +13,13 @@ import (
 
 func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) error {
 	for _, transaction := range slot.Transactions {
-		zlog.Debug("processing new transaction",
-			zap.String("transaction_id", transaction.Id),
-			zap.Int("instruction_count", len(transaction.Instructions)),
-		)
+		if traceEnabled {
+			zlog.Debug("processing new transaction",
+				zap.String("transaction_id", transaction.Id),
+				zap.Int("instruction_count", len(transaction.Instructions)),
+			)
+
+		}
 		for idx, instruction := range transaction.Instructions {
 			if instruction.ProgramId != serum.PROGRAM_ID.String() {
 				if traceEnabled {
@@ -40,12 +43,14 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 				continue
 			}
 
-			zlog.Debug("processing serum instruction",
-				zap.Uint64("slot_number", slot.Number),
-				zap.Int("instruction_index", idx),
-				zap.String("transaction_id", transaction.Id),
-				zap.Uint32("serum_instruction_variant_index", serumInstruction.TypeID),
-			)
+			if traceEnabled {
+				zlog.Debug("processing serum instruction",
+					zap.Uint64("slot_number", slot.Number),
+					zap.Int("instruction_index", idx),
+					zap.String("transaction_id", transaction.Id),
+					zap.Uint32("serum_instruction_variant_index", serumInstruction.TypeID),
+				)
+			}
 
 			accounts, err := transaction.InstructionAccountMetaList(instruction)
 			if err != nil {
@@ -62,18 +67,6 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 		}
 	}
 	return nil
-}
-
-func instructionAccountIndexes(trxAccounts []string, instructionAccounts []string) []uint8 {
-	var out []uint8
-	for _, ia := range instructionAccounts {
-		for i, ta := range trxAccounts {
-			if ta == ia {
-				out = append(out, uint8(i))
-			}
-		}
-	}
-	return out
 }
 
 func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {
