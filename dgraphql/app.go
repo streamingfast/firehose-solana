@@ -66,7 +66,7 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 	serumHistoryClient := pbserumhist.NewSerumHistoryClient(serumHistoryConn)
 
 	rpcClient := rpc.NewClient(f.config.RPCEndpointAddr)
-	tokenRegistry := md.NewServer(rpcClient, f.config.TokensFileURL, f.config.RPCWSEndpointAddr)
+	tokenRegistry := md.NewServer(rpcClient, f.config.TokensFileURL, "", f.config.RPCWSEndpointAddr)
 
 	if err := tokenRegistry.Launch(false); err != nil {
 		return nil, fmt.Errorf("unable to load token registry: %w", err)
