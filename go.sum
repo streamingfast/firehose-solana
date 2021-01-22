@@ -237,8 +237,6 @@ github.com/dfuse-io/shutter v1.4.1-0.20200319040708-c809eec458e6/go.mod h1:2mLf0
 github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f/go.mod h1:DNhYoTwU0YjpH3nixaqytVJ43uTe/4SahfipE221e68=
 github.com/dfuse-io/shutter v1.4.1 h1:a0HSmmu8vYxR4ynIv1+tH49jrv7gyenNtOJBsmm3OHA=
 github.com/dfuse-io/shutter v1.4.1/go.mod h1:/BxCU/ucC6WUyqmLbWpDhznS6Yy1HDblsstEBnTyr+4=
-github.com/dfuse-io/solana-go v0.2.1-0.20210121235036-2fb4cfbfd6bc h1:alyscU1FTDBNyd2s/Lknmuqe0abzBbTKT9sf2L+5bEk=
-github.com/dfuse-io/solana-go v0.2.1-0.20210121235036-2fb4cfbfd6bc/go.mod h1:uRYzVm9Kq+2Bx+baLgjqIByOvSpqD/bZgFmqtCPiVQU=
 github.com/dfuse-io/solana-go v0.2.1-0.20210122124834-000b72b16930 h1:avBOlk5c+5OMtpnlD6g9WGZ0QotbQalwj5GefNmgLxM=
 github.com/dfuse-io/solana-go v0.2.1-0.20210122124834-000b72b16930/go.mod h1:uRYzVm9Kq+2Bx+baLgjqIByOvSpqD/bZgFmqtCPiVQU=
 github.com/dgraph-io/badger/v2 v2.0.3 h1:inzdf6VF/NZ+tJ8RwwYMjJMvsOALTHYdozn0qSl6XJI=

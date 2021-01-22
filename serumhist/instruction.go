@@ -163,7 +163,7 @@ func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber, trxIdx, ins
 							Value: cnt,
 						},
 						&kvdb.KV{
-							Key:   keyer.EncodeFillByTrader(*trader, market, slotNumber, trxIdx, instIdx, orderSeqNum),
+							Key:   keyer.EncodeFillByMarketTrader(*trader, market, slotNumber, trxIdx, instIdx, orderSeqNum),
 							Value: cnt,
 						},
 					)
