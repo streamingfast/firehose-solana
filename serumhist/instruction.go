@@ -184,12 +184,12 @@ func extractOrderSeqNum(side serum.Side, orderID bin.Uint128) uint64 {
 
 func decodeEventQueue(accountChange *pbcodec.AccountChange) (old *serum.EventQueue, new *serum.EventQueue, err error) {
 	if err := bin.NewDecoder(accountChange.PrevData).Decode(&old); err != nil {
-		zlog.Warn("unable to decode 'event queue' old data", zap.String("data", hex.EncodeToString(accountChange.PrevData)))
+		zlog.Warn("unable to decode 'event queue' old data")
 		return nil, nil, fmt.Errorf("unable to decode 'event queue' old data: %w", err)
 	}
 
 	if err := bin.NewDecoder(accountChange.NewData).Decode(&new); err != nil {
-		zlog.Warn("unable to decode 'event queue' new data", zap.String("data", hex.EncodeToString(accountChange.NewData)))
+		zlog.Warn("unable to decode 'event queue' new data")
 		return nil, nil, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
 	}
 

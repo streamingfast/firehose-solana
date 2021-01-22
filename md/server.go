@@ -20,16 +20,18 @@ type Server struct {
 	tokenStore     map[string]*RegisteredToken
 	tokenStoreLock sync.RWMutex
 	tokenListURL   string
+	marketListURL  string
 	wsURL          string
 	rpcClient      *rpc.Client
 }
 
-func NewServer(rpcClient *rpc.Client, tokenListURL, wsURL string) *Server {
+func NewServer(rpcClient *rpc.Client, tokenListURL string, marketListURL string, wsURL string) *Server {
 	return &Server{
-		rpcClient:    rpcClient,
-		tokenListURL: tokenListURL,
-		wsURL:        wsURL,
-		tokenStore:   map[string]*RegisteredToken{},
+		rpcClient:     rpcClient,
+		tokenListURL:  tokenListURL,
+		marketListURL: marketListURL,
+		wsURL:         wsURL,
+		tokenStore:    map[string]*RegisteredToken{},
 	}
 }
 
