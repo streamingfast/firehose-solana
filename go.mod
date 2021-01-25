@@ -6,7 +6,7 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.4 // indirect
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
-	github.com/dfuse-io/binary v0.0.0-20210122184003-f928bf9f54c1
+	github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c
 	github.com/dfuse-io/bstream v0.0.2-0.20210118170643-057893cea2ef
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
@@ -26,7 +26,7 @@ require (
 	github.com/dfuse-io/pbgo v0.0.6-0.20210108215028-712d6889e94a
 	github.com/dfuse-io/relayer v0.0.2-0.20201029161257-ec97edca50d7
 	github.com/dfuse-io/shutter v1.4.1
-	github.com/dfuse-io/solana-go v0.2.1-0.20210122184128-38880c3785cd
+	github.com/dfuse-io/solana-go v0.2.1-0.20210125234546-a56b6892bb51
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1 // indirect
@@ -43,7 +43,6 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
-	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	golang.org/x/term v0.0.0-20201210144234-2321bbc49cbf // indirect
 	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.25.0

@@ -22,9 +22,10 @@ func init() {
 			cmd.Flags().Bool("dgraphql-override-trace-id", false, "Flag to override trace id or not")
 			cmd.Flags().String("dgraphql-auth-url", "null://", "Auth URL used to configure the dfuse js client")
 			cmd.Flags().String("dgraphql-api-key", "web_0000", "API key used in GraphiQL")
-			cmd.Flags().String("dgraphql-serum-hist-addr", SerumHistoryGRPCServingAddr, "Address where to reach the Serum History gRPC service")
+			cmd.Flags().String("dgraphql-serumhist-grpc-addr", SerumHistoryGRPCServingAddr, "Address where to reach the Serum History gRPC service")
 			cmd.Flags().Uint64("dgraphql-slot-offset", 100, "Number of slots offset")
 			cmd.Flags().String("dgraphql-tokens-file-url", "gs://staging.dfuseio-global.appspot.com/sol-tokens/sol-mainnet-v1.jsonl", "JSONL file containing list of known tokens")
+			cmd.Flags().String("dgraphql-markets-file-url", "gs://staging.dfuseio-global.appspot.com/sol-markets/sol-mainnet-v1.jsonl", "JSONL file containing list of known markets")
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
@@ -34,8 +35,9 @@ func init() {
 				RPCEndpointAddr:   viper.GetString("common-rpc-endpoint"),
 				RPCWSEndpointAddr: viper.GetString("common-rpc-ws-endpoint"),
 				SlotOffset:        viper.GetUint64("dgraphql-slot-offset"),
-				SerumHistoryAddr:  viper.GetString("dgraphql-serum-hist-addr"),
+				SerumHistoryAddr:  viper.GetString("dgraphql-serumhist-grpc-addr"),
 				TokensFileURL:     viper.GetString("dgraphql-tokens-file-url"),
+				MarketFileURL:     viper.GetString("dgraphql-markets-file-url"),
 				Config: dgraphqlApp.Config{
 					// Base dgraphql configs
 					Protocol:        "sol",

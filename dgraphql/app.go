@@ -19,8 +19,8 @@ import (
 
 	drateLimiter "github.com/dfuse-io/dauth/ratelimiter"
 	solResolver "github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
-	"github.com/dfuse-io/dfuse-solana/md"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dgraphql"
 	dgraphqlApp "github.com/dfuse-io/dgraphql/app/dgraphql"
 	"github.com/dfuse-io/dgrpc"
@@ -31,6 +31,7 @@ import (
 type Config struct {
 	dgraphqlApp.Config
 	TokensFileURL     string
+	MarketFileURL     string
 	RatelimiterPlugin string
 	RPCEndpointAddr   string
 	RPCWSEndpointAddr string
@@ -66,7 +67,7 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 	serumHistoryClient := pbserumhist.NewSerumHistoryClient(serumHistoryConn)
 
 	rpcClient := rpc.NewClient(f.config.RPCEndpointAddr)
-	tokenRegistry := md.NewServer(rpcClient, f.config.TokensFileURL, "", f.config.RPCWSEndpointAddr)
+	tokenRegistry := registry.NewServer(rpcClient, f.config.TokensFileURL, f.config.MarketFileURL, f.config.RPCWSEndpointAddr)
 
 	if err := tokenRegistry.Launch(false); err != nil {
 		return nil, fmt.Errorf("unable to load token registry: %w", err)

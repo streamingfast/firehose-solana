@@ -1,14 +1,14 @@
 package resolvers
 
 import (
-	"github.com/dfuse-io/dfuse-solana/md"
+	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dgraphql/types"
 	"github.com/dfuse-io/solana-go"
 )
 
 func (r *Root) QueryTokens() (out []*TokensResponse) {
 	out = []*TokensResponse{}
-	for _, t := range r.mdServer.GetTokens() {
+	for _, t := range r.registryServer.GetTokens() {
 		out = append(out, TokensResponseFromRegistryEntry(t))
 	}
 
@@ -21,7 +21,7 @@ func (r *Root) QueryToken(req *TokenRequest) (*TokensResponse, error) {
 		return nil, err
 	}
 
-	t := r.mdServer.GetToken(&pubKey)
+	t := r.registryServer.GetToken(&pubKey)
 	if t == nil {
 		return nil, nil
 	}
@@ -29,7 +29,7 @@ func (r *Root) QueryToken(req *TokenRequest) (*TokensResponse, error) {
 	return TokensResponseFromRegistryEntry(t), nil
 }
 
-func TokensResponseFromRegistryEntry(token *md.RegisteredToken) *TokensResponse {
+func TokensResponseFromRegistryEntry(token *registry.Token) *TokensResponse {
 	r := &TokensResponse{
 		Address:         token.Address.String(),
 		MintAuthority:   token.MintAuthority.String(),

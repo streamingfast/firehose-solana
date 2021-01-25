@@ -45,7 +45,7 @@ func (r *Root) QuerySerumFillHistory(ctx context.Context, in *SerumFillHistoryRe
 
 	edges := make([]*SerumFillEdge, len(fillsResponse.Fill))
 	for i, fill := range fillsResponse.Fill {
-		edges[i] = &SerumFillEdge{cursor: "", node: SerumFill{Fill: fill}}
+		edges[i] = &SerumFillEdge{cursor: "", node: r.newSerumFill(fill, r.registryServer)}
 	}
 
 	return &SerumFillConnection{

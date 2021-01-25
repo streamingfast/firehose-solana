@@ -6,3 +6,4 @@ start:
     common-rpc-ws-endpoint: "wss://api.mainnet-beta.solana.com/rpc"
     dgraphql-http-addr: ":8080"
     dgraphql-grpc-addr: ":9000"
+    dgraphql-serumhist-grpc-addr: ":9001"

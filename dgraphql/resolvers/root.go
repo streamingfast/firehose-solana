@@ -2,8 +2,8 @@ package resolvers
 
 import (
 	"github.com/dfuse-io/dauth/ratelimiter"
-	"github.com/dfuse-io/dfuse-solana/md"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/solana-go/rpc"
 )
 
@@ -11,7 +11,7 @@ import (
 type Root struct {
 	rpcClient          *rpc.Client
 	wsURL              string
-	mdServer           *md.Server
+	registryServer     *registry.Server
 	requestRateLimiter ratelimiter.RateLimiter
 	serumHistoryClient pbserumhist.SerumHistoryClient
 }
@@ -19,14 +19,14 @@ type Root struct {
 func NewRoot(
 	rpcClient *rpc.Client,
 	wsURL string,
-	mdServer *md.Server,
+	mdServer *registry.Server,
 	requestRateLimiter ratelimiter.RateLimiter,
 	serumHistoryClient pbserumhist.SerumHistoryClient,
 ) (*Root, error) {
 	return &Root{
 		rpcClient:          rpcClient,
 		wsURL:              wsURL,
-		mdServer:           mdServer,
+		registryServer:     mdServer,
 		requestRateLimiter: requestRateLimiter,
 		serumHistoryClient: serumHistoryClient,
 	}, nil

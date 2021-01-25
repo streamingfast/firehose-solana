@@ -154,10 +154,10 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f/go.mod h1:xH/i4TFMt8koVQZ6WFms69WAsDWr2XsYL3Hkl7jkoLE=
-github.com/dfuse-io/binary v0.0.0-20210119182726-f245aa830ba8 h1:7/6ofivaY8iF8YWOxBG9ANq8mBgmEKKvmDjwpb9+7F0=
-github.com/dfuse-io/binary v0.0.0-20210119182726-f245aa830ba8/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
 github.com/dfuse-io/binary v0.0.0-20210122184003-f928bf9f54c1 h1:9S1eeJIJpVeVRt+TowP8FjynB6V9m0KhkqUK1IebPtI=
 github.com/dfuse-io/binary v0.0.0-20210122184003-f928bf9f54c1/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
+github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c h1:HOp4tOFzTxGNRaW0Ma5/VuiRfVnyIiTeLHxrdFuWKLY=
+github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
 github.com/dfuse-io/bstream v0.0.2-0.20200714123252-e9115283f55f/go.mod h1:BHEANTxf3ORDdJdGmQ+lJyX8JqjUH45WGBvBKBaMLQg=
 github.com/dfuse-io/bstream v0.0.2-0.20200715185351-418dc70e2924/go.mod h1:BHEANTxf3ORDdJdGmQ+lJyX8JqjUH45WGBvBKBaMLQg=
 github.com/dfuse-io/bstream v0.0.2-0.20200724152201-64aae5bc532f/go.mod h1:DD1RDqq50aBHDXZLfSv/rNv/35VI+8F7doB8qFecAeM=
@@ -239,10 +239,10 @@ github.com/dfuse-io/shutter v1.4.1-0.20200319040708-c809eec458e6/go.mod h1:2mLf0
 github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f/go.mod h1:DNhYoTwU0YjpH3nixaqytVJ43uTe/4SahfipE221e68=
 github.com/dfuse-io/shutter v1.4.1 h1:a0HSmmu8vYxR4ynIv1+tH49jrv7gyenNtOJBsmm3OHA=
 github.com/dfuse-io/shutter v1.4.1/go.mod h1:/BxCU/ucC6WUyqmLbWpDhznS6Yy1HDblsstEBnTyr+4=
-github.com/dfuse-io/solana-go v0.2.1-0.20210122124834-000b72b16930 h1:avBOlk5c+5OMtpnlD6g9WGZ0QotbQalwj5GefNmgLxM=
-github.com/dfuse-io/solana-go v0.2.1-0.20210122124834-000b72b16930/go.mod h1:uRYzVm9Kq+2Bx+baLgjqIByOvSpqD/bZgFmqtCPiVQU=
 github.com/dfuse-io/solana-go v0.2.1-0.20210122184128-38880c3785cd h1:gGlMMPuj5wV0FQajeYh2RZfMZKU4/oZCxj082z59ulo=
 github.com/dfuse-io/solana-go v0.2.1-0.20210122184128-38880c3785cd/go.mod h1:ySBPUHDCdnof+CZSCQav3wwRD8yRb2WxW4vLsNHWOgA=
+github.com/dfuse-io/solana-go v0.2.1-0.20210125234546-a56b6892bb51 h1:OcrMIskVzn4LDjy0xSANW6ZRcWJ//un4X4bYua+Ibkk=
+github.com/dfuse-io/solana-go v0.2.1-0.20210125234546-a56b6892bb51/go.mod h1:pY+GRAYUPdUFYED+HtIxnZIQunJhoxyB5xeLuaJqJ/4=
 github.com/dgraph-io/badger/v2 v2.0.3 h1:inzdf6VF/NZ+tJ8RwwYMjJMvsOALTHYdozn0qSl6XJI=
 github.com/dgraph-io/badger/v2 v2.0.3/go.mod h1:3KY8+bsP8wI0OEnQJAKpd4wIJW/Mm32yw2j/9FUVnIM=
 github.com/dgraph-io/ristretto v0.0.2-0.20200115201040-8f368f2f2ab3 h1:MQLRM35Pp0yAyBYksjbj1nZI/w6eyRY/mWoM1sFf4kU=
@@ -864,6 +864,8 @@ golang.org/x/sys v0.0.0-20200803210538-64077c9b5642/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 h1:myAQVi0cGEoqQVR5POX+8RR2mrocKqNN1hmeMqhX27k=
 golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c h1:VwygUrnw9jn88c4u8GD3rZQbqrP/tgas88tPUbBxQrk=
+golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/term v0.0.0-20201117132131-f5c789dd3221/go.mod h1:Nr5EML6q2oocZ2LXRh80K7BxOlk5/8JxuGnuhpl+muw=
 golang.org/x/term v0.0.0-20201210144234-2321bbc49cbf h1:MZ2shdL+ZM/XzY3ZGOnh4Nlpnxz5GSOhOmtHo3iPU6M=
 golang.org/x/term v0.0.0-20201210144234-2321bbc49cbf/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
