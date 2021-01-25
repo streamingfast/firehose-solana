@@ -1,4 +1,4 @@
-package md
+package registry
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/dfuse-io/solana-go/programs/token"
 )
 
-type RegisteredToken struct {
+type Token struct {
 	*token.Mint
 	Meta    *TokenMeta
 	Address solana.PublicKey
@@ -26,17 +26,33 @@ type TokenMeta struct {
 	Website string
 }
 
-type Token struct {
-	*token.Mint
-	Meta    *TokenMeta
-	Address solana.PublicKey
-}
-
 type tokenJob struct {
 	Name   string           `json:"tokenName"`
 	Symbol string           `json:"tokenSymbol"`
 	Mint   solana.PublicKey `json:"mintAddress"`
 	Icon   string           `json:"icon"`
+}
+
+func (s *Server) GetToken(address *solana.PublicKey) *Token {
+	s.tokenStoreLock.RLock()
+	defer s.tokenStoreLock.RUnlock()
+
+	return s.tokenStore[address.String()]
+}
+
+func (s *Server) GetTokens() (out []*Token) {
+	s.tokenStoreLock.RLock()
+	defer s.tokenStoreLock.RUnlock()
+
+	zlog.Info("get tokens",
+		zap.Int("store_size", len(s.tokenStore)),
+	)
+
+	out = []*Token{}
+	for _, t := range s.tokenStore {
+		out = append(out, t)
+	}
+	return
 }
 
 func (s *Server) readKnownTokens() error {
@@ -51,7 +67,7 @@ func (s *Server) readKnownTokens() error {
 	err := readFile(s.tokenListURL, func(line string) error {
 		var t *tokenJob
 		if err := json.Unmarshal([]byte(line), &t); err != nil {
-			return fmt.Errorf("unable decode token inforation: %w", err)
+			return fmt.Errorf("unable decode token information: %w", err)
 		}
 		jobs <- t
 		return nil
@@ -95,7 +111,7 @@ func (s *Server) addToken(id int, wg *sync.WaitGroup, jobs <-chan *tokenJob) {
 			continue
 		}
 		s.tokenStoreLock.Lock()
-		s.tokenStore[j.Mint.String()] = &RegisteredToken{
+		s.tokenStore[j.Mint.String()] = &Token{
 			Mint: mint,
 			Meta: &TokenMeta{
 				Name:   j.Name,

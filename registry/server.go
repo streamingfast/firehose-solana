@@ -1,4 +1,4 @@
-package md
+package registry
 
 import (
 	"context"
@@ -17,12 +17,16 @@ import (
 )
 
 type Server struct {
-	tokenStore     map[string]*RegisteredToken
-	tokenStoreLock sync.RWMutex
 	tokenListURL   string
-	marketListURL  string
-	wsURL          string
-	rpcClient      *rpc.Client
+	tokenStore     map[string]*Token
+	tokenStoreLock sync.RWMutex
+
+	marketListURL   string
+	marketStore     map[string]*Market
+	marketStoreLock sync.RWMutex
+
+	wsURL     string
+	rpcClient *rpc.Client
 }
 
 func NewServer(rpcClient *rpc.Client, tokenListURL string, marketListURL string, wsURL string) *Server {
@@ -31,37 +35,20 @@ func NewServer(rpcClient *rpc.Client, tokenListURL string, marketListURL string,
 		tokenListURL:  tokenListURL,
 		marketListURL: marketListURL,
 		wsURL:         wsURL,
-		tokenStore:    map[string]*RegisteredToken{},
+		tokenStore:    map[string]*Token{},
+		marketStore:   map[string]*Market{},
 	}
-}
-
-func (s *Server) GetToken(address *solana.PublicKey) *RegisteredToken {
-	s.tokenStoreLock.RLock()
-	defer s.tokenStoreLock.RUnlock()
-
-	return s.tokenStore[address.String()]
-}
-
-func (s *Server) GetTokens() (out []*RegisteredToken) {
-	s.tokenStoreLock.RLock()
-	defer s.tokenStoreLock.RUnlock()
-
-	zlog.Info("get tokens",
-		zap.Int("store_size", len(s.tokenStore)),
-	)
-
-	out = []*RegisteredToken{}
-	for _, t := range s.tokenStore {
-		out = append(out, t)
-	}
-	zlog.Info("about to return tokens", zap.Int("count", len(out)))
-	return
 }
 
 func (s *Server) Launch(loadFromChain bool) (err error) {
 	zlog.Info("loading known tokens")
 	if err := s.readKnownTokens(); err != nil {
 		return fmt.Errorf("unable to receive known tokens: %w", err)
+	}
+
+	zlog.Info("loading known markets")
+	if err := s.readKnownMarkets(); err != nil {
+		return fmt.Errorf("unable to load known markets: %w", err)
 	}
 
 	if loadFromChain {
@@ -174,7 +161,7 @@ func (s *Server) loadChainTokens(client *ws.Client) error {
 
 		s.tokenStoreLock.Lock()
 		if _, found := s.tokenStore[addr]; !found {
-			s.tokenStore[addr] = &RegisteredToken{
+			s.tokenStore[addr] = &Token{
 				Address: result.Value.PubKey,
 				Mint:    mint,
 			}
@@ -210,7 +197,7 @@ func (s *Server) loadChainTokens(client *ws.Client) error {
 
 		s.tokenStoreLock.Lock()
 		if _, found := s.tokenStore[aPub]; !found { // can be found if the watch process added it
-			s.tokenStore[aPub] = &RegisteredToken{
+			s.tokenStore[aPub] = &Token{
 				Address: a.Pubkey,
 				Mint:    mint,
 			}

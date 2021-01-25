@@ -1,4 +1,4 @@
-package md
+package registry
 
 import (
 	"bufio"
