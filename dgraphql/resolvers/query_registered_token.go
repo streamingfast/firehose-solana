@@ -16,6 +16,10 @@ func (r *Root) QueryRegisteredTokens() (out []*RegisteredTokensResponse) {
 	return
 }
 
+type TokenRequest struct {
+	Address string
+}
+
 func (r *Root) QueryRegisteredToken(req *TokenRequest) (*RegisteredTokensResponse, error) {
 	pubKey, err := solana.PublicKeyFromBase58(req.Address)
 	if err != nil {

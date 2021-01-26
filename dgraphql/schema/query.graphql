@@ -22,4 +22,5 @@ type PageInfo{
 }
 
 scalar Uint64
+scalar Float64
 scalar JSON

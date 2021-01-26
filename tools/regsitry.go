@@ -1,8 +1,6 @@
 package tools
 
 import (
-	"bufio"
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -20,21 +18,30 @@ import (
 var registryCmd = &cobra.Command{Use: "registry", Short: "Registry "}
 var fetchRegistryCmd = &cobra.Command{Use: "fetch", Short: "Fetch"}
 var marketsFetchCmd = &cobra.Command{
-	Use:   "markets {old-market.jsonl} {new-market.jsonl}",
+	Use:   "markets {old-markets.jsonl} {new-markets.jsonl}",
 	Short: "Retrieve Serum Markets",
 	Long:  "Retrieve Serum Markets",
 	Args:  cobra.ExactArgs(2),
 	RunE:  fetchMarketsE,
 }
 
+var tokensFetchCmd = &cobra.Command{
+	Use:   "tokens {old-tokens.jsonl} {new-tokens.jsonl}",
+	Short: "Retrieve Solana Tokens",
+	Long:  "Retrieve Solana Tokens",
+	Args:  cobra.ExactArgs(2),
+	RunE:  fetchTokensE,
+}
+
 func init() {
 	Cmd.AddCommand(registryCmd)
-	fetchRegistryCmd.AddCommand(marketsFetchCmd)
 	registryCmd.AddCommand(fetchRegistryCmd)
+	fetchRegistryCmd.AddCommand(tokensFetchCmd)
+	fetchRegistryCmd.AddCommand(marketsFetchCmd)
 
 	registryCmd.PersistentFlags().String("rpc", "https://solana-api.projectserum.com", "RPC URL")
-	marketsFetchCmd.PersistentFlags().String("store", "gs://staging.dfuseio-global.appspot.com/sol-markets", "Market st")
-
+	marketsFetchCmd.PersistentFlags().String("store", "gs://staging.dfuseio-global.appspot.com/sol-markets", "Market store")
+	tokensFetchCmd.PersistentFlags().String("store", "gs://staging.dfuseio-global.appspot.com/sol-tokens", "Token store")
 }
 
 func fetchMarketsE(cmd *cobra.Command, args []string) (err error) {
@@ -45,11 +52,11 @@ func fetchMarketsE(cmd *cobra.Command, args []string) (err error) {
 	ctx := cmd.Context()
 	client := solrpc.NewClient(viper.GetString("rpc"))
 	fmt.Printf("Retrieving outdated markets: %s\n", oldFilepath)
-	oldMarkets, err := readKnownMarkets(ctx, oldFilepath)
+	oldMarkets, err := registry.ReadKnownMarkets(ctx, oldFilepath)
 	if err != nil {
 		return fmt.Errorf("unable to retrieve known markets: %w", err)
 	}
-	fmt.Printf("Markets V1 contains %d markets\n", len(oldMarkets))
+	fmt.Printf("Loaded %d known markets\n", len(oldMarkets))
 
 	fmt.Printf("Retrieving on-chain markets for program: %s\n", serum.PROGRAM_ID.String())
 	accounts, err := client.GetProgramAccounts(
@@ -91,16 +98,19 @@ func fetchMarketsE(cmd *cobra.Command, args []string) (err error) {
 		}
 
 		marketRegistry.Address = acc.Pubkey
+		marketRegistry.ProgramID = serum.PROGRAM_ID
 		marketRegistry.BaseToken = market.BaseMint
 		marketRegistry.QuoteToken = market.QuoteMint
-		marketRegistry.ProgramID = serum.PROGRAM_ID
+		marketRegistry.BaseLotSize = uint64(market.BaseLotSize)
+		marketRegistry.QuoteLotSize = uint64(market.QuoteLotSize)
+		marketRegistry.RequestQueue = market.RequestQueue
+		marketRegistry.EventQueue = market.EventQueue
 
 		data, err := json.Marshal(marketRegistry)
 		if err != nil {
-			return fmt.Errorf("error marshalling abis: %w", err)
+			return fmt.Errorf("error marshalling market: %w", err)
 		}
 
-		fmt.Println("Storing market!", string(data))
 		_, err = f.Write(data)
 		if err != nil {
 			return fmt.Errorf("writing market: %w", err)
@@ -125,40 +135,126 @@ func fetchMarketsE(cmd *cobra.Command, args []string) (err error) {
 	return nil
 }
 
-func readKnownMarkets(ctx context.Context, marketListURL string) (map[string]*registry.Market, error) {
-	out := map[string]*registry.Market{}
-	err := readFile(ctx, marketListURL, func(line string) error {
-		var m *registry.Market
-		if err := json.Unmarshal([]byte(line), &m); err != nil {
-			return fmt.Errorf("unable decode market information: %w", err)
-		}
-		out[m.Address.String()] = m
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
+func fetchTokensE(cmd *cobra.Command, args []string) (err error) {
+	// todo this should be an argument
+	oldFilepath := fmt.Sprintf("%s/%s", viper.GetString("store"), args[0])
+	newFilename := args[1]
 
-func readFile(ctx context.Context, filepath string, f func(line string) error) error {
-	reader, _, _, err := dstore.OpenObject(ctx, filepath)
+	ctx := cmd.Context()
+	client := solrpc.NewClient(viper.GetString("rpc"))
+	fmt.Printf("Retrieving outdated tokens: %s\n", oldFilepath)
+	oldTokens, err := registry.ReadKnownTokens(ctx, oldFilepath)
 	if err != nil {
-		return fmt.Errorf("opening file: %w", err)
+		return fmt.Errorf("unable to retrieve known tokens: %w", err)
 	}
-	defer reader.Close()
+	fmt.Printf("Loaded %d known tokens\n", len(oldTokens))
 
-	bufReader := bufio.NewReader(reader)
-	var line string
-	for {
-		line, err = bufReader.ReadString('\n')
+	tokens := make([]*registry.Token, len(oldTokens))
+	i := 0
+	for _, t := range oldTokens {
+		tokens[i] = t
+		i++
+	}
+
+	out, err := registry.SyncKnownTokens(client, tokens)
+	if err != nil {
+		return fmt.Errorf("unable to sync tokens: %w", err)
+	}
+	fmt.Printf("Synced %d tokens\n", len(out))
+
+	f, err := os.Create(filepath.Join("/tmp", "out.jsonl"))
+	if err != nil {
+		return fmt.Errorf("unable to open local file write: %w", err)
+	}
+	defer f.Close()
+
+	for _, t := range out {
+		data, err := json.Marshal(t)
 		if err != nil {
-			break
+			return fmt.Errorf("error marshalling tokens: %w", err)
 		}
 
-		if err := f(line); err != nil {
-			return fmt.Errorf("error processing line: %w", err)
+		_, err = f.Write(data)
+		if err != nil {
+			return fmt.Errorf("writing token: %w", err)
+		}
+
+		_, err = f.Write([]byte{'\n'})
+		if err != nil {
+			return fmt.Errorf("writing new line: %w", err)
 		}
 	}
+
+	//fmt.Printf("Retrieving on-chain tokens: %s\n", token.TOKEN_PROGRAM_ID.String())
+	//accounts, err := client.GetProgramAccounts(
+	//	ctx,
+	//	token.TOKEN_PROGRAM_ID,
+	//	&solrpc.GetProgramAccountsOpts{
+	//		Filters: []solrpc.RPCFilter{
+	//			{
+	//				DataSize: token.MINT_SIZE,
+	//			},
+	//		},
+	//	},
+	//)
+	//if err != nil {
+	//	return fmt.Errorf("unable to retrive tokens from chain: %w", err)
+	//}
+	//fmt.Printf("Found %d on chain tokens\n", len(accounts))
+	//
+	//f, err := os.Create(filepath.Join("/tmp", "out.jsonl"))
+	//if err != nil {
+	//	return fmt.Errorf("unable to open local file write: %w", err)
+	//}
+	//defer f.Close()
+	//
+	//for _, acc := range tokens {
+	//
+	//	mint := &token.Mint{}
+	//	err := mint.Decode(acc.Account.Data)
+	//	if err != nil {
+	//		fmt.Printf("Skipping account %s unable to decode market\n", acc.Pubkey.String())
+	//		continue
+	//	}
+	//
+	//	tokenRegistry := &registry.Token{}
+	//	if t, found := oldTokens[acc.Pubkey.String()]; found {
+	//		tokenRegistry = t
+	//	}
+	//
+	//	tokenRegistry.MintAuthorityOption = mint.MintAuthorityOption
+	//	tokenRegistry.MintAuthority = mint.MintAuthority
+	//	tokenRegistry.Supply = uint64(mint.Supply)
+	//	tokenRegistry.Decimals = mint.Decimals
+	//	tokenRegistry.IsInitialized = mint.IsInitialized
+	//	tokenRegistry.FreezeAuthorityOption = mint.FreezeAuthorityOption
+	//	tokenRegistry.FreezeAuthority = mint.FreezeAuthority
+	//
+	//	data, err := json.Marshal(tokenRegistry)
+	//	if err != nil {
+	//		return fmt.Errorf("error marshalling tokens: %w", err)
+	//	}
+	//
+	//	_, err = f.Write(data)
+	//	if err != nil {
+	//		return fmt.Errorf("writing token: %w", err)
+	//	}
+	//
+	//	_, err = f.Write([]byte{'\n'})
+	//	if err != nil {
+	//		return fmt.Errorf("writing new line: %w", err)
+	//	}
+	//}
+
+	store, err := dstore.NewStore(viper.GetString("store"), "", "", true)
+	if err != nil {
+		return fmt.Errorf("error creating export store: %w", err)
+	}
+	err = store.PushLocalFile(ctx, f.Name(), newFilename)
+	if err != nil {
+		return fmt.Errorf("unabel to upload local file: %w", err)
+
+	}
+
 	return nil
 }

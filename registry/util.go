@@ -8,8 +8,8 @@ import (
 	"github.com/dfuse-io/dstore"
 )
 
-func readFile(filepath string, f func(line string) error) error {
-	reader, _, _, err := dstore.OpenObject(context.Background(), filepath)
+func readFile(ctx context.Context, filepath string, f func(line string) error) error {
+	reader, _, _, err := dstore.OpenObject(ctx, filepath)
 	if err != nil {
 		return fmt.Errorf("opening file: %w", err)
 	}

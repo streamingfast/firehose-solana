@@ -243,6 +243,8 @@ github.com/dfuse-io/solana-go v0.2.1-0.20210122184128-38880c3785cd h1:gGlMMPuj5w
 github.com/dfuse-io/solana-go v0.2.1-0.20210122184128-38880c3785cd/go.mod h1:ySBPUHDCdnof+CZSCQav3wwRD8yRb2WxW4vLsNHWOgA=
 github.com/dfuse-io/solana-go v0.2.1-0.20210125234546-a56b6892bb51 h1:OcrMIskVzn4LDjy0xSANW6ZRcWJ//un4X4bYua+Ibkk=
 github.com/dfuse-io/solana-go v0.2.1-0.20210125234546-a56b6892bb51/go.mod h1:pY+GRAYUPdUFYED+HtIxnZIQunJhoxyB5xeLuaJqJ/4=
+github.com/dfuse-io/solana-go v0.2.1-0.20210126234342-be9990a71471 h1:uDFrudEskLHRIjEaubE3pUt9kqD2+S7LLHe2svEhp5Q=
+github.com/dfuse-io/solana-go v0.2.1-0.20210126234342-be9990a71471/go.mod h1:pY+GRAYUPdUFYED+HtIxnZIQunJhoxyB5xeLuaJqJ/4=
 github.com/dgraph-io/badger/v2 v2.0.3 h1:inzdf6VF/NZ+tJ8RwwYMjJMvsOALTHYdozn0qSl6XJI=
 github.com/dgraph-io/badger/v2 v2.0.3/go.mod h1:3KY8+bsP8wI0OEnQJAKpd4wIJW/Mm32yw2j/9FUVnIM=
 github.com/dgraph-io/ristretto v0.0.2-0.20200115201040-8f368f2f2ab3 h1:MQLRM35Pp0yAyBYksjbj1nZI/w6eyRY/mWoM1sFf4kU=

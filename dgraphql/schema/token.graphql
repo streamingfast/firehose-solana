@@ -1,6 +1,10 @@
 type Token {
   address: String!
-  name: String!
+  name: String
+  mintAuthority: String!
+  freezeAuthority: String!
+  supply: Uint64!
+  decimals: Int!
 }
 
 type TokenResponse {

@@ -6,17 +6,38 @@ import (
 	"fmt"
 	"sync"
 
-	bin "github.com/dfuse-io/binary"
+	"github.com/dfuse-io/solana-go/rpc"
+
+	"github.com/dfuse-io/solana-go/programs/token"
+
 	"go.uber.org/zap"
 
 	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/programs/token"
 )
 
 type Token struct {
-	*token.Mint
-	Meta    *TokenMeta
-	Address solana.PublicKey
+	Address               solana.PublicKey `json:"address"`
+	MintAuthorityOption   uint32           `json:"mint_authority_option"`
+	MintAuthority         solana.PublicKey `json:"mint_authority"`
+	Supply                uint64           `json:"supply"`
+	Decimals              uint8            `json:"decimals"`
+	IsInitialized         bool             `json:"is_initialized"`
+	FreezeAuthorityOption uint32           `json:"freeze_authority_option"`
+	FreezeAuthority       solana.PublicKey `json:"freeze_authority"`
+	Meta                  *TokenMeta       `json:"meta"`
+}
+
+func (t *Token) Display(amount uint64) string {
+	var symbol string
+	if t.Meta != nil {
+		symbol = t.Meta.Symbol
+	} else {
+		key := t.Address.String()
+		symbol = fmt.Sprintf("%s..%s", key[0:4], key[len(key)-4:])
+	}
+
+	v := F().Quo(F().SetUint64(amount), F().SetInt(decimalMultiplier(uint(t.Decimals))))
+	return fmt.Sprintf("%f %s", v, symbol)
 }
 
 type TokenMeta struct {
@@ -27,10 +48,9 @@ type TokenMeta struct {
 }
 
 type tokenJob struct {
-	Name   string           `json:"tokenName"`
-	Symbol string           `json:"tokenSymbol"`
-	Mint   solana.PublicKey `json:"mintAddress"`
-	Icon   string           `json:"icon"`
+	Name   string `json:"name"`
+	Symbol string `json:"symbol"`
+	Icon   string `json:"icon"`
 }
 
 func (s *Server) GetToken(address *solana.PublicKey) *Token {
@@ -55,70 +75,84 @@ func (s *Server) GetTokens() (out []*Token) {
 	return
 }
 
-func (s *Server) readKnownTokens() error {
-	jobs := make(chan *tokenJob, 1000)
+func ReadKnownTokens(ctx context.Context, tokenListURL string) (map[string]*Token, error) {
+	out := map[string]*Token{}
 
+	err := readFile(ctx, tokenListURL, func(line string) error {
+		var t *Token
+		if err := json.Unmarshal([]byte(line), &t); err != nil {
+			return fmt.Errorf("unable decode market information: %w", err)
+		}
+		out[t.Address.String()] = t
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func SyncKnownTokens(rpcClient *rpc.Client, tokens []*Token) (out []*Token, err error) {
+	jobs := make(chan *Token, 1000)
+	results := make(chan *Token, 1000)
 	var wg sync.WaitGroup
 	for w := 1; w <= 20; w++ {
 		wg.Add(1)
-		go s.addToken(w, &wg, jobs)
+		go processToken(&wg, rpcClient, jobs, results)
 	}
 
-	err := readFile(s.tokenListURL, func(line string) error {
-		var t *tokenJob
-		if err := json.Unmarshal([]byte(line), &t); err != nil {
-			return fmt.Errorf("unable decode token information: %w", err)
-		}
+	for _, t := range tokens {
 		jobs <- t
-		return nil
-	})
-
-	close(jobs)
-	if err != nil {
-		return err
 	}
+	close(jobs)
 
-	wg.Wait()
-	zlog.Info("known tokens loaded",
-		zap.Int("token_count", len(s.tokenStore)),
-	)
-	return nil
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for {
+		select {
+		case t, ok := <-results:
+			if !ok {
+				return out, nil
+			}
+			out = append(out, t)
+		}
+	}
 }
 
-func (s *Server) addToken(id int, wg *sync.WaitGroup, jobs <-chan *tokenJob) {
+func processToken(wg *sync.WaitGroup, rpc *rpc.Client, jobs <-chan *Token, results chan *Token) {
 	defer wg.Done()
 
-	for j := range jobs {
+	for tk := range jobs {
 		zlog.Debug("retrieving known token",
-			zap.String("name", j.Name),
-			zap.String("symbol", j.Symbol),
+			zap.Stringer("mint_address", tk.Address),
 		)
-		res, err := s.rpcClient.GetAccountInfo(context.Background(), j.Mint)
+		res, err := rpc.GetAccountInfo(context.Background(), tk.Address)
 		if err != nil {
 			zlog.Warn("unable to retrieve token account",
-				zap.Stringer("mint_address", j.Mint),
+				zap.Stringer("mint_address", tk.Address),
+			)
+			continue
+		}
+
+		mint := &token.Mint{}
+		if err := mint.Decode(res.Value.Data); err != nil {
+			zlog.Warn("unable to retrieve token account",
+				zap.Stringer("mint_address", tk.Address),
 				zap.Error(err),
 			)
 			continue
 		}
 
-		var mint *token.Mint
-		if err := bin.NewDecoder(res.Value.Data).Decode(&mint); err != nil {
-			zlog.Warn("unable to retrieve token account",
-				zap.Stringer("mint_address", j.Mint),
-				zap.Error(err),
-			)
-			continue
-		}
-		s.tokenStoreLock.Lock()
-		s.tokenStore[j.Mint.String()] = &Token{
-			Mint: mint,
-			Meta: &TokenMeta{
-				Name:   j.Name,
-				Symbol: j.Symbol,
-			},
-			Address: solana.PublicKey{},
-		}
-		s.tokenStoreLock.Unlock()
+		tk.MintAuthorityOption = mint.MintAuthorityOption
+		tk.MintAuthority = mint.MintAuthority
+		tk.Supply = uint64(mint.Supply)
+		tk.Decimals = mint.Decimals
+		tk.IsInitialized = mint.IsInitialized
+		tk.FreezeAuthorityOption = mint.FreezeAuthorityOption
+		tk.FreezeAuthority = mint.FreezeAuthority
+		results <- tk
 	}
 }

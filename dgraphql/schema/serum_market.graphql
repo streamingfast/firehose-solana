@@ -1,8 +1,14 @@
 type SerumMarket  {
+  """The market's address."""
   address: String!
-  name: String!
 
-#   // phase 2
-#   coinToken Token
-#   pcToken Token
+  """The market's display name"""
+  name: String
+
+  """The markets base token."""
+  baseToken: Token
+
+  """The markets quote token."""
+  quoteToken: Token
+
 }

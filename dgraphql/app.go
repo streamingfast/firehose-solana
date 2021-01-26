@@ -15,6 +15,7 @@
 package dgraphql
 
 import (
+	"context"
 	"fmt"
 
 	drateLimiter "github.com/dfuse-io/dauth/ratelimiter"
@@ -69,7 +70,7 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 	rpcClient := rpc.NewClient(f.config.RPCEndpointAddr)
 	tokenRegistry := registry.NewServer(rpcClient, f.config.TokensFileURL, f.config.MarketFileURL, f.config.RPCWSEndpointAddr)
 
-	if err := tokenRegistry.Launch(false); err != nil {
+	if err := tokenRegistry.Launch(context.Background()); err != nil {
 		return nil, fmt.Errorf("unable to load token registry: %w", err)
 	}
 

@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -10,12 +11,16 @@ import (
 )
 
 type Market struct {
-	Name       string           `json:"name"`
-	Address    solana.PublicKey `json:"address"`
-	Deprecated bool             `json:"deprecated"`
-	ProgramID  solana.PublicKey `json:"program_id"`
-	BaseToken  solana.PublicKey `json:"base_token"`
-	QuoteToken solana.PublicKey `json:"quote_token"`
+	Name         string           `json:"name"`
+	Address      solana.PublicKey `json:"address"`
+	Deprecated   bool             `json:"deprecated"`
+	ProgramID    solana.PublicKey `json:"program_id"`
+	BaseToken    solana.PublicKey `json:"base_token"`
+	QuoteToken   solana.PublicKey `json:"quote_token"`
+	BaseLotSize  uint64           `json:"base_lot_size"`
+	QuoteLotSize uint64           `json:"quote_lot_size"`
+	RequestQueue solana.PublicKey `json:"request_queue"`
+	EventQueue   solana.PublicKey `json:"event_queue"`
 }
 
 func (s *Server) GetMarket(address *solana.PublicKey) *Market {
@@ -43,23 +48,19 @@ func (s *Server) GetMarkets() (out []*Market) {
 	return
 }
 
-func (s *Server) readKnownMarkets() error {
-	err := readFile(s.marketListURL, func(line string) error {
+func ReadKnownMarkets(ctx context.Context, marketListURL string) (map[string]*Market, error) {
+	out := map[string]*Market{}
+
+	err := readFile(ctx, marketListURL, func(line string) error {
 		var m *Market
 		if err := json.Unmarshal([]byte(line), &m); err != nil {
 			return fmt.Errorf("unable decode market information: %w", err)
 		}
-		s.marketStoreLock.Lock()
-		s.marketStore[m.Address.String()] = m
-		s.marketStoreLock.Unlock()
+		out[m.Address.String()] = m
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	zlog.Info("known markets loaded",
-		zap.Int("market_count", len(s.marketStore)),
-	)
-	return nil
+	return out, nil
 }

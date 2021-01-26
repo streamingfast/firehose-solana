@@ -27,25 +27,28 @@ type SerumFill {
   trader: String!
 
   """The market for which this SerumFill's order is bound to."""
-  market: SerumMarket
+  market: SerumMarket!
 
   """Which side this SerumFill is for, either BID (seller) or ASK (buyer)."""
   side: SideType!
 
-  """The token this SerumFill starts from."""
-  baseToken: Token
-
-  """The token this SerumFill ends to."""
-  quoteToken: Token
+  """The number of lot this SerumFill filled the order with, represents the percentage of the order this SerumFill did."""
+  quantityReceived: TokenAmount!
 
   """The number of lot this SerumFill filled the order with, represents the percentage of the order this SerumFill did."""
-  lotCount: Uint64!
+  quantityPaid: TokenAmount!
 
-  """The price paid for this exact SerumFill."""
-  price: Uint64!
+  """The price paid for this exact SerumFill. The denomication is always in (base token / quote token)"""
+  price: String!
 
   """The SerumFeeTier level paid for this fill."""
   feeTier: SerumFeeTier!
+}
+
+type TokenAmount  {
+  value: Uint64!
+  display: String
+  token: Token
 }
 
 enum SerumFeeTier {

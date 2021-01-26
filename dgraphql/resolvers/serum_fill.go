@@ -1,15 +1,14 @@
 package resolvers
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/dfuse-io/solana-go"
-	"go.uber.org/zap"
-
-	"github.com/dfuse-io/dfuse-solana/registry"
-
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	gtype "github.com/dfuse-io/dgraphql/types"
+	"github.com/dfuse-io/dfuse-solana/registry"
+	"github.com/dfuse-io/solana-go"
+	"github.com/dfuse-io/solana-go/programs/serum"
+	"go.uber.org/zap"
 )
 
 type SerumFill struct {
@@ -30,97 +29,85 @@ func (r *Root) newSerumFill(f *pbserumhist.Fill, reg *registry.Server) SerumFill
 		return out
 	}
 
-	m := reg.GetMarket(&marketAddr)
-	if m == nil {
+	market := reg.GetMarket(&marketAddr)
+	if market == nil {
 		zlog.Warn("unknown market", zap.String("address", marketAddr.String()))
-		out.market = &registry.Market{Address: marketAddr}
 		return out
 	}
+	out.market = market
 
-	out.market = m
-
-	baseToken := reg.GetToken(&m.BaseToken)
-	if baseToken == nil {
+	baseToken := reg.GetToken(&market.BaseToken)
+	if baseToken != nil {
+		out.basetoken = baseToken
+	} else {
 		zlog.Warn("unknown base token for market",
-			zap.String("base_token", m.BaseToken.String()),
+			zap.String("base_token", market.BaseToken.String()),
 			zap.String("address", marketAddr.String()),
 		)
-		out.basetoken = &registry.Token{Address: m.BaseToken}
-	} else {
-		out.basetoken = baseToken
 	}
 
-	quoteToken := reg.GetToken(&m.QuoteToken)
-	if quoteToken == nil {
+	quoteToken := reg.GetToken(&market.QuoteToken)
+	if quoteToken != nil {
+		out.quoteToken = quoteToken
+	} else {
 		zlog.Warn("unknown quote token for market",
-			zap.String("quote_token", m.QuoteToken.String()),
+			zap.String("quote_token", market.QuoteToken.String()),
 			zap.String("address", marketAddr.String()),
 		)
-		out.quoteToken = &registry.Token{Address: m.QuoteToken}
-	} else {
-		out.quoteToken = quoteToken
 	}
 
 	return out
 }
 
-func (s SerumFill) OrderID() string {
-	return s.OrderId
-}
+func (s SerumFill) OrderID() string { return s.OrderId }
+func (s SerumFill) Trader() string  { return s.Fill.Trader }
 
-func (s SerumFill) Trader() string {
-	return s.Fill.Trader
-}
-
-func (s SerumFill) Side() string {
-	return s.Fill.Side.String()
-}
-
-func (s SerumFill) Market() *SerumMarket {
-	return &SerumMarket{
-		Address: s.market.Address.String(),
-		Name:    s.market.Name,
+func (s SerumFill) Market() SerumMarket {
+	return SerumMarket{
+		Address:    s.Fill.Market,
+		market:     s.market,
+		basetoken:  s.basetoken,
+		quoteToken: s.quoteToken,
 	}
-
-}
-func (s SerumFill) BaseToken() *Token {
-	t := &Token{Address: s.basetoken.Address.String()}
-	if s.basetoken.Meta != nil {
-		t.Name = s.basetoken.Meta.Name
-	}
-	return t
 }
 
-func (s SerumFill) QuoteToken() *Token {
-	t := &Token{Address: s.quoteToken.Address.String()}
-	if s.quoteToken.Meta != nil {
-		t.Name = s.quoteToken.Meta.Name
+func (s SerumFill) Side() string { return s.Fill.Side.String() }
+
+func (s SerumFill) QuantityPaid() TokenAmount {
+	token := s.basetoken
+	if s.Fill.Side == pbserumhist.Side_BID {
+		token = s.quoteToken
 	}
-	return t
+	return TokenAmount{
+		t: token,
+		v: s.NativeQtyPaid,
+	}
 }
-func (s SerumFill) LotCount() gtype.Uint64 {
-	return 0
+
+func (s SerumFill) QuantityReceived() TokenAmount {
+	token := s.quoteToken
+	if s.Fill.Side == pbserumhist.Side_BID {
+		token = s.basetoken
+	}
+	return TokenAmount{
+		t: token,
+		v: s.NativeQtyReceived,
+	}
 }
-func (s SerumFill) Price() (gtype.Uint64, error) {
-	v, err := s.Fill.GetPrice()
+
+func (s SerumFill) Price() (string, error) {
+	p, err := serum.GetPrice(s.Fill.OrderId)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
-	return gtype.Uint64(v), nil
+	if s.market == nil || s.quoteToken == nil || s.basetoken == nil {
+		return fmt.Sprintf("%d", p), nil
+	}
 
+	price := serum.PriceLotsToNumber(p, s.market.BaseLotSize, s.market.QuoteLotSize, uint64(s.basetoken.Decimals), uint64(s.quoteToken.Decimals))
+	return price.String(), nil
 }
+
 func (s SerumFill) FeeTier() string {
 	return strings.ToUpper(s.Fill.FeeTier.String())
 }
-
-type SerumFeeTier = string
-
-const (
-	SerumFeeTierBase SerumFeeTier = "BASE"
-	SerumFeeTierSRM2              = "SRM2"
-	SerumFeeTierSRM3              = "SRM3"
-	SerumFeeTierSRM4              = "SRM4"
-	SerumFeeTierSRM5              = "SRM5"
-	SerumFeeTierSRM6              = "SRM6"
-	SerumFeeTierMSRM              = "MSRM"
-)
