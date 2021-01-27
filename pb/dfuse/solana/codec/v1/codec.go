@@ -1,7 +1,6 @@
 package pbcodec
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/dfuse-io/bstream"
@@ -40,8 +39,7 @@ func (s *Slot) Num() uint64 {
 }
 
 func (m *Block) PreviousID() string {
-	fmt.Println("The most annoying message in the work so it never goes unoticed! This is broken, the previous ID is always the empty string!")
-	return ""
+	return m.PreviousId
 }
 
 func (m *Block) Time() time.Time {
