@@ -24,7 +24,7 @@ func init() {
 
 	blocksCmd.Flags().Bool("transactions", false, "Include transaction IDs in output")
 	blocksCmd.Flags().Bool("instructions", false, "Include instruction output")
-	blocksCmd.Flags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1_2-oneblock", "One block store")
+	blocksCmd.Flags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1-oneblock", "One block store")
 }
 
 func printBlocksE(cmd *cobra.Command, args []string) error {
