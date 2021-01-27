@@ -43,7 +43,7 @@ func (m *Block) PreviousID() string {
 }
 
 func (m *Block) Time() time.Time {
-	return time.Unix(int64(m.ClockUnixTimestamp), 0)
+	return time.Unix(int64(m.GenesisUnixTimestamp), 0)
 }
 
 // FIXME: This logic at some point is hard-coded and will need to be re-visited in regard
