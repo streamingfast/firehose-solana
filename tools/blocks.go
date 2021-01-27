@@ -33,7 +33,7 @@ func printBlocksE(cmd *cobra.Command, args []string) error {
 	printInstructions := viper.GetBool("instructions")
 	blockNum, err := strconv.ParseUint(args[0], 10, 64)
 	if err != nil {
-		return fmt.Errorf("unable to parse block number %q: %w", args[0], blockNum)
+		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
 	}
 
 	str := viper.GetString("store")
