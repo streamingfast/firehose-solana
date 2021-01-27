@@ -7,7 +7,7 @@ require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c
-	github.com/dfuse-io/bstream v0.0.2-0.20210118170643-057893cea2ef
+	github.com/dfuse-io/bstream v0.0.2-0.20210127190918-bdc564ae4d77
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
@@ -16,14 +16,14 @@ require (
 	github.com/dfuse-io/dlauncher v0.0.0-20201215203933-750a56ede40d
 	github.com/dfuse-io/dmetering v0.0.0-20210112023524-c3ddadbc0d6a
 	github.com/dfuse-io/dmetrics v0.0.0-20200508170817-3b8cb01fee68
-	github.com/dfuse-io/dstore v0.1.1-0.20201124190907-4b1585267864
+	github.com/dfuse-io/dstore v0.1.1-0.20210127175013-8b099523b6fd
 	github.com/dfuse-io/firehose v0.1.1-0.20210118213034-5bdcff6a14a7
 	github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
 	github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70
 	github.com/dfuse-io/merger v0.0.3-0.20210120192023-4faaf201eee9
 	github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37
-	github.com/dfuse-io/pbgo v0.0.6-0.20210108215028-712d6889e94a
+	github.com/dfuse-io/pbgo v0.0.6-0.20210125181705-b17235518132
 	github.com/dfuse-io/relayer v0.0.2-0.20201029161257-ec97edca50d7
 	github.com/dfuse-io/shutter v1.4.1
 	github.com/dfuse-io/solana-go v0.2.1-0.20210126234342-be9990a71471
@@ -52,3 +52,5 @@ require (
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807
 
 replace github.com/ShinyTrinkets/overseer => github.com/maoueh/overseer v0.2.1-0.20191024193921-39856397cf3f
+
+replace github.com/dfuse-io/bstream => /Users/cbillett/devel/dfuse/bstream
