@@ -2,6 +2,8 @@ package serumhist
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
@@ -116,10 +118,14 @@ func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber, trxIdx, ins
 						return
 					}
 
+					number := make([]byte, 16)
+					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
+					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
+
 					fill := &pbserumhist.Fill{
 						Trader:            e.Owner.String(),
 						Market:            market.String(),
-						OrderId:           e.OrderID.String(),
+						OrderId:           fmt.Sprintf("%s%s", hex.EncodeToString(number[:8]), hex.EncodeToString(number[8:])),
 						Side:              pbserumhist.Side(e.Side()),
 						Maker:             false,
 						NativeQtyPaid:     e.NativeQtyPaid,

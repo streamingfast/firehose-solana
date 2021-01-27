@@ -46,7 +46,8 @@ func (t *tradingAccountCache) setTradingAccount(ctx context.Context, tradingAcco
 	}
 
 	t.accounts[tradingAccount.String()] = trader
-	if err := t.kvdb.Put(ctx, tradingAccount[:], trader[:]); err != nil {
+	key := keyer.EncodeTradingAccount(tradingAccount)
+	if err := t.kvdb.Put(ctx, key, trader[:]); err != nil {
 		return fmt.Errorf("error setting trading account: %w", err)
 	}
 	return nil
@@ -56,7 +57,8 @@ func (t *tradingAccountCache) getTrader(ctx context.Context, tradingAccount sola
 	if trader, found := t.accounts[tradingAccount.String()]; found {
 		return &trader, nil
 	}
-	val, err := t.kvdb.Get(ctx, tradingAccount[:])
+	key := keyer.EncodeTradingAccount(tradingAccount)
+	val, err := t.kvdb.Get(ctx, key)
 	if err != nil {
 		if err == kvdb.ErrNotFound {
 			return nil, nil
