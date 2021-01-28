@@ -1,7 +1,5 @@
 type Query {
 
-  registeredMarkets: [SerumMarket!]!
-
   tokens: [TokenResponse!]!
 
   token(address: String!): TokenResponse
@@ -12,6 +10,8 @@ type Query {
 
   """Return last 100 fills for the given trader's public key. Returns irreversible only data so live data not yet part of a slot that is in the root set will not be returned when called."""
   serumFillHistory(trader: String!, market: String): SerumFillConnection!
+
+  serumMarkets(cursor: String): SerumMarketConnection!
 }
 
 """Cursors required to continue either forward or backwards from a list of paginated elements"""

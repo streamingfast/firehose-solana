@@ -1,3 +1,23 @@
+"""The Connection type for a SerumMarket. See the [GraphQL core concepts](https://docs.dfuse.io/guides/core-concepts/graphql/)"""
+type SerumMarketConnection {
+  "A list of edges to SerumFill"
+  edges: [SerumMarketEdge]!
+
+  "Information to aid pagination"
+  pageInfo: PageInfo!
+}
+
+"""
+A single SerumMarketEdge element of the connection list.
+"""
+type SerumMarketEdge {
+  """Query cursor, allowing you to continue fetching results even after interruption of your connection, without missing a beat."""
+  cursor: String!
+
+  """The SerumMarket object."""
+  node: SerumMarket!
+}
+
 type SerumMarket  {
   """The market's address."""
   address: String!
