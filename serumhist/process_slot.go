@@ -61,7 +61,7 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 				i.SetAccounts(accounts)
 			}
 
-			if err = i.processInstruction(ctx, slot.Number, transaction.Index, uint64(idx), transaction.Id, instruction, serumInstruction); err != nil {
+			if err = i.processInstruction(ctx, slot.Number, slot.Block.Time(), transaction.Index, uint64(idx), transaction.Id, instruction, serumInstruction); err != nil {
 				return fmt.Errorf("process serum instruction: %w", err)
 			}
 		}

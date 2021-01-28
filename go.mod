@@ -17,7 +17,7 @@ require (
 	github.com/dfuse-io/dmetering v0.0.0-20210112023524-c3ddadbc0d6a
 	github.com/dfuse-io/dmetrics v0.0.0-20200508170817-3b8cb01fee68
 	github.com/dfuse-io/dstore v0.1.1-0.20210127175013-8b099523b6fd
-	github.com/dfuse-io/firehose v0.1.1-0.20210118213034-5bdcff6a14a7
+	github.com/dfuse-io/firehose v0.1.1-0.20210127210823-5cbdd5ff0aa3
 	github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
 	github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70

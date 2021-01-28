@@ -5,6 +5,10 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"time"
+
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 
@@ -22,15 +26,7 @@ import (
 
 // TODO: this is very repetitive we need to optimze the account setting in solana go
 // once that is done we can clean all this up!
-func (i *Injector) processInstruction(
-	ctx context.Context,
-	slotNumber uint64,
-	trxIdx uint64,
-	instIdx uint64,
-	trxID string,
-	inst *pbcodec.Instruction,
-	serumInstruction *serum.Instruction,
-) error {
+func (i *Injector) processInstruction(ctx context.Context, slotNumber uint64, blkTime time.Time, trxIdx uint64, instIdx uint64, trxID string, inst *pbcodec.Instruction, serumInstruction *serum.Instruction) error {
 	var kvs []*kvdb.KV
 	var err error
 
@@ -57,7 +53,7 @@ func (i *Injector) processInstruction(
 			zap.String("trx_id", trxID),
 		)
 
-		if kvs, err = i.processMatchOrderInstruction(ctx, slotNumber, trxIdx, instIdx, mathOrder, inst.AccountChanges); err != nil {
+		if kvs, err = i.processMatchOrderInstruction(ctx, slotNumber, blkTime, trxIdx, instIdx, mathOrder, inst.AccountChanges); err != nil {
 			return fmt.Errorf("generating serumhist keys: %w", err)
 		}
 	}
@@ -78,7 +74,7 @@ func (i *Injector) processInstruction(
 	return nil
 }
 
-func (i *Injector) processMatchOrderInstruction(ctx context.Context, slotNumber, trxIdx, instIdx uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
+func (i *Injector) processMatchOrderInstruction(ctx context.Context, slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*kvdb.KV, err error) {
 	eventQueueAccountChange, err := filterAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
 		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
 	})
@@ -92,10 +88,10 @@ func (i *Injector) processMatchOrderInstruction(ctx context.Context, slotNumber,
 		return nil, fmt.Errorf("unable to decode event queue change: %w", err)
 	}
 
-	return i.getFillKeyValues(ctx, slotNumber, trxIdx, instIdx, inst.Accounts.Market.PublicKey, old, new)
+	return i.getFillKeyValues(ctx, slotNumber, blkTime, trxIdx, instIdx, inst.Accounts.Market.PublicKey, old, new)
 }
 
-func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber, trxIdx, instIdx uint64, market solana.PublicKey, old, new *serum.EventQueue) (out []*kvdb.KV, err error) {
+func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, market solana.PublicKey, old, new *serum.EventQueue) (out []*kvdb.KV, err error) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
@@ -119,19 +115,24 @@ func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber, trxIdx, ins
 					}
 
 					number := make([]byte, 16)
+
 					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
 					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
 
 					fill := &pbserumhist.Fill{
-						Trader:            e.Owner.String(),
-						Market:            market.String(),
-						OrderId:           fmt.Sprintf("%s%s", hex.EncodeToString(number[:8]), hex.EncodeToString(number[8:])),
-						Side:              pbserumhist.Side(e.Side()),
-						Maker:             false,
-						NativeQtyPaid:     e.NativeQtyPaid,
-						NativeQtyReceived: e.NativeQtyReleased,
-						NativeFeeOrRebate: e.NativeFeeOrRebate,
-						FeeTier:           pbserumhist.FeeTier(e.FeeTier),
+						Trader:               e.Owner.String(),
+						Market:               market.String(),
+						OrderId:              fmt.Sprintf("%s%s", hex.EncodeToString(number[:8]), hex.EncodeToString(number[8:])),
+						Side:                 pbserumhist.Side(e.Side()),
+						Maker:                false,
+						NativeQtyPaid:        e.NativeQtyPaid,
+						NativeQtyReceived:    e.NativeQtyReleased,
+						NativeFeeOrRebate:    e.NativeFeeOrRebate,
+						FeeTier:              pbserumhist.FeeTier(e.FeeTier),
+						Timestamp:            mustProtoTimestamp(blkTime),
+						XXX_NoUnkeyedLiteral: struct{}{},
+						XXX_unrecognized:     nil,
+						XXX_sizecache:        0,
 					}
 
 					cnt, err := proto.Marshal(fill)
@@ -186,4 +187,12 @@ func decodeEventQueue(accountChange *pbcodec.AccountChange) (old *serum.EventQue
 	}
 
 	return
+}
+
+func mustProtoTimestamp(in time.Time) *timestamp.Timestamp {
+	out, err := ptypes.TimestampProto(in)
+	if err != nil {
+		panic(fmt.Sprintf("invalid timestamp conversion %q: %s", in, err))
+	}
+	return out
 }
