@@ -36,9 +36,9 @@ func init() {
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "get_serum_markets.graphql",
-		FileModTime: time.Unix(1611851120, 0),
+		FileModTime: time.Unix(1611851405, 0),
 
-		Content: string("{\n  registeredMarkets {\n    address\n    name\n    baseToken {\n      address\n      name\n    }\n    quoteToken {\n      address\n      name\n    }\n  }\n}\n"),
+		Content: string("{\n  serumMarkets {\n    edges {\n      node {\n        address\n        name\n        baseToken {\n          address\n          name\n          decimals\n        }\n        quoteToken {\n          address\n          name\n          decimals\n        }\n      }\n    }\n  }\n}\n"),
 	}
 	file7 := &embedded.EmbeddedFile{
 		Filename:    "get_token.graphql",

@@ -1,14 +1,20 @@
 {
-  registeredMarkets {
-    address
-    name
-    baseToken {
-      address
-      name
-    }
-    quoteToken {
-      address
-      name
+  serumMarkets {
+    edges {
+      node {
+        address
+        name
+        baseToken {
+          address
+          name
+          decimals
+        }
+        quoteToken {
+          address
+          name
+          decimals
+        }
+      }
     }
   }
 }
