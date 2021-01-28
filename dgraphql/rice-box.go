@@ -11,53 +11,60 @@ func init() {
 
 	// define files
 	file2 := &embedded.EmbeddedFile{
+		Filename:    ".prettierrc",
+		FileModTime: time.Unix(1611871895, 0),
+
+		Content: string("{}"),
+	}
+	file3 := &embedded.EmbeddedFile{
 		Filename:    "get_all_registered_tokens.graphql",
-		FileModTime: time.Unix(1608158040, 0),
+		FileModTime: time.Unix(1611871901, 0),
 
 		Content: string("{\n  registeredTokens {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n    name\n    logo\n    website\n  }\n}\n"),
 	}
-	file3 := &embedded.EmbeddedFile{
+	file4 := &embedded.EmbeddedFile{
 		Filename:    "get_all_tokens.graphql",
-		FileModTime: time.Unix(1608158030, 0),
+		FileModTime: time.Unix(1611871904, 0),
 
 		Content: string("{\n  tokens {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n  }\n}\n"),
 	}
-	file4 := &embedded.EmbeddedFile{
-		Filename:    "get_registered_token.graphql",
-		FileModTime: time.Unix(1608158059, 0),
-
-		Content: string("query ($account: String!) {\n  registeredToken(address: $account) {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n    name\n    logo\n    website\n  }\n}\n"),
-	}
 	file5 := &embedded.EmbeddedFile{
-		Filename:    "get_serum_fill.graphql",
-		FileModTime: time.Unix(1608325405, 0),
+		Filename:    "get_registered_token.graphql",
+		FileModTime: time.Unix(1611871905, 0),
 
-		Content: string("query ($trader: String!, $market: String) {\n  serumFillHistory(trader: $trader, market: $market) {\n    pageInfo {\n      startCursor\n      endCursor\n    }\n    edges {\n      cursor\n      node {\n        orderId\n        side\n        market {\n          address\n          name\n        }\n        baseToken {\n          address\n          name\n        }\n        quoteToken {\n          address\n          name\n        }\n        lotCount\n        price\n        feeTier\n      }\n    }\n  }\n}\n"),
+		Content: string("query($account: String!) {\n  registeredToken(address: $account) {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n    symbol\n    name\n    logo\n    website\n  }\n}\n"),
 	}
 	file6 := &embedded.EmbeddedFile{
-		Filename:    "get_serum_markets.graphql",
-		FileModTime: time.Unix(1611851405, 0),
+		Filename:    "get_serum_fill.graphql",
+		FileModTime: time.Unix(1611871907, 0),
 
-		Content: string("{\n  serumMarkets {\n    edges {\n      node {\n        address\n        name\n        baseToken {\n          address\n          name\n          decimals\n        }\n        quoteToken {\n          address\n          name\n          decimals\n        }\n      }\n    }\n  }\n}\n"),
+		Content: string("query($trader: String!, $market: String) {\n  serumFillHistory(trader: $trader, market: $market) {\n    pageInfo {\n      startCursor\n      endCursor\n    }\n    edges {\n      cursor\n      node {\n        orderId\n        trader\n        side\n        market {\n          address\n          name\n          baseToken {\n            address\n            name\n          }\n          quoteToken {\n            address\n            name\n          }\n        }\n        quantityReceived {\n          display\n          value\n        }\n        quantityPaid {\n          display\n          value\n        }\n        price\n        feeTier\n      }\n    }\n  }\n}\n"),
 	}
 	file7 := &embedded.EmbeddedFile{
-		Filename:    "get_token.graphql",
-		FileModTime: time.Unix(1608158051, 0),
+		Filename:    "get_serum_markets.graphql",
+		FileModTime: time.Unix(1611872010, 0),
 
-		Content: string("query ($account: String!) {\n  token(address: $account) {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n  }\n}\n"),
+		Content: string("{\n  serumMarkets(count: 100) {\n    pageInfo {\n      startCursor\n      endCursor\n      hasNextPage\n    }\n    edges {\n      cursor\n      node {\n        address\n        name\n        baseToken {\n          address\n          name\n          decimals\n          supply\n        }\n        quoteToken {\n          address\n          name\n          decimals\n          supply\n        }\n      }\n    }\n  }\n}\n"),
+	}
+	file8 := &embedded.EmbeddedFile{
+		Filename:    "get_token.graphql",
+		FileModTime: time.Unix(1611871912, 0),
+
+		Content: string("query($account: String!) {\n  token(address: $account) {\n    address\n    mintAuthority\n    freezeAuthority\n    supply\n    decimals\n  }\n}\n"),
 	}
 
 	// define dirs
 	dir1 := &embedded.EmbeddedDir{
 		Filename:   "",
-		DirModTime: time.Unix(1611851119, 0),
+		DirModTime: time.Unix(1611871893, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
-			file2, // "get_all_registered_tokens.graphql"
-			file3, // "get_all_tokens.graphql"
-			file4, // "get_registered_token.graphql"
-			file5, // "get_serum_fill.graphql"
-			file6, // "get_serum_markets.graphql"
-			file7, // "get_token.graphql"
+			file2, // ".prettierrc"
+			file3, // "get_all_registered_tokens.graphql"
+			file4, // "get_all_tokens.graphql"
+			file5, // "get_registered_token.graphql"
+			file6, // "get_serum_fill.graphql"
+			file7, // "get_serum_markets.graphql"
+			file8, // "get_token.graphql"
 
 		},
 	}
@@ -68,17 +75,18 @@ func init() {
 	// register embeddedBox
 	embedded.RegisterEmbeddedBox(`examples`, &embedded.EmbeddedBox{
 		Name: `examples`,
-		Time: time.Unix(1611851119, 0),
+		Time: time.Unix(1611871893, 0),
 		Dirs: map[string]*embedded.EmbeddedDir{
 			"": dir1,
 		},
 		Files: map[string]*embedded.EmbeddedFile{
-			"get_all_registered_tokens.graphql": file2,
-			"get_all_tokens.graphql":            file3,
-			"get_registered_token.graphql":      file4,
-			"get_serum_fill.graphql":            file5,
-			"get_serum_markets.graphql":         file6,
-			"get_token.graphql":                 file7,
+			".prettierrc":                       file2,
+			"get_all_registered_tokens.graphql": file3,
+			"get_all_tokens.graphql":            file4,
+			"get_registered_token.graphql":      file5,
+			"get_serum_fill.graphql":            file6,
+			"get_serum_markets.graphql":         file7,
+			"get_token.graphql":                 file8,
 		},
 	})
 }

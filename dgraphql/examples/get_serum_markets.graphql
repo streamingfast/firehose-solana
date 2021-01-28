@@ -1,6 +1,12 @@
 {
-  serumMarkets {
+  serumMarkets(count: 100) {
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+    }
     edges {
+      cursor
       node {
         address
         name
@@ -8,11 +14,13 @@
           address
           name
           decimals
+          supply
         }
         quoteToken {
           address
           name
           decimals
+          supply
         }
       }
     }

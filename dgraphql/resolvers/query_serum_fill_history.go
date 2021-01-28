@@ -90,5 +90,5 @@ func NewPageInfoFromEdges(edges []*SerumFillEdge) PageInfo {
 		return emptyPageInfo
 	}
 
-	return NewPageInfo(edges[0].cursor, edges[len(edges)-1].cursor)
+	return NewPageInfo(edges[0].cursor, edges[len(edges)-1].cursor, true)
 }

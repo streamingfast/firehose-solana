@@ -1,10 +1,13 @@
 """The Connection type for a SerumMarket. See the [GraphQL core concepts](https://docs.dfuse.io/guides/core-concepts/graphql/)"""
 type SerumMarketConnection {
-  "A list of edges to SerumFill"
+  """A list of edges to SerumFill"""
   edges: [SerumMarketEdge]!
 
-  "Information to aid pagination"
+  """Information to aid pagination"""
   pageInfo: PageInfo!
+
+  """Total count of market that we could return"""
+  totalCount: Uint64!
 }
 
 """
@@ -30,5 +33,4 @@ type SerumMarket  {
 
   """The markets quote token."""
   quoteToken: Token
-
 }

@@ -1,4 +1,4 @@
-query ($trader: String!, $market: String) {
+query($trader: String!, $market: String) {
   serumFillHistory(trader: $trader, market: $market) {
     pageInfo {
       startCursor
@@ -8,20 +8,28 @@ query ($trader: String!, $market: String) {
       cursor
       node {
         orderId
+        trader
         side
         market {
           address
           name
+          baseToken {
+            address
+            name
+          }
+          quoteToken {
+            address
+            name
+          }
         }
-        baseToken {
-          address
-          name
+        quantityReceived {
+          display
+          value
         }
-        quoteToken {
-          address
-          name
+        quantityPaid {
+          display
+          value
         }
-        lotCount
         price
         feeTier
       }

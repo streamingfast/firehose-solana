@@ -1,4 +1,4 @@
-query ($account: String!) {
+query($account: String!) {
   token(address: $account) {
     address
     mintAuthority

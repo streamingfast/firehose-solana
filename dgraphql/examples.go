@@ -28,7 +28,7 @@ func GraphqlExamples() []*static.GraphqlExample {
 			Document: graphqlDocument(box, "get_registered_token.graphql"),
 			Variables: static.GraphqlVariablesByNetwork{
 				"generic": r(`{"account": "YOUR-ACCOUNT-HERE"}`),
-				"mainnet": r(`{"account": "YOUR-ACCOUNT-HERE"}`),
+				"mainnet": r(`{"account": "BXXkv6z8ykpG1yuvUDPgh732wzVHB69RnB9YgSYh3itW"}`),
 			},
 		},
 		{
@@ -36,7 +36,7 @@ func GraphqlExamples() []*static.GraphqlExample {
 			Document: graphqlDocument(box, "get_token.graphql"),
 			Variables: static.GraphqlVariablesByNetwork{
 				"generic": r(`{"account": "YOUR-ACCOUNT-HERE"}`),
-				"mainnet": r(`{"account": "YOUR-ACCOUNT-HERE"}`),
+				"mainnet": r(`{"account": "BXXkv6z8ykpG1yuvUDPgh732wzVHB69RnB9YgSYh3itW"}`),
 			},
 		},
 		{
@@ -44,7 +44,7 @@ func GraphqlExamples() []*static.GraphqlExample {
 			Document: graphqlDocument(box, "get_serum_fill.graphql"),
 			Variables: static.GraphqlVariablesByNetwork{
 				"generic": r(`{"trader": "YOUR-ACCOUNT-HERE"}`),
-				"mainnet": r(`{"trader": "YOUR-ACCOUNT-HERE"}`),
+				"mainnet": r(`{"trader": "5coBYaaDYd9xkMhDPDGcV2Batu51N987Um1jcrE122AY"}`),
 			},
 		},
 		{

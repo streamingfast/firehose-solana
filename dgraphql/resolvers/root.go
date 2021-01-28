@@ -4,6 +4,7 @@ import (
 	"github.com/dfuse-io/dauth/ratelimiter"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
+	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/rpc"
 )
 
@@ -14,6 +15,10 @@ type Root struct {
 	registryServer     *registry.Server
 	requestRateLimiter ratelimiter.RateLimiter
 	serumHistoryClient pbserumhist.SerumHistoryClient
+
+	// Interfaces we use internally for testing purposes
+	marketsGetter func() []*registry.Market
+	tokenGetter   func(in *solana.PublicKey) *registry.Token
 }
 
 func NewRoot(
@@ -29,5 +34,8 @@ func NewRoot(
 		registryServer:     mdServer,
 		requestRateLimiter: requestRateLimiter,
 		serumHistoryClient: serumHistoryClient,
+
+		marketsGetter: mdServer.GetMarkets,
+		tokenGetter:   mdServer.GetToken,
 	}, nil
 }
