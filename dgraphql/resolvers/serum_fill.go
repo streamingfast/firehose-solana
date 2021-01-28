@@ -66,7 +66,7 @@ func (s SerumFill) Market() SerumMarket {
 	return SerumMarket{
 		Address:    s.Fill.Market,
 		market:     s.market,
-		basetoken:  s.basetoken,
+		baseToken:  s.basetoken,
 		quoteToken: s.quoteToken,
 	}
 }

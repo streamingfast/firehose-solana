@@ -5,7 +5,7 @@ import "github.com/dfuse-io/dfuse-solana/registry"
 type SerumMarket struct {
 	Address    string
 	market     *registry.Market
-	basetoken  *registry.Token
+	baseToken  *registry.Token
 	quoteToken *registry.Token
 }
 
@@ -21,8 +21,8 @@ func (m SerumMarket) Name() *string {
 }
 
 func (s SerumMarket) BaseToken() *Token {
-	if s.basetoken != nil {
-		return &Token{s.basetoken}
+	if s.baseToken != nil {
+		return &Token{s.baseToken}
 	}
 	return nil
 }
