@@ -39,9 +39,7 @@ func init() {
 				SourceRequestBurst: viper.GetInt("relayer-source-request-burst"),
 				MinStartOffset:     viper.GetUint64("relayer-min-start-offset"),
 				SourceStoreURL:     mustReplaceDataDir(dfuseDataDir, viper.GetString("common-blocks-store-url")),
-			}, &relayerApp.Modules{
-				BlockFilter: runtime.BlockFilter.TransformInPlace,
-			}), nil
+			}, &relayerApp.Modules{}), nil
 		},
 	})
 }
