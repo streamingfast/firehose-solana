@@ -3,11 +3,9 @@
 // query.graphql (1.023kB)
 // query_alpha.graphql (14B)
 // registered_token.graphql (208B)
-// schema.graphql (59B)
+// schema.graphql (28B)
 // serum_fill.graphql (1.672kB)
 // serum_market.graphql (883B)
-// subscription.graphql (22B)
-// subscription_alpha.graphql (21B)
 // token.graphql (266B)
 
 package schema
@@ -137,7 +135,7 @@ func registered_tokenGraphql() (*asset, error) {
 	return a, nil
 }
 
-var _schemaGraphql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2a\x4e\xce\x48\xcd\x4d\x54\xa8\xe6\x52\x50\x50\x50\x28\x2c\x4d\x2d\xaa\xb4\x52\x08\x04\x51\x60\x81\xe2\xd2\xa4\xe2\xe4\xa2\xcc\x82\x92\xcc\xfc\x3c\x2b\x85\x60\x24\x1e\x57\x2d\x17\x20\x00\x00\xff\xff\x52\xd9\x58\xe5\x3b\x00\x00\x00")
+var _schemaGraphql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2a\x4e\xce\x48\xcd\x4d\x54\xa8\xe6\x52\x50\x50\x50\x28\x2c\x4d\x2d\xaa\xb4\x52\x08\x04\x51\x5c\xb5\x5c\x80\x00\x00\x00\xff\xff\x9e\xeb\xeb\x5e\x1c\x00\x00\x00")
 
 func schemaGraphqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -152,8 +150,8 @@ func schemaGraphql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "schema.graphql", size: 59, mode: os.FileMode(0644), modTime: time.Unix(1608156028, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5b, 0xba, 0x8f, 0x74, 0x29, 0x4e, 0xaf, 0x41, 0x66, 0x2b, 0x4e, 0x31, 0x85, 0x84, 0x19, 0x59, 0x50, 0x81, 0xda, 0x72, 0x50, 0x56, 0xaf, 0xe3, 0xd8, 0xb7, 0x35, 0xbc, 0xd1, 0x85, 0xf3, 0xc6}}
+	info := bindataFileInfo{name: "schema.graphql", size: 28, mode: os.FileMode(0644), modTime: time.Unix(1611874630, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xbb, 0x52, 0xf, 0x8c, 0x59, 0xcb, 0xec, 0xb1, 0xfd, 0x14, 0xda, 0xdd, 0x80, 0x73, 0x37, 0xba, 0xee, 0x84, 0xf, 0x5e, 0x4d, 0x73, 0x64, 0xe3, 0xb4, 0x18, 0xb7, 0x86, 0x6e, 0xc3, 0xc5, 0x70}}
 	return a, nil
 }
 
@@ -194,46 +192,6 @@ func serum_marketGraphql() (*asset, error) {
 
 	info := bindataFileInfo{name: "serum_market.graphql", size: 883, mode: os.FileMode(0644), modTime: time.Unix(1611871579, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf2, 0xb9, 0x79, 0xa1, 0x6e, 0x58, 0xc9, 0x64, 0x49, 0xac, 0x4f, 0xf4, 0xd0, 0xc4, 0xc1, 0xf9, 0x9b, 0xe4, 0x86, 0x80, 0x84, 0xba, 0x7b, 0xe, 0xb6, 0xda, 0xdf, 0xd7, 0xd5, 0x5b, 0xa4, 0x89}}
-	return a, nil
-}
-
-var _subscriptionGraphql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2a\xa9\x2c\x48\x55\x08\x2e\x4d\x2a\x4e\x2e\xca\x2c\x28\xc9\xcc\xcf\x53\xa8\xe6\xaa\xe5\x02\x04\x00\x00\xff\xff\xb3\xea\x92\x0b\x16\x00\x00\x00")
-
-func subscriptionGraphqlBytes() ([]byte, error) {
-	return bindataRead(
-		_subscriptionGraphql,
-		"subscription.graphql",
-	)
-}
-
-func subscriptionGraphql() (*asset, error) {
-	bytes, err := subscriptionGraphqlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "subscription.graphql", size: 22, mode: os.FileMode(0644), modTime: time.Unix(1610471296, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x53, 0x25, 0x27, 0xb0, 0x18, 0x69, 0xe3, 0x4, 0x9b, 0xf1, 0xde, 0x8e, 0x2a, 0x53, 0x2, 0x7f, 0x4f, 0xab, 0xde, 0xf0, 0x5f, 0xf4, 0xc7, 0xdc, 0x65, 0x6f, 0x7c, 0x8c, 0x75, 0xa1, 0x4d, 0xc0}}
-	return a, nil
-}
-
-var _subscription_alphaGraphql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x2a\xa9\x2c\x48\x55\x08\x2e\x4d\x2a\x4e\x2e\xca\x2c\x28\xc9\xcc\xcf\x53\xa8\xae\xe5\x02\x04\x00\x00\xff\xff\x4d\xe9\x40\xe8\x15\x00\x00\x00")
-
-func subscription_alphaGraphqlBytes() ([]byte, error) {
-	return bindataRead(
-		_subscription_alphaGraphql,
-		"subscription_alpha.graphql",
-	)
-}
-
-func subscription_alphaGraphql() (*asset, error) {
-	bytes, err := subscription_alphaGraphqlBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	info := bindataFileInfo{name: "subscription_alpha.graphql", size: 21, mode: os.FileMode(0644), modTime: time.Unix(1608153609, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3d, 0x20, 0x13, 0xe7, 0x39, 0xf6, 0x4e, 0x44, 0x50, 0x61, 0x33, 0x62, 0x95, 0x35, 0x1d, 0x5c, 0x43, 0x43, 0xb0, 0xe4, 0xe2, 0xf9, 0xa2, 0x94, 0xdd, 0xcc, 0xad, 0x3b, 0x5d, 0x4d, 0xce, 0x16}}
 	return a, nil
 }
 
@@ -348,15 +306,13 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"query.graphql":              queryGraphql,
-	"query_alpha.graphql":        query_alphaGraphql,
-	"registered_token.graphql":   registered_tokenGraphql,
-	"schema.graphql":             schemaGraphql,
-	"serum_fill.graphql":         serum_fillGraphql,
-	"serum_market.graphql":       serum_marketGraphql,
-	"subscription.graphql":       subscriptionGraphql,
-	"subscription_alpha.graphql": subscription_alphaGraphql,
-	"token.graphql":              tokenGraphql,
+	"query.graphql":            queryGraphql,
+	"query_alpha.graphql":      query_alphaGraphql,
+	"registered_token.graphql": registered_tokenGraphql,
+	"schema.graphql":           schemaGraphql,
+	"serum_fill.graphql":       serum_fillGraphql,
+	"serum_market.graphql":     serum_marketGraphql,
+	"token.graphql":            tokenGraphql,
 }
 
 // AssetDebug is true if the assets were built with the debug flag enabled.
@@ -409,8 +365,6 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"schema.graphql": {schemaGraphql, map[string]*bintree{}},
 	"serum_fill.graphql": {serum_fillGraphql, map[string]*bintree{}},
 	"serum_market.graphql": {serum_marketGraphql, map[string]*bintree{}},
-	"subscription.graphql": {subscriptionGraphql, map[string]*bintree{}},
-	"subscription_alpha.graphql": {subscription_alphaGraphql, map[string]*bintree{}},
 	"token.graphql": {tokenGraphql, map[string]*bintree{}},
 }}
 
