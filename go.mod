@@ -12,7 +12,7 @@ require (
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
 	github.com/dfuse-io/dgraphql v0.0.2-0.20201204213310-1a60670e318b
-	github.com/dfuse-io/dgrpc v0.0.0-20210116004319-046123544d11
+	github.com/dfuse-io/dgrpc v0.0.0-20210118212827-12d9d8a14c40
 	github.com/dfuse-io/dlauncher v0.0.0-20201215203933-750a56ede40d
 	github.com/dfuse-io/dmetering v0.0.0-20210112023524-c3ddadbc0d6a
 	github.com/dfuse-io/dmetrics v0.0.0-20200508170817-3b8cb01fee68
