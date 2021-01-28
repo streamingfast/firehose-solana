@@ -1,0 +1,14 @@
+{
+  registeredMarkets {
+    address
+    name
+    baseToken {
+      address
+      name
+    }
+    quoteToken {
+      address
+      name
+    }
+  }
+}

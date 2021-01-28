@@ -47,6 +47,10 @@ func GraphqlExamples() []*static.GraphqlExample {
 				"mainnet": r(`{"trader": "YOUR-ACCOUNT-HERE"}`),
 			},
 		},
+		{
+			Label:    "Get Serum Markets",
+			Document: graphqlDocument(box, "get_serum_markets.graphql"),
+		},
 	}
 }
 

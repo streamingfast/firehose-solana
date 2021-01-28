@@ -35,6 +35,12 @@ func init() {
 		Content: string("query ($trader: String!, $market: String) {\n  serumFillHistory(trader: $trader, market: $market) {\n    pageInfo {\n      startCursor\n      endCursor\n    }\n    edges {\n      cursor\n      node {\n        orderId\n        side\n        market {\n          address\n          name\n        }\n        baseToken {\n          address\n          name\n        }\n        quoteToken {\n          address\n          name\n        }\n        lotCount\n        price\n        feeTier\n      }\n    }\n  }\n}\n"),
 	}
 	file6 := &embedded.EmbeddedFile{
+		Filename:    "get_serum_markets.graphql",
+		FileModTime: time.Unix(1611851120, 0),
+
+		Content: string("{\n  registeredMarkets {\n    address\n    name\n    baseToken {\n      address\n      name\n    }\n    quoteToken {\n      address\n      name\n    }\n  }\n}\n"),
+	}
+	file7 := &embedded.EmbeddedFile{
 		Filename:    "get_token.graphql",
 		FileModTime: time.Unix(1608158051, 0),
 
@@ -44,13 +50,14 @@ func init() {
 	// define dirs
 	dir1 := &embedded.EmbeddedDir{
 		Filename:   "",
-		DirModTime: time.Unix(1610471296, 0),
+		DirModTime: time.Unix(1611851119, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file2, // "get_all_registered_tokens.graphql"
 			file3, // "get_all_tokens.graphql"
 			file4, // "get_registered_token.graphql"
 			file5, // "get_serum_fill.graphql"
-			file6, // "get_token.graphql"
+			file6, // "get_serum_markets.graphql"
+			file7, // "get_token.graphql"
 
 		},
 	}
@@ -61,7 +68,7 @@ func init() {
 	// register embeddedBox
 	embedded.RegisterEmbeddedBox(`examples`, &embedded.EmbeddedBox{
 		Name: `examples`,
-		Time: time.Unix(1610471296, 0),
+		Time: time.Unix(1611851119, 0),
 		Dirs: map[string]*embedded.EmbeddedDir{
 			"": dir1,
 		},
@@ -70,7 +77,8 @@ func init() {
 			"get_all_tokens.graphql":            file3,
 			"get_registered_token.graphql":      file4,
 			"get_serum_fill.graphql":            file5,
-			"get_token.graphql":                 file6,
+			"get_serum_markets.graphql":         file6,
+			"get_token.graphql":                 file7,
 		},
 	})
 }
