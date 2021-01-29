@@ -50,7 +50,7 @@ func (r *Root) QuerySerumFillHistory(ctx context.Context, in *SerumFillHistoryRe
 
 	return &SerumFillConnection{
 		Edges:    edges,
-		PageInfo: NewPageInfoFromEdges(edges),
+		PageInfo: NewPageInfoFromEdges(edges, fillsResponse.HasMore),
 	}, nil
 }
 
@@ -85,10 +85,10 @@ func NewSerumFillConnection(edges []*SerumFillEdge, pageInfo PageInfo) *SerumFil
 
 var emptyPageInfo = PageInfo{}
 
-func NewPageInfoFromEdges(edges []*SerumFillEdge) PageInfo {
+func NewPageInfoFromEdges(edges []*SerumFillEdge, hasMore bool) PageInfo {
 	if len(edges) == 0 {
 		return emptyPageInfo
 	}
 
-	return NewPageInfo(edges[0].cursor, edges[len(edges)-1].cursor, true)
+	return NewPageInfo(edges[0].cursor, edges[len(edges)-1].cursor, hasMore)
 }

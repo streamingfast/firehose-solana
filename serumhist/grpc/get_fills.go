@@ -18,12 +18,13 @@ func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequ
 	zlog.Debug("get fills", zap.Stringer("trader_address", trader))
 
 	if len(request.Market) == 0 {
-		fills, err := s.manager.GetFillsByTrader(ctx, trader)
+		fills, hasMore, err := s.manager.GetFillsByTrader(ctx, trader)
 		if err != nil {
 			return nil, fmt.Errorf("unable to retrieve fills: %w", err)
 		}
 		return &pbserumhist.FillsResponse{
-			Fill: fills,
+			Fill:    fills,
+			HasMore: hasMore,
 		}, nil
 	}
 
@@ -31,11 +32,12 @@ func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequ
 	if err != nil {
 		return nil, fmt.Errorf("invalid Market addresss:%s : %w", request.Trader, err)
 	}
-	f, err := s.manager.GetFillsByTraderAndMarket(ctx, trader, market)
+	f, hasMore, err := s.manager.GetFillsByTraderAndMarket(ctx, trader, market)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve fills: %w", err)
 	}
 	return &pbserumhist.FillsResponse{
-		Fill: f,
+		Fill:    f,
+		HasMore: hasMore,
 	}, nil
 }

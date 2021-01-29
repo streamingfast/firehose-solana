@@ -100,9 +100,9 @@ func readFillsE(cmd *cobra.Command, args []string) (err error) {
 			return fmt.Errorf("unable to create public key: %w", err)
 		}
 
-		fills, err = manager.GetFillsByTraderAndMarket(cmd.Context(), trader, market)
+		fills, _, err = manager.GetFillsByTraderAndMarket(cmd.Context(), trader, market)
 	} else {
-		fills, err = manager.GetFillsByTrader(cmd.Context(), trader)
+		fills, _, err = manager.GetFillsByTrader(cmd.Context(), trader)
 	}
 
 	if err != nil {
