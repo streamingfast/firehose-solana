@@ -36,7 +36,7 @@ import (
 type BlockMarshaller func(block *bstream.Block) ([]byte, error)
 
 type BlockDataArchiver struct {
-	store  dstore.Store
+	Store  dstore.Store
 	suffix string
 
 	uploadMutex sync.Mutex
@@ -51,7 +51,7 @@ func NewBlockDataArchiver(
 	logger *zap.Logger,
 ) *BlockDataArchiver {
 	return &BlockDataArchiver{
-		store:   store,
+		Store:   store,
 		suffix:  suffix,
 		workDir: workDir,
 		logger:  logger,
@@ -163,7 +163,7 @@ func (s *BlockDataArchiver) uploadFiles() error {
 				s.logger.Debug("uploading file to storage", zap.String("local_file", file), zap.String("remove_base", toBaseName))
 			}
 
-			if err = s.store.PushLocalFile(ctx, file, toBaseName); err != nil {
+			if err = s.Store.PushLocalFile(ctx, file, toBaseName); err != nil {
 				return fmt.Errorf("moving file %q to storage: %w", file, err)
 			}
 			return nil

@@ -542,7 +542,7 @@ func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockData
 	}
 
 	fileName := blockDataFileName(slot, "")
-	slot.AccountChangesFileRef = fileName
+	slot.AccountChangesFileRef = archiver.Store.ObjectPath(fileName)
 
 	accountChangesBundle := slot.Split(true)
 	err := archiver.StoreBlockData(accountChangesBundle, fileName)
