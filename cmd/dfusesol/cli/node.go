@@ -395,7 +395,9 @@ func RegisterSolanaNodeApp(kind string) {
 					viper.GetString(app+"-block-data-suffix"),
 					appLogger,
 				)
-
+				if err := blockDataArchiver.Init(); err != nil {
+					return nil, fmt.Errorf("init block data archiver: %w", err)
+				}
 				go blockDataArchiver.Start()
 
 				mindreaderPlugin, err = mindreader.NewMindReaderPlugin(
