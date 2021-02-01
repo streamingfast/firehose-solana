@@ -115,6 +115,7 @@ func (s *BlockDataArchiver) StoreBlockData(bundle *pbcodec.AccountChangesBundle,
 }
 
 func (a *BlockDataArchiver) Start() {
+	zlog.Info("starting block data archiver")
 	lastUploadFailed := false
 	for {
 		err := a.uploadFiles()
@@ -159,9 +160,7 @@ func (s *BlockDataArchiver) uploadFiles() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 			defer cancel()
 
-			if traceEnabled {
-				s.logger.Debug("uploading file to storage", zap.String("local_file", file), zap.String("remove_base", toBaseName))
-			}
+			s.logger.Debug("uploading file to storage", zap.String("local_file", file), zap.String("remove_base", toBaseName))
 
 			if err = s.Store.PushLocalFile(ctx, file, toBaseName); err != nil {
 				return fmt.Errorf("moving file %q to storage: %w", file, err)

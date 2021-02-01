@@ -113,6 +113,7 @@ func RegisterSolanaNodeApp(kind string) {
 				cmd.Flags().String(app+"-grpc-listen-addr", MindreaderNodeGRPCAddr, "Address to listen for incoming gRPC requests")
 				cmd.Flags().Bool(app+"-discard-after-stop-num", false, "Ignore remaining blocks being processed after stop num (only useful if we discard the mindreader data after reprocessing a chunk of blocks)")
 				cmd.Flags().String(app+"-working-dir", "{dfuse-data-dir}/mindreader/work", "Path where mindreader will stores its files")
+				cmd.Flags().String(app+"-block-data-working-dir", "{dfuse-data-dir}/mindreader/block-data-work", "Path where mindreader will stores its files")
 				cmd.Flags().Int(app+"-blocks-chan-capacity", 100, "Capacity of the channel holding blocks read by the mindreader. Process will shutdown superviser/geth if the channel gets over 90% of that capacity to prevent horrible consequences. Raise this number when processing tiny blocks very quickly")
 				cmd.Flags().Bool(app+"-start-failure-handler", true, "Enables the startup function handler, that gets called if mindreader fails on startup")
 				cmd.Flags().Bool(app+"-fail-on-non-contiguous-block", false, "Enables the Continuity Checker that stops (or refuses to start) the superviser if a block was missed. It has a significant performance cost on reprocessing large segments of blocks")
@@ -537,18 +538,22 @@ func setupNodeSysctl(logger *zap.Logger) error {
 
 func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockDataArchiver, obj interface{}) (*bstream.Block, error) {
 	slot, ok := obj.(*pbcodec.Slot)
+	zlog.Debug("transforming slot", zap.Uint64("slot_num", slot.Number))
 	if !ok {
 		return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
 	}
 
 	fileName := blockDataFileName(slot, "")
 	slot.AccountChangesFileRef = archiver.Store.ObjectPath(fileName)
+	zlog.Debug("slot data file", zap.String("object_path", slot.AccountChangesFileRef))
 
 	accountChangesBundle := slot.Split(true)
 	err := archiver.StoreBlockData(accountChangesBundle, fileName)
 	if !ok {
 		return nil, fmt.Errorf("storing block data: %w", err)
 	}
+
+	zlog.Debug("slot data store", zap.String("object_path", slot.AccountChangesFileRef))
 
 	bstreamBlock, err := codec.BlockFromProto(slot)
 	if err != nil {
