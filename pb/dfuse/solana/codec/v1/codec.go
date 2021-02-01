@@ -57,7 +57,7 @@ func (s *Slot) join(bundle *AccountChangesBundle) {
 }
 
 func (s *Slot) Retrieve(ctx context.Context, notFoundFunc func(fileName string) bool) (*AccountChangesBundle, error) {
-	store, filename, err := dstore.NewStoreFromURL(s.AccountChangesFileRef, nil)
+	store, filename, err := dstore.NewStoreFromURL(s.AccountChangesFileRef)
 	if err != nil {
 		return nil, fmt.Errorf("store from url: %s: %w", filename, err)
 	}
