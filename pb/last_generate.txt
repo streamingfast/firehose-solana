@@ -1,3 +1,3 @@
-generate.sh - Fri Jan 29 13:26:24 EST 2021 - cbillett
-dfuse-io/proto revision: d32565f58136d4bf33aa6025d4aa3fd5b304ea0d
+generate.sh - Mon  1 Feb 2021 16:35:29 EST - julien
+dfuse-io/proto revision: 4bca1300d6e75a04724925ef2c9341dfe50c5263
 dfuse-io/proto-solana revision: de893593a56a30c7c85c5aa0e83debc432dbda62

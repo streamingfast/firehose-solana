@@ -4,29 +4,29 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/dfuse-io/bstream/blockstream"
-	"github.com/dfuse-io/dstore"
-	"time"
-
 	"github.com/dfuse-io/bstream"
+	"github.com/dfuse-io/bstream/blockstream"
 	"github.com/dfuse-io/bstream/firehose"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
+	"time"
 )
 
 type Injector struct {
 	*shutter.Shutter
-	ctx context.Context
+	ctx               context.Context
 	kvdb              store.KVStore
 	flushSlotInterval uint64
 	lastTickBlock     uint64
 	lastTickTime      time.Time
-	blockStore dstore.Store
+	blockStore        dstore.Store
 	blockstreamAddr   string
 	healthy           bool
-	cache *tradingAccountCache
+	cache             *tradingAccountCache
+	source            *firehose.Firehose
 }
 
 func NewInjector(
@@ -37,9 +37,9 @@ func NewInjector(
 	flushSlotInterval uint64,
 ) *Injector {
 	return &Injector{
-		ctx: ctx,
+		ctx:               ctx,
 		blockstreamAddr:   blockstreamAddr,
-		blockStore: blockStore,
+		blockStore:        blockStore,
 		Shutter:           shutter.New(),
 		flushSlotInterval: flushSlotInterval,
 		kvdb:              kvdb,
@@ -47,8 +47,21 @@ func NewInjector(
 	}
 }
 
+func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bool) error {
+	zlog.Info("setting up serhumhist source",
+		zap.Uint64("start_block_num", startBlockNum),
+	)
 
-func (i *Injector) setupFirehose(startBlockNum uint64) *firehose.Firehose {
+	checkpoint, err := i.resolveCheckpoint(i.ctx, startBlockNum, ignoreCheckpointOnLaunch)
+	if err != nil {
+		return fmt.Errorf("unable to resolve shard checkpoint: %w", err)
+	}
+
+	zlog.Info("serumhist resolved start block",
+		zap.Uint64("start_block_num", checkpoint.LastWrittenSlotNum),
+		zap.String("start_block_num", checkpoint.LastWrittenSlotId),
+	)
+
 	liveStreamFactory := bstream.SourceFactory(func(subHandler bstream.Handler) bstream.Source {
 		return blockstream.NewSource(
 			i.ctx,
@@ -61,17 +74,18 @@ func (i *Injector) setupFirehose(startBlockNum uint64) *firehose.Firehose {
 	fhose := firehose.New(
 		[]dstore.Store{i.blockStore},
 		liveStreamFactory,
-		int64(startBlockNum),
+		int64(checkpoint.LastWrittenSlotNum),
 		i,
 		firehose.WithPreproc(i.preprocessSlot),
 		firehose.WithLogger(zlog),
 	)
-	return fhose
+	i.source = fhose
+	return nil
 }
 
-func (i *Injector) Launch(startBlockNum uint64) error {
-	fhose := i.setupFirehose(startBlockNum)
-	err := fhose.Run(i.ctx)
+func (i *Injector) Launch() error {
+	zlog.Info("launching serumhist injector")
+	err := i.source.Run(i.ctx)
 	if err != nil {
 		if errors.Is(err, firehose.ErrStopBlockReached) {
 			zlog.Info("firehose stream of blocks reached end block")
