@@ -18,6 +18,13 @@ func (t Token) Name() *string {
 	return nil
 }
 
+func (t Token) Symbol() *string {
+	if t.t.Meta != nil {
+		return &t.t.Meta.Symbol
+	}
+	return nil
+}
+
 func (t Token) MintAuthority() string {
 	return t.t.MintAuthority.String()
 }

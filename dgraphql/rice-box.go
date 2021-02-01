@@ -36,9 +36,9 @@ func init() {
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "get_serum_fill.graphql",
-		FileModTime: time.Unix(1611871907, 0),
+		FileModTime: time.Unix(1612199058, 0),
 
-		Content: string("query($trader: String!, $market: String) {\n  serumFillHistory(trader: $trader, market: $market) {\n    pageInfo {\n      startCursor\n      endCursor\n    }\n    edges {\n      cursor\n      node {\n        orderId\n        trader\n        side\n        market {\n          address\n          name\n          baseToken {\n            address\n            name\n          }\n          quoteToken {\n            address\n            name\n          }\n        }\n        quantityReceived {\n          display\n          value\n        }\n        quantityPaid {\n          display\n          value\n        }\n        price\n        feeTier\n      }\n    }\n  }\n}\n"),
+		Content: string("query($trader: String!, $market: String) {\n  serumFillHistory(trader: $trader, market: $market) {\n    pageInfo {\n      startCursor\n      endCursor\n    }\n    edges {\n      cursor\n      node {\n        orderId\n        trader\n        side\n        market {\n          address\n          name\n          baseToken {\n            address\n            name\n            symbol\n          }\n          quoteToken {\n            address\n            name\n            symbol\n          }\n        }\n        quantityReceived {\n          display\n          value\n        }\n        quantityPaid {\n          display\n          value\n        }\n        price\n        feeTier\n      }\n    }\n  }\n}\n"),
 	}
 	file7 := &embedded.EmbeddedFile{
 		Filename:    "get_serum_markets.graphql",

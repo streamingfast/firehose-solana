@@ -1,6 +1,7 @@
 type Token {
   address: String!
   name: String
+  symbol: String
   mintAuthority: String!
   freezeAuthority: String!
   supply: Uint64!
