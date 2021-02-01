@@ -120,19 +120,16 @@ func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber uint64, blkT
 					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
 
 					fill := &pbserumhist.Fill{
-						Trader:               e.Owner.String(),
-						Market:               market.String(),
-						OrderId:              fmt.Sprintf("%s%s", hex.EncodeToString(number[:8]), hex.EncodeToString(number[8:])),
-						Side:                 pbserumhist.Side(e.Side()),
-						Maker:                false,
-						NativeQtyPaid:        e.NativeQtyPaid,
-						NativeQtyReceived:    e.NativeQtyReleased,
-						NativeFeeOrRebate:    e.NativeFeeOrRebate,
-						FeeTier:              pbserumhist.FeeTier(e.FeeTier),
-						Timestamp:            mustProtoTimestamp(blkTime),
-						XXX_NoUnkeyedLiteral: struct{}{},
-						XXX_unrecognized:     nil,
-						XXX_sizecache:        0,
+						Trader:            e.Owner.String(),
+						Market:            market.String(),
+						OrderId:           fmt.Sprintf("%s%s", hex.EncodeToString(number[:8]), hex.EncodeToString(number[8:])),
+						Side:              pbserumhist.Side(e.Side()),
+						Maker:             false,
+						NativeQtyPaid:     e.NativeQtyPaid,
+						NativeQtyReceived: e.NativeQtyReleased,
+						NativeFeeOrRebate: e.NativeFeeOrRebate,
+						FeeTier:           pbserumhist.FeeTier(e.FeeTier),
+						Timestamp:         mustProtoTimestamp(blkTime),
 					}
 
 					cnt, err := proto.Marshal(fill)
