@@ -80,17 +80,17 @@ func (s *BlockDataArchiver) StoreBlockData(bundle *pbcodec.AccountChangesBundle,
 	if err != nil {
 		return fmt.Errorf("open file: %w", err)
 	}
-	defer file.Close()
-
+	zlog.Debug("temp file open", zap.String("temp_file_path", tempFile))
 	data, err := proto.Marshal(bundle)
 	if err != nil {
 		return fmt.Errorf("proto marshall: %w", err)
 	}
 
-	_, err = file.Write(data)
+	dataLen, err := file.Write(data)
 	if err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
+	zlog.Debug("data written", zap.String("temp_file_path", tempFile), zap.Int("data_len", dataLen))
 
 	//blockWriter, err := s.blockWriterFactory.New(file)
 	//if err != nil {
@@ -110,6 +110,7 @@ func (s *BlockDataArchiver) StoreBlockData(bundle *pbcodec.AccountChangesBundle,
 	if err := os.Rename(tempFile, finalFile); err != nil {
 		return fmt.Errorf("rename %q to %q: %w", tempFile, finalFile, err)
 	}
+	zlog.Debug("renamed file", zap.String("temp_file", tempFile), zap.String("final_file", finalFile))
 
 	return nil
 }
@@ -142,6 +143,8 @@ func (s *BlockDataArchiver) uploadFiles() error {
 	if err != nil {
 		return fmt.Errorf("unable to find files to upload: %w", err)
 	}
+
+	zlog.Debug("found file to upload", zap.Int("file_count", len(filesToUpload)))
 
 	if len(filesToUpload) == 0 {
 		return nil
