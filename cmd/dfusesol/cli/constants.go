@@ -9,6 +9,7 @@ const (
 	FilteredBlocksStoreURL string = "file://{dfuse-data-dir}/storage/filtered-merged-blocks"
 	IndicesStoreURL        string = "file://{dfuse-data-dir}/storage/indexes"
 	OneBlockStoreURL       string = "file://{dfuse-data-dir}/storage/one-blocks"
+	BlockDataStoreURL      string = "file://{dfuse-data-dir}/storage/data-blocks"
 	SnapshotsURL           string = "file://{dfuse-data-dir}/storage/snapshots"
 	DmeshDSN               string = "local://"
 	DmeshServiceVersion    string = "v1"

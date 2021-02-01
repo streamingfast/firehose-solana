@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
+	github.com/abourget/llerrgroup v0.2.0
 	github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c
 	github.com/dfuse-io/bstream v0.0.2-0.20210128140947-5aab63679fd7
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
@@ -39,6 +40,7 @@ require (
 	go.opencensus.io v0.22.5
 	go.uber.org/zap v1.16.0
 	google.golang.org/grpc v1.29.1
+	google.golang.org/protobuf v1.25.0
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807

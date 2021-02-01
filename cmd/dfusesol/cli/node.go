@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dfuse-io/dstore"
+
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/dfuse-solana/codec"
 	nodeManagerSol "github.com/dfuse-io/dfuse-solana/node-manager"
@@ -364,18 +366,10 @@ func RegisterSolanaNodeApp(kind string) {
 			var mindreaderPlugin *mindreader.MindReaderPlugin
 			if kind == "mindreader" {
 				oneBlockStoreURL := mustReplaceDataDir(dfuseDataDir, viper.GetString("common-oneblock-store-url"))
+				blockDataStoreURL := mustReplaceDataDir(dfuseDataDir, viper.GetString("common-block-data-store-url"))
 				mergedBlocksStoreURL := mustReplaceDataDir(dfuseDataDir, viper.GetString("common-blocks-store-url"))
 				consoleReaderFactory := func(reader io.Reader) (mindreader.ConsolerReader, error) {
 					return codec.NewConsoleReader(reader, viper.GetString(app+"-deepmind-batch-files-path"))
-				}
-
-				consoleReaderBlockTransformer := func(obj interface{}) (*bstream.Block, error) {
-					blk, ok := obj.(*pbcodec.Slot)
-					if !ok {
-						return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
-					}
-
-					return codec.BlockFromProto(blk)
 				}
 
 				// blockmetaAddr := viper.GetString("common-blockmeta-addr")
@@ -388,6 +382,20 @@ func RegisterSolanaNodeApp(kind string) {
 				// tracker.AddGetter(bstream.NetworkLIBTarget, bstream.NetworkLIBBlockRefGetter(blockmetaAddr))
 
 				workingDir := mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"-working-dir"))
+				blockDataWorkingDir := mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"block-data-working-dir"))
+
+				blockDataStore, err := dstore.NewDBinStore(blockDataStoreURL)
+				if err != nil {
+					return nil, fmt.Errorf("init block data store: %w", err)
+				}
+				blockDataArchiver := nodeManagerSol.NewBlockDataArchiver(
+					blockDataStore,
+					blockDataWorkingDir,
+					viper.GetString(app+"-block-data-suffix"),
+					appLogger,
+				)
+
+				go blockDataArchiver.Start()
 
 				mindreaderPlugin, err = mindreader.NewMindReaderPlugin(
 					oneBlockStoreURL,
@@ -396,7 +404,9 @@ func RegisterSolanaNodeApp(kind string) {
 					viper.GetDuration(app+"-merge-threshold-block-age"),
 					workingDir,
 					consoleReaderFactory,
-					consoleReaderBlockTransformer,
+					func(obj interface{}) (*bstream.Block, error) {
+						return consoleReaderBlockTransformerWithArchive(blockDataArchiver, obj)
+					},
 					tracker,
 					viper.GetUint64(app+"-start-block-num"),
 					viper.GetUint64(app+"-stop-block-num"),
@@ -523,4 +533,48 @@ func setupNodeSysctl(logger *zap.Logger) error {
 	}
 
 	return nil
+}
+
+func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockDataArchiver, obj interface{}) (*bstream.Block, error) {
+	slot, ok := obj.(*pbcodec.Slot)
+	if !ok {
+		return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
+	}
+
+	bstreamBlock, err := codec.BlockFromProto(slot)
+	if err != nil {
+		return nil, fmt.Errorf("block from proto: %w", err)
+	}
+
+	fileName := blockDataFileName(bstreamBlock, "")
+
+	accountChangesBundle := slot.Split(true)
+	err = archiver.StoreBlockData(accountChangesBundle, fileName)
+	if !ok {
+		return nil, fmt.Errorf("storing block data: %w", err)
+	}
+
+	return bstreamBlock, nil
+}
+
+//duplicated code from node manager
+func blockDataFileName(block *bstream.Block, suffix string) string {
+	blockTime := block.Time()
+	blockTimeString := fmt.Sprintf("%s.%01d", blockTime.Format("20060102T150405"), blockTime.Nanosecond()/100000000)
+
+	blockID := block.ID()
+	if len(blockID) > 8 {
+		blockID = blockID[len(blockID)-8:]
+	}
+
+	previousID := block.PreviousID()
+	if len(previousID) > 8 {
+		previousID = previousID[len(previousID)-8:]
+	}
+
+	suffixString := ""
+	if suffix != "" {
+		suffixString = fmt.Sprintf("-%s", suffix)
+	}
+	return fmt.Sprintf("%010d-%s-%s-%s%s", block.Num(), blockTimeString, blockID, previousID, suffixString)
 }

@@ -7,35 +7,39 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// func MustBlockRefAsProto(ref bstream.BlockRef) *BlockRef {
-// 	if ref == nil || bstream.EqualsBlockRefs(ref, bstream.BlockRefEmpty) {
-// 		return nil
-// 	}
-
-// 	hash, err := hex.DecodeString(ref.ID())
-// 	if err != nil {
-// 		panic(fmt.Errorf("invalid block hash %q: %w", ref.ID(), err))
-// 	}
-
-// 	return &BlockRef{
-// 		Hash:   hash,
-// 		Number: ref.Num(),
-// 	}
-// }
-
-// func (b *BlockRef) AsBstreamBlockRef() bstream.BlockRef {
-// 	return bstream.NewBlockRef(hex.EncodeToString(b.Hash), b.Number)
-// }
-
-// TODO: We should probably memoize all fields that requires computation
-//       like ID() and likes.
-
 func (s *Slot) ID() string {
 	return s.Id
 }
 
 func (s *Slot) Num() uint64 {
 	return s.Number
+}
+
+func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
+	bundle := &AccountChangesBundle{}
+	for _, trx := range s.Transactions {
+		bundleTransaction := &AccountChangesPerTrxIndex{}
+		for _, instruction := range trx.Instructions {
+			bundleInstruction := &AccountChangesPerInstruction{}
+			for _, change := range instruction.AccountChanges {
+				bundleInstruction.Changes = append(bundleInstruction.Changes, change)
+			}
+			bundleTransaction.Instructions = append(bundleTransaction.Instructions, bundleInstruction)
+			if removeFromInstruction {
+				instruction.AccountChanges = nil
+			}
+		}
+		bundle.Transactions = append(bundle.Transactions, bundleTransaction)
+	}
+	return bundle
+}
+
+func (s *Slot) Join(bundle *AccountChangesBundle) {
+	for ti, bundleTransaction := range bundle.Transactions {
+		for ii, bundleInstruction := range bundleTransaction.Instructions {
+			s.Transactions[ti].Instructions[ii].AccountChanges = bundleInstruction.Changes
+		}
+	}
 }
 
 func (m *Block) PreviousID() string {
