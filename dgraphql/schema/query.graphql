@@ -1,12 +1,12 @@
 type Query {
 
-  tokens: [TokenResponse!]!
+  tokens(count: Uint64, cursor: String): TokenConnection!
 
-  token(address: String!): TokenResponse
+  token(address: String!): TokenEdge!
 
-  registeredTokens: [RegisteredTokenResponse!]!
+#  registeredTokens: [RegisteredTokenResponse!]!
 
-  registeredToken(address: String!): RegisteredTokenResponse
+#  registeredToken(address: String!): RegisteredTokenResponse
 
   """Return last 100 fills for the given trader's public key. Returns irreversible only data so live data not yet part of a slot that is in the root set will not be returned when called."""
   serumFillHistory(trader: String!, market: String): SerumFillConnection!

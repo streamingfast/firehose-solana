@@ -1,9 +1,26 @@
-{
-  tokens {
-    address
-    mintAuthority
-    freezeAuthority
-    supply
-    decimals
+query($cursor: String!) {
+  tokens(cursor: $cursor) {
+    pageInfo {
+      hasNextPage
+      startCursor
+      endCursor
+    }
+    edges {
+      cursor
+      node {
+        address
+        mintAuthority
+        freezeAuthority
+        supply
+        decimals
+        verified
+        meta {
+          name
+          symbol
+          logo
+          website
+        }
+      }
+    }
   }
 }

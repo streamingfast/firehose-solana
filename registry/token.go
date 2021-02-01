@@ -24,6 +24,7 @@ type Token struct {
 	IsInitialized         bool             `json:"is_initialized"`
 	FreezeAuthorityOption uint32           `json:"freeze_authority_option"`
 	FreezeAuthority       solana.PublicKey `json:"freeze_authority"`
+	Verified              bool             `json:"verified"`
 	Meta                  *TokenMeta       `json:"meta"`
 }
 
