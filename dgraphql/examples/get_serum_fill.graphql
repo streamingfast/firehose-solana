@@ -16,10 +16,12 @@ query($trader: String!, $market: String) {
           baseToken {
             address
             name
+            symbol
           }
           quoteToken {
             address
             name
+            symbol
           }
         }
         quantityReceived {

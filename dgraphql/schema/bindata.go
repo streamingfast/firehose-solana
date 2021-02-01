@@ -6,7 +6,7 @@
 // schema.graphql (28B)
 // serum_fill.graphql (1.672kB)
 // serum_market.graphql (883B)
-// token.graphql (266B)
+// token.graphql (283B)
 
 package schema
 
@@ -170,7 +170,7 @@ func serum_fillGraphql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "serum_fill.graphql", size: 1672, mode: os.FileMode(0644), modTime: time.Unix(1611849359, 0)}
+	info := bindataFileInfo{name: "serum_fill.graphql", size: 1672, mode: os.FileMode(0644), modTime: time.Unix(1612199078, 0)}
 	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xac, 0x69, 0x59, 0x8b, 0xe4, 0x44, 0x81, 0x5e, 0x3d, 0x34, 0x3b, 0x28, 0xd, 0xe5, 0x9b, 0x30, 0xad, 0xe4, 0x27, 0x31, 0x80, 0xbe, 0x3f, 0xed, 0x8b, 0xb1, 0x16, 0x60, 0x9e, 0x45, 0xbd, 0xd7}}
 	return a, nil
 }
@@ -195,7 +195,7 @@ func serum_marketGraphql() (*asset, error) {
 	return a, nil
 }
 
-var _tokenGraphql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xb4\xce\x2d\x0e\x02\x31\x10\x05\x60\x3f\xa7\x78\x7b\x07\x82\x58\x87\xc4\xf2\x73\x80\x86\x3e\xa0\x61\x3b\x6d\x3a\xb3\xa2\x10\xee\x4e\x10\x04\x04\x48\xe4\xfb\x11\x9f\xf7\x4a\xec\xca\x85\x8a\x9b\x00\x21\xc6\x46\xb3\x11\x5b\x6f\x49\x4f\x83\x00\x1a\x32\x5f\x59\x80\x9c\xd4\x57\xb3\x9f\x4b\x4b\xde\x3f\x7f\xc7\x46\x5e\xf9\x75\xb2\xb9\xd6\xa9\x8f\xd8\x27\xf5\xe5\xe2\xd9\x44\x1e\x52\x0e\x93\x8d\x58\xab\x0f\x72\x17\x79\x43\x36\xb4\x5a\xd4\xf8\x0b\xf4\x27\xc1\x23\x00\x00\xff\xff\x13\x7e\x6d\x9e\x0a\x01\x00\x00")
+var _tokenGraphql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xb4\xce\x3b\x0e\x02\x31\x0c\x84\xe1\xde\xa7\x98\xbd\x03\xa2\xd8\x8e\x92\x96\xc7\x01\x02\x31\x60\x91\x38\x51\xec\x2d\x02\xe2\xee\x88\x02\xb1\x05\x94\x94\xfe\xad\x91\x3e\xef\x95\xb1\x2b\x57\x56\xdc\x09\x08\x31\x36\x36\x1b\xb1\xf5\x26\x7a\x1e\x08\xd0\x90\xf9\x7d\x13\x60\x3d\x1f\x4a\x9a\x85\x2c\xea\xab\xc9\x2f\xa5\x89\xf7\xf9\xf0\xd4\x98\x6f\xfc\xf5\x65\x53\xad\xa9\x8f\xd8\x8b\xfa\x72\xf1\x2a\x91\x8f\x92\x43\xb2\x11\x6b\xf5\x81\x1e\x44\x1f\xd9\x86\xad\x16\x35\xfe\x25\xfc\x93\xe0\x19\x00\x00\xff\xff\x1d\x22\x07\x49\x1b\x01\x00\x00")
 
 func tokenGraphqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -210,8 +210,8 @@ func tokenGraphql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "token.graphql", size: 266, mode: os.FileMode(0644), modTime: time.Unix(1611849359, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb3, 0xdf, 0x92, 0x97, 0x73, 0x4f, 0xc, 0x67, 0xec, 0x61, 0x3c, 0xfc, 0x34, 0xf, 0x4d, 0x78, 0x42, 0xd3, 0x18, 0xb7, 0x1f, 0xae, 0x28, 0x7, 0xdc, 0x2b, 0x7d, 0xa9, 0xf3, 0x72, 0x85, 0x37}}
+	info := bindataFileInfo{name: "token.graphql", size: 283, mode: os.FileMode(0644), modTime: time.Unix(1612198985, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd0, 0x7c, 0xba, 0x1c, 0x25, 0xc, 0x95, 0xcd, 0xf3, 0x67, 0xa9, 0x7f, 0xc9, 0x2a, 0x79, 0x37, 0x93, 0x6e, 0xf, 0xeb, 0x37, 0x2c, 0x23, 0xf1, 0xb, 0x5a, 0x2d, 0x45, 0x42, 0x37, 0x18, 0xca}}
 	return a, nil
 }
 
