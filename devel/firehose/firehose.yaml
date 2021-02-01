@@ -3,5 +3,5 @@ start:
   - firehose
   flags:
     common-blockstream-addr: ":9001"
-    common-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v1_2-oneblock?oneblocks=true"
+    common-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v1"
     firehose-grpc-listen-addr: ":9000"

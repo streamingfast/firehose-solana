@@ -38,23 +38,41 @@ func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
 	return bundle
 }
 
-func (s *Slot) JoinStore(ctx context.Context, notFoundFunc func(fileName string) bool) error {
+func (s *Slot) Join(ctx context.Context, notFoundFunc func(fileName string) bool) error {
+	bundle, err := s.Retrieve(ctx, notFoundFunc)
+	if err != nil {
+		return fmt.Errorf("error retrieving account changes: %w", err)
+	}
+
+	s.join(bundle)
+	return nil
+}
+
+func (s *Slot) join(bundle *AccountChangesBundle) {
+	for ti, bundleTransaction := range bundle.Transactions {
+		for ii, bundleInstruction := range bundleTransaction.Instructions {
+			s.Transactions[ti].Instructions[ii].AccountChanges = bundleInstruction.Changes
+		}
+	}
+}
+
+func (s *Slot) Retrieve(ctx context.Context, notFoundFunc func(fileName string) bool) (*AccountChangesBundle, error) {
 	store, filename, err := dstore.NewStoreFromURL(s.AccountChangesFileRef, nil)
 	if err != nil {
-		return fmt.Errorf("store from url: %s: %w", filename, err)
+		return nil, fmt.Errorf("store from url: %s: %w", filename, err)
 	}
 
 	for {
 		exist, err := store.FileExists(ctx, filename)
 		if err != nil {
-			return fmt.Errorf("file exist: %s : %w", filename, err)
+			return nil, fmt.Errorf("file exist: %s : %w", filename, err)
 		}
 		if !exist {
 			if notFoundFunc(filename) {
 				//notFoundFunc should sleep and return true to retry
 				continue
 			}
-			return fmt.Errorf("retry break by not found func: %s", filename)
+			return nil, fmt.Errorf("retry break by not found func: %s", filename)
 		}
 
 		break
@@ -62,32 +80,22 @@ func (s *Slot) JoinStore(ctx context.Context, notFoundFunc func(fileName string)
 
 	reader, err := store.OpenObject(ctx, filename)
 	if err != nil {
-		return fmt.Errorf("open object: %s : %w", filename, err)
+		return nil, fmt.Errorf("open object: %s : %w", filename, err)
 	}
 	defer reader.Close()
 
 	data, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return fmt.Errorf("read all: %s : %w", filename, err)
+		return nil, fmt.Errorf("read all: %s : %w", filename, err)
 	}
 
 	bundle := &AccountChangesBundle{}
 	err = proto.Unmarshal(data, bundle)
 	if err != nil {
-		return fmt.Errorf("proto unmarshal: %s : %w", filename, err)
+		return nil, fmt.Errorf("proto unmarshal: %s : %w", filename, err)
 	}
 
-	s.Join(bundle)
-
-	return nil
-}
-
-func (s *Slot) Join(bundle *AccountChangesBundle) {
-	for ti, bundleTransaction := range bundle.Transactions {
-		for ii, bundleInstruction := range bundleTransaction.Instructions {
-			s.Transactions[ti].Instructions[ii].AccountChanges = bundleInstruction.Changes
-		}
-	}
+	return bundle, nil
 }
 
 func (m *Block) PreviousID() string {

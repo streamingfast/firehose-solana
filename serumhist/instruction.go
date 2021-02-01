@@ -26,10 +26,12 @@ import (
 
 // TODO: this is very repetitive we need to optimze the account setting in solana go
 // once that is done we can clean all this up!
-func (i *Injector) processInstruction(ctx context.Context, slotNumber uint64, blkTime time.Time, trxIdx uint64, instIdx uint64, trxID string, inst *pbcodec.Instruction, serumInstruction *serum.Instruction) error {
+func (i *Injector) processInstruction(ctx context.Context, slotNumber uint64, blkTime time.Time, inst *serumInstruction) error {
 	var kvs []*kvdb.KV
 	var err error
 
+	trxID := inst.trxtID
+	serumInstruction := inst.native
 	// we only care about new order instruction that modify the request queue
 	if newOrder, ok := serumInstruction.Impl.(*serum.InstructionNewOrder); ok {
 		zlog.Debug("processing new order v1",
@@ -53,7 +55,7 @@ func (i *Injector) processInstruction(ctx context.Context, slotNumber uint64, bl
 			zap.String("trx_id", trxID),
 		)
 
-		if kvs, err = i.processMatchOrderInstruction(ctx, slotNumber, blkTime, trxIdx, instIdx, mathOrder, inst.AccountChanges); err != nil {
+		if kvs, err = i.processMatchOrderInstruction(ctx, slotNumber, blkTime, inst.trxIdx, inst.instIdx, mathOrder, inst.accChanges); err != nil {
 			return fmt.Errorf("generating serumhist keys: %w", err)
 		}
 	}
