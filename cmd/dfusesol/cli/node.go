@@ -541,33 +541,34 @@ func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockData
 		return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
 	}
 
+	fileName := blockDataFileName(slot, "")
+	slot.AccountChangesFileRef = fileName
+
+	accountChangesBundle := slot.Split(true)
+	err := archiver.StoreBlockData(accountChangesBundle, fileName)
+	if !ok {
+		return nil, fmt.Errorf("storing block data: %w", err)
+	}
+
 	bstreamBlock, err := codec.BlockFromProto(slot)
 	if err != nil {
 		return nil, fmt.Errorf("block from proto: %w", err)
-	}
-
-	fileName := blockDataFileName(bstreamBlock, "")
-
-	accountChangesBundle := slot.Split(true)
-	err = archiver.StoreBlockData(accountChangesBundle, fileName)
-	if !ok {
-		return nil, fmt.Errorf("storing block data: %w", err)
 	}
 
 	return bstreamBlock, nil
 }
 
 //duplicated code from node manager
-func blockDataFileName(block *bstream.Block, suffix string) string {
-	blockTime := block.Time()
-	blockTimeString := fmt.Sprintf("%s.%01d", blockTime.Format("20060102T150405"), blockTime.Nanosecond()/100000000)
+func blockDataFileName(slot *pbcodec.Slot, suffix string) string {
+	t := slot.Block.Time()
+	blockTimeString := fmt.Sprintf("%s.%01d", t.Format("20060102T150405"), t.Nanosecond()/100000000)
 
-	blockID := block.ID()
+	blockID := slot.ID()
 	if len(blockID) > 8 {
 		blockID = blockID[len(blockID)-8:]
 	}
 
-	previousID := block.PreviousID()
+	previousID := slot.Block.PreviousId
 	if len(previousID) > 8 {
 		previousID = previousID[len(previousID)-8:]
 	}
@@ -576,5 +577,5 @@ func blockDataFileName(block *bstream.Block, suffix string) string {
 	if suffix != "" {
 		suffixString = fmt.Sprintf("-%s", suffix)
 	}
-	return fmt.Sprintf("%010d-%s-%s-%s%s", block.Num(), blockTimeString, blockID, previousID, suffixString)
+	return fmt.Sprintf("%010d-%s-%s-%s%s", slot.Num(), blockTimeString, blockID, previousID, suffixString)
 }

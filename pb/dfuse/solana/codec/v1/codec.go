@@ -34,6 +34,10 @@ func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
 	return bundle
 }
 
+//func (s *Slot) JoinStore(store dstore.Store) error {
+//	store
+//}
+
 func (s *Slot) Join(bundle *AccountChangesBundle) {
 	for ti, bundleTransaction := range bundle.Transactions {
 		for ii, bundleInstruction := range bundleTransaction.Instructions {
