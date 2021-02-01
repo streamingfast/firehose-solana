@@ -186,6 +186,7 @@ func (s *BlockDataArchiver) Terminate() <-chan interface{} {
 }
 
 func (s *BlockDataArchiver) Init() error {
+	zlog.Info("initializing", zap.String("working dir", s.workDir))
 	if err := os.MkdirAll(s.workDir, 0755); err != nil {
 		return fmt.Errorf("mkdir work folder: %w", err)
 	}

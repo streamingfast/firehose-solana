@@ -383,7 +383,7 @@ func RegisterSolanaNodeApp(kind string) {
 				// tracker.AddGetter(bstream.NetworkLIBTarget, bstream.NetworkLIBBlockRefGetter(blockmetaAddr))
 
 				workingDir := mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"-working-dir"))
-				blockDataWorkingDir := mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"block-data-working-dir"))
+				blockDataWorkingDir := mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"-block-data-working-dir"))
 
 				blockDataStore, err := dstore.NewDBinStore(blockDataStoreURL)
 				if err != nil {
