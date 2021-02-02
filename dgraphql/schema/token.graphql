@@ -1,17 +1,39 @@
-type Token {
-  address: String!
-  name: String
-  symbol: String
-  mintAuthority: String!
-  freezeAuthority: String!
-  supply: Uint64!
-  decimals: Int!
+
+
+"""The Connection type for a Token. See the [GraphQL core concepts](https://docs.dfuse.io/guides/core-concepts/graphql/)"""
+type TokenConnection {
+  "A list of edges to Token "
+  edges: [TokenEdge]!
+
+  "Information to aid pagination"
+  pageInfo: PageInfo!
 }
 
-type TokenResponse {
+"""
+A single Token element of the connection list.
+"""
+type TokenEdge {
+  """Query cursor, allowing you to continue fetching results even after interruption of your connection, without missing a beat."""
+  cursor: String!
+
+  """The Token object."""
+  node: Token!
+}
+
+
+type Token {
   address: String!
   mintAuthority: String!
   freezeAuthority: String!
   supply: Uint64!
   decimals: Int!
+  verified: Boolean!
+  meta: TokenMeta
+}
+
+type TokenMeta {
+  symbol: String!
+  name: String!
+  logo: String
+  website: String
 }

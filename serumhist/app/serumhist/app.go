@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dfuse-io/dstore"
+
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
@@ -17,15 +19,16 @@ import (
 )
 
 type Config struct {
-	BlockStreamV2Addr string
-	BlockStreamAddr   string
-	FLushSlotInterval uint64
-	StartBlock        uint64
-	KvdbDsn           string
-	EnableInjector    bool
-	EnableServer      bool
-	GRPCListenAddr    string
-	HTTPListenAddr    string
+	BlockStreamAddr          string
+	BlocksStoreURL           string
+	FLushSlotInterval        uint64
+	StartBlock               uint64
+	KvdbDsn                  string
+	EnableInjector           bool
+	EnableServer             bool
+	GRPCListenAddr           string
+	HTTPListenAddr           string
+	IgnoreCheckpointOnLaunch bool
 }
 
 type App struct {
@@ -42,6 +45,11 @@ func New(config *Config) *App {
 
 func (a *App) Run() error {
 	zlog.Info("launching serumhist", zap.Reflect("config", a.Config))
+
+	appCtx, cancel := context.WithCancel(context.Background())
+	a.OnTerminating(func(err error) {
+		cancel()
+	})
 
 	if err := a.Config.validate(); err != nil {
 		return fmt.Errorf("invalid config: %w", err)
@@ -62,14 +70,18 @@ func (a *App) Run() error {
 	if a.Config.EnableInjector {
 		dmetrics.Register(metrics.Metricset)
 
-		injector := serumhist.NewInjector(a.Config.BlockStreamV2Addr, a.Config.BlockStreamAddr, kvdb, a.Config.FLushSlotInterval)
-		if err := injector.
-			Setup(); err != nil {
-			return fmt.Errorf("unable to create solana injector: %w", err)
+		blocksStore, err := dstore.NewDBinStore(a.Config.BlocksStoreURL)
+		if err != nil {
+			return fmt.Errorf("failed setting up blocks store: %w", err)
 		}
 
-		zlog.Info("serum history injector setup")
+		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, kvdb, a.Config.FLushSlotInterval)
+		err = injector.SetupSource(a.Config.StartBlock, a.Config.IgnoreCheckpointOnLaunch)
+		if err != nil {
+			return fmt.Errorf("unable to setup serumhist injector source: %w", err)
+		}
 
+		zlog.Info("serum history injector setup complete")
 		a.OnTerminating(func(err error) {
 			injector.SetUnhealthy()
 			injector.Shutdown(err)
@@ -78,7 +90,7 @@ func (a *App) Run() error {
 
 		injector.LaunchHealthz(a.Config.HTTPListenAddr)
 		go func() {
-			err := injector.Launch(context.Background(), a.Config.StartBlock)
+			err := injector.Launch()
 			if err != nil {
 				zlog.Error("injector terminated with error")
 				injector.Shutdown(err)

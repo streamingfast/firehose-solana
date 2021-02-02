@@ -2,49 +2,44 @@ package serumhist
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io"
-	"time"
-
-	"go.opencensus.io/plugin/ocgrpc"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/balancer/roundrobin"
-	"google.golang.org/grpc/keepalive"
-
 	"github.com/dfuse-io/bstream"
-
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
+	"github.com/dfuse-io/bstream/blockstream"
+	"github.com/dfuse-io/bstream/firehose"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/kvdb/store"
-	pbbstream "github.com/dfuse-io/pbgo/dfuse/bstream/v1"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
+	"time"
 )
 
 type Injector struct {
 	*shutter.Shutter
+	ctx               context.Context
 	kvdb              store.KVStore
 	flushSlotInterval uint64
 	lastTickBlock     uint64
 	lastTickTime      time.Time
-	blockStreamV2Addr string
+	blockStore        dstore.Store
 	blockstreamAddr   string
 	healthy           bool
-	firehoseClient    pbbstream.BlockStreamV2Client
-	blockStreamClient pbbstream.BlockStreamClient // temp used to
-
-	cache *tradingAccountCache
+	cache             *tradingAccountCache
+	source            *firehose.Firehose
 }
 
 func NewInjector(
-	blockstreamV2Addr string,
+	ctx context.Context,
 	blockstreamAddr string,
+	blockStore dstore.Store,
 	kvdb store.KVStore,
 	flushSlotInterval uint64,
 ) *Injector {
 	return &Injector{
-		blockStreamV2Addr: blockstreamV2Addr,
+		ctx:               ctx,
 		blockstreamAddr:   blockstreamAddr,
+		blockStore:        blockStore,
 		Shutter:           shutter.New(),
 		flushSlotInterval: flushSlotInterval,
 		kvdb:              kvdb,
@@ -52,114 +47,70 @@ func NewInjector(
 	}
 }
 
-func (i *Injector) Setup() error {
-	conn, err := grpc.Dial(
-		i.blockstreamAddr,
-		grpc.WithStatsHandler(&ocgrpc.ClientHandler{}),
-		grpc.WithBalancerName(roundrobin.Name),
-		grpc.WithInsecure(),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                30 * time.Second, // send pings every (x seconds) there is no activity
-			Timeout:             10 * time.Second, // wait that amount of time for ping ack before considering the connection dead
-			PermitWithoutStream: true,             // send pings even without active streams
-		}),
-		grpc.WithDefaultCallOptions([]grpc.CallOption{
-			grpc.MaxCallRecvMsgSize(1024 * 1024 * 1024),
-			grpc.WaitForReady(true),
-		}...),
+func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bool) error {
+	zlog.Info("setting up serhumhist source",
+		zap.Uint64("start_block_num", startBlockNum),
 	)
+
+	checkpoint, err := i.resolveCheckpoint(i.ctx, startBlockNum, ignoreCheckpointOnLaunch)
 	if err != nil {
-		return fmt.Errorf("unable to connecto blockstream: %w", err)
+		return fmt.Errorf("unable to resolve shard checkpoint: %w", err)
 	}
 
-	i.cache.load(context.Background())
-	i.blockStreamClient = pbbstream.NewBlockStreamClient(conn)
+	zlog.Info("serumhist resolved start block",
+		zap.Uint64("start_block_num", checkpoint.LastWrittenSlotNum),
+		zap.String("start_block_num", checkpoint.LastWrittenSlotId),
+	)
 
+	liveStreamFactory := bstream.SourceFactory(func(subHandler bstream.Handler) bstream.Source {
+		return blockstream.NewSource(
+			i.ctx,
+			i.blockstreamAddr,
+			200,
+			subHandler,
+		)
+	})
+
+	fhose := firehose.New(
+		[]dstore.Store{i.blockStore},
+		liveStreamFactory,
+		int64(checkpoint.LastWrittenSlotNum),
+		i,
+		firehose.WithPreproc(i.preprocessSlot),
+		firehose.WithLogger(zlog),
+	)
+	i.source = fhose
 	return nil
 }
 
-func (i *Injector) Launch(ctx context.Context, startBlockNum uint64) error {
-	//req := &pbbstream.BlocksRequestV2{
-	//	StartBlockNum:     int64(startBlockNum),
-	//	ExcludeStartBlock: true,
-	//	Decoded:           true,
-	//	HandleForks:       true,
-	//	HandleForksSteps: []pbbstream.ForkStep{
-	//		pbbstream.ForkStep_STEP_IRREVERSIBLE,
-	//	},
-	//}
-	req := &pbbstream.BlockRequest{
-		Burst:       100,
-		ContentType: "sol",
-		Requester:   "serumhist",
-	}
-	zlog.Info("launching serumdb loader",
-		zap.Reflect("blockstream_request", req),
-	)
-
-	// stream, err := i.firehoseClient.Blocks(ctx, req)
-	stream, err := i.blockStreamClient.Blocks(ctx, req)
+func (i *Injector) Launch() error {
+	zlog.Info("launching serumhist injector")
+	err := i.source.Run(i.ctx)
 	if err != nil {
-		return fmt.Errorf("unable to setup block stream client: %w", err)
-	}
-
-	for {
-		msg, err := stream.Recv()
-		if err == io.EOF {
-			zlog.Info("received EOF in listening stream, expected a long-running stream here")
+		if errors.Is(err, firehose.ErrStopBlockReached) {
+			zlog.Info("firehose stream of blocks reached end block")
 			return nil
 		}
-		if err != nil {
-			return err
+
+		if errors.Is(err, context.Canceled) {
+			return fmt.Errorf("firehose context canceled")
 		}
 
-		i.setHealthy()
-
-		blk, err := bstream.BlockFromProto(msg)
-		if err != nil {
-			return fmt.Errorf("unable to transform to bstream.Block: %w", err)
-		}
-		slot := blk.ToNative().(*pbcodec.Slot)
-
-		//if msg.Undo {
-		//	return fmt.Errorf("blockstreamv2 should never send undo signals, irreversible only please")
-		//}
-		//
-		//if msg.Step != pbbstream.ForkStep_STEP_IRREVERSIBLE {
-		//	return fmt.Errorf("blockstreamv2 should never pass something that is not irreversible")
-		//}
-
-		if slot.Number%logEveryXSlot == 0 {
-			zlog.Info(fmt.Sprintf("processed %d slot", logEveryXSlot),
-				zap.Uint64("slot_number", slot.Number),
-				zap.String("slot_id", slot.Id),
-				zap.String("previous_id", slot.PreviousId),
-				zap.Uint32("transaction_count", slot.TransactionCount),
-			)
-		}
-		if err := i.processSerumSlot(ctx, slot); err != nil {
-			return fmt.Errorf("process serum slot: %w", err)
+		if errors.Is(err, context.DeadlineExceeded) {
+			return fmt.Errorf("firehose context deadline exceeded")
 		}
 
-		if err := i.writeCheckpoint(ctx, slot); err != nil {
-			return fmt.Errorf("error while saving block checkpoint")
+		var e *firehose.ErrInvalidArg
+		if errors.As(err, &e) {
+			return fmt.Errorf("firehose invalid args: %s", e.Error())
 		}
 
-		if err := i.flush(ctx, slot); err != nil {
-			return fmt.Errorf("error while flushing: %w", err)
-		}
-
-		t := slot.Block.Time()
-
-		err = i.FlushIfNeeded(slot.Number, t)
-		if err != nil {
-			zlog.Error("flushIfNeeded", zap.Error(err))
-			return err
-		}
+		return fmt.Errorf("firehose unexpected d error: %w", err)
 	}
+	return nil
 }
 
-func (i *Injector) DoFlush(slotNum uint64, reason string) error {
+func (i *Injector) doFlush(slotNum uint64, reason string) error {
 	zlog.Debug("flushing block",
 		zap.Uint64("slot_num", slotNum),
 		zap.String("reason", reason),
@@ -174,7 +125,7 @@ func (i *Injector) DoFlush(slotNum uint64, reason string) error {
 	return nil
 }
 
-func (i *Injector) FlushIfNeeded(slotNum uint64, slotTime time.Time) error {
+func (i *Injector) flushIfNeeded(slotNum uint64, slotTime time.Time) error {
 	batchSizeReached := slotNum%i.flushSlotInterval == 0
 	closeToHeadBlockTime := time.Since(slotTime) < 25*time.Second
 
@@ -188,7 +139,7 @@ func (i *Injector) FlushIfNeeded(slotNum uint64, slotTime time.Time) error {
 			reason += ", close to head block"
 		}
 
-		err := i.DoFlush(slotNum, reason)
+		err := i.doFlush(slotNum, reason)
 		if err != nil {
 			return err
 		}

@@ -16,27 +16,18 @@ func GraphqlExamples() []*static.GraphqlExample {
 
 	return []*static.GraphqlExample{
 		{
-			Label:    "Get All Registered Tokens",
-			Document: graphqlDocument(box, "get_all_registered_tokens.graphql"),
-		},
-		{
 			Label:    "Get All Tokens",
 			Document: graphqlDocument(box, "get_all_tokens.graphql"),
-		},
-		{
-			Label:    "Get Registered Token",
-			Document: graphqlDocument(box, "get_registered_token.graphql"),
 			Variables: static.GraphqlVariablesByNetwork{
-				"generic": r(`{"account": "YOUR-ACCOUNT-HERE"}`),
-				"mainnet": r(`{"account": "BXXkv6z8ykpG1yuvUDPgh732wzVHB69RnB9YgSYh3itW"}`),
+				"generic": r(`{"cursor": ""}`),
 			},
 		},
 		{
-			Label:    "Get Token",
+			Label:    "Get A Token",
 			Document: graphqlDocument(box, "get_token.graphql"),
 			Variables: static.GraphqlVariablesByNetwork{
-				"generic": r(`{"account": "YOUR-ACCOUNT-HERE"}`),
-				"mainnet": r(`{"account": "BXXkv6z8ykpG1yuvUDPgh732wzVHB69RnB9YgSYh3itW"}`),
+				"generic": r(`{"address": "TOKEN-ADDRESS"}`),
+				"mainnet": r(`{"account": "So11111111111111111111111111111111111111112"}`),
 			},
 		},
 		{

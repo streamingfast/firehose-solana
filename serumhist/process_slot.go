@@ -1,18 +1,25 @@
 package serumhist
 
 import (
-	"context"
 	"fmt"
+	"time"
 
 	bin "github.com/dfuse-io/binary"
+	"github.com/dfuse-io/bstream"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/programs/serum"
 	"go.uber.org/zap"
 )
 
-func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) error {
-	for _, transaction := range slot.Transactions {
+func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
+	slot := blk.ToNative().(*pbcodec.Slot)
+	var out []*serumInstruction
+	var err error
+	var accountChangesBundle *pbcodec.AccountChangesBundle
+
+	zlog.Debug("preprocessing slot", zap.Stringer("slot", blk))
+	for trxIdx, transaction := range slot.Transactions {
 		if traceEnabled {
 			zlog.Debug("processing new transaction",
 				zap.String("transaction_id", transaction.Id),
@@ -20,25 +27,40 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 			)
 
 		}
-		for idx, instruction := range transaction.Instructions {
+		for instIdx, instruction := range transaction.Instructions {
 			if instruction.ProgramId != serum.PROGRAM_ID.String() {
 				if traceEnabled {
 					zlog.Debug("skipping non-serum instruction",
 						zap.Uint64("slot_number", slot.Number),
 						zap.String("transaction_id", transaction.Id),
-						zap.Int("instruction_index", idx),
+						zap.Int("instruction_index", instIdx),
 						zap.String("program_id", instruction.ProgramId),
 					)
 				}
 				continue
 			}
 
-			var serumInstruction *serum.Instruction
-			if err := bin.NewDecoder(instruction.Data).Decode(&serumInstruction); err != nil {
+			if accountChangesBundle == nil {
+				retryCount := 0
+				accountChangesBundle, err = slot.Retrieve(i.ctx, func(fileName string) bool {
+					retryCount++
+					zlog.Debug("account changes file not found...sleeping and retrying",
+						zap.Int("retry_count", retryCount),
+					)
+					time.Sleep(time.Duration(retryCount) * 15 * time.Millisecond)
+					return true
+				})
+				if err != nil {
+					return nil, fmt.Errorf("unable to retrieve accoutn changes for lsot %d (%s): %w", slot.Number, slot.Id, err)
+				}
+			}
+
+			var decodedInst *serum.Instruction
+			if err := bin.NewDecoder(instruction.Data).Decode(&decodedInst); err != nil {
 				zlog.Warn("unable to decode serum instruction skipping",
 					zap.Uint64("slot_number", slot.Number),
 					zap.String("transaction_id", transaction.Id),
-					zap.Int("instruction_index", idx),
+					zap.Int("instruction_index", instIdx),
 				)
 				continue
 			}
@@ -46,27 +68,31 @@ func (i *Injector) processSerumSlot(ctx context.Context, slot *pbcodec.Slot) err
 			if traceEnabled {
 				zlog.Debug("processing serum instruction",
 					zap.Uint64("slot_number", slot.Number),
-					zap.Int("instruction_index", idx),
+					zap.Int("instruction_index", instIdx),
 					zap.String("transaction_id", transaction.Id),
-					zap.Uint32("serum_instruction_variant_index", serumInstruction.TypeID),
+					zap.Uint32("serum_instruction_variant_index", decodedInst.TypeID),
 				)
 			}
 
 			accounts, err := transaction.InstructionAccountMetaList(instruction)
 			if err != nil {
-				return fmt.Errorf("get instruction account meta list: %w", err)
+				return nil, fmt.Errorf("get instruction account meta list: %w", err)
 			}
 
-			if i, ok := serumInstruction.Impl.(solana.AccountSettable); ok {
+			if i, ok := decodedInst.Impl.(solana.AccountSettable); ok {
 				i.SetAccounts(accounts)
 			}
 
-			if err = i.processInstruction(ctx, slot.Number, slot.Block.Time(), transaction.Index, uint64(idx), transaction.Id, instruction, serumInstruction); err != nil {
-				return fmt.Errorf("process serum instruction: %w", err)
-			}
+			out = append(out, &serumInstruction{
+				trxIdx:     transaction.Index,
+				instIdx:    uint64(instIdx),
+				trxtID:     transaction.Id,
+				accChanges: accountChangesBundle.Transactions[trxIdx].Instructions[instIdx].Changes,
+				native:     decodedInst,
+			})
 		}
 	}
-	return nil
+	return out, nil
 }
 
 func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {

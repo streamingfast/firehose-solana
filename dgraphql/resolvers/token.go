@@ -11,20 +11,6 @@ type Token struct {
 
 func (t Token) Address() string { return t.t.Address.String() }
 
-func (t Token) Name() *string {
-	if t.t.Meta != nil {
-		return &t.t.Meta.Name
-	}
-	return nil
-}
-
-func (t Token) Symbol() *string {
-	if t.t.Meta != nil {
-		return &t.t.Meta.Symbol
-	}
-	return nil
-}
-
 func (t Token) MintAuthority() string {
 	return t.t.MintAuthority.String()
 }
@@ -39,6 +25,43 @@ func (t Token) Supply() gtype.Uint64 {
 
 func (t Token) Decimals() int32 {
 	return int32(t.t.Decimals)
+}
+
+func (t Token) Verified() bool {
+	return t.t.Verified
+}
+
+func (t Token) Meta() *TokenMeta {
+	if t.t.Meta != nil {
+		return &TokenMeta{
+			Symbol:  t.t.Meta.Symbol,
+			Name:    t.t.Meta.Name,
+			logo:    t.t.Meta.Logo,
+			website: t.t.Meta.Website,
+		}
+	}
+	return nil
+}
+
+type TokenMeta struct {
+	Symbol  string
+	Name    string
+	logo    string
+	website string
+}
+
+func (t TokenMeta) Logo() *string {
+	if t.logo == "" {
+		return nil
+	}
+	return &t.logo
+}
+
+func (t TokenMeta) Website() *string {
+	if t.website == "" {
+		return nil
+	}
+	return &t.website
 }
 
 type TokenAmount struct {

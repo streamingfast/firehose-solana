@@ -26,7 +26,7 @@ func (i *Injector) flush(ctx context.Context, slot *pbcodec.Slot) error {
 			reason += ", close to head block"
 		}
 
-		err := i.DoFlush(slotNum, reason)
+		err := i.doFlush(slotNum, reason)
 		if err != nil {
 			return err
 		}

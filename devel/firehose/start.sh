@@ -43,6 +43,9 @@ usage() {
   echo ""
   echo "Options"
   echo "    -c             Clean actual data directory first"
+  echo "Examples (grpc)"
+  echo '    Stream Blocks'
+
 }
 
 main "$@"
