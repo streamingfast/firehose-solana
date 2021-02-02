@@ -14,7 +14,7 @@ func init() {
 		Title:       "Serum History Server",
 		Description: "Serves fills for pubkey and or market",
 		MetricsID:   "serumhist",
-		Logger:      launcher.NewLoggingDef("github.com/dfuse-io/dfuse-solana/serumhist/.*", nil),
+		Logger:      launcher.NewLoggingDef("github.com/dfuse-io/dfuse-solana/serumhist.*", nil),
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("serumhist-dsn", SerumHistDSN, "kvdb connection string to solana databse database")
 			cmd.Flags().Uint64("serumhist-start-block-num", 0, "Block number where we start processing")

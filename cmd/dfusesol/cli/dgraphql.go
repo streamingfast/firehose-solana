@@ -14,7 +14,7 @@ func init() {
 		Title:       "GraphQL",
 		Description: "Serves GraphQL queries to clients",
 		MetricsID:   "dgraphql",
-		Logger:      launcher.NewLoggingDef("github.com/dfuse-io/(dgraphql.*|dfuse-ethereum/dgraphql.*)", nil),
+		Logger:      launcher.NewLoggingDef("github.com/dfuse-io/(dgraphql.*|dfuse-solana/dgraphql.*)", nil),
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("dgraphql-http-addr", DgraphqlHTTPServingAddr, "TCP Listener addr for http")
 			cmd.Flags().String("dgraphql-grpc-addr", DgraphqlGRPCServingAddr, "TCP Listener addr for gRPC")
