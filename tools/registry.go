@@ -16,7 +16,8 @@ import (
 )
 
 var registryCmd = &cobra.Command{Use: "registry", Short: "Registry "}
-var fetchRegistryCmd = &cobra.Command{Use: "fetch", Short: "Fetch"}
+var listRegistryCmd = &cobra.Command{Use: "list", Short: "List entities"}
+var fetchRegistryCmd = &cobra.Command{Use: "fetch", Short: "Fetch entities"}
 var marketsFetchCmd = &cobra.Command{
 	Use:   "markets {old-markets.jsonl} {new-markets.jsonl}",
 	Short: "Retrieve Serum Markets",
@@ -147,11 +148,13 @@ func fetchTokensE(cmd *cobra.Command, args []string) (err error) {
 	if err != nil {
 		return fmt.Errorf("unable to retrieve known tokens: %w", err)
 	}
-	fmt.Printf("Loaded %d known tokens\n", len(oldTokens))
 
 	tokens := make([]*registry.Token, len(oldTokens))
 	i := 0
 	for _, t := range oldTokens {
+		if t.Meta != nil {
+			t.Verified = true
+		}
 		tokens[i] = t
 		i++
 	}
