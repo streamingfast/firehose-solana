@@ -54,7 +54,7 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 					return true
 				})
 				if err != nil {
-					return nil, fmt.Errorf("unable to retrieve accoutn changes for lsot %d (%s): %w", slot.Number, slot.Id, err)
+					return nil, fmt.Errorf("unable to retrieve account changes for slot %d (%s): %w", slot.Number, slot.Id, err)
 				}
 			}
 
