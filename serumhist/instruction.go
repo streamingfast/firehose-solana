@@ -99,9 +99,10 @@ func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber uint64, blkT
 			e := event.Element().Interface().(*serum.Event)
 			switch event.Kind {
 			case diff.KindAdded:
-				zlog.Debug("found a diff",
+				zlog.Debug("found a serum event diff",
 					zap.Stringer("diff_kind", event.Kind),
 					zap.Stringer("event_flag", e.Flag),
+					zap.Bool("is_fill", e.Flag.IsFill()),
 				)
 
 				if e.Flag.IsFill() {

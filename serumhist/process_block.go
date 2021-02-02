@@ -3,6 +3,8 @@ package serumhist
 import (
 	"fmt"
 
+	"github.com/dfuse-io/bstream/forkable"
+
 	"github.com/dfuse-io/solana-go/programs/serum"
 
 	"github.com/dfuse-io/bstream"
@@ -32,11 +34,11 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		)
 	}
 
-	for _, inst := range obj.([]*serumInstruction) {
+	forkObj := obj.(*forkable.ForkableObject)
+	for _, inst := range forkObj.Obj.([]*serumInstruction) {
 		if err := i.processInstruction(i.ctx, slot.Number, slot.Block.Time(), inst); err != nil {
 			return fmt.Errorf("process serum instruction: %w", err)
 		}
-
 	}
 
 	if err := i.writeCheckpoint(i.ctx, slot); err != nil {

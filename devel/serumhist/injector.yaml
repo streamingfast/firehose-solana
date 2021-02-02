@@ -4,10 +4,10 @@ start:
   flags:
     common-blockstream-addr: ""
     log-format: "stackdriver"
-    common-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v2"
+    common-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v1"
     serumhist-enable-injector-mode: true
     serumhist-enable-server-mode: false
     serumhist-grpc-listen-addr: ":9000"
     serumhist-http-listen-addr: ":8080"
     serumhist-flush-slots-interval: 100
-    serumhist-start-block-num: 63670900
+    serumhist-start-block-num: 63674400
