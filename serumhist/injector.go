@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/bstream/blockstream"
 	"github.com/dfuse-io/bstream/firehose"
@@ -12,7 +14,6 @@ import (
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
-	"time"
 )
 
 type Injector struct {
@@ -59,25 +60,31 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 
 	zlog.Info("serumhist resolved start block",
 		zap.Uint64("start_block_num", checkpoint.LastWrittenSlotNum),
-		zap.String("start_block_num", checkpoint.LastWrittenSlotId),
+		zap.String("start_block_id", checkpoint.LastWrittenSlotId),
 	)
 
-	liveStreamFactory := bstream.SourceFactory(func(subHandler bstream.Handler) bstream.Source {
-		return blockstream.NewSource(
-			i.ctx,
-			i.blockstreamAddr,
-			200,
-			subHandler,
-		)
-	})
+	options := []firehose.Option{
+		firehose.WithPreproc(i.preprocessSlot),
+		firehose.WithLogger(zlog),
+	}
+
+	if i.blockstreamAddr != "" {
+		liveStreamFactory := bstream.SourceFactory(func(subHandler bstream.Handler) bstream.Source {
+			return blockstream.NewSource(
+				i.ctx,
+				i.blockstreamAddr,
+				200,
+				subHandler,
+			)
+		})
+		options = append(options, firehose.WithLiveSource(liveStreamFactory))
+	}
 
 	fhose := firehose.New(
 		[]dstore.Store{i.blockStore},
-		liveStreamFactory,
 		int64(checkpoint.LastWrittenSlotNum),
 		i,
-		firehose.WithPreproc(i.preprocessSlot),
-		firehose.WithLogger(zlog),
+		options...,
 	)
 	i.source = fhose
 	return nil

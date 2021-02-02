@@ -206,6 +206,8 @@ github.com/dfuse-io/dtracing v0.0.0-20200417133307-c09302668d0c h1:G/qxKHQXz8OGY
 github.com/dfuse-io/dtracing v0.0.0-20200417133307-c09302668d0c/go.mod h1:SA/v5q2RIuah2W5uvVldEUwfFprEhGiw66Id0j68rtw=
 github.com/dfuse-io/firehose v0.1.1-0.20210128141111-698c8cfb22bb h1:hRb9qlmxY9dPKJWWyI7Nc/C+VmxQkmXv3lANy+4dQ90=
 github.com/dfuse-io/firehose v0.1.1-0.20210128141111-698c8cfb22bb/go.mod h1:8j5IkPRJr4uaaMhq4/1aiRewIvQsvyhQB9Lk0ddwFqI=
+github.com/dfuse-io/firehose v0.1.1-0.20210202184334-ce54dd166ec6 h1:MCyNvzAl+fWpWaIxIBGU6rmHFRjDZjJZueONHNgZqsQ=
+github.com/dfuse-io/firehose v0.1.1-0.20210202184334-ce54dd166ec6/go.mod h1:2WJdIHk0yqbPkK2byWtHF5+dk8f2XTuXpXB4tXxJZOY=
 github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807 h1:UrLCef4qXSCrHhxbp/YvAVsQtdhAV6OrsEdDGIh7G+o=
 github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/dfuse-io/jsonpb v0.0.0-20200406211248-c5cf83f0e0c0/go.mod h1:Qt4EPDfP8T2d/eN96nonFDEyJDMUD3oa/C8LQBX2OAs=

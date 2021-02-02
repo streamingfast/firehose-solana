@@ -46,6 +46,9 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 					retryCount++
 					zlog.Debug("account changes file not found...sleeping and retrying",
 						zap.Int("retry_count", retryCount),
+						zap.String("filename", fileName),
+						zap.String("slot_id", slot.Id),
+						zap.Uint64("slot_id", slot.Number),
 					)
 					time.Sleep(time.Duration(retryCount) * 15 * time.Millisecond)
 					return true
