@@ -2,11 +2,11 @@ start:
   args:
   - serumhist
   flags:
-    common-blockstream-addr: ":9001"
+    common-blockstream-addr: ""
+    common-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v2"
     serumhist-enable-injector-mode: true
     serumhist-enable-server-mode: false
     serumhist-grpc-listen-addr: ":9000"
     serumhist-http-listen-addr: ":8080"
     serumhist-flush-slots-interval: 100
-    common-rpc-endpoint: "https://api.mainnet-beta.solana.com/rpc"
-    common-rpc-ws-endpoint: "wss://api.mainnet-beta.solana.com/rpc"
+    serumhist-start-block-num: 63646000

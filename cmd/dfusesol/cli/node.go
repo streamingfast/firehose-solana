@@ -546,8 +546,8 @@ func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockData
 	}
 
 	fileName := blockDataFileName(slot, "")
-	slot.AccountChangesFileRef = archiver.Store.ObjectPath(fileName)
-	zlog.Debug("slot data file", zap.String("object_path", slot.AccountChangesFileRef))
+	slot.AccountChangesFileRef = archiver.Store.ObjectURL(fileName)
+	zlog.Debug("slot data file", zap.String("object_url", slot.AccountChangesFileRef))
 
 	go func() {
 		accountChangesBundle := slot.Split(true)
