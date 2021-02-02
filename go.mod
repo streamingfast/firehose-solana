@@ -16,7 +16,7 @@ require (
 	github.com/dfuse-io/dlauncher v0.0.0-20201215203933-750a56ede40d
 	github.com/dfuse-io/dmetering v0.0.0-20210112023524-c3ddadbc0d6a
 	github.com/dfuse-io/dmetrics v0.0.0-20200508170817-3b8cb01fee68
-	github.com/dfuse-io/dstore v0.1.1-0.20210202182822-3ab14e17244b
+	github.com/dfuse-io/dstore v0.1.1-0.20210202202519-656c91bba5b9
 	github.com/dfuse-io/firehose v0.1.1-0.20210202184334-ce54dd166ec6
 	github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
