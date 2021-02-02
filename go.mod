@@ -24,7 +24,7 @@ require (
 	github.com/dfuse-io/merger v0.0.3-0.20210120192023-4faaf201eee9
 	github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37
 	github.com/dfuse-io/pbgo v0.0.6-0.20210125181705-b17235518132
-	github.com/dfuse-io/relayer v0.0.2-0.20201029161257-ec97edca50d7
+	github.com/dfuse-io/relayer v0.0.2-0.20210202030730-e16ed570e7a9
 	github.com/dfuse-io/shutter v1.4.1
 	github.com/dfuse-io/solana-go v0.2.1-0.20210126234342-be9990a71471
 	github.com/dustin/go-humanize v1.0.0
@@ -37,10 +37,8 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	github.com/test-go/testify v1.1.4
-	go.opencensus.io v0.22.5
 	go.uber.org/zap v1.16.0
 	google.golang.org/grpc v1.29.1
-	google.golang.org/protobuf v1.25.0
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807
