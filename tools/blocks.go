@@ -12,25 +12,82 @@ import (
 	"github.com/spf13/viper"
 )
 
-var blocksCmd = &cobra.Command{
-	Use:   "print-block {block_num}",
-	Short: "Prints the content summary of a local one block file",
+var printCmd = &cobra.Command{
+	Use:   "print",
+	Short: "Prints of one block or merged blocks file",
+}
+
+var blockCmd = &cobra.Command{
+	Use:   "block {block_num}",
+	Short: "Prints the content summary of a one block file",
 	Args:  cobra.ExactArgs(1),
-	RunE:  printBlocksE,
+	RunE:  printOneBlockE,
+}
+
+var mergedBlocksCmd = &cobra.Command{
+	Use:   "blocks {base_block_num}",
+	Short: "Prints the content summary of a merged blocks file",
+	Args:  cobra.ExactArgs(1),
+	RunE:  printMergeBlocksE,
 }
 
 func init() {
-	Cmd.AddCommand(blocksCmd)
+	Cmd.AddCommand(printCmd)
+	printCmd.AddCommand(blockCmd)
+	printCmd.AddCommand(mergedBlocksCmd)
 
-	blocksCmd.Flags().Bool("transactions", false, "Include transaction IDs in output")
-	blocksCmd.Flags().Bool("instructions", false, "Include instruction output")
-	blocksCmd.Flags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1-oneblock", "One block store")
+	printCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
+	printCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
+	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v2", "block store")
 }
 
-func printBlocksE(cmd *cobra.Command, args []string) error {
+func printMergeBlocksE(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
-	printTransactions := viper.GetBool("transactions")
-	printInstructions := viper.GetBool("instructions")
+	blockNum, err := strconv.ParseUint(args[0], 10, 64)
+	if err != nil {
+		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
+	}
+
+	str := viper.GetString("store")
+
+	store, err := dstore.NewDBinStore(str)
+	if err != nil {
+		return fmt.Errorf("unable to create store at path %q: %w", store, err)
+	}
+
+	filename := fmt.Sprintf("%010d", blockNum)
+	reader, err := store.OpenObject(ctx, filename)
+	if err != nil {
+		fmt.Printf("❌ Unable to read merge blocks filename %s: %s\n", filename, err)
+		return err
+	}
+	defer reader.Close()
+
+	readerFactory, err := bstream.GetBlockReaderFactory.New(reader)
+	if err != nil {
+		fmt.Printf("❌ Unable to read blocks filename %s: %s\n", filename, err)
+		return err
+	}
+
+	fmt.Printf("Merged Blocks File: %s\n", store.ObjectURL(filename))
+	seenBlockCount := 0
+	for {
+		err := readBlock(readerFactory)
+		if err != nil {
+			if err == io.EOF {
+				fmt.Printf("Total blocks: %d\n", seenBlockCount)
+				return nil
+			}
+			return fmt.Errorf("reading block: %w", err)
+		}
+		seenBlockCount++
+	}
+
+}
+
+func printOneBlockE(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+
 	blockNum, err := strconv.ParseUint(args[0], 10, 64)
 	if err != nil {
 		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
@@ -69,54 +126,58 @@ func printBlocksE(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		seenBlockCount := 0
-		for {
-			block, err := readerFactory.Read()
-			if block != nil {
-				seenBlockCount++
-
-				payloadSize := len(block.PayloadBuffer)
-				slot := block.ToNative().(*pbcodec.Slot)
-				fmt.Printf("One Block File: %s:\n", filepath)
-				fmt.Printf("  Slot #%d (%s) (prev: %s) (%d bytes): %d transactions\n",
-					slot.Num(),
-					slot.ID(),
-					slot.PreviousId,
-					payloadSize,
-					len(slot.Transactions),
-				)
-				fmt.Printf("  Block #%d (%s) @ %s\n",
-					slot.Block.Number,
-					slot.Block.Id,
-					slot.Block.Time(),
-				)
-
-				if printTransactions {
-					fmt.Println("- Transactions: ")
-					for _, t := range slot.Transactions {
-						fmt.Printf("    * Trx %s: %d instructions\n", t.Id, len(t.Instructions))
-						if printInstructions {
-							for _, inst := range t.Instructions {
-								fmt.Printf("      * Inst [%d]: program_id %s\n", inst.Ordinal, inst.ProgramId)
-							}
-						}
-
-					}
-					fmt.Println()
-				}
-
-				continue
-			}
-
-			if block == nil && err == io.EOF {
-				fmt.Printf("Total blocks: %d\n", seenBlockCount)
+		fmt.Printf("One Block File: %s\n", store.ObjectURL(filepath))
+		err = readBlock(readerFactory)
+		if err != nil {
+			if err == io.EOF {
 				return nil
 			}
-
-			if err != nil {
-				return err
-			}
+			return fmt.Errorf("reading block: %w", err)
 		}
+
 	}
+	return nil
+}
+
+func readBlock(reader bstream.BlockReader) error {
+	block, err := reader.Read()
+	if block != nil {
+		payloadSize := len(block.PayloadBuffer)
+		slot := block.ToNative().(*pbcodec.Slot)
+		fmt.Printf("Slot #%d (%s) (prev: %s...) (%d bytes) (blk: %d) (@: %s): %d transactions\n",
+			slot.Num(),
+			slot.ID(),
+			slot.PreviousId[0:6],
+			payloadSize,
+			slot.Block.Number,
+			slot.Block.Time(),
+			len(slot.Transactions),
+		)
+
+		if viper.GetBool("transactions") {
+			fmt.Println("- Transactions: ")
+			for _, t := range slot.Transactions {
+				fmt.Printf("    * Trx %s: %d instructions\n", t.Id, len(t.Instructions))
+				if viper.GetBool("instructions") {
+					for _, inst := range t.Instructions {
+						fmt.Printf("      * Inst [%d]: program_id %s\n", inst.Ordinal, inst.ProgramId)
+					}
+				}
+
+			}
+			fmt.Println()
+		}
+
+		return nil
+	}
+
+	if block == nil && err == io.EOF {
+		return io.EOF
+	}
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
