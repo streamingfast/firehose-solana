@@ -549,13 +549,16 @@ func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockData
 	slot.AccountChangesFileRef = archiver.Store.ObjectPath(fileName)
 	zlog.Debug("slot data file", zap.String("object_path", slot.AccountChangesFileRef))
 
-	accountChangesBundle := slot.Split(true)
-	err := archiver.StoreBlockData(accountChangesBundle, fileName)
-	if !ok {
-		return nil, fmt.Errorf("storing block data: %w", err)
-	}
+	go func() {
+		accountChangesBundle := slot.Split(true)
+		err := archiver.StoreBlockData(accountChangesBundle, fileName)
+		if err != nil {
+			//todo: This is very bad
+			panic(fmt.Errorf("storing block data: %w", err))
+		}
+		zlog.Debug("slot data store", zap.String("object_path", slot.AccountChangesFileRef))
 
-	zlog.Debug("slot data store", zap.String("object_path", slot.AccountChangesFileRef))
+	}()
 
 	bstreamBlock, err := codec.BlockFromProto(slot)
 	if err != nil {
