@@ -65,7 +65,7 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 
 	options := []firehose.Option{
 		firehose.WithPreproc(i.preprocessSlot),
-		firehose.WithLogger(zlog),
+		//firehose.WithLogger(zlog),
 	}
 
 	if i.blockstreamAddr != "" {
