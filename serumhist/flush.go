@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+
+	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 )
 
 func (i *Injector) flush(ctx context.Context, slot *pbcodec.Slot) error {
@@ -30,7 +31,8 @@ func (i *Injector) flush(ctx context.Context, slot *pbcodec.Slot) error {
 		if err != nil {
 			return err
 		}
-		metrics.HeadBlockNumber.SetUint64(slotNum)
+
+		metrics.LastFlushedSlotNum.SetUint64(slotNum)
 	}
 
 	return nil

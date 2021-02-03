@@ -3,12 +3,11 @@ package serumhist
 import (
 	"fmt"
 
-	"github.com/dfuse-io/bstream/forkable"
-
-	"github.com/dfuse-io/solana-go/programs/serum"
-
 	"github.com/dfuse-io/bstream"
+	"github.com/dfuse-io/bstream/forkable"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
+	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+	"github.com/dfuse-io/solana-go/programs/serum"
 	"go.uber.org/zap"
 )
 
@@ -24,6 +23,9 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	i.setHealthy()
 
 	slot := blk.ToNative().(*pbcodec.Slot)
+
+	metrics.HeadBlockNumber.SetUint64(slot.Number)
+	metrics.HeadBlockTimeDrift.SetBlockTime(slot.Block.Time())
 
 	if slot.Number%logEveryXSlot == 0 {
 		zlog.Info(fmt.Sprintf("processed %d slot", logEveryXSlot),

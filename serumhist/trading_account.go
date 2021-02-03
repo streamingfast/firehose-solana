@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+
 	"github.com/dfuse-io/kvdb"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
@@ -33,7 +35,10 @@ func (t *tradingAccountCache) load(ctx context.Context) {
 		trader := solana.PublicKeyFromBytes(it.Item().Value)
 		t.accounts[tradingAccount.String()] = trader
 	}
-	zlog.Debug("trading account cache loaded", zap.Int("account_count", len(t.accounts)))
+	metrics.TradingAccountCount.SetUint64(uint64(len(t.accounts)))
+	zlog.Debug("trading account cache loaded",
+		zap.Int("account_count", len(t.accounts)),
+	)
 }
 
 func (t *tradingAccountCache) setTradingAccount(ctx context.Context, tradingAccount, trader solana.PublicKey) error {
@@ -50,6 +55,7 @@ func (t *tradingAccountCache) setTradingAccount(ctx context.Context, tradingAcco
 	if err := t.kvdb.Put(ctx, key, trader[:]); err != nil {
 		return fmt.Errorf("error setting trading account: %w", err)
 	}
+	metrics.TradingAccountCount.SetUint64(uint64(len(t.accounts)))
 	return nil
 }
 
