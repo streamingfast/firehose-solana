@@ -8,6 +8,7 @@ import (
 	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/programs/serum"
+	"github.com/graph-gophers/graphql-go"
 	"go.uber.org/zap"
 )
 
@@ -59,8 +60,14 @@ func (r *Root) newSerumFill(f *pbserumhist.Fill, reg *registry.Server) SerumFill
 	return out
 }
 
-func (s SerumFill) OrderID() string { return s.OrderId }
-func (s SerumFill) Trader() string  { return s.Fill.Trader }
+func (s SerumFill) Timestamp() graphql.Time { return toTime(s.Fill.Timestamp) }
+func (s SerumFill) OrderID() string         { return s.OrderId }
+func (s SerumFill) Trader() string          { return s.Fill.Trader }
+
+// func (s SerumFill) SeqNum() (commonTypes.Uint64, error) {
+// 	seqNo, err := serum.GetSeqNum(s.OrderId, s.Fill.Side)
+// 	return commonTypes.Uint64(seqNo), err
+// }
 
 func (s SerumFill) Market() SerumMarket {
 	return SerumMarket{
