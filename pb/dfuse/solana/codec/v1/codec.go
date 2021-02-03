@@ -115,12 +115,12 @@ func (s *Slot) LIBNum() uint64 {
 		return bstream.GetProtocolGenesisBlock
 	}
 
-	//todo: remove that -10 stuff
-	if s.Number <= 10 {
+	//todo: remove that -100 stuff
+	if s.Number <= 100 {
 		return bstream.GetProtocolFirstStreamableBlock
 	}
 
-	return s.Number - 10
+	return s.Number - 100
 }
 
 func (s *Slot) AsRef() bstream.BlockRef {
