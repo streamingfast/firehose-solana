@@ -23,9 +23,13 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	i.setHealthy()
 
 	slot := blk.ToNative().(*pbcodec.Slot)
+	forkObj := obj.(*forkable.ForkableObject)
 
-	metrics.HeadBlockNumber.SetUint64(slot.Number)
-	metrics.HeadBlockTimeDrift.SetBlockTime(slot.Block.Time())
+	if forkObj.Step == forkable.StepNew {
+		metrics.HeadBlockNumber.SetUint64(slot.Number)
+		metrics.HeadBlockTimeDrift.SetBlockTime(slot.Block.Time())
+		return nil
+	}
 
 	if slot.Number%logEveryXSlot == 0 {
 		zlog.Info(fmt.Sprintf("processed %d slot", logEveryXSlot),
@@ -36,7 +40,6 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		)
 	}
 
-	forkObj := obj.(*forkable.ForkableObject)
 	for _, inst := range forkObj.Obj.([]*serumInstruction) {
 		if err := i.processInstruction(i.ctx, slot.Number, slot.Block.Time(), inst); err != nil {
 			return fmt.Errorf("process serum instruction: %w", err)

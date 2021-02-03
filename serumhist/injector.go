@@ -9,6 +9,7 @@ import (
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/bstream/blockstream"
 	"github.com/dfuse-io/bstream/firehose"
+	"github.com/dfuse-io/bstream/forkable"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/kvdb/store"
@@ -66,6 +67,7 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 	options := []firehose.Option{
 		firehose.WithPreproc(i.preprocessSlot),
 		firehose.WithLogger(zlog),
+		firehose.WithForkableSteps(forkable.StepNew | forkable.StepIrreversible),
 	}
 
 	if i.blockstreamAddr != "" {
