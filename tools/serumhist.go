@@ -43,6 +43,7 @@ func init() {
 	serumhistCmd.PersistentFlags().String("dsn", "badger:///dfuse-data/kvdb/kvdb_badger.db", "kvStore DSN")
 
 	fillCmd.Flags().String("market-addr", "", "Market Address")
+	fillCmd.Flags().Int("limit", 100, "Number of fills to retrieve")
 }
 
 func decoderKeyerE(cmd *cobra.Command, args []string) (err error) {
@@ -100,9 +101,10 @@ func readFillsE(cmd *cobra.Command, args []string) (err error) {
 			return fmt.Errorf("unable to create public key: %w", err)
 		}
 
-		fills, _, err = manager.GetFillsByTraderAndMarket(cmd.Context(), trader, market)
+		fills, _, err = manager.GetFillsByTraderAndMarket(cmd.Context(), trader, market, viper.GetInt("limit"))
 	} else {
-		fills, _, err = manager.GetFillsByTrader(cmd.Context(), trader)
+		fmt.Println("getting fils for trader", trader.String())
+		fills, _, err = manager.GetFillsByTrader(cmd.Context(), trader, viper.GetInt("limit"))
 	}
 
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
+	gtype "github.com/dfuse-io/dgraphql/types"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/programs/serum"
 	"github.com/graph-gophers/graphql-go"
@@ -60,14 +61,12 @@ func (r *Root) newSerumFill(f *pbserumhist.Fill, reg *registry.Server) SerumFill
 	return out
 }
 
-func (s SerumFill) Timestamp() graphql.Time { return toTime(s.Fill.Timestamp) }
-func (s SerumFill) OrderID() string         { return s.OrderId }
-func (s SerumFill) Trader() string          { return s.Fill.Trader }
-
-// func (s SerumFill) SeqNum() (commonTypes.Uint64, error) {
-// 	seqNo, err := serum.GetSeqNum(s.OrderId, s.Fill.Side)
-// 	return commonTypes.Uint64(seqNo), err
-// }
+func (s SerumFill) SlotNum() gtype.Uint64          { return gtype.Uint64(s.Fill.SlotNum) }
+func (s SerumFill) TransactionIndex() gtype.Uint64 { return gtype.Uint64(s.Fill.TrxIdx) }
+func (s SerumFill) InstructionIndex() gtype.Uint64 { return gtype.Uint64(s.Fill.InstIdx) }
+func (s SerumFill) Timestamp() graphql.Time        { return toTime(s.Fill.Timestamp) }
+func (s SerumFill) OrderNum() gtype.Uint64         { return gtype.Uint64(s.Fill.OrderSeqNum) }
+func (s SerumFill) Trader() string                 { return s.Fill.Trader }
 
 func (s SerumFill) Market() SerumMarket {
 	return SerumMarket{

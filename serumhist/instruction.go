@@ -123,8 +123,6 @@ func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber uint64, blkT
 					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
 
 					fill := &pbserumhist.Fill{
-						Trader:            e.Owner.String(),
-						Market:            market.String(),
 						OrderId:           fmt.Sprintf("%s%s", hex.EncodeToString(number[:8]), hex.EncodeToString(number[8:])),
 						Side:              pbserumhist.Side(e.Side()),
 						Maker:             false,
@@ -143,7 +141,7 @@ func (i *Injector) getFillKeyValues(ctx context.Context, slotNumber uint64, blkT
 
 					orderSeqNum := extractOrderSeqNum(e.Side(), e.OrderID)
 
-					zlog.Debug("serum new fill",
+					zlog.Info("serum new fill",
 						zap.Uint32("side", uint32(e.Side())),
 						zap.Stringer("market", market),
 						zap.Stringer("trader", trader),

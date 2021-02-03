@@ -27,5 +27,6 @@ type PageInfo {
 }
 
 scalar Uint64
+scalar Time
 scalar Float64
 scalar JSON

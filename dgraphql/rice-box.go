@@ -35,15 +35,15 @@ func init() {
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "get_token.graphql",
-		FileModTime: time.Unix(1612206158, 0),
+		FileModTime: time.Unix(1612211908, 0),
 
-		Content: string("query($address: String!){\n  token(address: $address) {\n    cursor\n    node {\n      address\n      mintAuthority\n      freezeAuthority\n      supply\n      decimals\n      verified\n      meta {\n        name\n        symbol\n        logo\n        website\n      }\n    }\n  }\n}\n"),
+		Content: string("query($address: String!){\n  token(address: $address) {\n    cursor\n    node {\n      address\n      mintAuthority\n      freezeAuthority\n      supply\n      decimals\n      verified\n      meta {\n        name  \n        symbol\n        logo\n        website\n      }\n    }\n  }\n}\n"),
 	}
 
 	// define dirs
 	dir1 := &embedded.EmbeddedDir{
 		Filename:   "",
-		DirModTime: time.Unix(1612206158, 0),
+		DirModTime: time.Unix(1612211908, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file2, // ".prettierrc"
 			file3, // "get_all_tokens.graphql"
@@ -60,7 +60,7 @@ func init() {
 	// register embeddedBox
 	embedded.RegisterEmbeddedBox(`examples`, &embedded.EmbeddedBox{
 		Name: `examples`,
-		Time: time.Unix(1612206158, 0),
+		Time: time.Unix(1612211908, 0),
 		Dirs: map[string]*embedded.EmbeddedDir{
 			"": dir1,
 		},

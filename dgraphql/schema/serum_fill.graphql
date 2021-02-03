@@ -20,22 +20,34 @@ type SerumFillEdge {
 }
 
 type SerumFill {
-  """The order unique identifier for which this SerumFill is bound to."""
-  orderId: String!
+  """The slot number in which the SerumFill occurred."""
+  slotNum: Uint64!
+
+  """The transaction's index within the slot where the SerumFill occurred."""
+  transactionIndex: Uint64!
+
+  """The instruction's index within the transaction where the SerumFill occurred."""
+  instructionIndex: Uint64!
+
+  """The order number unique identifier within a given market."""
+  orderNum: Uint64!
+
+  """The timestamp of the block in which this SerumFill occurred."""
+  timestamp: Time!
 
   """The trader's public key for this SerumFill, i.e. the one that buy or sell for this market."""
   trader: String!
 
-  """The market for which this SerumFill's order is bound to."""
+  """The market for in which this SerumFill occurred."""
   market: SerumMarket!
 
   """Which side this SerumFill is for, either BID (seller) or ASK (buyer)."""
   side: SideType!
 
-  """The number of lot this SerumFill filled the order with, represents the percentage of the order this SerumFill did."""
+  """The quantity of token that was received in the SerumFill"""
   quantityReceived: TokenAmount!
 
-  """The number of lot this SerumFill filled the order with, represents the percentage of the order this SerumFill did."""
+  """The quantity of token that was paid out in the SerumFill"""
   quantityPaid: TokenAmount!
 
   """The price paid for this exact SerumFill. The denomication is always in (base token / quote token)"""

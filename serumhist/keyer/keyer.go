@@ -120,3 +120,5 @@ func (p Prefix) String() string { return hex.EncodeToString(p) }
 type Key []byte
 
 func (k Key) String() string { return hex.EncodeToString(k) }
+
+type KeyDecoder func(Key) (solana.PublicKey, solana.PublicKey, uint64, uint64, uint64, uint64)
