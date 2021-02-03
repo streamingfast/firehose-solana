@@ -14,7 +14,9 @@ import (
 
 func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 	slot := blk.ToNative().(*pbcodec.Slot)
-	var out []*serumInstruction
+
+	serumSlot := newSerumSlot()
+
 	var err error
 	var accountChangesBundle *pbcodec.AccountChangesBundle
 
@@ -86,16 +88,11 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 				i.SetAccounts(accounts)
 			}
 
-			out = append(out, &serumInstruction{
-				trxIdx:     transaction.Index,
-				instIdx:    uint64(instIdx),
-				trxtID:     transaction.Id,
-				accChanges: accountChangesBundle.Transactions[trxIdx].Instructions[instIdx].Changes,
-				native:     decodedInst,
-			})
+			accChanges := accountChangesBundle.Transactions[trxIdx].Instructions[instIdx].Changes
+			serumSlot.processInstruction(slot.Number, transaction.Index, uint64(instIdx), slot.Block.Time(), decodedInst, accChanges)
 		}
 	}
-	return out, nil
+	return serumSlot, nil
 }
 
 func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {

@@ -7,17 +7,8 @@ import (
 	"github.com/dfuse-io/bstream/forkable"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
-	"github.com/dfuse-io/solana-go/programs/serum"
 	"go.uber.org/zap"
 )
-
-type serumInstruction struct {
-	trxIdx     uint64
-	instIdx    uint64
-	trxtID     string
-	accChanges []*pbcodec.AccountChange
-	native     *serum.Instruction
-}
 
 func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	i.setHealthy()
@@ -40,14 +31,28 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		)
 	}
 
-	for _, inst := range forkObj.Obj.([]*serumInstruction) {
-		if err := i.processInstruction(i.ctx, slot.Number, slot.Block.Time(), inst); err != nil {
-			return fmt.Errorf("process serum instruction: %w", err)
+	serumSlot := forkObj.Obj.(*serumSlot)
+
+	zlog.Debug("processing serum slot",
+		zap.Int("trading_accout_cache_count", len(serumSlot.tradingAccountCache)),
+		zap.Int("fills_count", len(serumSlot.fills)),
+	)
+
+	for _, ta := range serumSlot.tradingAccountCache {
+		err := i.cache.setTradingAccount(i.ctx, ta.tradingAccount, ta.trader)
+		if err != nil {
+			return fmt.Errorf("unable to store trading account %d (%s): %w", slot.Number, slot.Id, err)
+		}
+	}
+
+	for _, fill := range serumSlot.fills {
+		if err := i.processSerumFill(i.ctx, fill); err != nil {
+			return fmt.Errorf("unable to process serum fill: %w", err)
 		}
 	}
 
 	if err := i.writeCheckpoint(i.ctx, slot); err != nil {
-		return fmt.Errorf("error while saving block checkpoint")
+		return fmt.Errorf("error while saving block checkpoint: %w", err)
 	}
 
 	if err := i.flush(i.ctx, slot); err != nil {
