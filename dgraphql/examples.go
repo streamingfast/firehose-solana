@@ -27,7 +27,7 @@ func GraphqlExamples() []*static.GraphqlExample {
 			Document: graphqlDocument(box, "get_token.graphql"),
 			Variables: static.GraphqlVariablesByNetwork{
 				"generic": r(`{"address": "TOKEN-ADDRESS"}`),
-				"mainnet": r(`{"account": "So11111111111111111111111111111111111111112"}`),
+				"mainnet": r(`{"address": "So11111111111111111111111111111111111111112"}`),
 			},
 		},
 		{
