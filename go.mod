@@ -7,7 +7,7 @@ require (
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/abourget/llerrgroup v0.2.0
 	github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c
-	github.com/dfuse-io/bstream v0.0.2-0.20210203173117-1b0260a6cb52
+	github.com/dfuse-io/bstream v0.0.2-0.20210203203654-afe75df13683
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
