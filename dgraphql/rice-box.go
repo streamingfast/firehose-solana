@@ -23,15 +23,15 @@ func init() {
 	}
 	file4 := &embedded.EmbeddedFile{
 		Filename:    "get_serum_fill.graphql",
-		FileModTime: time.Unix(1612202072, 0),
+		FileModTime: time.Unix(1612375422, 0),
 
-		Content: string("query($trader: String!, $market: String) {\n  serumFillHistory(trader: $trader, market: $market) {\n    pageInfo {\n      startCursor\n      endCursor\n    }\n    edges {\n      cursor\n      node {\n        orderId\n        trader\n        side\n        market {\n          address\n          name\n          baseToken {\n            address\n            name\n            symbol\n          }\n          quoteToken {\n            address\n            name\n            symbol\n          }\n        }\n        quantityReceived {\n          display\n          value\n        }\n        quantityPaid {\n          display\n          value\n        }\n        price\n        feeTier\n      }\n    }\n  }\n}\n"),
+		Content: string("query($trader: String!, $market: String) {\n  serumFillHistory(trader: $trader, market: $market) {\n    pageInfo {\n      startCursor\n      endCursor\n    }\n    edges {\n      cursor\n      node {\n        slotNum\n        transactionIndex\n        instructionIndex\n        trader\n        side\n        market {\n          address\n          name\n          baseToken {\n            address\n            meta {\n              name\n              symbol\n            }\n          }\n          quoteToken {\n            address\n            meta {\n              name\n              symbol\n            }\n          }\n        }\n        quantityReceived {\n          display\n          value\n        }\n        quantityPaid {\n          display\n          value\n        }\n        price\n        feeTier\n      }\n    }\n  }\n}\n"),
 	}
 	file5 := &embedded.EmbeddedFile{
 		Filename:    "get_serum_markets.graphql",
-		FileModTime: time.Unix(1611886197, 0),
+		FileModTime: time.Unix(1612375422, 0),
 
-		Content: string("{\n  serumMarkets(count: 100) {\n    pageInfo {\n      startCursor\n      endCursor\n      hasNextPage\n    }\n    edges {\n      cursor\n      node {\n        address\n        name\n        baseToken {\n          address\n          name\n          decimals\n          supply\n        }\n        quoteToken {\n          address\n          name\n          decimals\n          supply\n        }\n      }\n    }\n  }\n}\n"),
+		Content: string("{\n  serumMarkets(count: 100) {\n    pageInfo {\n      startCursor\n      endCursor\n      hasNextPage\n    }\n    edges {\n      cursor\n      node {\n        address\n        name\n        baseToken {\n          address\n          decimals\n          supply\n          meta {\n            name\n            symbol\n          }\n        }\n        quoteToken {\n          address\n          decimals\n          supply\n          meta {\n            name\n            symbol\n          }\n        }\n      }\n    }\n  }\n}\n"),
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "get_token.graphql",
@@ -43,7 +43,7 @@ func init() {
 	// define dirs
 	dir1 := &embedded.EmbeddedDir{
 		Filename:   "",
-		DirModTime: time.Unix(1612211908, 0),
+		DirModTime: time.Unix(1612375422, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file2, // ".prettierrc"
 			file3, // "get_all_tokens.graphql"
@@ -60,7 +60,7 @@ func init() {
 	// register embeddedBox
 	embedded.RegisterEmbeddedBox(`examples`, &embedded.EmbeddedBox{
 		Name: `examples`,
-		Time: time.Unix(1612211908, 0),
+		Time: time.Unix(1612375422, 0),
 		Dirs: map[string]*embedded.EmbeddedDir{
 			"": dir1,
 		},

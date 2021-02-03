@@ -7,7 +7,9 @@ query($trader: String!, $market: String) {
     edges {
       cursor
       node {
-        orderId
+        slotNum
+        transactionIndex
+        instructionIndex
         trader
         side
         market {
@@ -15,13 +17,17 @@ query($trader: String!, $market: String) {
           name
           baseToken {
             address
-            name
-            symbol
+            meta {
+              name
+              symbol
+            }
           }
           quoteToken {
             address
-            name
-            symbol
+            meta {
+              name
+              symbol
+            }
           }
         }
         quantityReceived {

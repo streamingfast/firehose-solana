@@ -12,15 +12,21 @@
         name
         baseToken {
           address
-          name
           decimals
           supply
+          meta {
+            name
+            symbol
+          }
         }
         quoteToken {
           address
-          name
           decimals
           supply
+          meta {
+            name
+            symbol
+          }
         }
       }
     }
