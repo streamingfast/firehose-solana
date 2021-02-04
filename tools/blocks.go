@@ -3,6 +3,7 @@ package tools
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strconv"
 
 	"github.com/dfuse-io/bstream"
@@ -143,6 +144,10 @@ func readBlock(reader bstream.BlockReader) error {
 	block, err := reader.Read()
 	if block != nil {
 		payloadSize := len(block.PayloadBuffer)
+
+		if block.Number == 63943243 {
+			ioutil.WriteFile("/tmp/cochon.log", block.Payload(), 0644)
+		}
 		slot := block.ToNative().(*pbcodec.Slot)
 		fmt.Printf("Slot #%d (%s) (prev: %s...) (%d bytes) (blk: %d) (@: %s): %d transactions\n",
 			slot.Num(),

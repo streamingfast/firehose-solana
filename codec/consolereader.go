@@ -344,10 +344,6 @@ func (b *bank) createSlot(slotNum uint64, slotID string) *pbcodec.Slot {
 	return s
 }
 
-func (b *bank) recordTransaction(batchNum uint64, trx *pbcodec.Transaction) {
-	b.batchAggregator[batchNum] = append(b.batchAggregator[batchNum], trx)
-}
-
 func (b *bank) getActiveTransaction(batchNum uint64, trxID string) (*pbcodec.Transaction, error) {
 	length := len(b.batchAggregator[batchNum])
 	if length == 0 {
@@ -359,46 +355,6 @@ func (b *bank) getActiveTransaction(batchNum uint64, trxID string) (*pbcodec.Tra
 	}
 
 	return trx, nil
-}
-
-func (b *bank) recordLogMessage(batchNum uint64, trxID string, log string) error {
-	trx, err := b.getActiveTransaction(batchNum, trxID)
-	if err != nil {
-		return fmt.Errorf("record log message: unable to retrieve transaction: %w", err)
-	}
-
-	trx.LogMessages = append(trx.LogMessages, log)
-	return nil
-}
-
-func (b *bank) recordInstruction(batchNum uint64, trxID string, instruction *pbcodec.Instruction) error {
-	trx, err := b.getActiveTransaction(batchNum, trxID)
-	if err != nil {
-		return fmt.Errorf("record instruction: unable to retrieve transaction: %w", err)
-	}
-
-	trx.Instructions = append(trx.Instructions, instruction)
-	return nil
-}
-
-func (b *bank) recordAccountChange(batchNum uint64, trxID string, ordinal int, accountChange *pbcodec.AccountChange) error {
-	trx, err := b.getActiveTransaction(batchNum, trxID)
-	if err != nil {
-		return fmt.Errorf("record account change: unable to retrieve transaction: %w", err)
-	}
-
-	trx.Instructions[ordinal-1].AccountChanges = append(trx.Instructions[ordinal-1].AccountChanges, accountChange)
-	return nil
-}
-
-func (b *bank) recordLamportsChange(batchNum uint64, trxID string, ordinal int, balanceChange *pbcodec.BalanceChange) error {
-	trx, err := b.getActiveTransaction(batchNum, trxID)
-	if err != nil {
-		return fmt.Errorf("record balance change: unable to retrieve transaction: %w", err)
-	}
-
-	trx.Instructions[ordinal-1].BalanceChanges = append(trx.Instructions[ordinal-1].BalanceChanges, balanceChange)
-	return nil
 }
 
 // BATCH_END

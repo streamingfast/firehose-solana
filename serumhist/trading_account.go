@@ -6,8 +6,6 @@ import (
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 
-	"github.com/dfuse-io/kvdb"
-
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 
 	"github.com/dfuse-io/kvdb/store"
@@ -66,7 +64,7 @@ func (t *tradingAccountCache) getTrader(ctx context.Context, tradingAccount sola
 	key := keyer.EncodeTradingAccount(tradingAccount)
 	val, err := t.kvdb.Get(ctx, key)
 	if err != nil {
-		if err == kvdb.ErrNotFound {
+		if err == store.ErrNotFound {
 			return nil, nil
 		}
 		return &solana.PublicKey{}, fmt.Errorf("error retriving trading account: %w", err)
