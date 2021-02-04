@@ -88,7 +88,17 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 				i.SetAccounts(accounts)
 			}
 
-			accChanges := accountChangesBundle.Transactions[trxIdx].Instructions[instIdx].Changes
+			if trxIdx >= len(accountChangesBundle.Transactions) {
+				return nil, fmt.Errorf("trx index is out of range, slot: %d (%s), trx index: %d, trx count: %d", slot.Number, slot.Id, trxIdx, len(accountChangesBundle.Transactions))
+			}
+
+			trxAccChanges := accountChangesBundle.Transactions[trxIdx]
+
+			if instIdx >= len(trxAccChanges.Instructions) {
+				return nil, fmt.Errorf("inst index is out of range, slot: %d (%s), trx index: %d, inst index: %d, inst count: %d", slot.Number, slot.Id, trxIdx, instIdx, len(trxAccChanges.Instructions))
+			}
+
+			accChanges := trxAccChanges.Instructions[instIdx].Changes
 			serumSlot.processInstruction(slot.Number, transaction.Index, uint64(instIdx), slot.Block.Time(), decodedInst, accChanges)
 		}
 	}
