@@ -34,7 +34,7 @@ func (i *Injector) processSerumFill(ctx context.Context, serumFill *serumFill) e
 		return fmt.Errorf("unable to marshal to fill: %w", err)
 	}
 
-	zlog.Info("serum new fill",
+	zlog.Debug("serum new fill",
 		zap.Stringer("side", serumFill.fill.Side),
 		zap.Stringer("market", serumFill.market),
 		zap.Stringer("trader", trader),

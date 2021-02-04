@@ -22,21 +22,17 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		return nil
 	}
 
+	serumSlot := forkObj.Obj.(*serumSlot)
+
 	if slot.Number%logEveryXSlot == 0 {
 		zlog.Info(fmt.Sprintf("processed %d slot", logEveryXSlot),
 			zap.Uint64("slot_number", slot.Number),
 			zap.String("slot_id", slot.Id),
 			zap.String("previous_id", slot.PreviousId),
-			zap.Uint32("transaction_count", slot.TransactionCount),
+			zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
+			zap.Int("fill_count", len(serumSlot.fills)),
 		)
 	}
-
-	serumSlot := forkObj.Obj.(*serumSlot)
-
-	zlog.Debug("processing serum slot",
-		zap.Int("trading_accout_cache_count", len(serumSlot.tradingAccountCache)),
-		zap.Int("fills_count", len(serumSlot.fills)),
-	)
 
 	for _, ta := range serumSlot.tradingAccountCache {
 		err := i.cache.setTradingAccount(i.ctx, ta.tradingAccount, ta.trader)

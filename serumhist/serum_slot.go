@@ -54,19 +54,25 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx
 		zap.Uint64("instruction_index", instIdx),
 	}
 	if newOrder, ok := instruction.Impl.(*serum.InstructionNewOrder); ok {
-		zlog.Debug("processing new order v1", logFields...)
+		if traceEnabled {
+			zlog.Debug("processing new order v1", logFields...)
+		}
 		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
 			trader:         newOrder.Accounts.Owner.PublicKey,
 			tradingAccount: newOrder.Accounts.OpenOrders.PublicKey,
 		})
 	} else if newOrderV2, ok := instruction.Impl.(*serum.InstructionNewOrderV2); ok {
-		zlog.Debug("processing new order v2", logFields...)
+		if traceEnabled {
+			zlog.Debug("processing new order v2", logFields...)
+		}
 		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
 			trader:         newOrderV2.Accounts.Owner.PublicKey,
 			tradingAccount: newOrderV2.Accounts.OpenOrders.PublicKey,
 		})
 	} else if mathOrder, ok := instruction.Impl.(*serum.InstructionMatchOrder); ok {
-		zlog.Debug("processing match order", logFields...)
+		if traceEnabled {
+			zlog.Debug("processing match order", logFields...)
+		}
 		serumFills, err := s.processMatchOrderInstruction(slotNumber, blkTime, trxIdx, instIdx, mathOrder, accChanges)
 		if err != nil {
 			return fmt.Errorf("generating serum fills: %w", err)
@@ -100,12 +106,6 @@ func (i *serumSlot) getFillKeyValues(slotNumber uint64, blkTime time.Time, trxId
 			e := event.Element().Interface().(*serum.Event)
 			switch event.Kind {
 			case diff.KindAdded:
-				zlog.Debug("found a serum event diff",
-					zap.Stringer("diff_kind", event.Kind),
-					zap.Stringer("event_flag", e.Flag),
-					zap.Bool("is_fill", e.Flag.IsFill()),
-				)
-
 				if e.Flag.IsFill() {
 					number := make([]byte, 16)
 					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
