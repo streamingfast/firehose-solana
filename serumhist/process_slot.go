@@ -101,13 +101,13 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			accChanges := trxAccChanges.Instructions[instIdx].Changes
 			serumSlot.processInstruction(slot.Number, transaction.Index, uint64(instIdx), slot.Block.Time(), decodedInst, accChanges)
 		}
-		zlog.Debug("preprocessed slot completed",
-			zap.Stringer("slot", blk),
-			zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
-			zap.Int("fill_count", len(serumSlot.fills)),
-			zap.Duration("duration", time.Since(t0)),
-		)
 	}
+	zlog.Debug("preprocessed slot completed",
+		zap.Stringer("slot", blk),
+		zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
+		zap.Int("fill_count", len(serumSlot.fills)),
+		zap.Duration("duration", time.Since(t0)),
+	)
 	return serumSlot, nil
 }
 
