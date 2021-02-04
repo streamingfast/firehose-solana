@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist"
+	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/solana-go"
+	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -23,6 +23,13 @@ var fillCmd = &cobra.Command{
 	Long:  "Read fills for a trader account",
 	Args:  cobra.ExactArgs(1),
 	RunE:  readFillsE,
+}
+
+var checkpointCmd = &cobra.Command{
+	Use:   "checkpoint",
+	Short: "Get checkpoint",
+	Long:  "Get checkpoint",
+	RunE:  readCheckpointE,
 }
 
 var KeyerCmd = &cobra.Command{Use: "keyer", Short: "Serum history keyer helpers"}
@@ -38,6 +45,7 @@ func init() {
 	Cmd.AddCommand(serumhistCmd)
 	serumhistCmd.AddCommand(fillCmd)
 	serumhistCmd.AddCommand(KeyerCmd)
+	serumhistCmd.AddCommand(checkpointCmd)
 	KeyerCmd.AddCommand(decodeKeyerCmd)
 
 	serumhistCmd.PersistentFlags().String("dsn", "badger:///dfuse-data/kvdb/kvdb_badger.db", "kvStore DSN")
@@ -76,6 +84,33 @@ func decoderKeyerE(cmd *cobra.Command, args []string) (err error) {
 		fmt.Println("Trading Account Key :")
 		fmt.Println("Marker:", traderAccount.String())
 	}
+	return nil
+}
+
+func readCheckpointE(cmd *cobra.Command, args []string) (err error) {
+	kvdb, err := getKVDBAndMode()
+	if err != nil {
+		return err
+	}
+
+	key := serumhistkeyer.EncodeCheckpoint()
+
+	val, err := kvdb.Get(cmd.Context(), key)
+	if err == store.ErrNotFound {
+		fmt.Println("No checkpoint found")
+	} else if err != nil {
+		fmt.Errorf("error reading checkpoint: %w", err)
+	}
+
+	// Decode val as `pbaccounthist.ShardCheckpoint`
+	out := &pbserumhist.Checkpoint{}
+	if err := proto.Unmarshal(val, out); err != nil {
+		fmt.Errorf("error marhsalling checkpoint: %w", err)
+	}
+
+	fmt.Println("Checkpoint found:")
+	fmt.Println("LastWrittenSlotNum: ", out.LastWrittenSlotNum)
+	fmt.Println("LastWrittenSlotId: ", out.LastWrittenSlotId)
 	return nil
 }
 
