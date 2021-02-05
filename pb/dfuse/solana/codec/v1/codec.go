@@ -108,19 +108,8 @@ func (m *Block) Time() time.Time {
 	return time.Unix(int64(m.GenesisUnixTimestamp), 0)
 }
 
-// FIXME: This logic at some point is hard-coded and will need to be re-visited in regard
-//        of the fork logic.
 func (s *Slot) LIBNum() uint64 {
-	if s.Number == bstream.GetProtocolFirstStreamableBlock {
-		return bstream.GetProtocolGenesisBlock
-	}
-
-	//todo: remove that -100 stuff
-	if s.Number <= 100 {
-		return bstream.GetProtocolFirstStreamableBlock
-	}
-
-	return s.Number - 100
+	return s.Block.RootNum
 }
 
 func (s *Slot) AsRef() bstream.BlockRef {
