@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/abourget/llerrgroup"
+
 	"cloud.google.com/go/storage"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
@@ -112,7 +114,8 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 	}
 	piper, pipew := io.Pipe()
 
-	go func() {
+	eg := llerrgroup.New(1)
+	eg.Go(func() error {
 		tr := tar.NewReader(piper)
 		for {
 			zlog.Info("waiting for header")
@@ -122,11 +125,11 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 
 			// if no more files are found return
 			case err == io.EOF:
-				return
+				return nil
 
 			// return any other error
 			case err != nil:
-				panic(err)
+				return err
 
 			// if the header is nil, just skip it (not sure how this happens)
 			case header == nil:
@@ -137,32 +140,33 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 			target := filepath.Join(header.Name)
 
 			switch header.Typeflag {
-			//case tar.TypeDir:
-
-			// if it's a file create it
 			case tar.TypeReg:
 				zlog.Info("untar file", zap.String("target", target))
-
 				destWriter := getWriter(target)
 				destWriter.ContentType = "application/octet-stream"
 				destWriter.CacheControl = "public, max-age=86400"
 				// copy over contents
-				if copiedSize, err := io.Copy(destWriter, tr); err != nil {
-					panic(err)
-				} else {
-					zlog.Info("un compressing completed", zap.String("taget", target), zap.Int64("size", copiedSize))
+				if _, err := io.Copy(destWriter, tr); err != nil {
+					return fmt.Errorf("updaling target: %s: %w", target, err)
 				}
+				zlog.Info("target uploaded", zap.String("target", target))
+
 				if err := destWriter.Close(); err != nil {
-					panic(err)
+					return fmt.Errorf("closing destination write to target: %s: %w", target, err)
 				}
+				return err
 			}
 		}
-	}()
+	})
 
 	err = c.Decompress(compressedDataReader, pipew)
 	if err != nil {
 		return fmt.Errorf("decompressing: %w", err)
 	}
 
+	if err := eg.Wait(); err != nil {
+		// eg.Wait() will block until everything is done, and return the first error.
+		return err
+	}
 	return nil
 }
