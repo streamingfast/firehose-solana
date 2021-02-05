@@ -1,0 +1,6 @@
+start:
+  args:
+  - snapshotter
+  flags:
+    snapshotter-solana-snapshot-bucket: "mainnet-beta-ledger-us-west1"
+    snapshotter-solana-snapshot-prefix: ""

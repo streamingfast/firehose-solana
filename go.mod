@@ -3,6 +3,7 @@ module github.com/dfuse-io/dfuse-solana
 go 1.14
 
 require (
+	cloud.google.com/go/storage v1.8.0
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/abourget/llerrgroup v0.2.0
@@ -33,11 +34,13 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
 	github.com/lorenzosaino/go-sysctl v0.1.1
+	github.com/mholt/archiver/v3 v3.5.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	github.com/test-go/testify v1.1.4
 	go.uber.org/zap v1.16.0
+	google.golang.org/api v0.29.0
 	google.golang.org/grpc v1.29.1
 )
 
