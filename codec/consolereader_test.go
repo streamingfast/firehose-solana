@@ -379,7 +379,7 @@ func Test_readBlockEnd(t *testing.T) {
 			},
 			line: "BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",
 			expectCtx: &parseCtx{
-				activeBankWaitingForRoot: &bank{
+				activeBank: &bank{
 					blockNum: 55295941,
 					blk: &pbcodec.Block{
 						Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
@@ -416,7 +416,7 @@ func Test_readBlockRoot(t *testing.T) {
 		{
 			name: "block root",
 			ctx: &parseCtx{
-				activeBankWaitingForRoot: &bank{
+				activeBank: &bank{
 					blockNum:       55295941,
 					parentSlotNum:  55295939,
 					trxCount:       932,

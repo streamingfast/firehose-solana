@@ -135,13 +135,12 @@ func (l *ConsoleReader) Close() {
 }
 
 type parseCtx struct {
-	activeBank               *bank
-	activeBankWaitingForRoot *bank
-	banks                    map[uint64]*bank
-	conversionOptions        []conversionOption
-	slotBuffer               chan *pbcodec.Slot
-	batchWG                  sync.WaitGroup
-	batchFilesPath           string
+	activeBank        *bank
+	banks             map[uint64]*bank
+	conversionOptions []conversionOption
+	slotBuffer        chan *pbcodec.Slot
+	batchWG           sync.WaitGroup
+	batchFilesPath    string
 }
 
 func newParseCtx(batchFilesPath string) *parseCtx {
@@ -216,7 +215,7 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	case strings.HasPrefix(line, "BLOCK_FAILED"):
 		err = ctx.readBlockFailed(line)
 
-	// this occurs when the root of the activeBankWaitingForRoot has been computed
+	// this occurs when the root of the active banks has been computed
 	case strings.HasPrefix(line, "BLOCK_ROOT"):
 		err = ctx.readBlockRoot(line)
 
@@ -296,7 +295,7 @@ type bank struct {
 	slots           []*pbcodec.Slot
 	blk             *pbcodec.Block
 	sortedTrx       []*pbcodec.Transaction
-
+	ended           bool
 	batchAggregator [][]*pbcodec.Transaction
 }
 
@@ -504,10 +503,6 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 		return fmt.Errorf("received slot end while no active bank in context")
 	}
 
-	if ctx.activeBankWaitingForRoot != nil {
-		return fmt.Errorf("received slot end while we're waiting for the latest root num")
-	}
-
 	if ctx.activeBank.blockNum != blockNum {
 		return fmt.Errorf("slot end's active bank does not match context's active bank")
 	}
@@ -516,7 +511,8 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	ctx.activeBank.blk.Id = slotID
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
-	ctx.activeBankWaitingForRoot = ctx.activeBank
+	ctx.activeBank.ended = true
+	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	ctx.activeBank = nil
 
 	return nil
@@ -535,29 +531,27 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 		return fmt.Errorf("root block num num to int: %w", err)
 	}
 
-	if ctx.activeBankWaitingForRoot == nil {
-		return nil
-	}
-
-	activeBank := ctx.activeBankWaitingForRoot
-	activeBank.blk.RootNum = rootBlock
-
-	for _, slot := range activeBank.slots {
-		slot.Block = activeBank.blk
-		for i, t := range slot.Transactions {
-			t.Index = uint64(i)
-			t.SlotHash = slot.Id
-			t.SlotNum = slot.Number
+	for bankIndex, bank := range ctx.banks {
+		if !bank.ended {
+			continue
 		}
 
-		if len(ctx.slotBuffer) == cap(ctx.slotBuffer) {
-			return fmt.Errorf("unable to put slot in buffer reached buffer capacity size %q", cap(ctx.slotBuffer))
-		}
-		ctx.slotBuffer <- slot
-	}
+		bank.blk.RootNum = rootBlock
+		for _, slot := range bank.slots {
+			slot.Block = bank.blk
+			for i, t := range slot.Transactions {
+				t.Index = uint64(i)
+				t.SlotHash = slot.Id
+				t.SlotNum = slot.Number
+			}
 
-	ctx.activeBankWaitingForRoot = nil
-	delete(ctx.banks, uint64(activeBank.blk.Number))
+			if len(ctx.slotBuffer) == cap(ctx.slotBuffer) {
+				return fmt.Errorf("unable to put slot in buffer reached buffer capacity size %q", cap(ctx.slotBuffer))
+			}
+			ctx.slotBuffer <- slot
+		}
+		delete(ctx.banks, bankIndex)
+	}
 
 	return nil
 }
