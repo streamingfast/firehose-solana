@@ -180,29 +180,45 @@ func (l *ConsoleReader) Read() (out interface{}, err error) {
 func parseLine(ctx *parseCtx, line string) (err error) {
 	// Order of conditions is based (approximately) on those that will appear more often
 	switch {
-	case strings.HasPrefix(line, "BATCH_FILE"):
-		err = ctx.readBatchFile(line)
+	// defines the current version of deepmind; should fail is the value is unexpected
+	case strings.HasPrefix(line, "INIT"):
+		err = ctx.readInit(line)
 
+	// this occurs at the beginning execution of a given block (bank) (this is a 'range' of slot say from 10 to 13,
+	// it can also just be one slot), this can be PARTIAL or FULL work of said block. A given block may have multiple
+	// SLOT_WORK partial but only one SLOT_WORK full.
 	case strings.HasPrefix(line, "BLOCK_WORK"):
 		err = ctx.readBlockWork(line)
 
+	// output when a group of batch of transaction have been executed and the protobuf has been written to a file on  disk
+	case strings.HasPrefix(line, "BATCH_FILE"):
+		err = ctx.readBatchFile(line)
+
+	// when processing a block you will have SLOT_BOUNDS (between SLOT_WORK & SLOT_END) for each SLOT in that BLOCK.
 	case strings.HasPrefix(line, "SLOT_BOUND"):
 		err = ctx.readSlotBound(line)
 
+	// When executing a transactions, we will group them in multiples batches and run them in parallel.
+	// We will create one file per batch (group of trxs), each batch is is running in its own thread.
+	// When a given batch is completed we will receive BATCH_FILE. Once all the batches are completed in parallel
+	// we will receive BATCH_END. At this point we have already received all of the batches, we must then merge
+	// all these batches and sort them to have a deterministic ordering of transactions.
+	// - Within in given batch, transactions are executed linearly, so partial sort is already done.
+	// - Batches are sorted based on their first transaction's id (hash), sorted alphanumerically
 	case strings.HasPrefix(line, "BATCHES_END"):
 		err = ctx.readBatchesEnd()
 
+	// this occurs when a given block is full (frozen),
 	case strings.HasPrefix(line, "BLOCK_END"):
 		err = ctx.readBlockEnd(line)
 
+	// this occurs when there is a failure in executing a given block
 	case strings.HasPrefix(line, "BLOCK_FAILED"):
 		err = ctx.readBlockFailed(line)
 
+	// this occurs when the root of the activeBankWaitingForRoot has been computed
 	case strings.HasPrefix(line, "BLOCK_ROOT"):
 		err = ctx.readBlockRoot(line)
-
-	case strings.HasPrefix(line, "INIT"):
-		err = ctx.readInit(line)
 
 	default:
 		zlog.Warn("unknown log line", zap.String("line", line))
@@ -497,7 +513,6 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	}
 
 	slotID := chunks[2]
-
 	ctx.activeBank.blk.Id = slotID
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
@@ -512,10 +527,9 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 	zlog.Debug("reading block root failed", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != BlockFailedChunkSize {
-		return fmt.Errorf("expected %d fields got %d", BlockFailedChunkSize, len(chunks))
+	if len(chunks) != BlockRootChunkSize {
+		return fmt.Errorf("expected %d fields got %d", BlockRootChunkSize, len(chunks))
 	}
-
 	var rootBlock uint64
 	if rootBlock, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
 		return fmt.Errorf("root block num num to int: %w", err)
@@ -579,30 +593,4 @@ func splitNToM(line string, min, max int) ([]string, error) {
 	}
 
 	return chunks, nil
-}
-
-func (ctx *parseCtx) readDeepmindVersion(line string) error {
-	chunks, err := splitNToM(line, 2, 3)
-	if err != nil {
-		return err
-	}
-
-	majorVersion := chunks[1]
-	if !inSupportedVersion(majorVersion) {
-		return fmt.Errorf("deep mind reported version %s, but this reader supports only %s", majorVersion, strings.Join(supportedVersions, ", "))
-	}
-
-	zlog.Info("read deep mind version", zap.String("major_version", majorVersion))
-
-	return nil
-}
-
-func inSupportedVersion(majorVersion string) bool {
-	for _, supportedVersion := range supportedVersions {
-		if majorVersion == supportedVersion {
-			return true
-		}
-	}
-
-	return false
 }
