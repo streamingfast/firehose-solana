@@ -3,7 +3,6 @@ package tools
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strconv"
 
 	"github.com/dfuse-io/bstream"
@@ -40,6 +39,7 @@ func init() {
 	printCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
 	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v2", "block store")
+	mergedBlocksCmd.Flags().Bool("viz", false, "Output .dot file")
 }
 
 func printMergeBlocksE(cmd *cobra.Command, args []string) error {
@@ -49,6 +49,7 @@ func printMergeBlocksE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
 	}
 
+	outputDot := viper.GetBool("viz")
 	str := viper.GetString("store")
 
 	store, err := dstore.NewDBinStore(str)
@@ -70,20 +71,31 @@ func printMergeBlocksE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Merged Blocks File: %s\n", store.ObjectURL(filename))
+	if outputDot {
+		fmt.Println("// Run: dot -Tpdf file.dot -o file.pdf")
+		fmt.Println("digraph D {")
+	} else {
+		fmt.Printf("Merged Blocks File: %s\n", store.ObjectURL(filename))
+	}
 	seenBlockCount := 0
 	for {
-		err := readBlock(readerFactory)
+		err := readBlock(readerFactory, outputDot)
 		if err != nil {
 			if err == io.EOF {
-				fmt.Printf("Total blocks: %d\n", seenBlockCount)
-				return nil
+				break
 			}
 			return fmt.Errorf("reading block: %w", err)
 		}
 		seenBlockCount++
 	}
 
+	if outputDot {
+		fmt.Println("}")
+	} else {
+		fmt.Printf("Total blocks: %d\n", seenBlockCount)
+	}
+
+	return nil
 }
 
 func printOneBlockE(cmd *cobra.Command, args []string) error {
@@ -128,7 +140,7 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 		}
 
 		fmt.Printf("One Block File: %s\n", store.ObjectURL(filepath))
-		err = readBlock(readerFactory)
+		err = readBlock(readerFactory, false)
 		if err != nil {
 			if err == io.EOF {
 				return nil
@@ -140,15 +152,36 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func readBlock(reader bstream.BlockReader) error {
+func readBlock(reader bstream.BlockReader, outputDot bool) error {
 	block, err := reader.Read()
-	if block != nil {
-		payloadSize := len(block.PayloadBuffer)
+	if err != nil {
+		return err
+	}
 
-		if block.Number == 63943243 {
-			ioutil.WriteFile("/tmp/cochon.log", block.Payload(), 0644)
+	payloadSize := len(block.PayloadBuffer)
+
+	// if block.Number == 63943243 {
+	// 	ioutil.WriteFile("/tmp/cochon.log", block.Payload(), 0644)
+	// }
+	slot := block.ToNative().(*pbcodec.Slot)
+	if outputDot {
+		var virt string
+		if slot.Number != slot.Block.Number {
+			virt = " (V)"
 		}
-		slot := block.ToNative().(*pbcodec.Slot)
+		fmt.Printf(
+			"  S%s [label=\"%s..%s\\n#%d%s t=%d\"];\n  S%s -> S%s;\n",
+			slot.Id[:8],
+			slot.Id[:8],
+			slot.Id[len(slot.Id)-8:],
+			slot.Number,
+			virt,
+			slot.TransactionCount,
+			slot.Id[:8],
+			slot.PreviousId[:8],
+		)
+
+	} else {
 		fmt.Printf("Slot #%d (%s) (prev: %s...) (%d bytes) (blk: %d) (@: %s): %d transactions\n",
 			slot.Num(),
 			slot.ID(),
@@ -158,31 +191,20 @@ func readBlock(reader bstream.BlockReader) error {
 			slot.Block.Time(),
 			len(slot.Transactions),
 		)
+	}
 
-		if viper.GetBool("transactions") {
-			fmt.Println("- Transactions: ")
-			for _, t := range slot.Transactions {
-				fmt.Printf("    * Trx %s: %d instructions\n", t.Id, len(t.Instructions))
-				if viper.GetBool("instructions") {
-					for _, inst := range t.Instructions {
-						fmt.Printf("      * Inst [%d]: program_id %s\n", inst.Ordinal, inst.ProgramId)
-					}
+	if viper.GetBool("transactions") {
+		fmt.Println("- Transactions: ")
+		for _, t := range slot.Transactions {
+			fmt.Printf("    * Trx %s: %d instructions\n", t.Id, len(t.Instructions))
+			if viper.GetBool("instructions") {
+				for _, inst := range t.Instructions {
+					fmt.Printf("      * Inst [%d]: program_id %s\n", inst.Ordinal, inst.ProgramId)
 				}
-
 			}
-			fmt.Println()
+
 		}
-
-		return nil
+		fmt.Println()
 	}
-
-	if block == nil && err == io.EOF {
-		return io.EOF
-	}
-
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

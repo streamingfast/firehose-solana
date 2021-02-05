@@ -35,7 +35,7 @@ func (i *Injector) writeCheckpoint(ctx context.Context, slot *pbcodec.Slot) erro
 	return i.kvdb.Put(ctx, key, value)
 }
 
-func (i *Injector) GetShardCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {
+func (i *Injector) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {
 
 	key := keyer.EncodeCheckpoint()
 
@@ -70,7 +70,7 @@ func (i *Injector) resolveCheckpoint(ctx context.Context, startBlockNum uint64, 
 	zlog.Info("retrieving serumhist checkpoint from kvdb")
 	// Retrieved lastProcessedBlock must be in the shard's range, and that shouldn't
 	// change across invocations, or in the lifetime of the database.
-	checkpoint, err := i.GetShardCheckpoint(ctx)
+	checkpoint, err := i.GetCheckpoint(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("fetching checkpoint: %w", err)
 	}

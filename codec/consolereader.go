@@ -135,12 +135,13 @@ func (l *ConsoleReader) Close() {
 }
 
 type parseCtx struct {
-	activeBank        *bank
-	banks             map[uint64]*bank
-	conversionOptions []conversionOption
-	slotBuffer        chan *pbcodec.Slot
-	batchWG           sync.WaitGroup
-	batchFilesPath    string
+	activeBank               *bank
+	activeBankWaitingForRoot *bank
+	banks                    map[uint64]*bank
+	conversionOptions        []conversionOption
+	slotBuffer               chan *pbcodec.Slot
+	batchWG                  sync.WaitGroup
+	batchFilesPath           string
 }
 
 func newParseCtx(batchFilesPath string) *parseCtx {
@@ -182,20 +183,26 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	case strings.HasPrefix(line, "BATCH_FILE"):
 		err = ctx.readBatchFile(line)
 
-	case strings.HasPrefix(line, "SLOT_WORK"):
-		err = ctx.readSlotWork(line)
+	case strings.HasPrefix(line, "BLOCK_WORK"):
+		err = ctx.readBlockWork(line)
 
 	case strings.HasPrefix(line, "SLOT_BOUND"):
 		err = ctx.readSlotBound(line)
 
 	case strings.HasPrefix(line, "BATCHES_END"):
-		err = ctx.readBatchEnd()
+		err = ctx.readBatchesEnd()
 
-	case strings.HasPrefix(line, "SLOT_END"):
-		err = ctx.readSlotEnd(line)
+	case strings.HasPrefix(line, "BLOCK_END"):
+		err = ctx.readBlockEnd(line)
 
-	case strings.HasPrefix(line, "SLOT_FAILED"):
-		err = ctx.readSlotFailed(line)
+	case strings.HasPrefix(line, "BLOCK_FAILED"):
+		err = ctx.readBlockFailed(line)
+
+	case strings.HasPrefix(line, "BLOCK_ROOT"):
+		err = ctx.readBlockRoot(line)
+
+	case strings.HasPrefix(line, "INIT"):
+		err = ctx.readInit(line)
 
 	default:
 		zlog.Warn("unknown log line", zap.String("line", line))
@@ -209,7 +216,6 @@ func (l *ConsoleReader) formatError(line string, err error) error {
 }
 
 func (ctx *parseCtx) readBatchFile(line string) (err error) {
-
 	chunks := strings.Split(line, " ")
 	if len(chunks) != 2 {
 		return fmt.Errorf("read batch file: expected 2 fields, got %d", len(chunks))
@@ -257,10 +263,12 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 }
 
 const (
-	SlotWorkChunkSize   = 14
-	SlotEndChunkSize    = 5
-	SlotBoundChunkSize  = 3
-	SlotFailedChunkSize = 3
+	BlockWorkChunkSize   = 14
+	BlockEndChunkSize    = 5
+	BlockFailedChunkSize = 3
+	BlockRootChunkSize   = 2
+	InitChunkSize        = 3
+	SlotBoundChunkSize   = 3
 )
 
 type bank struct {
@@ -357,8 +365,8 @@ func (b *bank) getActiveTransaction(batchNum uint64, trxID string) (*pbcodec.Tra
 	return trx, nil
 }
 
-// BATCH_END
-func (ctx *parseCtx) readBatchEnd() (err error) {
+// BATCHES_END
+func (ctx *parseCtx) readBatchesEnd() (err error) {
 	if ctx.activeBank == nil {
 		return fmt.Errorf("received batch end while no active bank in context")
 	}
@@ -367,13 +375,32 @@ func (ctx *parseCtx) readBatchEnd() (err error) {
 	return nil
 }
 
-// SLOT_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 51936823 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0
-// SLOT_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID BLOCK_HEIGHT NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT
-func (ctx *parseCtx) readSlotWork(line string) (err error) {
-	zlog.Debug("reading slot work", zap.String("line", line))
+func (ctx *parseCtx) readInit(line string) (err error) {
+	zlog.Debug("reading init", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != SlotWorkChunkSize {
-		return fmt.Errorf("expected %d fields got %d", SlotWorkChunkSize, len(chunks))
+	if len(chunks) != InitChunkSize {
+		return fmt.Errorf("expected %d fields got %d", InitChunkSize, len(chunks))
+	}
+
+	var version uint64
+	if version, err = strconv.ParseUint(chunks[2], 10, 64); err != nil {
+		return fmt.Errorf("version to int: %w", err)
+	}
+
+	if version != 2 {
+		return fmt.Errorf("unsupported DMLOG version %d, expected version 2", version)
+	}
+
+	return nil
+}
+
+// BLOCK_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 51936823 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0
+// BLOCK_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID BLOCK_HEIGHT NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT
+func (ctx *parseCtx) readBlockWork(line string) (err error) {
+	zlog.Debug("reading block work", zap.String("line", line))
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != BlockWorkChunkSize {
+		return fmt.Errorf("expected %d fields got %d", BlockWorkChunkSize, len(chunks))
 	}
 
 	var blockNum, parentSlotNumber, blockHeight, trxCount int
@@ -420,8 +447,8 @@ func (ctx *parseCtx) readSlotBound(line string) (err error) {
 		return fmt.Errorf("expected %d fields got %d", SlotBoundChunkSize, len(chunks))
 	}
 
-	var blockNum int
-	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
+	var blockNum uint64
+	if blockNum, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
@@ -430,30 +457,30 @@ func (ctx *parseCtx) readSlotBound(line string) (err error) {
 	}
 
 	slotId := chunks[2]
-	ctx.activeBank.registerSlot(uint64(blockNum), slotId)
+	ctx.activeBank.registerSlot(blockNum, slotId)
 	return nil
 }
 
-// SLOT_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316
-// SLOT_END BLOCK_NUM LAST_ENTRY_HASH GENESIS_UNIX_TIMESTAMP CLOCK_UNIX_TIMESTAMP
-func (ctx *parseCtx) readSlotEnd(line string) (err error) {
-	zlog.Debug("reading slot end", zap.String("line", line))
+// BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316
+// BLOCK_END BLOCK_NUM LAST_ENTRY_HASH GENESIS_UNIX_TIMESTAMP CLOCK_UNIX_TIMESTAMP
+func (ctx *parseCtx) readBlockEnd(line string) (err error) {
+	zlog.Debug("reading block end", zap.String("line", line))
 
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != SlotEndChunkSize {
-		return fmt.Errorf("expected %d fields, got %d", SlotEndChunkSize, len(chunks))
+	if len(chunks) != BlockEndChunkSize {
+		return fmt.Errorf("expected %d fields, got %d", BlockEndChunkSize, len(chunks))
 	}
 
-	var blockNum, clockTimestamp, genesisTimestamp int
-	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
+	var blockNum, clockTimestamp, genesisTimestamp uint64
+	if blockNum, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
 		return fmt.Errorf("slotNumber to int: %w", err)
 	}
 
-	if clockTimestamp, err = strconv.Atoi(chunks[3]); err != nil {
+	if clockTimestamp, err = strconv.ParseUint(chunks[3], 10, 64); err != nil {
 		return fmt.Errorf("error decoding sysvar::clock timestamp in seconds: %w", err)
 	}
 
-	if genesisTimestamp, err = strconv.Atoi(chunks[4]); err != nil {
+	if genesisTimestamp, err = strconv.ParseUint(chunks[4], 10, 64); err != nil {
 		return fmt.Errorf("error decoding genesis timestamp in seconds: %w", err)
 	}
 
@@ -461,19 +488,48 @@ func (ctx *parseCtx) readSlotEnd(line string) (err error) {
 		return fmt.Errorf("received slot end while no active bank in context")
 	}
 
-	if ctx.activeBank.blockNum != uint64(blockNum) {
+	if ctx.activeBankWaitingForRoot != nil {
+		return fmt.Errorf("received slot end while we're waiting for the latest root num")
+	}
+
+	if ctx.activeBank.blockNum != blockNum {
 		return fmt.Errorf("slot end's active bank does not match context's active bank")
 	}
 
 	slotID := chunks[2]
 
-	blk := ctx.activeBank.blk
-	blk.Id = slotID
-	blk.GenesisUnixTimestamp = uint64(genesisTimestamp)
-	blk.ClockUnixTimestamp = uint64(clockTimestamp)
+	ctx.activeBank.blk.Id = slotID
+	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
+	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
+	ctx.activeBankWaitingForRoot = ctx.activeBank
+	ctx.activeBank = nil
 
-	for _, slot := range ctx.activeBank.slots {
-		slot.Block = blk
+	return nil
+}
+
+// BLOCK_ROOT 6482838121
+// Simply the root block number, when this block is done processing, and all of its votes are taken into account.
+func (ctx *parseCtx) readBlockRoot(line string) (err error) {
+	zlog.Debug("reading block root failed", zap.String("line", line))
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != BlockFailedChunkSize {
+		return fmt.Errorf("expected %d fields got %d", BlockFailedChunkSize, len(chunks))
+	}
+
+	var rootBlock uint64
+	if rootBlock, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
+		return fmt.Errorf("root block num num to int: %w", err)
+	}
+
+	if ctx.activeBankWaitingForRoot == nil {
+		return nil
+	}
+
+	activeBank := ctx.activeBankWaitingForRoot
+	activeBank.blk.RootNum = rootBlock
+
+	for _, slot := range activeBank.slots {
+		slot.Block = activeBank.blk
 		for i, t := range slot.Transactions {
 			t.Index = uint64(i)
 			t.SlotHash = slot.Id
@@ -486,21 +542,22 @@ func (ctx *parseCtx) readSlotEnd(line string) (err error) {
 		ctx.slotBuffer <- slot
 	}
 
-	ctx.activeBank = nil
-	delete(ctx.banks, uint64(blockNum))
+	ctx.activeBankWaitingForRoot = nil
+	delete(ctx.banks, uint64(activeBank.blk.Number))
+
 	return nil
 }
 
 // SLOT_FAILED SLOT_NUM REASON
-func (ctx *parseCtx) readSlotFailed(line string) (err error) {
-	zlog.Debug("reading slot failed", zap.String("line", line))
+func (ctx *parseCtx) readBlockFailed(line string) (err error) {
+	zlog.Debug("reading block failed", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != SlotFailedChunkSize {
-		return fmt.Errorf("expected %d fields got %d", SlotFailedChunkSize, len(chunks))
+	if len(chunks) != BlockFailedChunkSize {
+		return fmt.Errorf("expected %d fields got %d", BlockFailedChunkSize, len(chunks))
 	}
 
-	var blockNum int
-	if blockNum, err = strconv.Atoi(chunks[1]); err != nil {
+	var blockNum uint64
+	if blockNum, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
@@ -508,7 +565,7 @@ func (ctx *parseCtx) readSlotFailed(line string) (err error) {
 		return fmt.Errorf("slot failed start while no active bank in context")
 	}
 
-	if ctx.activeBank.blockNum != uint64(blockNum) {
+	if ctx.activeBank.blockNum != blockNum {
 		return fmt.Errorf("slot failed's active bank does not match context's active bank")
 	}
 

@@ -41,10 +41,12 @@ func (t *tradingAccountCache) load(ctx context.Context) {
 
 func (t *tradingAccountCache) setTradingAccount(ctx context.Context, tradingAccount, trader solana.PublicKey) error {
 	if _, found := t.accounts[tradingAccount.String()]; found {
-		zlog.Debug("found trading account skipping the setting it to kvdb",
-			zap.Stringer("trader", trader),
-			zap.Stringer("trading_acount", tradingAccount),
-		)
+		if traceEnabled {
+			zlog.Debug("found trading account skipping the setting it to kvdb",
+				zap.Stringer("trader", trader),
+				zap.Stringer("trading_acount", tradingAccount),
+			)
+		}
 		return nil
 	}
 

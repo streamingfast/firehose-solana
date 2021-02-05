@@ -98,14 +98,16 @@ func readCheckpointE(cmd *cobra.Command, args []string) (err error) {
 	val, err := kvdb.Get(cmd.Context(), key)
 	if err == store.ErrNotFound {
 		fmt.Println("No checkpoint found")
+		return nil
 	} else if err != nil {
-		fmt.Errorf("error reading checkpoint: %w", err)
+		return fmt.Errorf("error reading checkpoint: %w", err)
+
 	}
 
 	// Decode val as `pbaccounthist.ShardCheckpoint`
 	out := &pbserumhist.Checkpoint{}
 	if err := proto.Unmarshal(val, out); err != nil {
-		fmt.Errorf("error marhsalling checkpoint: %w", err)
+		return fmt.Errorf("error marhsalling checkpoint: %w", err)
 	}
 
 	fmt.Println("Checkpoint found:")

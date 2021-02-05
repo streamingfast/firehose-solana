@@ -13,6 +13,7 @@ import (
 )
 
 func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
+	t0 := time.Now()
 	slot := blk.ToNative().(*pbcodec.Slot)
 
 	serumSlot := newSerumSlot()
@@ -20,7 +21,6 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 	var err error
 	var accountChangesBundle *pbcodec.AccountChangesBundle
 
-	zlog.Debug("preprocessing slot", zap.Stringer("slot", blk))
 	for trxIdx, transaction := range slot.Transactions {
 		if traceEnabled {
 			zlog.Debug("processing new transaction",
@@ -88,10 +88,26 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 				i.SetAccounts(accounts)
 			}
 
-			accChanges := accountChangesBundle.Transactions[trxIdx].Instructions[instIdx].Changes
+			if trxIdx >= len(accountChangesBundle.Transactions) {
+				return nil, fmt.Errorf("trx index is out of range, slot: %d (%s), trx index: %d, trx count: %d", slot.Number, slot.Id, trxIdx, len(accountChangesBundle.Transactions))
+			}
+
+			trxAccChanges := accountChangesBundle.Transactions[trxIdx]
+
+			if instIdx >= len(trxAccChanges.Instructions) {
+				return nil, fmt.Errorf("inst index is out of range, slot: %d (%s), trx index: %d, inst index: %d, inst count: %d", slot.Number, slot.Id, trxIdx, instIdx, len(trxAccChanges.Instructions))
+			}
+
+			accChanges := trxAccChanges.Instructions[instIdx].Changes
 			serumSlot.processInstruction(slot.Number, transaction.Index, uint64(instIdx), slot.Block.Time(), decodedInst, accChanges)
 		}
 	}
+	zlog.Debug("preprocessed slot completed",
+		zap.Stringer("slot", blk),
+		zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
+		zap.Int("fill_count", len(serumSlot.fills)),
+		zap.Duration("duration", time.Since(t0)),
+	)
 	return serumSlot, nil
 }
 
