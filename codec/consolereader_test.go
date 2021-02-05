@@ -286,7 +286,7 @@ func Test_readSlotWork(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.ctx.readSlotWork(test.line)
+			err := test.ctx.readBlockWork(test.line)
 			if test.expecError {
 				require.Error(t, err)
 			} else {
@@ -394,7 +394,7 @@ func Test_readSlotEnd(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.ctx.readSlotEnd(test.line)
+			err := test.ctx.readBlockEnd(test.line)
 			require.NoError(t, err)
 			assert.Equal(t, 1, len(test.ctx.slotBuffer))
 			slot := <-test.ctx.slotBuffer
