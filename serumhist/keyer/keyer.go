@@ -99,7 +99,7 @@ func EncodeFillByMarket(trader, market solana.PublicKey, slotNum, trxIdx, instId
 	return key
 }
 
-func DecodeFillByMarket(key Key) (trader solana.PublicKey, market solana.PublicKey, slotNum uint64, trxIdx uint64, instIdx uint64, orderSeqNum uint64)  {
+func DecodeFillByMarket(key Key) (trader solana.PublicKey, market solana.PublicKey, slotNum uint64, trxIdx uint64, instIdx uint64, orderSeqNum uint64) {
 	if key[0] != PrefixFillByTrader {
 		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByTrader))
 	}
