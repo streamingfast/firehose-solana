@@ -10,7 +10,8 @@ import (
 
 const (
 	PrefixFillByTrader       = byte(0x01) // 01:[trader]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[market]:[rev_order_seq_num] =>  FillData(side)
-	PrefixFillByMarketTrader = byte(0x02) // 02:[trader]:[market]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[rev_order_seq_num] =>  FillData(side)
+	PrefixFillByTraderMarket = byte(0x02) // 02:[trader]:[market]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[rev_order_seq_num] =>  FillData(side)
+	PrefixFillByMarket       = byte(0x03) // 03:[market]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[trader]:[rev_order_seq_num] => FillData(side)
 
 	PrefixTradingAccount = byte(0x05) // 05:[trading_account] => [trader]
 
@@ -54,7 +55,7 @@ func EncodeFillByTraderPrefix(trader solana.PublicKey) Prefix {
 // 02:[trader]:[market]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[rev_order_seq_num] =>  =>
 func EncodeFillByMarketTrader(trader, market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeqNum uint64) Key {
 	key := make([]byte, 1+32+32+8+8+8+8)
-	key[0] = PrefixFillByMarketTrader
+	key[0] = PrefixFillByTraderMarket
 	copy(key[1:], trader[:])
 	copy(key[33:], market[:])
 	binary.BigEndian.PutUint64(key[65:], ^slotNum)
@@ -65,8 +66,8 @@ func EncodeFillByMarketTrader(trader, market solana.PublicKey, slotNum, trxIdx, 
 }
 
 func DecodeFillByMarketTrader(key Key) (trader solana.PublicKey, market solana.PublicKey, slotNum uint64, trxIdx uint64, instIdx uint64, orderSeqNum uint64) {
-	if key[0] != PrefixFillByMarketTrader {
-		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByMarketTrader))
+	if key[0] != PrefixFillByTraderMarket {
+		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByTraderMarket))
 	}
 	copy(trader[:], key[1:])
 	copy(market[:], key[33:])
@@ -79,9 +80,43 @@ func DecodeFillByMarketTrader(key Key) (trader solana.PublicKey, market solana.P
 
 func EncodeFillByTraderMarketPrefix(trader, market solana.PublicKey) Prefix {
 	key := make([]byte, 1+32+32)
-	key[0] = PrefixFillByMarketTrader
+	key[0] = PrefixFillByTraderMarket
 	copy(key[1:], trader[:])
 	copy(key[33:], market[:])
+	return key
+}
+
+// 03:[market]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[trader]:[rev_order_seq_num] => FillData(side)
+func EncodeFillByMarket(trader, market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeqNum uint64) Key {
+	key := make([]byte, 1+32+8+8+8+32+8)
+	key[0] = PrefixFillByTrader
+	copy(key[1:], market[:])
+	binary.BigEndian.PutUint64(key[33:], ^slotNum)
+	binary.BigEndian.PutUint64(key[41:], ^trxIdx)
+	binary.BigEndian.PutUint64(key[49:], ^instIdx)
+	copy(key[57:], trader[:])
+	binary.BigEndian.PutUint64(key[89:], ^orderSeqNum)
+	return key
+}
+
+func DecodeFillByMarket(key Key) (trader solana.PublicKey, market solana.PublicKey, slotNum uint64, trxIdx uint64, instIdx uint64, orderSeqNum uint64)  {
+	if key[0] != PrefixFillByTrader {
+		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByTrader))
+	}
+	copy(market[:], key[1:])
+	slotNum = ^binary.BigEndian.Uint64(key[33:])
+	trxIdx = ^binary.BigEndian.Uint64(key[41:])
+	instIdx = ^binary.BigEndian.Uint64(key[49:])
+	copy(trader[:], key[57:])
+	orderSeqNum = ^binary.BigEndian.Uint64(key[89:])
+
+	return
+}
+
+func EncodeFillByMarketPrefix(market solana.PublicKey) Prefix {
+	key := make([]byte, 1+32)
+	key[0] = PrefixFillByMarket
+	copy(key[1:], market[:])
 	return key
 }
 
@@ -97,7 +132,7 @@ func EncodeTradingAccount(tradingAccount solana.PublicKey) Key {
 
 func DecodeTradingAccount(key Key) (tradingAccount solana.PublicKey) {
 	if key[0] != PrefixTradingAccount {
-		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByMarketTrader))
+		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByTraderMarket))
 	}
 
 	key[0] = PrefixTradingAccount
