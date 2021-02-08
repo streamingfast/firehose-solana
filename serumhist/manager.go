@@ -31,6 +31,15 @@ func (m *Manager) GetFillsByTrader(ctx context.Context, trader solana.PublicKey,
 	return m.getFillsForPrefix(ctx, prefix, keyer.DecodeFillByTrader, limit)
 }
 
+func (m *Manager) GetFillsByMarket(ctx context.Context, market solana.PublicKey, limit int) (fills []*pbserumhist.Fill, hasMore bool, err error) {
+	prefix := keyer.EncodeFillByMarketPrefix(market)
+	zlog.Debug("get fills by trader",
+		zap.Stringer("prefix", prefix),
+		zap.Stringer("market", market),
+	)
+	return m.getFillsForPrefix(ctx, prefix, keyer.DecodeFillByTrader, limit)
+}
+
 func (m *Manager) GetFillsByTraderAndMarket(ctx context.Context, trader, market solana.PublicKey, limit int) (fills []*pbserumhist.Fill, hasMore bool, err error) {
 	prefix := keyer.EncodeFillByTraderMarketPrefix(trader, market)
 	zlog.Debug("get fills by trader and market",

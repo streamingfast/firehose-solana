@@ -95,6 +95,17 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			trxAccChanges := accountChangesBundle.Transactions[trxIdx]
 
 			if instIdx >= len(trxAccChanges.Instructions) {
+				//2
+				//4zsYLBJpeyX5VCnzF8rGjkDjYgs39P3qgJd8hwjT9RReBZEKvEALNnWmYdS6tr835Gt2yGLoeamwTUtoyQtFiL36
+				//1
+				//4
+
+				fmt.Println(instruction.Ordinal)
+				fmt.Println(transaction.Id)
+				fmt.Println(len(trxAccChanges.Instructions))
+				fmt.Println(len(transaction.Instructions))
+				fmt.Println(slot.Number)
+
 				return nil, fmt.Errorf("inst index is out of range, slot: %d (%s), trx index: %d, inst index: %d, inst count: %d", slot.Number, slot.Id, trxIdx, instIdx, len(trxAccChanges.Instructions))
 			}
 

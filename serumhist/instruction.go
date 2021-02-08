@@ -52,6 +52,10 @@ func (i *Injector) processSerumFill(ctx context.Context, serumFill *serumFill) e
 			Key:   keyer.EncodeFillByMarketTrader(*trader, serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
 			Value: cnt,
 		},
+		{
+			Key:   keyer.EncodeFillByMarket(*trader, serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
+			Value: cnt,
+		},
 	}
 
 	for _, kv := range kvs {

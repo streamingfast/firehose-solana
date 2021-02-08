@@ -69,11 +69,11 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx
 			trader:         newOrderV2.Accounts.Owner.PublicKey,
 			tradingAccount: newOrderV2.Accounts.OpenOrders.PublicKey,
 		})
-	} else if mathOrder, ok := instruction.Impl.(*serum.InstructionMatchOrder); ok {
+	} else if matchOrder, ok := instruction.Impl.(*serum.InstructionMatchOrder); ok {
 		if traceEnabled {
 			zlog.Debug("processing match order", logFields...)
 		}
-		serumFills, err := s.processMatchOrderInstruction(slotNumber, blkTime, trxIdx, instIdx, mathOrder, accChanges)
+		serumFills, err := s.processMatchOrderInstruction(slotNumber, blkTime, trxIdx, instIdx, matchOrder, accChanges)
 		if err != nil {
 			return fmt.Errorf("generating serum fills: %w", err)
 		}

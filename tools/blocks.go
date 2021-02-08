@@ -2,7 +2,9 @@ package tools
 
 import (
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"io"
+	"io/ioutil"
 	"strconv"
 
 	"github.com/dfuse-io/bstream"
@@ -24,6 +26,13 @@ var blockCmd = &cobra.Command{
 	RunE:  printOneBlockE,
 }
 
+var blockDataCmd = &cobra.Command{
+	Use:   "blockdata {block_num}",
+	Short: "Prints the data of a one block file",
+	Args:  cobra.ExactArgs(1),
+	RunE:  printBlockDataE,
+}
+
 var mergedBlocksCmd = &cobra.Command{
 	Use:   "blocks {base_block_num}",
 	Short: "Prints the content summary of a merged blocks file",
@@ -33,12 +42,14 @@ var mergedBlocksCmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(printCmd)
+	printCmd.AddCommand(blockDataCmd)
 	printCmd.AddCommand(blockCmd)
 	printCmd.AddCommand(mergedBlocksCmd)
 
 	printCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
 	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v2", "block store")
+	blockDataCmd.PersistentFlags().String("datastore", "gs://dfuseio-global-blocks-us/sol-mainnet/v2-block-data", "block store")
 	mergedBlocksCmd.Flags().Bool("viz", false, "Output .dot file")
 }
 
@@ -146,6 +157,73 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 				return nil
 			}
 			return fmt.Errorf("reading block: %w", err)
+		}
+
+	}
+	return nil
+}
+
+func printBlockDataE(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+
+	blockNum, err := strconv.ParseUint(args[0], 10, 64)
+	if err != nil {
+		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
+	}
+
+	str := viper.GetString("datastore")
+
+	store, err := dstore.NewDBinStore(str)
+	if err != nil {
+		return fmt.Errorf("unable to create store at path %q: %w", store, err)
+	}
+
+
+
+	var files []string
+	filePrefix := fmt.Sprintf("%010d", blockNum)
+	err = store.Walk(ctx, filePrefix, "", func(filename string) (err error) {
+		files = append(files, filename)
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("unable to find on block files: %w", err)
+	}
+
+	fmt.Printf("Found %d oneblock files for block number %d\n", len(files), blockNum)
+
+	for _, filepath := range files {
+		reader, err := store.OpenObject(ctx, filepath)
+		if err != nil {
+			fmt.Printf("❌ Unable to read block filename %s: %s\n", filepath, err)
+			return err
+		}
+		defer reader.Close()
+
+
+		bundle := &pbcodec.AccountChangesBundle{}
+
+		data, err := ioutil.ReadAll(reader)
+		if err != nil {
+			fmt.Printf("❌ Unable to read data from filename %s: %s\n", filepath, err)
+			return err
+		}
+
+		err = proto.Unmarshal(data, bundle)
+		if err != nil {
+			fmt.Printf("❌ Unable to unmarshal proto %s: %s\n", filepath, err)
+			return err
+		}
+
+		for i, transaction := range bundle.Transactions {
+			fmt.Printf("trx %d\n", i)
+			for j, instruction := range transaction.Instructions {
+				fmt.Printf("instruction %d\n", j)
+				for k, change := range instruction.Changes {
+					fmt.Printf("change %d\n", k)
+					fmt.Println(change.Pubkey)
+				}
+			}
 		}
 
 	}
