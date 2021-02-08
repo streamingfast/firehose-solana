@@ -36,6 +36,7 @@ func init() {
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("firehose-grpc-listen-addr", FirehoseGRPCServingAddr, "Address on which the firehose will listen")
 			cmd.Flags().StringSlice("firehose-blocks-store-urls", nil, "If non-empty, overrides common-blocks-store-url with a list of blocks stores")
+			cmd.Flags().Duration("firehose-real-time-tolerance", 1*time.Minute, "firehose will became alive if now - block time is smaller then tolerance")
 			return nil
 		},
 
@@ -89,6 +90,7 @@ func init() {
 				BlockStreamAddr:         blockstreamAddr,
 				GRPCListenAddr:          viper.GetString("firehose-grpc-listen-addr"),
 				GRPCShutdownGracePeriod: grcpShutdownGracePeriod,
+				RealtimeTolerance:       viper.GetDuration("firehose-real-time-tolerance"),
 			}, &firehoseApp.Modules{
 				Authenticator:             authenticator,
 				BlockTrimmer:              blockstreamv2.BlockTrimmerFunc(trimBlock),
