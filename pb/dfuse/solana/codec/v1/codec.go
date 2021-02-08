@@ -21,6 +21,7 @@ func (s *Slot) Num() uint64 {
 
 func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
 	bundle := &AccountChangesBundle{}
+
 	for _, trx := range s.Transactions {
 		bundleTransaction := &AccountChangesPerTrxIndex{}
 		for _, instruction := range trx.Instructions {

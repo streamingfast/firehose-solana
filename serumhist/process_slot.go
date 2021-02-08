@@ -85,7 +85,10 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			}
 
 			if i, ok := decodedInst.Impl.(solana.AccountSettable); ok {
-				i.SetAccounts(accounts)
+				err = i.SetAccounts(accounts)
+				if err != nil {
+					return nil, fmt.Errorf("setting account: %w", err)
+				}
 			}
 
 			if trxIdx >= len(accountChangesBundle.Transactions) {
@@ -102,15 +105,18 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 
 				fmt.Println(instruction.Ordinal)
 				fmt.Println(transaction.Id)
-				fmt.Println(len(trxAccChanges.Instructions))
-				fmt.Println(len(transaction.Instructions))
+				fmt.Println(len(trxAccChanges.Instructions)) //1
+				fmt.Println(len(transaction.Instructions))   //2
 				fmt.Println(slot.Number)
 
 				return nil, fmt.Errorf("inst index is out of range, slot: %d (%s), trx index: %d, inst index: %d, inst count: %d", slot.Number, slot.Id, trxIdx, instIdx, len(trxAccChanges.Instructions))
 			}
 
 			accChanges := trxAccChanges.Instructions[instIdx].Changes
-			serumSlot.processInstruction(slot.Number, transaction.Index, uint64(instIdx), slot.Block.Time(), decodedInst, accChanges)
+			err = serumSlot.processInstruction(slot.Number, transaction.Index, uint64(instIdx), slot.Block.Time(), decodedInst, accChanges)
+			if err != nil {
+				return nil, fmt.Errorf("processing instruction: %w", err)
+			}
 		}
 	}
 	zlog.Debug("preprocessed slot completed",

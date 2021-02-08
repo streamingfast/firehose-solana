@@ -549,8 +549,8 @@ func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockData
 	slot.AccountChangesFileRef = archiver.Store.ObjectURL(fileName)
 	zlog.Debug("slot data file", zap.String("object_url", slot.AccountChangesFileRef))
 
-	go func() {
-		accountChangesBundle := slot.Split(true)
+	accountChangesBundle := slot.Split(true)
+	go func(accountChangesBundle *pbcodec.AccountChangesBundle) {
 		err := archiver.StoreBlockData(accountChangesBundle, fileName)
 		if err != nil {
 			//todo: This is very bad
@@ -558,7 +558,7 @@ func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockData
 		}
 		zlog.Debug("slot data store", zap.String("object_path", slot.AccountChangesFileRef))
 
-	}()
+	}(accountChangesBundle)
 
 	bstreamBlock, err := codec.BlockFromProto(slot)
 	if err != nil {
