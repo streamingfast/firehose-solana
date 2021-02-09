@@ -80,7 +80,7 @@ func (f *Finder) launch() error {
 		err := pcr.processSnapshot(ctx, client, snapshot, f.bucket)
 		if err != nil {
 			f.Shutdown(err)
-		}git
+		}
 	}
 
 	//should not reach that code
