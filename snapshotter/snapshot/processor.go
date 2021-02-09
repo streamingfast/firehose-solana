@@ -154,7 +154,6 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 				if err := destWriter.Close(); err != nil {
 					return fmt.Errorf("closing destination write to target: %s: %w", target, err)
 				}
-				return err
 			}
 		}
 	})
