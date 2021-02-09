@@ -90,6 +90,7 @@ func (f *Finder) launch() error {
 		}
 	}
 
+	zlog.Info("WAITING FOR 200 HOURs")
 	time.Sleep(200 * time.Hour)
 	//should not reach that code
 	f.Shutdown(fmt.Errorf("unexpect shutdown"))
