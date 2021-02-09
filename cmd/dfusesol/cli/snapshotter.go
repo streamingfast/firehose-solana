@@ -19,7 +19,7 @@ func init() {
 			cmd.Flags().String("snapshotter-source-prefix", "", "mainnet-beta-ledger-us-west1")
 			cmd.Flags().String("snapshotter-destination-bucket", "dfuseio-global-blocks-us", "bucket where solana snapshot will be stored and uncompressed")
 			cmd.Flags().String("snapshotter-destination-prefix", "sol-mainnet/snapshots", "")
-			cmd.Flags().String("snapshotter-working-dir", "{dfuse-data-dir}/merger/merger.seen.gob", "")
+			cmd.Flags().String("snapshotter-working-dir", "{dfuse-data-dir}/working", "")
 			return nil
 		},
 		InitFunc: func(runtime *launcher.Runtime) (err error) {
