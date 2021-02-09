@@ -552,7 +552,7 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 		}
 		delete(ctx.banks, bankIndex)
 	}
-
+	zlog.Info("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
 	return nil
 }
 
