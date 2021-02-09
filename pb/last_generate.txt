@@ -1,3 +1,3 @@
-generate.sh - Fri 05 Feb 2021 01:37:25 PM EST - abourget
-dfuse-io/proto revision: b7bb186d6b4f6ebb724d1b99864d34280ee4af92
-dfuse-io/proto-solana revision: df5e3ce4c2ae1cfcb130f44a9c5b2b029d6037fb
+generate.sh - Tue 09 Feb 2021 08:35:51 AM EST - colin
+dfuse-io/proto revision: 4bca1300d6e75a04724925ef2c9341dfe50c5263
+dfuse-io/proto-solana revision: 64864f6bd14791f473441472fb04613ce801fc22

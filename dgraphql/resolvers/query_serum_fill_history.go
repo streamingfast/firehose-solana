@@ -10,29 +10,38 @@ import (
 )
 
 type SerumFillHistoryRequest struct {
-	Trader string
+	Trader *string
 	Market *string
 }
 
+func (r *SerumFillHistoryRequest) validate() error {
+	if r.Trader == nil && r.Market == nil {
+		return gqerrs.Errorf("trader and market cannot both be empty")
+	}
+	return nil
+}
+
 func (r *Root) QuerySerumFillHistory(ctx context.Context, in *SerumFillHistoryRequest) (out *SerumFillConnection, err error) {
-	trader, err := solana.PublicKeyFromBase58(in.Trader)
-	if err != nil {
-		return nil, gqerrs.Errorf(`invalid "trader" argument %q: %s`, in.Trader, err)
+	if err := in.validate(); err != nil {
+		return nil, err
 	}
 
-	var market *solana.PublicKey
+	request := &pbserumhist.GetFillsRequest{}
+
+	if in.Trader != nil {
+		traderKey, err := solana.PublicKeyFromBase58(*in.Trader)
+		if err != nil {
+			return nil, gqerrs.Errorf(`invalid "trader" argument %q: %s`, *in.Trader, err)
+		}
+		request.Trader = traderKey.String()
+	}
+
 	if in.Market != nil {
 		marketKey, err := solana.PublicKeyFromBase58(*in.Market)
 		if err != nil {
 			return nil, gqerrs.Errorf(`invalid "market" argument %q: %s`, *in.Market, err)
 		}
-
-		market = &marketKey
-	}
-
-	request := &pbserumhist.GetFillsRequest{Trader: trader.String()}
-	if market != nil {
-		request.Market = market.String()
+		request.Market = marketKey.String()
 	}
 
 	getCtx, cancel := context.WithTimeout(ctx, 30*time.Second)

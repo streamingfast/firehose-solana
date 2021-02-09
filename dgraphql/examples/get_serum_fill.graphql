@@ -1,4 +1,4 @@
-query($trader: String!, $market: String) {
+query($trader: String, $market: String) {
   serumFillHistory(trader: $trader, market: $market) {
     pageInfo {
       startCursor

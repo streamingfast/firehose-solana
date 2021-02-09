@@ -6,12 +6,13 @@ package pbserumhist
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -433,11 +434,11 @@ var fileDescriptor_c18832c9aa9279e6 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // SerumHistoryClient is the client API for SerumHistory service.
 //
@@ -447,10 +448,10 @@ type SerumHistoryClient interface {
 }
 
 type serumHistoryClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewSerumHistoryClient(cc *grpc.ClientConn) SerumHistoryClient {
+func NewSerumHistoryClient(cc grpc.ClientConnInterface) SerumHistoryClient {
 	return &serumHistoryClient{cc}
 }
 

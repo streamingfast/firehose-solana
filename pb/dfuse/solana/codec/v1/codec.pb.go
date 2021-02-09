@@ -5,8 +5,9 @@ package pbcodec
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -783,7 +784,9 @@ func init() {
 	proto.RegisterType((*AccountChange)(nil), "dfuse.solana.codec.v1.AccountChange")
 }
 
-func init() { proto.RegisterFile("dfuse/solana/codec/v1/codec.proto", fileDescriptor_10cf9f0a2b7e0e4b) }
+func init() {
+	proto.RegisterFile("dfuse/solana/codec/v1/codec.proto", fileDescriptor_10cf9f0a2b7e0e4b)
+}
 
 var fileDescriptor_10cf9f0a2b7e0e4b = []byte{
 	// 1006 bytes of a gzipped FileDescriptorProto
