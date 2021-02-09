@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/dfuse-io/shutter"
@@ -89,6 +90,7 @@ func (f *Finder) launch() error {
 		}
 	}
 
+	time.Sleep(200 * time.Hour)
 	//should not reach that code
 	f.Shutdown(fmt.Errorf("unexpect shutdown"))
 	return nil
