@@ -526,13 +526,18 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 	if len(chunks) != BlockRootChunkSize {
 		return fmt.Errorf("expected %d fields got %d", BlockRootChunkSize, len(chunks))
 	}
+
 	var rootBlock uint64
 	if rootBlock, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
 		return fmt.Errorf("root block num num to int: %w", err)
 	}
 
-	for bankIndex, bank := range ctx.banks {
+	for bankSlotNum, bank := range ctx.banks {
 		if !bank.ended {
+			if bankSlotNum < rootBlock {
+				zlog.Info("purging un-ended banks", zap.Uint64("purge_bank_slot", bankSlotNum), zap.Uint64("root_block", rootBlock))
+				delete(ctx.banks, bankSlotNum)
+			}
 			continue
 		}
 
@@ -550,7 +555,7 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 			}
 			ctx.slotBuffer <- slot
 		}
-		delete(ctx.banks, bankIndex)
+		delete(ctx.banks, bankSlotNum)
 	}
 	zlog.Info("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
 	return nil
@@ -578,13 +583,4 @@ func (ctx *parseCtx) readBlockFailed(line string) (err error) {
 	}
 
 	return fmt.Errorf("slot %d failed: %s", blockNum, chunks[2])
-}
-
-func splitNToM(line string, min, max int) ([]string, error) {
-	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) < min || len(chunks) > max {
-		return nil, fmt.Errorf("expected between %d to %d fields (inclusively), got %d", min, max, len(chunks))
-	}
-
-	return chunks, nil
 }
