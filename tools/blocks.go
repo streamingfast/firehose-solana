@@ -218,13 +218,9 @@ func printBlockDataE(cmd *cobra.Command, args []string) error {
 		for i, transaction := range bundle.Transactions {
 			fmt.Printf("* Trx [%d] %s: %d instructions\n", i, transaction.TrxId, len(transaction.Instructions))
 			totalInst += len(transaction.Instructions)
-			//for j, instruction := range transaction.Instructions {
-			//	fmt.Printf("instruction %d\n", j)
-			//	for k, change := range instruction.Changes {
-			//		fmt.Printf("change %d\n", k)
-			//		fmt.Println(change.Pubkey)
-			//	}
-			//}
+			for j, instruction := range transaction.Instructions {
+				fmt.Printf("instruction %d changes: %d\n", j, len(instruction.Changes))
+			}
 		}
 
 		fmt.Println("total inst: ", totalInst)
