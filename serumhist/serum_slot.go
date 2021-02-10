@@ -7,14 +7,13 @@ import (
 	"time"
 
 	bin "github.com/dfuse-io/binary"
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
-
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/diff"
 	"github.com/dfuse-io/solana-go/programs/serum"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.uber.org/zap"
 )
 
@@ -25,8 +24,8 @@ type serumSlot struct {
 
 func newSerumSlot() *serumSlot {
 	return &serumSlot{
-		tradingAccountCache: []*serumTradingAccount{},
-		fills:               []*serumFill{},
+		tradingAccountCache: nil,
+		fills:               nil,
 	}
 }
 
@@ -47,44 +46,62 @@ type serumFill struct {
 }
 
 func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx uint64, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
-
-	logFields := []zap.Field{
-		zap.Uint64("slot_number", slotNumber),
-		zap.Uint64("transaction_index", trxIdx),
-		zap.Uint64("instruction_index", instIdx),
+	if traceEnabled {
+		zlog.Debug(fmt.Sprintf("processing instruction %T", instruction.Impl),
+			zap.Uint64("slot_number", slotNumber),
+			zap.Uint64("transaction_index", trxIdx),
+			zap.Uint64("instruction_index", instIdx))
 	}
-	if newOrder, ok := instruction.Impl.(*serum.InstructionNewOrder); ok {
-		if traceEnabled {
-			zlog.Debug("processing new order v1", logFields...)
-		}
+
+	switch v := instruction.Impl.(type) {
+	case *serum.InstructionNewOrder:
 		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
-			trader:         newOrder.Accounts.Owner.PublicKey,
-			tradingAccount: newOrder.Accounts.OpenOrders.PublicKey,
+			trader:         v.Accounts.Owner.PublicKey,
+			tradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
-	} else if newOrderV2, ok := instruction.Impl.(*serum.InstructionNewOrderV2); ok {
-		if traceEnabled {
-			zlog.Debug("processing new order v2", logFields...)
-		}
+
+	case *serum.InstructionNewOrderV2:
 		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
-			trader:         newOrderV2.Accounts.Owner.PublicKey,
-			tradingAccount: newOrderV2.Accounts.OpenOrders.PublicKey,
+			trader:         v.Accounts.Owner.PublicKey,
+			tradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
-	} else if matchOrder, ok := instruction.Impl.(*serum.InstructionMatchOrder); ok {
-		if traceEnabled {
-			zlog.Debug("processing match order", logFields...)
-		}
-		serumFills, err := s.processMatchOrderInstruction(slotNumber, blkTime, trxIdx, instIdx, matchOrder, accChanges)
+
+	case *serum.InstructionNewOrderV3:
+		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
+			trader:         v.Accounts.Owner.PublicKey,
+			tradingAccount: v.Accounts.OpenOrders.PublicKey,
+		})
+
+		market := v.Accounts.Market.PublicKey
+		serumFills, err := s.extractFillsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, market, accChanges)
 		if err != nil {
-			return fmt.Errorf("generating serum fills: %w", err)
+			return fmt.Errorf("generating serum fills from new order v3: %w", err)
 		}
+
+		s.fills = append(s.fills, serumFills...)
+
+	case *serum.InstructionMatchOrder:
+		market := v.Accounts.Market.PublicKey
+		serumFills, err := s.extractFillsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, market, accChanges)
+		if err != nil {
+			return fmt.Errorf("generating serum fills from matching order: %w", err)
+		}
+
 		s.fills = append(s.fills, serumFills...)
 	}
-	return nil
 
+	return nil
 }
 
-func (s *serumSlot) processMatchOrderInstruction(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, inst *serum.InstructionMatchOrder, accountChanges []*pbcodec.AccountChange) (out []*serumFill, err error) {
-	eventQueueAccountChange, err := filterAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
+func (s *serumSlot) extractFillsFromInstruction(
+	slotNumber uint64,
+	blkTime time.Time,
+	trxIdx uint64,
+	instIdx uint64,
+	market solana.PublicKey,
+	accountChanges []*pbcodec.AccountChange,
+) (out []*serumFill, err error) {
+	eventQueueAccountChange, err := findAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
 		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
 	})
 
@@ -97,7 +114,7 @@ func (s *serumSlot) processMatchOrderInstruction(slotNumber uint64, blkTime time
 		return nil, fmt.Errorf("unable to decode event queue change: %w", err)
 	}
 
-	return s.getFillKeyValues(slotNumber, blkTime, trxIdx, instIdx, inst.Accounts.Market.PublicKey, old, new), nil
+	return s.getFillKeyValues(slotNumber, blkTime, trxIdx, instIdx, market, old, new), nil
 }
 
 func (i *serumSlot) getFillKeyValues(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, market solana.PublicKey, old, new *serum.EventQueue) (out []*serumFill) {
@@ -119,7 +136,7 @@ func (i *serumSlot) getFillKeyValues(slotNumber uint64, blkTime time.Time, trxId
 						tradingAccount: e.Owner,
 						orderSeqNum:    extractOrderSeqNum(e.Side(), e.OrderID),
 						fill: &pbserumhist.Fill{
-							OrderId:           fmt.Sprintf("%s%s", hex.EncodeToString(number[:8]), hex.EncodeToString(number[8:])),
+							OrderId:           hex.EncodeToString(number[:8]) + hex.EncodeToString(number[8:]),
 							Side:              pbserumhist.Side(e.Side()),
 							Maker:             false,
 							NativeQtyPaid:     e.NativeQtyPaid,
@@ -131,7 +148,6 @@ func (i *serumSlot) getFillKeyValues(slotNumber uint64, blkTime time.Time, trxId
 					})
 
 				}
-			default:
 			}
 		}
 	}))

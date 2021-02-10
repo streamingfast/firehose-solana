@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
-
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-
+	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/solana-go"
 	"go.uber.org/zap"
@@ -69,8 +67,9 @@ func (t *tradingAccountCache) getTrader(ctx context.Context, tradingAccount sola
 		if err == store.ErrNotFound {
 			return nil, nil
 		}
-		return &solana.PublicKey{}, fmt.Errorf("error retriving trading account: %w", err)
+		return nil, fmt.Errorf("error retriving trading account: %w", err)
 	}
+
 	p := solana.PublicKeyFromBytes(val)
 	return &p, nil
 }

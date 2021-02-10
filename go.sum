@@ -244,6 +244,8 @@ github.com/dfuse-io/shutter v1.4.1 h1:a0HSmmu8vYxR4ynIv1+tH49jrv7gyenNtOJBsmm3OH
 github.com/dfuse-io/shutter v1.4.1/go.mod h1:/BxCU/ucC6WUyqmLbWpDhznS6Yy1HDblsstEBnTyr+4=
 github.com/dfuse-io/solana-go v0.2.1-0.20210126234342-be9990a71471 h1:uDFrudEskLHRIjEaubE3pUt9kqD2+S7LLHe2svEhp5Q=
 github.com/dfuse-io/solana-go v0.2.1-0.20210126234342-be9990a71471/go.mod h1:pY+GRAYUPdUFYED+HtIxnZIQunJhoxyB5xeLuaJqJ/4=
+github.com/dfuse-io/solana-go v0.2.1-0.20210209165506-b9803f04babe h1:W/fZSuDcVBfQFRKqXd0vba+ff0kFi26gh39KTRqx1as=
+github.com/dfuse-io/solana-go v0.2.1-0.20210209165506-b9803f04babe/go.mod h1:pY+GRAYUPdUFYED+HtIxnZIQunJhoxyB5xeLuaJqJ/4=
 github.com/dgraph-io/badger/v2 v2.0.3 h1:inzdf6VF/NZ+tJ8RwwYMjJMvsOALTHYdozn0qSl6XJI=
 github.com/dgraph-io/badger/v2 v2.0.3/go.mod h1:3KY8+bsP8wI0OEnQJAKpd4wIJW/Mm32yw2j/9FUVnIM=
 github.com/dgraph-io/ristretto v0.0.2-0.20200115201040-8f368f2f2ab3 h1:MQLRM35Pp0yAyBYksjbj1nZI/w6eyRY/mWoM1sFf4kU=
