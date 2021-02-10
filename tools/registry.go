@@ -59,10 +59,10 @@ func fetchMarketsE(cmd *cobra.Command, args []string) (err error) {
 	}
 	fmt.Printf("Loaded %d known markets\n", len(oldMarkets))
 
-	fmt.Printf("Retrieving on-chain markets for program: %s\n", serum.PROGRAM_ID.String())
+	fmt.Printf("Retrieving on-chain markets for program: %s\n", serum.DEXProgramIDV2.String())
 	accounts, err := client.GetProgramAccounts(
 		ctx,
-		serum.PROGRAM_ID,
+		serum.DEXProgramIDV2,
 		&solrpc.GetProgramAccountsOpts{
 			Filters: []solrpc.RPCFilter{
 				{
@@ -76,7 +76,7 @@ func fetchMarketsE(cmd *cobra.Command, args []string) (err error) {
 			},
 		},
 	)
-	fmt.Printf("Found %d on chain markets for program %s\n", len(accounts), serum.PROGRAM_ID.String())
+	fmt.Printf("Found %d on chain markets for program %s\n", len(accounts), serum.DEXProgramIDV2.String())
 
 	f, err := os.Create(filepath.Join("/tmp", "out.jsonl"))
 	if err != nil {
@@ -99,7 +99,7 @@ func fetchMarketsE(cmd *cobra.Command, args []string) (err error) {
 		}
 
 		marketRegistry.Address = acc.Pubkey
-		marketRegistry.ProgramID = serum.PROGRAM_ID
+		marketRegistry.ProgramID = serum.DEXProgramIDV2
 		marketRegistry.BaseToken = market.BaseMint
 		marketRegistry.QuoteToken = market.QuoteMint
 		marketRegistry.BaseLotSize = uint64(market.BaseLotSize)

@@ -30,7 +30,7 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 
 		}
 		for instIdx, instruction := range transaction.Instructions {
-			if instruction.ProgramId != serum.PROGRAM_ID.String() {
+			if instruction.ProgramId != serum.DEXProgramIDV2.String() {
 				if traceEnabled {
 					zlog.Debug("skipping non-serum instruction",
 						zap.Uint64("slot_number", slot.Number),
