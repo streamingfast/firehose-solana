@@ -27,9 +27,10 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 				zap.String("transaction_id", transaction.Id),
 				zap.Int("instruction_count", len(transaction.Instructions)),
 			)
-
 		}
+
 		for instIdx, instruction := range transaction.Instructions {
+			// FIXME: The DEX v3 address is not known yet, we will need to update this when the address is known
 			if instruction.ProgramId != serum.DEXProgramIDV2.String() {
 				if traceEnabled {
 					zlog.Debug("skipping non-serum instruction",
@@ -96,19 +97,7 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			}
 
 			trxAccChanges := accountChangesBundle.Transactions[trxIdx]
-
 			if instIdx >= len(trxAccChanges.Instructions) {
-				//2
-				//4zsYLBJpeyX5VCnzF8rGjkDjYgs39P3qgJd8hwjT9RReBZEKvEALNnWmYdS6tr835Gt2yGLoeamwTUtoyQtFiL36
-				//1
-				//4
-
-				fmt.Println(instruction.Ordinal)
-				fmt.Println(transaction.Id)
-				fmt.Println(len(trxAccChanges.Instructions)) //1
-				fmt.Println(len(transaction.Instructions))   //2
-				fmt.Println(slot.Number)
-
 				return nil, fmt.Errorf("inst index is out of range, slot: %d (%s), trx index: %d, inst index: %d, inst count: %d", slot.Number, slot.Id, trxIdx, instIdx, len(trxAccChanges.Instructions))
 			}
 
@@ -128,12 +117,12 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 	return serumSlot, nil
 }
 
-func filterAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {
+func findAccountChange(accountChanges []*pbcodec.AccountChange, filter func(f *serum.AccountFlag) bool) (*pbcodec.AccountChange, error) {
 	for _, accountChange := range accountChanges {
 		var f *serum.AccountFlag
 		//assumption data should begin with serum prefix "736572756d"
 		if err := bin.NewDecoder(accountChange.PrevData[5:]).Decode(&f); err != nil {
-			return nil, fmt.Errorf("get account change: unable to deocde account flag: %w", err)
+			return nil, fmt.Errorf("get account change: unable to decode account flag: %w", err)
 		}
 		if filter(f) {
 			return accountChange, nil

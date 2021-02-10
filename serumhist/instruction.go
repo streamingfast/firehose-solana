@@ -5,10 +5,8 @@ import (
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-
-	"github.com/golang/protobuf/proto"
-
 	kvdb "github.com/dfuse-io/kvdb/store"
+	"github.com/golang/protobuf/proto"
 	"go.uber.org/zap"
 )
 
