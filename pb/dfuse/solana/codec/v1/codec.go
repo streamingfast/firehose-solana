@@ -23,7 +23,9 @@ func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
 	bundle := &AccountChangesBundle{}
 
 	for _, trx := range s.Transactions {
-		bundleTransaction := &AccountChangesPerTrxIndex{}
+		bundleTransaction := &AccountChangesPerTrxIndex{
+			TrxId: trx.Id,
+		}
 		for _, instruction := range trx.Instructions {
 			bundleInstruction := &AccountChangesPerInstruction{}
 			for _, change := range instruction.AccountChanges {
