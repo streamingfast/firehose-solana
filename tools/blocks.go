@@ -2,10 +2,11 @@ package tools
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"io"
 	"io/ioutil"
 	"strconv"
+
+	"github.com/golang/protobuf/proto"
 
 	"github.com/dfuse-io/bstream"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
@@ -27,7 +28,7 @@ var blockCmd = &cobra.Command{
 }
 
 var blockDataCmd = &cobra.Command{
-	Use:   "blockdata {block_num}",
+	Use:   "block-data {block_num}",
 	Short: "Prints the data of a one block file",
 	Args:  cobra.ExactArgs(1),
 	RunE:  printBlockDataE,
@@ -46,10 +47,11 @@ func init() {
 	printCmd.AddCommand(blockCmd)
 	printCmd.AddCommand(mergedBlocksCmd)
 
+	printCmd.PersistentFlags().Uint64("transactions-for-block", 0, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
-	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v2", "block store")
-	blockDataCmd.PersistentFlags().String("datastore", "gs://dfuseio-global-blocks-us/sol-mainnet/v2-block-data", "block store")
+	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1", "block store")
+	blockDataCmd.PersistentFlags().String("data-store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1-block-data", "block store")
 	mergedBlocksCmd.Flags().Bool("viz", false, "Output .dot file")
 }
 
@@ -171,14 +173,12 @@ func printBlockDataE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
 	}
 
-	str := viper.GetString("datastore")
+	str := viper.GetString("data-store")
 
 	store, err := dstore.NewDBinStore(str)
 	if err != nil {
 		return fmt.Errorf("unable to create store at path %q: %w", store, err)
 	}
-
-
 
 	var files []string
 	filePrefix := fmt.Sprintf("%010d", blockNum)
@@ -200,7 +200,6 @@ func printBlockDataE(cmd *cobra.Command, args []string) error {
 		}
 		defer reader.Close()
 
-
 		bundle := &pbcodec.AccountChangesBundle{}
 
 		data, err := ioutil.ReadAll(reader)
@@ -215,16 +214,20 @@ func printBlockDataE(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
+		totalInst := 0
 		for i, transaction := range bundle.Transactions {
-			fmt.Printf("trx %d\n", i)
-			for j, instruction := range transaction.Instructions {
-				fmt.Printf("instruction %d\n", j)
-				for k, change := range instruction.Changes {
-					fmt.Printf("change %d\n", k)
-					fmt.Println(change.Pubkey)
-				}
-			}
+			fmt.Printf("* Trx [%d] : %d instructions\n", i, len(transaction.Instructions))
+			totalInst += len(transaction.Instructions)
+			//for j, instruction := range transaction.Instructions {
+			//	fmt.Printf("instruction %d\n", j)
+			//	for k, change := range instruction.Changes {
+			//		fmt.Printf("change %d\n", k)
+			//		fmt.Println(change.Pubkey)
+			//	}
+			//}
 		}
+
+		fmt.Println("total inst: ", totalInst)
 
 	}
 	return nil
@@ -271,10 +274,12 @@ func readBlock(reader bstream.BlockReader, outputDot bool) error {
 		)
 	}
 
-	if viper.GetBool("transactions") {
+	if viper.GetBool("transactions") || viper.GetUint64("transactions-for-block") == slot.Number {
 		fmt.Println("- Transactions: ")
-		for _, t := range slot.Transactions {
-			fmt.Printf("    * Trx %s: %d instructions\n", t.Id, len(t.Instructions))
+		totalInstr := 0
+		for i, t := range slot.Transactions {
+			fmt.Printf("    * Trx [%d] %s: %d instructions\n", i, t.Id, len(t.Instructions))
+			totalInstr += len(t.Instructions)
 			if viper.GetBool("instructions") {
 				for _, inst := range t.Instructions {
 					fmt.Printf("      * Inst [%d]: program_id %s\n", inst.Ordinal, inst.ProgramId)
@@ -282,6 +287,7 @@ func readBlock(reader bstream.BlockReader, outputDot bool) error {
 			}
 
 		}
+		fmt.Println("total instruction:", totalInstr)
 		fmt.Println()
 	}
 	return nil
