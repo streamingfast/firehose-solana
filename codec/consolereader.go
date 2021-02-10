@@ -244,9 +244,11 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	}
 
 	defer func() {
-		_ = file.Close()
+		if err := file.Close(); err != nil {
+			zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
+		}
 		if err := os.Remove(filePath); err != nil {
-			zlog.Warn("failed to delete file", zap.String("file_path", filePath))
+			zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
 		}
 	}()
 
