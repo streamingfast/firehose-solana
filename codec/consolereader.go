@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -244,9 +243,11 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	}
 
 	defer func() {
-		_ = file.Close()
+		if err := file.Close(); err != nil {
+			zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
+		}
 		if err := os.Remove(filePath); err != nil {
-			zlog.Warn("failed to delete file", zap.String("file_path", filePath))
+			zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
 		}
 	}()
 
@@ -278,7 +279,7 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 }
 
 const (
-	BlockWorkChunkSize   = 14
+	BlockWorkChunkSize   = 15
 	BlockEndChunkSize    = 5
 	BlockFailedChunkSize = 3
 	BlockRootChunkSize   = 2
@@ -289,12 +290,11 @@ const (
 type bank struct {
 	blockNum        uint64
 	parentSlotNum   uint64
-	trxCount        uint64
 	processTrxCount uint64
 	previousSlotID  string
+	transactionIDs  []string
 	slots           []*pbcodec.Slot
 	blk             *pbcodec.Block
-	sortedTrx       []*pbcodec.Transaction
 	ended           bool
 	batchAggregator [][]*pbcodec.Transaction
 }
@@ -305,7 +305,6 @@ func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID stri
 		parentSlotNum:   parentSlotNumber,
 		previousSlotID:  previousSlotID,
 		slots:           []*pbcodec.Slot{},
-		sortedTrx:       []*pbcodec.Transaction{},
 		batchAggregator: [][]*pbcodec.Transaction{},
 		blk: &pbcodec.Block{
 			Number:            blockNum,
@@ -317,29 +316,39 @@ func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID stri
 }
 
 // the goal is to sort the batches based on the first transaction id of each batch
-func (b *bank) sortTrx() {
-	type batchSort struct {
-		index int
-		trxID string
+func (b *bank) processBatchAggregation() error {
+	indexMap := map[string]int{}
+	for idx, trxID := range b.transactionIDs {
+		indexMap[trxID] = idx
 	}
-	batches := make([]*batchSort, len(b.batchAggregator))
-	// the batch num starts at 0 and is increment, thus
-	// it can be used as our array index
-	for i, transactions := range b.batchAggregator {
-		batches[i] = &batchSort{
-			index: i,
-			trxID: transactions[0].Id,
-		}
-	}
-	sort.Slice(batches, func(i, j int) bool {
-		return strings.Compare(batches[i].trxID, batches[j].trxID) < 0
-	})
 
-	for _, batch := range batches {
-		b.sortedTrx = append(b.sortedTrx, b.batchAggregator[batch.index]...)
+	if len(b.slots) == 0 {
+		return fmt.Errorf("cannot aggregate transactions when there are no slots in this block")
+	}
+
+	lastSlot := b.slots[len(b.slots)-1]
+	lastSlot.Transactions = make([]*pbcodec.Transaction, len(b.transactionIDs))
+	lastSlot.TransactionCount = uint32(len(b.transactionIDs))
+
+	var count int
+	for _, transactions := range b.batchAggregator {
+		for _, trx := range transactions {
+			trxIndex := indexMap[trx.Id]
+			trx.Index = uint64(trxIndex)
+			trx.SlotNum = lastSlot.Number
+			trx.SlotHash = lastSlot.Id
+			count++
+			lastSlot.Transactions[trxIndex] = trx
+		}
 	}
 
 	b.batchAggregator = [][]*pbcodec.Transaction{}
+
+	if count != len(b.transactionIDs) {
+		return fmt.Errorf("transaction ids received on BLOCK_WORK did not match the number of transactions collection from batch executions, counted %d execution, expected %d from ids", count, len(b.transactionIDs))
+	}
+
+	return nil
 }
 
 func (b *bank) registerSlot(slotNum uint64, slotID string) {
@@ -349,21 +358,13 @@ func (b *bank) registerSlot(slotNum uint64, slotID string) {
 
 func (b *bank) createSlot(slotNum uint64, slotID string) *pbcodec.Slot {
 	s := &pbcodec.Slot{
-		Id:               slotID,
-		Number:           slotNum,
-		PreviousId:       b.previousSlotID,
-		Version:          1,
-		TransactionCount: uint32(len(b.sortedTrx)),
+		Id:         slotID,
+		Number:     slotNum,
+		PreviousId: b.previousSlotID,
+		Version:    1,
 	}
 
-	for idx, trx := range b.sortedTrx {
-		trx.Index = uint64(idx)
-		trx.SlotNum = slotNum
-		trx.SlotHash = slotID
-		s.Transactions = append(s.Transactions, trx)
-	}
 	b.previousSlotID = slotID
-	b.sortedTrx = []*pbcodec.Transaction{}
 	return s
 }
 
@@ -386,7 +387,6 @@ func (ctx *parseCtx) readBatchesEnd() (err error) {
 		return fmt.Errorf("received batch end while no active bank in context")
 	}
 
-	ctx.activeBank.sortTrx()
 	return nil
 }
 
@@ -409,8 +409,8 @@ func (ctx *parseCtx) readInit(line string) (err error) {
 	return nil
 }
 
-// BLOCK_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 51936823 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0
-// BLOCK_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID BLOCK_HEIGHT NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT
+// BLOCK_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 51936823 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0 T;trxid1;trxid2
+// BLOCK_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID BLOCK_HEIGHT NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT T;TRANSACTION_IDS_VECTOR_SPLIT_BY_;
 func (ctx *parseCtx) readBlockWork(line string) (err error) {
 	zlog.Debug("reading block work", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
@@ -418,7 +418,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 		return fmt.Errorf("expected %d fields got %d", BlockWorkChunkSize, len(chunks))
 	}
 
-	var blockNum, parentSlotNumber, blockHeight, trxCount int
+	var blockNum, parentSlotNumber, blockHeight int
 	if blockNum, err = strconv.Atoi(chunks[2]); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
@@ -429,10 +429,6 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 
 	if blockHeight, err = strconv.Atoi(chunks[5]); err != nil {
 		return fmt.Errorf("parent slot num to int: %w", err)
-	}
-
-	if trxCount, err = strconv.Atoi(chunks[6]); err != nil {
-		return fmt.Errorf("transaction count: %w", err)
 	}
 
 	previousSlotID := chunks[4]
@@ -447,7 +443,13 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 		b = newBank(uint64(blockNum), uint64(parentSlotNumber), uint64(blockHeight), previousSlotID)
 		ctx.banks[uint64(blockNum)] = b
 	}
-	b.trxCount = b.trxCount + uint64(trxCount)
+
+	for _, trxID := range strings.Split(chunks[14], ";") {
+		if trxID == "" || trxID == "T" {
+			continue
+		}
+		b.transactionIDs = append(b.transactionIDs, trxID)
+	}
 
 	ctx.activeBank = b
 	return nil
@@ -512,6 +514,11 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
 	ctx.activeBank.ended = true
+
+	if err := ctx.activeBank.processBatchAggregation(); err != nil {
+		return fmt.Errorf("sorting: %w", err)
+	}
+
 	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	ctx.activeBank = nil
 

@@ -19,6 +19,7 @@ func (s *Slot) Num() uint64 {
 	return s.Number
 }
 
+// TODO: move to `codec/`...
 func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
 	bundle := &AccountChangesBundle{}
 
@@ -27,11 +28,11 @@ func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
 			TrxId: trx.Id,
 		}
 		for _, instruction := range trx.Instructions {
-			bundleInstruction := &AccountChangesPerInstruction{}
-			for _, change := range instruction.AccountChanges {
-				bundleInstruction.Changes = append(bundleInstruction.Changes, change)
-			}
-			bundleTransaction.Instructions = append(bundleTransaction.Instructions, bundleInstruction)
+			bundleTransaction.Instructions = append(
+				bundleTransaction.Instructions,
+				&AccountChangesPerInstruction{
+					Changes: instruction.AccountChanges,
+				})
 			if removeFromInstruction {
 				instruction.AccountChanges = nil
 			}

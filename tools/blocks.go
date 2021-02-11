@@ -279,13 +279,14 @@ func readBlock(reader bstream.BlockReader, outputDot bool) error {
 			virt = " (V)"
 		}
 		fmt.Printf(
-			"  S%s [label=\"%s..%s\\n#%d%s t=%d\"];\n  S%s -> S%s;\n",
+			"  S%s [label=\"%s..%s\\n#%d%s t=%d lib=%d\"];\n  S%s -> S%s;\n",
 			slot.Id[:8],
 			slot.Id[:8],
 			slot.Id[len(slot.Id)-8:],
 			slot.Number,
 			virt,
 			slot.TransactionCount,
+			slot.Block.RootNum,
 			slot.Id[:8],
 			slot.PreviousId[:8],
 		)
