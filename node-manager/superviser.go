@@ -1,4 +1,4 @@
-// Copyright 2020 dfuse Platform Inc.
+// Copyright 2021 dfuse Platform Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/ShinyTrinkets/overseer"
+	"github.com/dfuse-io/dstore"
 	nodeManager "github.com/dfuse-io/node-manager"
 	logplugin "github.com/dfuse-io/node-manager/log_plugin"
 	"github.com/dfuse-io/node-manager/metrics"
@@ -34,32 +35,45 @@ type Superviser struct {
 	*superviser.Superviser
 	name string
 
-	options *Options
-	client  *rpc.Client
-	logger  *zap.Logger
+	mergedBlocksStore dstore.Store
+
+	options          *Options
+	client           *rpc.Client
+	logger           *zap.Logger
+	localSnapshotDir string
+	uploadingJobs    map[string]interface{}
 }
 
 type Options struct {
-	BinaryPath          string
-	Arguments           []string
-	DataDirPath         string
-	RCPPort             string
-	LogToZap            bool
-	DebugDeepMind       bool
-	HeadBlockUpdateFunc nodeManager.HeadBlockUpdater
+	BinaryPath           string
+	Arguments            []string
+	MergedBlocksStoreURL string
+	DataDirPath          string
+	RCPPort              string
+	LogToZap             bool
+	DebugDeepMind        bool
+	HeadBlockUpdateFunc  nodeManager.HeadBlockUpdater
 }
 
-func NewSuperviser(appLogger *zap.Logger, nodelogger *zap.Logger, options *Options) (*Superviser, error) {
+func NewSuperviser(appLogger *zap.Logger, nodelogger *zap.Logger, localSnapshotDir string, options *Options) (*Superviser, error) {
 	// Ensure process manager line buffer is large enough (50 MiB) for our Deep Mind instrumentation outputting lot's of text.
 	overseer.DEFAULT_LINE_BUFFER_SIZE = 50 * 1024 * 1024
+
+	mergedBlocksStore, err := dstore.NewDBinStore(options.MergedBlocksStoreURL)
+	if err != nil {
+		return nil, fmt.Errorf("setting up merged blocks store: %w", err)
+	}
 
 	client := rpc.NewClient(fmt.Sprintf("http://127.0.0.1:%s", options.RCPPort))
 	s := &Superviser{
 		// The arguments field is actually `nil` because arguments are re-computed upon each start
-		Superviser: superviser.New(appLogger, options.BinaryPath, nil),
-		options:    options,
-		logger:     appLogger,
-		client:     client,
+		Superviser:        superviser.New(appLogger, options.BinaryPath, nil),
+		options:           options,
+		logger:            appLogger,
+		client:            client,
+		mergedBlocksStore: mergedBlocksStore,
+		localSnapshotDir:  localSnapshotDir,
+		uploadingJobs:     map[string]interface{}{},
 	}
 
 	s.RegisterLogPlugin(logplugin.NewKeepLastLinesLogPlugin(25, options.DebugDeepMind))

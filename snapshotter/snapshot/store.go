@@ -25,7 +25,7 @@ func listFiles(ctx context.Context, client *storage.Client, bucket string, prefi
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("Bucket(%q).Objects: %v", bucket, err)
+			return nil, fmt.Errorf("SourceBucket(%q).Objects: %v", bucket, err)
 		}
 		if fileHandler != nil {
 			err := fileHandler(ctx, client, bucket, attrs.Name)

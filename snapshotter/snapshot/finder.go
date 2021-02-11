@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/dfuse-io/shutter"
@@ -13,15 +14,21 @@ import (
 
 type Finder struct {
 	*shutter.Shutter
-	bucket string
-	prefix string
+	bucket            string
+	prefix            string
+	workdir           string
+	snapshotPrefix    string //"sol-mainnet/snapshots"
+	destinationBucket string
 }
 
-func NewFinder(bucket string, prefix string) *Finder {
+func NewFinder(bucket string, prefix string, destinationBucket string, snapshotPrefix string, workdir string) *Finder {
 	finder := &Finder{
-		Shutter: shutter.New(),
-		bucket:  bucket,
-		prefix:  prefix,
+		Shutter:           shutter.New(),
+		bucket:            bucket,
+		prefix:            prefix,
+		workdir:           workdir,
+		snapshotPrefix:    snapshotPrefix,
+		destinationBucket: destinationBucket,
 	}
 
 	return finder
@@ -76,13 +83,15 @@ func (f *Finder) launch() error {
 		snapshot := snapshots[len(snapshots)-1]
 		zlog.Info("will process snapshot", zap.String("snapshot", snapshot))
 
-		pcr := NewProcessor("dfuseio-global-blocks-us", "sol-mainnet/snapshots", "/Volumes/bb/dfuse/t")
+		pcr := NewProcessor(f.destinationBucket, f.snapshotPrefix, f.workdir)
 		err := pcr.processSnapshot(ctx, client, snapshot, f.bucket)
 		if err != nil {
 			f.Shutdown(err)
 		}
 	}
 
+	zlog.Info("WAITING FOR 200 HOURs")
+	time.Sleep(200 * time.Hour)
 	//should not reach that code
 	f.Shutdown(fmt.Errorf("unexpect shutdown"))
 	return nil

@@ -125,7 +125,7 @@ func (a *BlockDataArchiver) Start() {
 			lastUploadFailed = true
 		} else {
 			if lastUploadFailed {
-				a.logger.Warn("success uploading previously failed mindreader block files")
+				a.logger.Warn("success expectedUploading previously failed mindreader block files")
 				lastUploadFailed = false
 			}
 		}
@@ -163,7 +163,7 @@ func (s *BlockDataArchiver) uploadFiles() error {
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 			defer cancel()
 
-			s.logger.Debug("uploading file to storage", zap.String("local_file", file), zap.String("remove_base", toBaseName))
+			s.logger.Debug("expectedUploading file to storage", zap.String("local_file", file), zap.String("remove_base", toBaseName))
 
 			if err = s.Store.PushLocalFile(ctx, file, toBaseName); err != nil {
 				return fmt.Errorf("moving file %q to storage: %w", file, err)
