@@ -19,6 +19,7 @@ func (s *Slot) Num() uint64 {
 	return s.Number
 }
 
+// TODO: move to `codec/`...
 func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
 	bundle := &AccountChangesBundle{}
 
