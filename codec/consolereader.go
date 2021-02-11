@@ -21,7 +21,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -322,26 +321,26 @@ func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID stri
 // the goal is to sort the batches based on the first transaction id of each batch
 func (b *bank) sortTrx() error {
 	posMap := map[string]int{}
-	for idx, trxID := range bank.transactionIDs {
+	for idx, trxID := range b.transactionIDs {
 		posMap[trxID] = idx
 	}
 
-	lastSlot := bank.slots[len(bank.slots) - 1]
-	lastSlot.Transactions = make([]*pbcodec.Transaction, len(bank.transactionIDs))
+	lastSlot := b.slots[len(b.slots)-1]
+	lastSlot.Transactions = make([]*pbcodec.Transaction, len(b.transactionIDs))
 
 	var count int
-	for i, transactions := range b.batchAggregator {
+	for _, transactions := range b.batchAggregator {
 		for _, trx := range transactions {
 			count++
 			pos := posMap[trx.Id]
-			lastSlot.Transactions[thisPos] = trx
+			lastSlot.Transactions[pos] = trx
 		}
 	}
 
 	b.batchAggregator = [][]*pbcodec.Transaction{}
 
-	if count != len(bank.transactionIDs) {
-		return fmt.Errorf("transaction ids received on BLOCK_WORK did not match the number of transactions collection from batch executions, counted %d execution, expected %d from ids", count, len(bank.transactionIDs))
+	if count != len(b.transactionIDs) {
+		return fmt.Errorf("transaction ids received on BLOCK_WORK did not match the number of transactions collection from batch executions, counted %d execution, expected %d from ids", count, len(b.transactionIDs))
 	}
 
 	return nil
@@ -450,7 +449,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 		ctx.banks[uint64(blockNum)] = b
 	}
 
-	for trxID := range strings.Split(chunks[14], ";") {
+	for _, trxID := range strings.Split(chunks[14], ";") {
 		if trxID == "" || trxID == "T" {
 			continue
 		}
