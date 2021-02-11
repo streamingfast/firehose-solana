@@ -296,7 +296,6 @@ type bank struct {
 	transactionIDs  []string
 	slots           []*pbcodec.Slot
 	blk             *pbcodec.Block
-	sortedTrx       []*pbcodec.Transaction
 	ended           bool
 	batchAggregator [][]*pbcodec.Transaction
 }
@@ -307,7 +306,6 @@ func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID stri
 		parentSlotNum:   parentSlotNumber,
 		previousSlotID:  previousSlotID,
 		slots:           []*pbcodec.Slot{},
-		sortedTrx:       []*pbcodec.Transaction{},
 		batchAggregator: [][]*pbcodec.Transaction{},
 		blk: &pbcodec.Block{
 			Number:            blockNum,
@@ -319,21 +317,25 @@ func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID stri
 }
 
 // the goal is to sort the batches based on the first transaction id of each batch
-func (b *bank) sortTrx() error {
-	posMap := map[string]int{}
+func (b *bank) processBatchAggregation() error {
+	indexMap := map[string]int{}
 	for idx, trxID := range b.transactionIDs {
-		posMap[trxID] = idx
+		indexMap[trxID] = idx
 	}
 
 	lastSlot := b.slots[len(b.slots)-1]
 	lastSlot.Transactions = make([]*pbcodec.Transaction, len(b.transactionIDs))
+	lastSlot.TransactionCount = uint32(len(b.transactionIDs))
 
 	var count int
 	for _, transactions := range b.batchAggregator {
 		for _, trx := range transactions {
+			trxIndex := indexMap[trx.Id]
+			trx.Index = uint64(trxIndex)
+			trx.SlotNum = lastSlot.Number
+			trx.SlotHash = lastSlot.Id
 			count++
-			pos := posMap[trx.Id]
-			lastSlot.Transactions[pos] = trx
+			lastSlot.Transactions[trxIndex] = trx
 		}
 	}
 
@@ -353,23 +355,13 @@ func (b *bank) registerSlot(slotNum uint64, slotID string) {
 
 func (b *bank) createSlot(slotNum uint64, slotID string) *pbcodec.Slot {
 	s := &pbcodec.Slot{
-		Id:               slotID,
-		Number:           slotNum,
-		PreviousId:       b.previousSlotID,
-		Version:          1,
-		TransactionCount: uint32(len(b.sortedTrx)),
+		Id:         slotID,
+		Number:     slotNum,
+		PreviousId: b.previousSlotID,
+		Version:    1,
 	}
 
-	// TODO: this needs to be done elsewhere, in `sortTrx`?  we need our
-	// slot.Transactions to be marked with the `index` and with the slot num..
-	for idx, trx := range b.sortedTrx {
-		trx.Index = uint64(idx)
-		trx.SlotNum = slotNum
-		trx.SlotHash = slotID
-		s.Transactions = append(s.Transactions, trx)
-	}
 	b.previousSlotID = slotID
-	b.sortedTrx = []*pbcodec.Transaction{}
 	return s
 }
 
@@ -520,7 +512,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
 	ctx.activeBank.ended = true
 
-	if err := ctx.activeBank.sortTrx(); err != nil {
+	if err := ctx.activeBank.processBatchAggregation(); err != nil {
 		return fmt.Errorf("sorting: %w", err)
 	}
 

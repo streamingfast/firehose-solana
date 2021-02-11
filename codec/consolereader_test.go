@@ -69,8 +69,15 @@ func Test_readFromFile(t *testing.T) {
 	assert.Equal(t, 1, len(transaction.Instructions))
 }
 
-func Test_bank_sortTrx(t *testing.T) {
+func Test_processBatchAggregation(t *testing.T) {
 	b := &bank{
+		transactionIDs: []string{"11", "aa", "cc", "bb", "dd", "ee"},
+		slots: []*pbcodec.Slot{
+			{
+				Id:     "A",
+				Number: 1,
+			},
+		},
 		batchAggregator: [][]*pbcodec.Transaction{
 			{
 				{Id: "dd"},
@@ -90,15 +97,16 @@ func Test_bank_sortTrx(t *testing.T) {
 			},
 		},
 	}
-	b.sortTrx()
+	err := b.processBatchAggregation()
+	require.NoError(t, err)
 	assert.Equal(t, []*pbcodec.Transaction{
-		{Id: "11"},
-		{Id: "aa"},
-		{Id: "cc"},
-		{Id: "bb"},
-		{Id: "dd"},
-		{Id: "ee"},
-	}, b.sortedTrx)
+		{Id: "11", SlotNum: 1, SlotHash: "A", Index: 0},
+		{Id: "aa", SlotNum: 1, SlotHash: "A", Index: 1},
+		{Id: "cc", SlotNum: 1, SlotHash: "A", Index: 2},
+		{Id: "bb", SlotNum: 1, SlotHash: "A", Index: 3},
+		{Id: "dd", SlotNum: 1, SlotHash: "A", Index: 4},
+		{Id: "ee", SlotNum: 1, SlotHash: "A", Index: 5},
+	}, b.slots[0].Transactions)
 }
 
 func Test_readBlockWork(t *testing.T) {
@@ -123,7 +131,6 @@ func Test_readBlockWork(t *testing.T) {
 						trxCount:        932,
 						batchAggregator: [][]*pbcodec.Transaction{},
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						sortedTrx:       []*pbcodec.Transaction{},
 						slots:           []*pbcodec.Slot{},
 						blk: &pbcodec.Block{
 							Number:            55295941,
@@ -139,7 +146,6 @@ func Test_readBlockWork(t *testing.T) {
 					trxCount:        932,
 					batchAggregator: [][]*pbcodec.Transaction{},
 					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					sortedTrx:       []*pbcodec.Transaction{},
 					slots:           []*pbcodec.Slot{},
 					blk: &pbcodec.Block{
 						Number:            55295941,
@@ -163,7 +169,6 @@ func Test_readBlockWork(t *testing.T) {
 						parentSlotNum:   55295939,
 						trxCount:        932,
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						sortedTrx:       []*pbcodec.Transaction{},
 						batchAggregator: [][]*pbcodec.Transaction{},
 						slots:           []*pbcodec.Slot{},
 						blk: &pbcodec.Block{
@@ -179,7 +184,6 @@ func Test_readBlockWork(t *testing.T) {
 					parentSlotNum:   55295939,
 					trxCount:        932,
 					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					sortedTrx:       []*pbcodec.Transaction{},
 					batchAggregator: [][]*pbcodec.Transaction{},
 					slots:           []*pbcodec.Slot{},
 					blk: &pbcodec.Block{
@@ -324,7 +328,6 @@ func Test_readSlotBound(t *testing.T) {
 					parentSlotNum:  55295939,
 					trxCount:       932,
 					previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					sortedTrx:      []*pbcodec.Transaction{},
 					blk: &pbcodec.Block{
 						Number:            55295941,
 						Height:            51936825,
@@ -410,7 +413,6 @@ func Test_readBlockRoot(t *testing.T) {
 					parentSlotNum:  55295939,
 					trxCount:       932,
 					previousSlotID: "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
-					sortedTrx:      trxSlice([]string{"a", "b", "c", "d"}),
 					ended:          true,
 					blk: &pbcodec.Block{
 						Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
