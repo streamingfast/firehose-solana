@@ -165,8 +165,8 @@ func RegisterSolanaNodeApp(kind string) {
 				"--gossip-port", viper.GetString(app + "-gossip-port"),
 				"--dynamic-port-range", fmt.Sprintf("%s-%s", viper.GetString(app+"-p2p-port-start"), viper.GetString(app+"-p2p-port-end")),
 				"--log", "-",
-				"--no-snapshot-fetch",
-				"--no-genesis-fetch",
+				//"--no-snapshot-fetch",
+				//"--no-genesis-fetch",
 			})
 			if app == "miner" {
 				identityFile := filepath.Join(configDir, "identity.json")
