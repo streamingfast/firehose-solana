@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -43,15 +44,19 @@ var mergedBlocksCmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(printCmd)
-	printCmd.AddCommand(blockDataCmd)
+
 	printCmd.AddCommand(blockCmd)
 	printCmd.AddCommand(mergedBlocksCmd)
+	printCmd.AddCommand(blockDataCmd)
 
 	printCmd.PersistentFlags().Uint64("transactions-for-block", 0, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
 	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1", "block store")
 	blockDataCmd.PersistentFlags().String("data-store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1-block-data", "block store")
+
+	blockCmd.Flags().Bool("data", false, "output block data statistic")
+
 	mergedBlocksCmd.Flags().Bool("viz", false, "Output .dot file")
 }
 
@@ -120,6 +125,7 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 	}
 
 	str := viper.GetString("store")
+	fmt.Println(str)
 
 	store, err := dstore.NewDBinStore(str)
 	if err != nil {
@@ -237,10 +243,36 @@ func readBlock(reader bstream.BlockReader, outputDot bool) error {
 
 	payloadSize := len(block.PayloadBuffer)
 
-	// if block.Number == 63943243 {
-	// 	ioutil.WriteFile("/tmp/cochon.log", block.Payload(), 0644)
-	// }
 	slot := block.ToNative().(*pbcodec.Slot)
+
+	var accChangesBundle *pbcodec.AccountChangesBundle
+	if viper.GetBool("data") {
+		store, filename, err := dstore.NewStoreFromURL(slot.AccountChangesFileRef,
+			dstore.Compression("zstd"),
+		)
+		if err != nil {
+			return fmt.Errorf("unable to create block data store from url: %s: %w", filename, err)
+		}
+
+		reader, err := store.OpenObject(context.Background(), filename)
+		if err != nil {
+			return fmt.Errorf("unable to open block data: %s : %w", filename, err)
+		}
+		defer reader.Close()
+
+		data, err := ioutil.ReadAll(reader)
+		if err != nil {
+			return fmt.Errorf("unable to read all: %s : %w", filename, err)
+		}
+
+		accChangesBundle = &pbcodec.AccountChangesBundle{}
+		err = proto.Unmarshal(data, accChangesBundle)
+		if err != nil {
+			return fmt.Errorf("unable to proto unmarshal account changed: %s : %w", filename, err)
+		}
+
+	}
+
 	if outputDot {
 		var virt string
 		if slot.Number != slot.Block.Number {
@@ -259,26 +291,46 @@ func readBlock(reader bstream.BlockReader, outputDot bool) error {
 		)
 
 	} else {
-		fmt.Printf("Slot #%d (%s) (prev: %s...) (%d bytes) (blk: %d) (@: %s): %d transactions\n",
+		fmt.Printf("Slot #%d (%s) (prev: %s...) (blk: %d) (LIB: %d) (%d bytes) (@: %s): %d transactions\n",
 			slot.Num(),
 			slot.ID(),
+
 			slot.PreviousId[0:6],
-			payloadSize,
 			slot.Block.Number,
+			slot.Block.RootNum,
+			payloadSize,
 			slot.Block.Time(),
 			len(slot.Transactions),
 		)
 	}
 
 	if viper.GetBool("transactions") || viper.GetUint64("transactions-for-block") == slot.Number {
-		fmt.Println("- Transactions: ")
 		totalInstr := 0
-		for i, t := range slot.Transactions {
-			fmt.Printf("    * Trx [%d] %s: %d instructions\n", i, t.Id, len(t.Instructions))
+		fmt.Println("- Transactions: ")
+		for trxIdx, t := range slot.Transactions {
+			trxStr := fmt.Sprintf("    * Trx [%d] %s: %d instructions", trxIdx, t.Id, len(t.Instructions))
+			if accChangesBundle != nil {
+				if trxIdx < len(accChangesBundle.Transactions) {
+					trxStr = fmt.Sprintf("%s ✅ acc change", trxStr)
+				} else {
+					trxStr = fmt.Sprintf("%s ❌ invalid account change index mismatch (%d,%d)", trxStr, trxIdx, len(accChangesBundle.Transactions))
+				}
+			}
+			trxStr = fmt.Sprintf("%s ", trxStr)
+			fmt.Println(trxStr)
 			totalInstr += len(t.Instructions)
 			if viper.GetBool("instructions") {
-				for _, inst := range t.Instructions {
-					fmt.Printf("      * Inst [%d]: program_id %s\n", inst.Ordinal, inst.ProgramId)
+				for instrx, inst := range t.Instructions {
+					instStr := fmt.Sprintf("      * Inst [%d]: program_id %s", inst.Ordinal, inst.ProgramId)
+					if accChangesBundle != nil {
+						if instrx < len(accChangesBundle.Transactions[trxIdx].Instructions) {
+							instStr = fmt.Sprintf("%s ✅ account change", trxStr)
+						} else {
+							instStr = fmt.Sprintf("%s ❌ invalid account change index mismatch (%d,%d)", trxStr, instrx, len(accChangesBundle.Transactions[trxIdx].Instructions))
+						}
+					}
+					instStr = fmt.Sprintf("%s ", instStr)
+					fmt.Println(instStr)
 				}
 			}
 
