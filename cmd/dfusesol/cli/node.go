@@ -113,6 +113,7 @@ func RegisterSolanaNodeApp(kind string) {
 			//cmd.Flags().String("node-manager-auto-restore-source", "snapshot", "Enables restore from the latest source. Can be either, 'snapshot' or 'backup'. Do not use 'backup' on single block producing node")
 			cmd.Flags().String(app+"-restore-snapshot-name", "", "If non-empty, the node will be restored from that snapshot when it starts.")
 			cmd.Flags().Duration(app+"-auto-snapshot-period", 0, "If non-zero, the node manager will check on disk at this period interval to see if the underlying node has produced a snapshot. Use in conjunction with --snapshot-interval-slots in the --"+app+"-extra-arguments. Specify 1m, 2m...")
+			cmd.Flags().String(app+"-local-snapshot-folder", "", "where solana snapshots are stored by the node")
 			cmd.Flags().Int(app+"-number-of-snapshots-to-keep", 0, "if non-zero, after a successful snapshot, older snapshots will be deleted to only keep that number of recent snapshots")
 
 			if kind == "mindreader" {
@@ -338,17 +339,21 @@ func RegisterSolanaNodeApp(kind string) {
 
 			mergedBlocksStoreURL := mustReplaceDataDir(dfuseDataDir, viper.GetString("common-blocks-store-url"))
 
-			superviser, err := nodeManagerSol.NewSuperviser(appLogger, nodeLogger, &nodeManagerSol.Options{
-				BinaryPath: viper.GetString("global-validator-path"),
-				Arguments:  arguments,
-				// BinaryPath:          "/bin/bash",
-				// Arguments:           []string{"-c", `cat /tmp/mama.txt /home/abourget/build/solana/validator/dmlog.log; sleep 3600`},
-				DataDirPath:          mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"-data-dir")),
-				DebugDeepMind:        viper.GetBool(app + "-debug-deep-mind"),
-				LogToZap:             viper.GetBool(app + "-log-to-zap"),
-				HeadBlockUpdateFunc:  metricsAndReadinessManager.UpdateHeadBlock,
-				MergedBlocksStoreURL: mergedBlocksStoreURL,
-			})
+			superviser, err := nodeManagerSol.NewSuperviser(
+				appLogger,
+				nodeLogger,
+				viper.GetString(app+"-local-snapshot-folder"),
+				&nodeManagerSol.Options{
+					BinaryPath: viper.GetString("global-validator-path"),
+					Arguments:  arguments,
+					// BinaryPath:          "/bin/bash",
+					// Arguments:           []string{"-c", `cat /tmp/mama.txt /home/abourget/build/solana/validator/dmlog.log; sleep 3600`},
+					DataDirPath:          mustReplaceDataDir(dfuseDataDir, viper.GetString(app+"-data-dir")),
+					DebugDeepMind:        viper.GetBool(app + "-debug-deep-mind"),
+					LogToZap:             viper.GetBool(app + "-log-to-zap"),
+					HeadBlockUpdateFunc:  metricsAndReadinessManager.UpdateHeadBlock,
+					MergedBlocksStoreURL: mergedBlocksStoreURL,
+				})
 			if err != nil {
 				return nil, fmt.Errorf("unable to create chain superviser: %w", err)
 			}
@@ -364,8 +369,8 @@ func RegisterSolanaNodeApp(kind string) {
 					Profiler:                   p,
 
 					// Snapshots config
-					RestoreSnapshotName:     viper.GetString(app + "-restore-snapshot-name"),
-					AutoRestoreSource:       "snapshot", // "backup" mode not supported yet.
+					RestoreSnapshotName: viper.GetString(app + "-restore-snapshot-name"),
+					//AutoRestoreSource:       "snapshot", // "backup" mode not supported yet.
 					NumberOfSnapshotsToKeep: viper.GetInt(app + "-number-of-snapshots-to-keep"),
 					SnapshotStoreURL:        mustReplaceDataDir(dfuseDataDir, viper.GetString("common-snapshots-store-url")),
 				},
