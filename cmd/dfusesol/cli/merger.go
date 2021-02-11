@@ -20,7 +20,7 @@ func init() {
 			cmd.Flags().Duration("merger-time-between-store-lookups", 5*time.Second, "delay between source store polling (should be higher for remote storage)")
 			cmd.Flags().String("merger-state-file", "{dfuse-data-dir}/merger/merger.seen.gob", "Path to file containing last written block number, as well as a map of all 'seen blocks' in the 'max-fixable-fork' range")
 			cmd.Flags().Bool("merger-batch-mode", false, "Ignores the state file, starts and stop based on flags")
-			cmd.Flags().Uint64("merger-start-block-num", 0, "[BATCH] Set the block number where we should start processing")
+			cmd.Flags().Uint64("merger-start-block-num", 0, "[BATCH, LIVE] Set the block number where we should start processing. In LIVE mode, will override the seen file, and start explicitly from that block number onwards.")
 			cmd.Flags().Uint64("merger-stop-block-num", 0, "[BATCH] Set the block number where we should stop processing (and stop the process)")
 			cmd.Flags().String("merger-grpc-listen-addr", MergerServingAddr, "Address to listen for incoming gRPC requests")
 			cmd.Flags().Uint64("merger-minimal-block-num", 0, "Never process blocks lower than that number")
