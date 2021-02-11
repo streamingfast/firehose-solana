@@ -92,6 +92,15 @@ func decoderKeyerE(cmd *cobra.Command, args []string) (err error) {
 		fmt.Println("Trx idx:", trxIdx)
 		fmt.Println("Inst idx:", instIdx)
 		fmt.Println("Order Seq Num:", orderSeqNum)
+	case serumhistkeyer.PrefixFillByMarket:
+		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByMarket(key)
+		fmt.Println("Fill By Market Key:")
+		fmt.Println("Trader:", trader.String())
+		fmt.Println("Marker:", market.String())
+		fmt.Println("Slot Num:", slotNum)
+		fmt.Println("Trx idx:", trxIdx)
+		fmt.Println("Inst idx:", instIdx)
+		fmt.Println("Order Seq Num:", orderSeqNum)
 	case serumhistkeyer.PrefixTradingAccount:
 		traderAccount := serumhistkeyer.DecodeTradingAccount(key)
 		fmt.Println("Trading Account Key :")
