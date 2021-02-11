@@ -8,7 +8,7 @@ import (
 var zlog *zap.Logger
 
 var traceEnabled = logging.IsTraceEnabled("serumhist", "github.com/dfuse-io/dfuse-solana/serumhist")
-var logEveryXSlot = uint64(1)
+var logEveryXSlot = uint64(10)
 
 func init() {
 	logging.Register("github.com/dfuse-io/dfuse-solana/serumhist", &zlog)

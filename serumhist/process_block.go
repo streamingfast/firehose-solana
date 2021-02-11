@@ -24,16 +24,6 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 
 	serumSlot := forkObj.Obj.(*serumSlot)
 
-	if slot.Number%logEveryXSlot == 0 {
-		zlog.Info(fmt.Sprintf("processed %d slot", logEveryXSlot),
-			zap.Uint64("slot_number", slot.Number),
-			zap.String("slot_id", slot.Id),
-			zap.String("previous_id", slot.PreviousId),
-			zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
-			zap.Int("fill_count", len(serumSlot.fills)),
-		)
-	}
-
 	for _, ta := range serumSlot.tradingAccountCache {
 		err := i.cache.setTradingAccount(i.ctx, ta.tradingAccount, ta.trader)
 		if err != nil {
@@ -41,6 +31,7 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		}
 	}
 
+	i.slotMetrics.serumFillCount += len(serumSlot.fills)
 	for _, fill := range serumSlot.fills {
 		if err := i.processSerumFill(i.ctx, fill); err != nil {
 			return fmt.Errorf("unable to process serum fill: %w", err)
@@ -63,5 +54,21 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		return err
 	}
 
+	i.slotMetrics.slotCount++
+
+	if slot.Number%logEveryXSlot == 0 {
+		opts := i.slotMetrics.dump()
+		opts = append(opts, []zap.Field{
+			zap.Uint64("slot_number", slot.Number),
+			zap.String("slot_id", slot.Id),
+			zap.String("previous_id", slot.PreviousId),
+			zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
+			zap.Int("fill_count", len(serumSlot.fills)),
+		}...)
+
+		zlog.Info(fmt.Sprintf("processed %d slot", logEveryXSlot),
+			opts...,
+		)
+	}
 	return nil
 }

@@ -29,6 +29,7 @@ type Injector struct {
 	healthy           bool
 	cache             *tradingAccountCache
 	source            *firehose.Firehose
+	slotMetrics       slotMetrics
 }
 
 func NewInjector(
@@ -46,6 +47,9 @@ func NewInjector(
 		flushSlotInterval: flushSlotInterval,
 		kvdb:              kvdb,
 		cache:             newTradingAccountCache(kvdb),
+		slotMetrics: slotMetrics{
+			startTime: time.Now(),
+		},
 	}
 }
 
