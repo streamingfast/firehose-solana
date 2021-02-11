@@ -89,7 +89,7 @@ func EncodeFillByTraderMarketPrefix(trader, market solana.PublicKey) Prefix {
 // 03:[market]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[trader]:[rev_order_seq_num] => FillData(side)
 func EncodeFillByMarket(trader, market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeqNum uint64) Key {
 	key := make([]byte, 1+32+8+8+8+32+8)
-	key[0] = PrefixFillByTrader
+	key[0] = PrefixFillByMarket
 	copy(key[1:], market[:])
 	binary.BigEndian.PutUint64(key[33:], ^slotNum)
 	binary.BigEndian.PutUint64(key[41:], ^trxIdx)
@@ -100,8 +100,8 @@ func EncodeFillByMarket(trader, market solana.PublicKey, slotNum, trxIdx, instId
 }
 
 func DecodeFillByMarket(key Key) (trader solana.PublicKey, market solana.PublicKey, slotNum uint64, trxIdx uint64, instIdx uint64, orderSeqNum uint64) {
-	if key[0] != PrefixFillByTrader {
-		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByTrader))
+	if key[0] != PrefixFillByMarket {
+		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByMarket))
 	}
 	copy(market[:], key[1:])
 	slotNum = ^binary.BigEndian.Uint64(key[33:])

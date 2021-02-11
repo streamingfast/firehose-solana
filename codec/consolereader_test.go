@@ -126,12 +126,11 @@ func Test_readBlockWork(t *testing.T) {
 			expectCtx: &parseCtx{
 				banks: map[uint64]*bank{
 					55295941: {
-						blockNum:        55295941,
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						slots:           []*pbcodec.Slot{},
-						transactionIDs: []string{"aa", "bb"},
+						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							Height:            51936825,
@@ -141,12 +140,11 @@ func Test_readBlockWork(t *testing.T) {
 					},
 				},
 				activeBank: &bank{
-					blockNum:        55295941,
 					parentSlotNum:   55295939,
 					batchAggregator: [][]*pbcodec.Transaction{},
 					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 					slots:           []*pbcodec.Slot{},
-					transactionIDs: []string{"aa", "bb"},
+					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
 						Number:            55295941,
 						Height:            51936825,
@@ -165,12 +163,11 @@ func Test_readBlockWork(t *testing.T) {
 			expectCtx: &parseCtx{
 				banks: map[uint64]*bank{
 					55295941: {
-						blockNum:        55295941,
 						parentSlotNum:   55295939,
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						batchAggregator: [][]*pbcodec.Transaction{},
 						slots:           []*pbcodec.Slot{},
-						transactionIDs: []string{"aa", "bb"},
+						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							Height:            51936825,
@@ -180,12 +177,11 @@ func Test_readBlockWork(t *testing.T) {
 					},
 				},
 				activeBank: &bank{
-					blockNum:        55295941,
 					parentSlotNum:   55295939,
 					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 					batchAggregator: [][]*pbcodec.Transaction{},
 					slots:           []*pbcodec.Slot{},
-					transactionIDs: []string{"aa", "bb"},
+					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
 						Number:            55295941,
 						Height:            51936825,
@@ -200,11 +196,10 @@ func Test_readBlockWork(t *testing.T) {
 			ctx: &parseCtx{
 				banks: map[uint64]*bank{
 					55295941: {
-						blockNum:        55295941,
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						transactionIDs: []string{"aa"},
+						transactionIDs:  []string{"aa"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							Height:            51936825,
@@ -218,11 +213,10 @@ func Test_readBlockWork(t *testing.T) {
 			expectCtx: &parseCtx{
 				banks: map[uint64]*bank{
 					55295941: {
-						blockNum:        55295941,
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						transactionIDs: []string{"aa", "bb"},
+						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							Height:            51936825,
@@ -232,11 +226,10 @@ func Test_readBlockWork(t *testing.T) {
 					},
 				},
 				activeBank: &bank{
-					blockNum:        55295941,
 					parentSlotNum:   55295939,
 					batchAggregator: [][]*pbcodec.Transaction{},
 					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					transactionIDs: []string{"aa", "bb"},
+					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
 						Number:            55295941,
 						Height:            51936825,
@@ -251,11 +244,10 @@ func Test_readBlockWork(t *testing.T) {
 			ctx: &parseCtx{
 				banks: map[uint64]*bank{
 					55295941: {
-						blockNum:        55295941,
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						transactionIDs: []string{"aa"},
+						transactionIDs:  []string{"aa"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							Height:            51936825,
@@ -269,11 +261,10 @@ func Test_readBlockWork(t *testing.T) {
 			expectCtx: &parseCtx{
 				banks: map[uint64]*bank{
 					55295941: {
-						blockNum:        55295941,
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						transactionIDs: []string{"aa", "bb"},
+						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							Height:            51936825,
@@ -283,11 +274,10 @@ func Test_readBlockWork(t *testing.T) {
 					},
 				},
 				activeBank: &bank{
-					blockNum:        55295941,
 					parentSlotNum:   55295939,
 					batchAggregator: [][]*pbcodec.Transaction{},
 					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					transactionIDs: []string{"aa", "bb"},
+					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
 						Number:            55295941,
 						Height:            51936825,
@@ -324,8 +314,6 @@ func Test_readSlotBound(t *testing.T) {
 			name: "end slot",
 			ctx: &parseCtx{
 				activeBank: &bank{
-					blockNum:       55295941,
-					parentSlotNum:  55295939,
 					previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 					blk: &pbcodec.Block{
 						Number:            55295941,
@@ -371,8 +359,7 @@ func Test_readBlockEnd(t *testing.T) {
 			ctx: &parseCtx{
 				activeBank: &bank{
 					transactionIDs: []string{},
-					slots: []*pbcodec.Slot{{Id: "a"}},
-					blockNum: 55295941,
+					slots:          []*pbcodec.Slot{{Id: "a"}},
 					blk: &pbcodec.Block{
 						Number:            55295941,
 						Height:            51936825,
@@ -410,8 +397,6 @@ func Test_readBlockRoot(t *testing.T) {
 			name: "block root",
 			ctx: &parseCtx{
 				activeBank: &bank{
-					blockNum:       55295941,
-					parentSlotNum:  55295939,
 					previousSlotID: "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
 					ended:          true,
 					blk: &pbcodec.Block{
@@ -450,7 +435,6 @@ func Test_readBlockRoot(t *testing.T) {
 				},
 				banks: map[uint64]*bank{
 					55295941: {
-						blockNum:       55295941,
 						parentSlotNum:  55295939,
 						previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
 						ended:          true,

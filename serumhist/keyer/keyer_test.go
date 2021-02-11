@@ -1,7 +1,6 @@
 package keyer
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/dfuse-io/solana-go"
@@ -194,9 +193,6 @@ func TestDecodeTradingAccount(t *testing.T) {
 func TestEncodeDecodeFillByTrader(t *testing.T) {
 	k := EncodeFillByTrader(solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111"), solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111112"), 123, 456, 789, 101112)
 	trader, market, slotNum, trxIdx, instIdx, orderSeqNum := DecodeFillByTrader(k)
-
-	fmt.Println("key", k)
-
 	assert.Equal(t, solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111"), trader)
 	assert.Equal(t, solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111112"), market)
 	assert.Equal(t, uint64(123), slotNum)
@@ -222,7 +218,7 @@ func TestEncodeFillByMarket(t *testing.T) {
 
 	key := EncodeFillByMarket(traderkey, marketkey, 2, 5, 2, 3)
 	assert.Equal(t, Key([]byte{
-		0x01,
+		0x03,
 
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -246,7 +242,7 @@ func TestEncodeFillByMarket(t *testing.T) {
 
 func TestDecodeFillByMarket(t *testing.T) {
 	trader, market, slotNum, trxIndx, InstIdx, orderSeqNum := DecodeFillByMarket([]byte{
-		0x01,
+		0x03,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

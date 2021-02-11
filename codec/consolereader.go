@@ -288,7 +288,6 @@ const (
 )
 
 type bank struct {
-	blockNum        uint64
 	parentSlotNum   uint64
 	processTrxCount uint64
 	previousSlotID  string
@@ -301,7 +300,6 @@ type bank struct {
 
 func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID string) *bank {
 	return &bank{
-		blockNum:        blockNum,
 		parentSlotNum:   parentSlotNumber,
 		previousSlotID:  previousSlotID,
 		slots:           []*pbcodec.Slot{},
@@ -505,7 +503,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 		return fmt.Errorf("received slot end while no active bank in context")
 	}
 
-	if ctx.activeBank.blockNum != blockNum {
+	if ctx.activeBank.blk.Number != blockNum {
 		return fmt.Errorf("slot end's active bank does not match context's active bank")
 	}
 
@@ -548,7 +546,12 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 			continue
 		}
 
+		if rootBlock == bank.blk.Number {
+			return fmt.Errorf("invalid root for bank. Root block %d cannot equal bank block number %d", rootBlock, bank.blk.Number)
+		}
+
 		bank.blk.RootNum = rootBlock
+
 		for _, slot := range bank.slots {
 			slot.Block = bank.blk
 			for i, t := range slot.Transactions {
@@ -585,7 +588,7 @@ func (ctx *parseCtx) readBlockFailed(line string) (err error) {
 		return fmt.Errorf("slot failed start while no active bank in context")
 	}
 
-	if ctx.activeBank.blockNum != blockNum {
+	if ctx.activeBank.blk.Number != blockNum {
 		return fmt.Errorf("slot failed's active bank does not match context's active bank")
 	}
 

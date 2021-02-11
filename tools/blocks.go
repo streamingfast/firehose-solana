@@ -53,11 +53,12 @@ func init() {
 	printCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
 	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1", "block store")
-	blockDataCmd.PersistentFlags().String("data-store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1-block-data", "block store")
-
-	blockCmd.Flags().Bool("data", false, "output block data statistic")
 
 	mergedBlocksCmd.Flags().Bool("viz", false, "Output .dot file")
+	mergedBlocksCmd.Flags().Bool("data", false, "output block data statistic")
+
+	blockDataCmd.PersistentFlags().String("data-store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1-block-data", "block store")
+
 }
 
 func printMergeBlocksE(cmd *cobra.Command, args []string) error {
@@ -134,6 +135,7 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 
 	var files []string
 	filePrefix := fmt.Sprintf("%010d", blockNum)
+	fmt.Println(filePrefix)
 	err = store.Walk(ctx, filePrefix, "", func(filename string) (err error) {
 		files = append(files, filename)
 		return nil
@@ -244,7 +246,6 @@ func readBlock(reader bstream.BlockReader, outputDot bool) error {
 	payloadSize := len(block.PayloadBuffer)
 
 	slot := block.ToNative().(*pbcodec.Slot)
-
 	var accChangesBundle *pbcodec.AccountChangesBundle
 	if viper.GetBool("data") {
 		store, filename, err := dstore.NewStoreFromURL(slot.AccountChangesFileRef,
@@ -270,7 +271,6 @@ func readBlock(reader bstream.BlockReader, outputDot bool) error {
 		if err != nil {
 			return fmt.Errorf("unable to proto unmarshal account changed: %s : %w", filename, err)
 		}
-
 	}
 
 	if outputDot {
