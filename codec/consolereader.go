@@ -290,7 +290,6 @@ const (
 type bank struct {
 	blockNum        uint64
 	parentSlotNum   uint64
-	trxCount        uint64
 	processTrxCount uint64
 	previousSlotID  string
 	transactionIDs  []string
@@ -321,6 +320,10 @@ func (b *bank) processBatchAggregation() error {
 	indexMap := map[string]int{}
 	for idx, trxID := range b.transactionIDs {
 		indexMap[trxID] = idx
+	}
+
+	if len(b.slots) == 0 {
+		return fmt.Errorf("cannot aggregate transactions when there are no slots in this block")
 	}
 
 	lastSlot := b.slots[len(b.slots)-1]
