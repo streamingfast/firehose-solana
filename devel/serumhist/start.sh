@@ -8,11 +8,13 @@ main() {
   pushd "$ROOT" &> /dev/null
 
   clean=
+  force_injection=
 
   while getopts "hc" opt; do
     case $opt in
       h) usage && exit 0;;
       c) clean=true;;
+      i) force_injection=true;;
       \?) usage_error "Invalid option: -$OPTARG";;
     esac
   done
@@ -23,7 +25,13 @@ main() {
     rm -rf dfuse-data &> /dev/null || true
   fi
 
-  exec $dfusesol -c injector.yaml start "$@"
+  if [[ $force_injection == "true" ]]; then
+     echo "running serumhist injector"
+     KILL_AFTER=${KILL_AFTER:-15} $dfusesol -c injector.yaml start "$@"
+  fi
+
+  echo "running serumhist server"
+  exec $dfusesol -c server.yaml start "$@"
 }
 
 usage_error() {
@@ -37,12 +45,13 @@ usage_error() {
 }
 
 usage() {
-  echo "usage: start.sh [-c]"
+  echo "usage: start.sh [-c] [-i]"
   echo ""
   echo "Start $(basename $ROOT) environment starting dgraphql connect to Mainnet (Beta) network."
   echo ""
   echo "Options"
   echo "    -c             Clean actual data directory first"
+  echo "    -i             Starts injector"
   echo "Environment"
   echo "    INFO=<app>     Turn info logs for <app> (multiple separated by ','), accepts app name or regexp (.* for all)"
   echo "    DEBUG=<app>    Turn debug logs for <app> (multiple separated by ','), accepts app name or regexp (.* for all)"

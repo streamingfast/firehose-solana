@@ -1,0 +1,9 @@
+start:
+  args:
+    - serumhist
+  flags:
+    serumhist-dsn: "bigkv://dfuseio-global.dfuse-saas/sol-mainnet-serumhist-v1"
+    serumhist-enable-injector-mode: false
+    serumhist-enable-server-mode: true
+    serumhist-grpc-listen-addr: ":9000"
+    serumhist-http-listen-addr: ":8080"
