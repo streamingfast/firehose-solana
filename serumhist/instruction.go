@@ -27,6 +27,8 @@ func (i *Injector) processSerumFill(ctx context.Context, serumFill *serumFill) e
 		return nil
 	}
 
+	// we need to make sure we assign the trader before we proto encode, not all the keys contains the trader
+	serumFill.fill.Trader = trader.String()
 	cnt, err := proto.Marshal(serumFill.fill)
 	if err != nil {
 		return fmt.Errorf("unable to marshal to fill: %w", err)
@@ -43,16 +45,14 @@ func (i *Injector) processSerumFill(ctx context.Context, serumFill *serumFill) e
 
 	kvs := []*kvdb.KV{
 		{
-			Key:   keyer.EncodeFillByTrader(*trader, serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
+			Key:   keyer.EncodeFill(serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
 			Value: cnt,
 		},
 		{
-			Key:   keyer.EncodeFillByMarketTrader(*trader, serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
-			Value: cnt,
+			Key: keyer.EncodeFillByTrader(*trader, serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
 		},
 		{
-			Key:   keyer.EncodeFillByMarket(*trader, serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
-			Value: cnt,
+			Key: keyer.EncodeFillByTraderMarket(*trader, serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
 		},
 	}
 
