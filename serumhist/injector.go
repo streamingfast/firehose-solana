@@ -75,11 +75,8 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 	)
 
 	options := []firehose.Option{
-		firehose.WithPreproc(i.preprocessSlot),
 		firehose.WithLogger(zlog),
 		firehose.WithForkableSteps(forkable.StepNew | forkable.StepIrreversible),
-		firehose.WithConcurrentPreprocessor(i.preprocessorThreadCount),
-		firehose.WithConcurrentFileDownload(i.parallelDownloadThreadCount),
 	}
 
 	if i.blockstreamAddr != "" {
@@ -92,11 +89,23 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 				blockstream.WithParallelPreproc(i.preprocessSlot, i.preprocessorThreadCount),
 			)
 		})
-		options = append(options, firehose.WithLiveSource(liveStreamFactory))
+		options = append(options, firehose.WithLiveSource(liveStreamFactory, false))
 	}
 
+	fileSourceFactory := bstream.SourceFromNumFactory(func(startBlockNum uint64, h bstream.Handler) bstream.Source {
+		fs := bstream.NewFileSource(
+			i.blockStore,
+			startBlockNum,
+			i.parallelDownloadThreadCount,
+			i.preprocessSlot,
+			h,
+			bstream.FileSourceWithConcurrentPreprocess(i.preprocessorThreadCount),
+		)
+		return fs
+	})
+
 	fhose := firehose.New(
-		[]dstore.Store{i.blockStore},
+		fileSourceFactory,
 		int64(checkpoint.LastWrittenSlotNum),
 		i,
 		options...,
