@@ -11,20 +11,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type FullOrder struct {
-	Order *pbserumhist.Order
-	Fills []*pbserumhist.Fill
-
-}
-
 func (r *Reader) GetInitializeOrder(ctx context.Context, market solana.PublicKey, orderNum uint64) (*pbserumhist.OrderTransition, error) {
 	out := &pbserumhist.OrderTransition{
 		PreviousState: pbserumhist.OrderTransition_STATE_UNKNOWN,
-		//CurrentState:  0,
 		Transition:    pbserumhist.OrderTransition_TRANS_INIT,
 		Order:                &pbserumhist.Order{},
 		AddedFill:            nil,
-		//Cancellation:         nil,
 	}
 	orderKeyPrefix := keyer.EncodeOrderPrefix(market, orderNum)
 
@@ -50,6 +42,7 @@ func (r *Reader) GetInitializeOrder(ctx context.Context, market solana.PublicKey
 			fillKeys = append(fillKeys, keyer.EncodeFill(market, slotNum, trxIdx, instIdx, orderSeqNum))
 			out.CurrentState = pbserumhist.OrderTransition_STATE_PARTIAL
 		case keyer.OrderEventTypeCancel:
+			out.Cancellation = &pbserumhist.InstructionRef{}
 			err := proto.Unmarshal(itr.Item().Value, out.Cancellation)
 			if err != nil {
 				return nil, fmt.Errorf("failed to unmarshal order: %w", err)
@@ -64,6 +57,7 @@ func (r *Reader) GetInitializeOrder(ctx context.Context, market solana.PublicKey
 			// since the keys are sorted alphanemurically, we should only get
 			// OrderEventTypeClose after receiving all Fill
 			if len(fillKeys) == 0 {
+				out.Cancellation = &pbserumhist.InstructionRef{}
 				// since there no fill we can assume the order was canceled
 				err := proto.Unmarshal(itr.Item().Value, out.Cancellation)
 				if err != nil {

@@ -21,10 +21,10 @@ type serumSlot struct {
 	tradingAccountCache []*serumTradingAccount
 	newOrders           []interface{}
 
-	orderExecuted      []*serumOrderExecuted
-	orderCancellations []*serumOrderCancelled
-	orderClosed        []*serumOrderClosed
-	fills              []*serumFill
+	ordersExecuted  []*orderExecuted
+	ordersCancelled []*orderCancelled
+	ordersClosed    []*orderClosed
+	fills           []*fill
 }
 
 func newSerumSlot() *serumSlot {
@@ -39,12 +39,12 @@ type serumTradingAccount struct {
 	tradingAccount solana.PublicKey
 }
 
-type serumFill struct {
+type fill struct {
 	trader         solana.PublicKey
 	fill           *pbserumhist.Fill
 	slotNumber     uint64
-	trxIdx      uint32
-	instIdx     uint32
+	trxIdx         uint32
+	instIdx        uint32
 	tradingAccount solana.PublicKey
 	market         solana.PublicKey
 	orderSeqNum    uint64
@@ -59,7 +59,7 @@ type serumOrder struct {
 	instIdx     uint32
 }
 
-type serumOrderExecuted struct {
+type orderExecuted struct {
 	market      solana.PublicKey
 	orderSeqNum uint64
 	slotNumber  uint64
@@ -67,28 +67,30 @@ type serumOrderExecuted struct {
 	instIdx     uint32
 }
 
-type serumOrderClosed struct {
+type orderClosed struct {
 	market      solana.PublicKey
 	orderSeqNum uint64
 	slotNumber  uint64
 	trxIdx      uint32
 	instIdx     uint32
+	instRef     *pbserumhist.InstructionRef
 }
 
-type serumOrderCancelled struct {
+type orderCancelled struct {
 	market      solana.PublicKey
 	orderSeqNum uint64
 	slotNumber  uint64
 	trxIdx      uint32
 	instIdx     uint32
+	instRef     *pbserumhist.InstructionRef
 }
 
-func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx uint64, trxId, slotHash string, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
+func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32, trxId, slotHash string, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
 	if traceEnabled {
 		zlog.Debug(fmt.Sprintf("processing instruction %T", instruction.Impl),
 			zap.Uint64("slot_number", slotNumber),
-			zap.Uint64("transaction_index", trxIdx),
-			zap.Uint64("instruction_index", instIdx))
+			zap.Uint32("transaction_index", trxIdx),
+			zap.Uint32("instruction_index", instIdx))
 	}
 
 	switch v := instruction.Impl.(type) {
@@ -152,7 +154,7 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx
 	return nil
 }
 
-func (s *serumSlot) setSerumCancellations(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue) {
+func (s *serumSlot) setSerumCancellations(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint32, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
@@ -163,12 +165,17 @@ func (s *serumSlot) setSerumCancellations(slotNumber uint64, blkTime time.Time, 
 					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
 					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
 
-					s.orderCancellations = append(s.orderCancellations, &serumOrderCancelled{
+					s.ordersCancelled = append(s.ordersCancelled, &orderCancelled{
 						market:      market,
 						orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
 						slotNumber:  slotNumber,
 						trxIdx:      trxIdx,
 						instIdx:     instIdx,
+						instRef: &pbserumhist.InstructionRef{
+							SlotHash:  slotHash,
+							TrxHash:   trxId,
+							Timestamp: mustProtoTimestamp(blkTime),
+						},
 					})
 				}
 			}
@@ -176,7 +183,7 @@ func (s *serumSlot) setSerumCancellations(slotNumber uint64, blkTime time.Time, 
 	}))
 }
 
-func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
+func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint32, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
@@ -187,7 +194,7 @@ func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time
 					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
 					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
 
-					s.fills = append(s.fills, &serumFill{
+					s.fills = append(s.fills, &fill{
 						slotNumber:     slotNumber,
 						trxIdx:         trxIdx,
 						instIdx:        instIdx,
@@ -220,7 +227,7 @@ func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time
 					// whether or not it was actually executed or cancelled when we stitch the order events together
 					// if the new event OUT originates from a new order v2 instruction, we know that it is a ORDER EXECUTED event
 					if processOutAsOrderExecuted {
-						s.orderExecuted = append(s.orderExecuted, &serumOrderExecuted{
+						s.ordersExecuted = append(s.ordersExecuted, &orderExecuted{
 							market:      market,
 							orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
 							slotNumber:  slotNumber,
@@ -230,12 +237,17 @@ func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time
 						return
 					}
 
-					s.orderClosed = append(s.orderClosed, &serumOrderClosed{
+					s.ordersClosed = append(s.ordersClosed, &orderClosed{
 						market:      market,
 						orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
 						slotNumber:  slotNumber,
 						trxIdx:      trxIdx,
 						instIdx:     instIdx,
+						instRef: &pbserumhist.InstructionRef{
+							SlotHash:  slotHash,
+							TrxHash:   trxId,
+							Timestamp: mustProtoTimestamp(blkTime),
+						},
 					})
 					return
 				}

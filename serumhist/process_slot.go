@@ -102,7 +102,7 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			}
 
 			accChanges := trxAccChanges.Instructions[instIdx].Changes
-			err = serumSlot.processInstruction(slot.Number, transaction.Index, uint64(instIdx), transaction.Id, slot.Id, slot.Block.Time(), decodedInst, accChanges)
+			err = serumSlot.processInstruction(slot.Number, uint32(transaction.Index), uint32(instIdx), transaction.Id, slot.Id, slot.Block.Time(), decodedInst, accChanges)
 			if err != nil {
 				return nil, fmt.Errorf("processing instruction: %w", err)
 			}

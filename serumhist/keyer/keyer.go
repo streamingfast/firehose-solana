@@ -20,8 +20,8 @@ const (
 	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeFill>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => null
 	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeFill>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]  => null
 	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeExecuted>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (executed) => null
-	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeCancel>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (cancelled) => &pbseruhist.SerumTemporal{}
-	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeClose>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (close (used to support serum V1 request queue & matching orders) => &pbseruhist.SerumTemporal{}
+	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeCancel>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (cancelled) => &pbseruhist.InstructionRef{}
+	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeClose>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (close (used to support serum V1 request queue & matching orders) => &pbseruhist.InstructionRef{}
 	PrefixOrder            = byte(0x06)
 	OrderEventTypeNew      = byte(0x01)
 	OrderEventTypeFill     = byte(0x02)
@@ -140,6 +140,12 @@ func EncodeOrderFill(market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeq
 }
 func EncodeOrderCancel(market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeqNum uint64) Key {
 	return encodeOrder(OrderEventTypeCancel, market, slotNum, trxIdx, instIdx, orderSeqNum)
+}
+func EncodeOrderExecute(market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeqNum uint64) Key {
+	return encodeOrder(OrderEventTypeExecuted, market, slotNum, trxIdx, instIdx, orderSeqNum)
+}
+func EncodeOrderClose(market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeqNum uint64) Key {
+	return encodeOrder(OrderEventTypeClose, market, slotNum, trxIdx, instIdx, orderSeqNum)
 }
 
 // 06:[market]:[rev_order_seq_num]:<EVENT_BYTE>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]

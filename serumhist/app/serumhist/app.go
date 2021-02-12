@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
+
 	"github.com/dfuse-io/dstore"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
@@ -66,7 +68,7 @@ func (a *App) Run() error {
 	}
 
 	if a.Config.EnableServer {
-		server := grpc.New(a.Config.GRPCListenAddr, serumhist.NewManager(kvdb))
+		server := grpc.New(a.Config.GRPCListenAddr, reader.New(kvdb))
 		a.OnTerminating(server.Terminate)
 		server.OnTerminated(a.Shutdown)
 		go server.Serve()

@@ -3,6 +3,8 @@ package serumhist
 import (
 	"fmt"
 
+	kvdb "github.com/dfuse-io/kvdb/store"
+
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/bstream/forkable"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
@@ -31,24 +33,36 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		}
 	}
 
-	// process cancellation
-	for _, cancel := range serumSlot.orderCancellations {
-		if err := i.processSerumCancel(i.ctx, cancel); err != nil {
-			return fmt.Errorf("unable to process serum cancel: %w", err)
-		}
+	var kvs []*kvdb.KV
+	key, err := processSerumOrdersCancelled(serumSlot.ordersCancelled)
+	if err != nil {
+		return fmt.Errorf("unable to process serum orders cancelled: %w", err)
 	}
+	kvs = append(kvs, key...)
 
-	// process executed
-	for _, execute := range serumSlot.orderExecuted {
-		i.processSerumExecute(i.ctx, execute)
+	key, err = processSerumOrdersExecuted(serumSlot.ordersExecuted)
+	if err != nil {
+		return fmt.Errorf("unable to process serum orders executed: %w", err)
 	}
+	kvs = append(kvs, key...)
+
+	key, err = processSerumOrdersClosed(serumSlot.ordersClosed)
+	if err != nil {
+		return fmt.Errorf("unable to process serum orders executed: %w", err)
+	}
+	kvs = append(kvs, key...)
 
 	// process close
-
 	i.slotMetrics.serumFillCount += len(serumSlot.fills)
-	for _, fill := range serumSlot.fills {
-		if err := i.processSerumFill(i.ctx, fill); err != nil {
-			return fmt.Errorf("unable to process serum fill: %w", err)
+	key, err = i.processSerumFills(serumSlot.fills)
+	if err != nil {
+		return fmt.Errorf("unable to process serum order fills: %w", err)
+	}
+	kvs = append(kvs, key...)
+
+	for _, kv := range kvs {
+		if err := i.kvdb.Put(i.ctx, kv.Key, kv.Value); err != nil {
+			return fmt.Errorf("unable to write serumhist injector in kvdb: %w", err)
 		}
 	}
 
@@ -62,7 +76,7 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 
 	t := slot.Block.Time()
 
-	err := i.flushIfNeeded(slot.Number, t)
+	err = i.flushIfNeeded(slot.Number, t)
 	if err != nil {
 		zlog.Error("flushIfNeeded", zap.Error(err))
 		return err

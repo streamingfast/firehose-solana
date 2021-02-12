@@ -1,10 +1,7 @@
 package serumhist
 
 import (
-	"context"
 	"fmt"
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	kvdb "github.com/dfuse-io/kvdb/store"
@@ -12,131 +9,119 @@ import (
 	"go.uber.org/zap"
 )
 
-func (i *Injector) processSerumFill(ctx context.Context, serumFill *serumFill) error {
-	trader, err := i.cache.getTrader(ctx, serumFill.tradingAccount)
-	if err != nil {
-		return fmt.Errorf("unable to retrieve trader for trading key %q: %w", serumFill.tradingAccount.String(), err)
-	}
+func (i Injector) processSerumFills(serumFills []*fill) (out []*kvdb.KV, err error) {
+	for _, serumFill := range serumFills {
+		trader, err := i.cache.getTrader(i.ctx, serumFill.tradingAccount)
+		if err != nil {
+			return nil, fmt.Errorf("unable to retrieve trader for trading key %q: %w", serumFill.tradingAccount.String(), err)
+		}
 
-	if trader == nil {
-		zlog.Warn("unable to find trader for trading account, skipping fill",
-			zap.Stringer("trading_account", serumFill.tradingAccount),
-			zap.Uint64("slot_number", serumFill.slotNumber),
-			zap.Uint64("trx_id", serumFill.trxIdx),
-			zap.Uint64("inst_id", serumFill.instIdx),
+		if trader == nil {
+			zlog.Warn("unable to find trader for trading account, skipping fill",
+				zap.Stringer("trading_account", serumFill.tradingAccount),
+				zap.Uint64("slot_number", serumFill.slotNumber),
+				zap.Uint32("trx_id", serumFill.trxIdx),
+				zap.Uint32("inst_id", serumFill.instIdx),
+				zap.Stringer("market", serumFill.market),
+			)
+			return nil, nil
+		}
+
+		// we need to make sure we assign the trader before we proto encode, not all the keys contains the trader
+		serumFill.fill.Trader = trader.String()
+		cnt, err := proto.Marshal(serumFill.fill)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal to fill: %w", err)
+		}
+
+		zlog.Debug("serum new fill",
+			zap.Stringer("side", serumFill.fill.Side),
 			zap.Stringer("market", serumFill.market),
+			zap.Stringer("trader", trader),
+			zap.Stringer("trading_Account", serumFill.tradingAccount),
+			zap.Uint64("order_seq_num", serumFill.orderSeqNum),
+			zap.Uint64("slot_num", serumFill.slotNumber),
 		)
-		return nil
-	}
 
-	// we need to make sure we assign the trader before we proto encode, not all the keys contains the trader
-	serumFill.fill.Trader = trader.String()
-	cnt, err := proto.Marshal(serumFill.fill)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to fill: %w", err)
+		out = append(out, []*kvdb.KV{
+			{
+				Key:   keyer.EncodeFill(serumFill.market, serumFill.slotNumber, uint64(serumFill.trxIdx), uint64(serumFill.instIdx), serumFill.orderSeqNum),
+				Value: cnt,
+			},
+			{
+				Key: keyer.EncodeFillByTrader(*trader, serumFill.market, serumFill.slotNumber, uint64(serumFill.trxIdx), uint64(serumFill.instIdx), serumFill.orderSeqNum),
+			},
+			{
+				Key: keyer.EncodeFillByTraderMarket(*trader, serumFill.market, serumFill.slotNumber, uint64(serumFill.trxIdx), uint64(serumFill.instIdx), serumFill.orderSeqNum),
+			},
+		}...)
 	}
-
-	zlog.Debug("serum new fill",
-		zap.Stringer("side", serumFill.fill.Side),
-		zap.Stringer("market", serumFill.market),
-		zap.Stringer("trader", trader),
-		zap.Stringer("trading_Account", serumFill.tradingAccount),
-		zap.Uint64("order_seq_num", serumFill.orderSeqNum),
-		zap.Uint64("slot_num", serumFill.slotNumber),
-	)
-
-	kvs := []*kvdb.KV{
-		{
-			Key:   keyer.EncodeFill(serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
-			Value: cnt,
-		},
-		{
-			Key: keyer.EncodeFillByTrader(*trader, serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
-		},
-		{
-			Key: keyer.EncodeFillByTraderMarket(*trader, serumFill.market, serumFill.slotNumber, serumFill.trxIdx, serumFill.instIdx, serumFill.orderSeqNum),
-		},
-	}
-
-	for _, kv := range kvs {
-		if err := i.kvdb.Put(ctx, kv.Key, kv.Value); err != nil {
-			return fmt.Errorf("unable to write serumhist fill in kvdb: %w", err)
-		}
-	}
-	return nil
+	return
 }
 
-func (i *Injector) processSerumCancel(ctx context.Context, serumCancel *serumOrderCancelled) error {
-	zlog.Debug("serum new cancel",
-		zap.Stringer("market", serumCancel.market),
-		zap.Uint64("order_seq_num", serumCancel.orderSeqNum),
-		zap.Uint64("slot_num", serumCancel.slotNumber),
-		zap.Uint64("trx_idx", serumCancel.trxIdx),
-		zap.Uint64("inst_idx", serumCancel.instIdx),
-	)
+func processSerumOrdersCancelled(ordersCancel []*orderCancelled) (out []*kvdb.KV, err error) {
+	for _, cancel := range ordersCancel {
+		zlog.Debug("serum order cancelled",
+			zap.Stringer("market", cancel.market),
+			zap.Uint64("order_seq_num", cancel.orderSeqNum),
+			zap.Uint64("slot_num", cancel.slotNumber),
+			zap.Uint32("trx_idx", cancel.trxIdx),
+			zap.Uint32("inst_idx", cancel.instIdx),
+		)
 
-	tmporal := &pbserumhist.SerumTemporal{
-		SlotNum:              serumCancel.slotNumber,
-		TrxHash:              "",
-		TrxIdx:               serumCancel.trxIdx,
-		InstIdx:              serumCancel.instIdx,
-		SlotHash:             "",
-		Timestamp:            timestamppb.Now(),
-	}
+		val, err := proto.Marshal(cancel.instRef)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal to fill: %w", err)
+		}
 
-	val, err := proto.Marshal(tmporal)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to fill: %w", err)
-	}
-
-	kvs := []*kvdb.KV{
-		{
-			Key:   keyer.EncodeOrderCancel(serumCancel.market, serumCancel.slotNumber, serumCancel.trxIdx, serumCancel.instIdx, serumCancel.orderSeqNum),
+		out = append(out, &kvdb.KV{
+			Key:   keyer.EncodeOrderCancel(cancel.market, cancel.slotNumber, uint64(cancel.trxIdx), uint64(cancel.instIdx), cancel.orderSeqNum),
 			Value: val,
-		},
+		})
 	}
 
-	for _, kv := range kvs {
-		if err := i.kvdb.Put(ctx, kv.Key, kv.Value); err != nil {
-			return fmt.Errorf("unable to write serumhist fill in kvdb: %w", err)
-		}
-	}
-	return nil
+	return
 }
 
-func (i *Injector) processSerumExecute(ctx context.Context, serumExecute *serumOrderExecuted) error {
-	zlog.Debug("serum new execute",
-		zap.Stringer("market", serumExecute.market),
-		zap.Uint64("order_seq_num", serumExecute.orderSeqNum),
-		zap.Uint64("slot_num", serumExecute.slotNumber),
-		zap.Uint64("trx_idx", serumExecute.trxIdx),
-		zap.Uint64("inst_idx", serumExecute.instIdx),
-	)
+func processSerumOrdersClosed(ordersClosed []*orderClosed) (out []*kvdb.KV, err error) {
+	for _, close := range ordersClosed {
+		zlog.Debug("serum order closed",
+			zap.Stringer("market", close.market),
+			zap.Uint64("order_seq_num", close.orderSeqNum),
+			zap.Uint64("slot_num", close.slotNumber),
+			zap.Uint32("trx_idx", close.trxIdx),
+			zap.Uint32("inst_idx", close.instIdx),
+		)
 
-	tmporal := &pbserumhist.SerumTemporal{
-		SlotNum:   serumExecute.slotNumber,
-		TrxHash:   "",
-		TrxIdx:    uint32(serumExecute.trxIdx),
-		InstIdx:   uint32(serumExecute.instIdx),
-		SlotHash:  "",
-		Timestamp: timestamppb.Now(),
-	}
-
-	val, err := proto.Marshal(tmporal)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to fill: %w", err)
-	}
-
-	kvs := []*kvdb.KV{
-		{
-			Key:   keyer.EncodeOrder(serumExecute.market, serumExecute.slotNumber, serumExecute.trxIdx, serumExecute.instIdx, serumExecute.orderSeqNum),
-		},
-	}
-
-	for _, kv := range kvs {
-		if err := i.kvdb.Put(ctx, kv.Key, kv.Value); err != nil {
-			return fmt.Errorf("unable to write serumhist fill in kvdb: %w", err)
+		val, err := proto.Marshal(close.instRef)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal to fill: %w", err)
 		}
+
+		out = append(out, &kvdb.KV{
+			Key:   keyer.EncodeOrderClose(close.market, close.slotNumber, uint64(close.trxIdx), uint64(close.instIdx), close.orderSeqNum),
+			Value: val,
+		})
 	}
-	return nil
+
+	return
+
+}
+
+func processSerumOrdersExecuted(ordersExecuted []*orderExecuted) (out []*kvdb.KV, err error) {
+	for _, executed := range ordersExecuted {
+		zlog.Debug("serum order executed",
+			zap.Stringer("market", executed.market),
+			zap.Uint64("order_seq_num", executed.orderSeqNum),
+			zap.Uint64("slot_num", executed.slotNumber),
+			zap.Uint32("trx_idx", executed.trxIdx),
+			zap.Uint32("inst_idx", executed.instIdx),
+		)
+
+		out = append(out, &kvdb.KV{
+			Key: keyer.EncodeOrderExecute(executed.market, executed.slotNumber, uint64(executed.trxIdx), uint64(executed.instIdx), executed.orderSeqNum),
+		})
+	}
+
+	return
 }

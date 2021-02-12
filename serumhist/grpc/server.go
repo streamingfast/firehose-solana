@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist"
+	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
 
 	pbaccounthist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dgrpc"
@@ -20,14 +20,14 @@ type Server struct {
 
 	grpcAddr string
 	server   *grpc.Server
-	manager  *serumhist.Manager
+	reader   *reader.Reader
 }
 
-func New(grpcAddr string, manager *serumhist.Manager) *Server {
+func New(grpcAddr string, manager *reader.Reader) *Server {
 	return &Server{
 		Shutter:  shutter.New(),
 		grpcAddr: grpcAddr,
-		manager:  manager,
+		reader:   manager,
 		server:   dgrpc.NewServer(dgrpc.WithLogger(zlog)),
 	}
 }
