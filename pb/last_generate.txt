@@ -1,3 +1,3 @@
-generate.sh - Fri 12 Feb 2021 08:52:45 AM EST - colin
+generate.sh - Fri Feb 12 11:14:07 EST 2021 - julien
 dfuse-io/proto revision: 4bca1300d6e75a04724925ef2c9341dfe50c5263
-dfuse-io/proto-solana revision: 4699600a73b88620189ed4ef38600aebda40f90a
+dfuse-io/proto-solana revision: 234657782e8f5bc7aac4ad902cafd0caf7370fef

@@ -1,7 +1,7 @@
 
 type SerumOrder {
   """The order number unique identifier"""
-  Num: Uint64!
+  num: Uint64!
 
   """The slot number in which the SerumOrder occurred."""
   slotNum: Uint64!

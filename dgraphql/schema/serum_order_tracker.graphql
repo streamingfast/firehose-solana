@@ -6,9 +6,6 @@ enum ORDER_STATE {
     """ Indicates when the order has been Accepted by the exchange"""
     APPROVED
 
-    """ Indicates when a cancellation has been sent but the order has not been cancelled with the exchange. This is a direct result of a cancelled order instruction"""
-    CANCEL_PENDING
-
     """ An order is in this status when it has been completely cancelled and the order is no longer open"""
     CANCELLED
 
@@ -19,10 +16,9 @@ enum ORDER_STATE {
     EXECUTED
 }
 
-
 type SerumOrderState {
     """The order number unique identifier"""
-    Num: Uint64!
+    num: Uint64!
 
     """previousState is the previous of the SerumOrder."""
     previousState: ORDER_STATE!
@@ -36,52 +32,36 @@ type SerumOrderState {
     transition: OrderTransition
 }
 
-union OrderTransition = OrderTransitionInit | OrderTransitionAccepted | OrderTransitionPendindCancellation | OrderTransitionCancelled | OrderTransitionFilled | OrderTransitionExecuted
+union OrderTransition = OrderTransitionInit | OrderTransitionAccepted | OrderTransitionCancelled | OrderTransitionPartiallyFilled | OrderTransitionExecuted
 
 type OrderTransitionInit {
     """`order` is the SerumOrder details."""
-    order: SerumOrder!
-
+    order: SerumOrder
 }
+
 type OrderTransitionAccepted {
-    slotNum: Uint64!
-    transactionHash: String!
-    transactionIndex: Uint64!
-    instructionIndex: Uint64!
-    timestamp: Time!
-}
-
-type OrderTransitionPendindCancellation {
-    slotNum: Uint64!
-    transactionHash: String!
-    transactionIndex: Uint64!
-    instructionIndex: Uint64!
-    timestamp: Time!
+    """`order` is the SerumOrder details."""
+    order: SerumOrder!
 }
 
 type OrderTransitionCancelled {
-    slotNum: Uint64!
-    transactionHash: String!
-    transactionIndex: Uint64!
-    instructionIndex: Uint64!
-    timestamp: Time!
+    cancelledSlotNum: Uint64!
+    cancelledTransactionHash: String!
+    cancelledTransactionIndex: Uint64!
+    cancelledInstructionIndex: Uint64!
+    cancelledAt: Time!
 }
 
-type OrderTransitionFilled {
-    fill: SerumFill!
+type OrderTransitionPartiallyFilled {
+    """New fill that completed the order"""
+    addedFill: SerumFill!
 }
 
 type OrderTransitionExecuted {
-    slotNum: Uint64!
-    transactionHash: String!
-    transactionIndex: Uint64!
-    instructionIndex: Uint64!
-    timestamp: Time!
 }
 
 enum ORDER_TRANSITION {
     ACCEPTED
-    PENDING_CANCELLATION
     CANCELLED
     FILLED
     EXECUTED
