@@ -8,8 +8,8 @@ import (
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/solana-go"
+	"github.com/golang/protobuf/proto"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 )
 
 type Reader struct {
@@ -38,7 +38,7 @@ func (m *Reader) GetFillsByTraderAndMarket(ctx context.Context, trader, market s
 		zap.Stringer("trader", trader),
 		zap.Stringer("market", market),
 	)
-	return m.getFillsForPrefix(ctx, prefix, keyer.DecodeFillByMarketTrader, limit)
+	return m.getFillsForPrefix(ctx, prefix, keyer.DecodeFillByTraderMarket, limit)
 }
 
 func (m *Reader) GetFillsByMarket(ctx context.Context, market solana.PublicKey, limit int) (fills []*pbserumhist.Fill, hasMore bool, err error) {
@@ -54,8 +54,9 @@ func (m *Reader) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, dec
 	zlog.Debug("get fills for prefix",
 		zap.Stringer("prefix", prefix),
 	)
+
 	orderIterator := m.store.Prefix(ctx, prefix, limit+1, store.KeyOnly())
-	fillKeys := [][]byte{}
+	var fillKeys [][]byte
 	for orderIterator.Next() {
 		if len(fillKeys) < limit {
 			_, market, slotNum, trxIdx, instIdx, orderSeqNum := decoder(orderIterator.Item().Key)
@@ -65,10 +66,10 @@ func (m *Reader) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, dec
 		}
 	}
 
-	getIter := m.store.BatchGet(ctx, fillKeys)
-	for getIter.Next() {
+	fillsIter := m.store.BatchGet(ctx, fillKeys)
+	for fillsIter.Next() {
 		f := &pbserumhist.Fill{}
-		err := proto.Unmarshal(orderIterator.Item().Value, f)
+		err := proto.Unmarshal(fillsIter.Item().Value, f)
 		if err != nil {
 			return nil, false, fmt.Errorf("failed to unmarshal order: %w", err)
 		}
@@ -81,6 +82,7 @@ func (m *Reader) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, dec
 		f.OrderSeqNum = orderSeqNum
 		out = append(out, f)
 	}
+
 	zlog.Debug("found fills ", zap.Int("count", len(out)), zap.Bool("has_more", hasMore))
 	return
 }
@@ -89,6 +91,7 @@ func (m *Reader) getFillsForMarket(ctx context.Context, prefix keyer.Prefix, lim
 	zlog.Debug("get fills for prefix",
 		zap.Stringer("prefix", prefix),
 	)
+
 	orderIterator := m.store.Prefix(ctx, prefix, limit+1, store.KeyOnly())
 	for orderIterator.Next() {
 		if len(out) < limit {

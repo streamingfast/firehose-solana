@@ -47,6 +47,7 @@ func EncodeFill(market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeqNum u
 	binary.BigEndian.PutUint64(key[57:], ^orderSeqNum)
 	return key
 }
+
 func DecodeFill(key Key) (market solana.PublicKey, slotNum uint64, trxIdx uint64, instIdx uint64, orderSeqNum uint64) {
 	if key[0] != PrefixFill {
 		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFill))
@@ -91,6 +92,13 @@ func EncodeFillByTraderPrefix(trader solana.PublicKey) Prefix {
 	return key
 }
 
+func EncodeFillByMarketPrefix(market solana.PublicKey) Prefix {
+	key := make([]byte, 1+32)
+	key[0] = PrefixFillByTrader
+	copy(key[1:], market[:])
+	return key
+}
+
 // 03:[trader]:[market]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[rev_order_seq_num] 	=> null
 func EncodeFillByTraderMarket(trader, market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeqNum uint64) Key {
 	key := make([]byte, 1+32+32+8+8+8+8)
@@ -104,15 +112,16 @@ func EncodeFillByTraderMarket(trader, market solana.PublicKey, slotNum, trxIdx, 
 	return key
 }
 func DecodeFillByTraderMarket(key Key) (trader solana.PublicKey, market solana.PublicKey, slotNum uint64, trxIdx uint64, instIdx uint64, orderSeqNum uint64) {
-	if key[0] != PrefixFillByTraderMarket {
-		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByTraderMarket))
+	if key[0] != PrefixFillByTrader {
+		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByTrader))
 	}
 	copy(trader[:], key[1:])
-	copy(market[:], key[33:])
-	slotNum = ^binary.BigEndian.Uint64(key[65:])
-	trxIdx = ^binary.BigEndian.Uint64(key[73:])
-	instIdx = ^binary.BigEndian.Uint64(key[81:])
+	slotNum = ^binary.BigEndian.Uint64(key[33:])
+	trxIdx = ^binary.BigEndian.Uint64(key[41:])
+	instIdx = ^binary.BigEndian.Uint64(key[49:])
+	copy(market[:], key[57:])
 	orderSeqNum = ^binary.BigEndian.Uint64(key[89:])
+
 	return
 }
 func EncodeFillByTraderMarketPrefix(trader, market solana.PublicKey) Prefix {

@@ -23,6 +23,7 @@ type serumSlot struct {
 
 	orderExecuted      []*serumOrderExecuted
 	orderCancellations []*serumOrderCancelled
+	orderClosed        []*serumOrderClosed
 	fills              []*serumFill
 }
 
@@ -66,6 +67,14 @@ type serumOrderExecuted struct {
 	instIdx     uint64
 }
 
+type serumOrderClosed struct {
+	market      solana.PublicKey
+	orderSeqNum uint64
+	slotNumber  uint64
+	trxIdx      uint64
+	instIdx     uint64
+}
+
 type serumOrderCancelled struct {
 	market      solana.PublicKey
 	orderSeqNum uint64
@@ -99,16 +108,22 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx
 	//case *serum.InstructionCancelOrder:
 
 	case *serum.InstructionCancelOrderByClientIdV2:
-		market := v.Accounts.Market.PublicKey
-		if err := s.extractCancellationsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, accChanges); err != nil{
-			return fmt.Errorf("generating instruction cancel orders by client v2: %w", err)
+		old, new, err := decodeEventQueue(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionCancelOrderByClientIdV2: unable to decode event queue: %w", err)
 		}
 
-	case *serum.InstructionCancelOrderV2:
 		market := v.Accounts.Market.PublicKey
-		if err := s.extractCancellationsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, accChanges); err != nil{
-			return fmt.Errorf("generating instruction cancel orders v2: %w", err)
+		s.setSerumCancellations(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new)
+
+	case *serum.InstructionCancelOrderV2:
+		old, new, err := decodeEventQueue(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionCancelOrderV2: unable to decode event queue: %w", err)
 		}
+
+		market := v.Accounts.Market.PublicKey
+		s.setSerumCancellations(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new)
 
 	case *serum.InstructionNewOrderV3:
 		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
@@ -116,49 +131,28 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx
 			tradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
 
-		market := v.Accounts.Market.PublicKey
-		if err := s.extractFillsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, accChanges); err != nil {
-			return fmt.Errorf("generating serum fills from new order v3: %w", err)
+		old, new, err := decodeEventQueue(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionNewOrderV3: unable to decode event queue: %w", err)
 		}
+
+		market := v.Accounts.Market.PublicKey
+		s.setSerumFillAndOutEvent(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new, false)
 
 	case *serum.InstructionMatchOrder:
-		market := v.Accounts.Market.PublicKey
-		if err := s.extractFillsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, accChanges); err != nil {
-			return fmt.Errorf("generating serum fills from matching order: %w", err)
+		old, new, err := decodeEventQueue(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionMatchOrder: unable to decode event queue: %w", err)
 		}
+
+		market := v.Accounts.Market.PublicKey
+		s.setSerumFillAndOutEvent(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new, true)
 	}
 
 	return nil
 }
 
-func (s serumSlot) extractCancellationsFromInstruction(
-	slotNumber uint64,
-	blkTime time.Time,
-	trxIdx uint64,
-	instIdx uint64,
-	trxId string,
-	slotHash string,
-	market solana.PublicKey,
-	accountChanges []*pbcodec.AccountChange,
-) (err error) {
-	eventQueueAccountChange, err := findAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
-		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
-	})
-
-	if eventQueueAccountChange == nil {
-		return nil
-	}
-
-	old, new, err := decodeEventQueue(eventQueueAccountChange)
-	if err != nil {
-		return fmt.Errorf("unable to decode event queue change: %w", err)
-	}
-
-	s.getCancellationKeyValues(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new)
-	return nil
-}
-
-func (s *serumSlot) getCancellationKeyValues(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue) {
+func (s *serumSlot) setSerumCancellations(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
@@ -170,7 +164,7 @@ func (s *serumSlot) getCancellationKeyValues(slotNumber uint64, blkTime time.Tim
 					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
 
 					s.orderCancellations = append(s.orderCancellations, &serumOrderCancelled{
-						market:      solana.PublicKey{},
+						market:      market,
 						orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
 						slotNumber:  slotNumber,
 						trxIdx:      trxIdx,
@@ -182,34 +176,7 @@ func (s *serumSlot) getCancellationKeyValues(slotNumber uint64, blkTime time.Tim
 	}))
 }
 
-func (s *serumSlot) extractFillsFromInstruction(
-	slotNumber uint64,
-	blkTime time.Time,
-	trxIdx uint64,
-	instIdx uint64,
-	trxId string,
-	slotHash string,
-	market solana.PublicKey,
-	accountChanges []*pbcodec.AccountChange,
-) (err error) {
-	eventQueueAccountChange, err := findAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
-		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
-	})
-
-	if eventQueueAccountChange == nil {
-		return nil
-	}
-
-	old, new, err := decodeEventQueue(eventQueueAccountChange)
-	if err != nil {
-		return fmt.Errorf("unable to decode event queue change: %w", err)
-	}
-
-	s.getFillKeyValues(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new)
-	return nil
-}
-
-func (s *serumSlot) getFillKeyValues(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue) {
+func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
@@ -241,21 +208,60 @@ func (s *serumSlot) getFillKeyValues(slotNumber uint64, blkTime time.Time, trxId
 						},
 					})
 				} else if e.Flag.IsOut() {
-					number := make([]byte, 16)
-					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
-					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
+					// if the new event OUT originates from a matching order instruction, we are unable to determine whether or not
+					// it is due to an order being executed or cancelled. thus, we store it as an ORDER CLOSED event and we will determine
+					// whether or not it was actually executed or cancelled when we stitch the order events together
+					// if the new event OUT originates from a new order v2 instruction, we know that it is a ORDER EXECUTED event
+					if processOutAsOrderExecuted {
+						number := make([]byte, 16)
+						binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
+						binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
 
-					s.orderExecuted = append(s.orderExecuted, &serumOrderExecuted{
-						market:      solana.PublicKey{},
-						orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
-						slotNumber:  slotNumber,
-						trxIdx:      trxIdx,
-						instIdx:     instIdx,
-					})
+						s.orderExecuted = append(s.orderExecuted, &serumOrderExecuted{
+							market:      market,
+							orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
+							slotNumber:  slotNumber,
+							trxIdx:      trxIdx,
+							instIdx:     instIdx,
+						})
+					} else {
+						number := make([]byte, 16)
+						binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
+						binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
+
+						s.orderClosed = append(s.orderClosed, &serumOrderClosed{
+							market:      market,
+							orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
+							slotNumber:  slotNumber,
+							trxIdx:      trxIdx,
+							instIdx:     instIdx,
+						})
+					}
+
 				}
 			}
 		}
 	}))
+}
+
+func decodeEventQueue(accountChanges []*pbcodec.AccountChange) (old, new *serum.EventQueue, err error) {
+	eventQueueAccountChange, err := findAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
+		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
+	})
+
+	if eventQueueAccountChange == nil {
+		return nil, nil, nil
+	}
+
+	if err := bin.NewDecoder(eventQueueAccountChange.PrevData).Decode(&old); err != nil {
+		return nil, nil, fmt.Errorf("unable to decode 'event queue' old data: %w", err)
+	}
+
+	if err := bin.NewDecoder(eventQueueAccountChange.NewData).Decode(&new); err != nil {
+		return nil, nil, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
+	}
+
+	return
 }
 
 func extractOrderSeqNum(side serum.Side, orderID bin.Uint128) uint64 {
@@ -263,18 +269,6 @@ func extractOrderSeqNum(side serum.Side, orderID bin.Uint128) uint64 {
 		return ^orderID.Lo
 	}
 	return orderID.Lo
-}
-
-func decodeEventQueue(accountChange *pbcodec.AccountChange) (old *serum.EventQueue, new *serum.EventQueue, err error) {
-	if err := bin.NewDecoder(accountChange.PrevData).Decode(&old); err != nil {
-		return nil, nil, fmt.Errorf("unable to decode 'event queue' old data: %w", err)
-	}
-
-	if err := bin.NewDecoder(accountChange.NewData).Decode(&new); err != nil {
-		return nil, nil, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
-	}
-
-	return
 }
 
 func mustProtoTimestamp(in time.Time) *timestamp.Timestamp {
