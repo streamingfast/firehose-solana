@@ -89,6 +89,7 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 				i.blockstreamAddr,
 				200,
 				subHandler,
+				blockstream.WithParallelPreproc(i.preprocessSlot, i.preprocessorThreadCount),
 			)
 		})
 		options = append(options, firehose.WithLiveSource(liveStreamFactory))
