@@ -19,17 +19,18 @@ import (
 
 type Injector struct {
 	*shutter.Shutter
-	ctx               context.Context
-	kvdb              store.KVStore
-	flushSlotInterval uint64
-	lastTickBlock     uint64
-	lastTickTime      time.Time
-	blockStore        dstore.Store
-	blockstreamAddr   string
-	healthy           bool
-	cache             *tradingAccountCache
-	source            *firehose.Firehose
-	slotMetrics       slotMetrics
+	ctx                     context.Context
+	kvdb                    store.KVStore
+	flushSlotInterval       uint64
+	lastTickBlock           uint64
+	lastTickTime            time.Time
+	blockStore              dstore.Store
+	blockstreamAddr         string
+	healthy                 bool
+	cache                   *tradingAccountCache
+	source                  *firehose.Firehose
+	slotMetrics             slotMetrics
+	preprocessorThreadCount int
 }
 
 func NewInjector(
@@ -38,6 +39,7 @@ func NewInjector(
 	blockStore dstore.Store,
 	kvdb store.KVStore,
 	flushSlotInterval uint64,
+	preprocessorThreadCount int,
 ) *Injector {
 	return &Injector{
 		ctx:               ctx,
@@ -50,6 +52,7 @@ func NewInjector(
 		slotMetrics: slotMetrics{
 			startTime: time.Now(),
 		},
+		preprocessorThreadCount: preprocessorThreadCount,
 	}
 }
 
@@ -72,6 +75,7 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 		firehose.WithPreproc(i.preprocessSlot),
 		firehose.WithLogger(zlog),
 		firehose.WithForkableSteps(forkable.StepNew | forkable.StepIrreversible),
+		firehose.WithConcurrentPreprocessor(i.preprocessorThreadCount),
 	}
 
 	if i.blockstreamAddr != "" {

@@ -29,6 +29,7 @@ type Config struct {
 	GRPCListenAddr           string
 	HTTPListenAddr           string
 	IgnoreCheckpointOnLaunch bool
+	PreprocessorThreadCount  int
 }
 
 type App struct {
@@ -37,6 +38,10 @@ type App struct {
 }
 
 func New(config *Config) *App {
+	//fail safe
+	if config.PreprocessorThreadCount == 0 {
+		config.PreprocessorThreadCount = 1
+	}
 	return &App{
 		Shutter: shutter.New(),
 		Config:  config,
@@ -75,7 +80,7 @@ func (a *App) Run() error {
 			return fmt.Errorf("failed setting up blocks store: %w", err)
 		}
 
-		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, kvdb, a.Config.FLushSlotInterval)
+		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, kvdb, a.Config.FLushSlotInterval, a.Config.PreprocessorThreadCount)
 		err = injector.SetupSource(a.Config.StartBlock, a.Config.IgnoreCheckpointOnLaunch)
 		if err != nil {
 			return fmt.Errorf("unable to setup serumhist injector source: %w", err)
