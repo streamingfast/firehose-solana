@@ -38,7 +38,7 @@ type Injector struct {
 	preprocessorThreadCount int
 
 	manager  *OrderManager
-	reader *reader.Reader
+	reader   *reader.Reader
 	grpcAddr string
 	server   *dgrpc.Server
 }
@@ -64,9 +64,9 @@ func NewInjector(
 			startTime: time.Now(),
 		},
 		preprocessorThreadCount: preprocessorThreadCount,
-		grpcAddr: grpcAddr,
-		manager: newOrderManager(),
-		reader: reader.New(kvdb),
+		grpcAddr:                grpcAddr,
+		manager:                 newOrderManager(),
+		reader:                  reader.New(kvdb),
 	}
 }
 

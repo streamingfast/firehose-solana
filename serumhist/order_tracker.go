@@ -20,7 +20,7 @@ type OrderManager struct {
 
 func newOrderManager() *OrderManager {
 	return &OrderManager{
-		subscriptions:  []*subscription{},
+		subscriptions: []*subscription{},
 	}
 }
 

@@ -29,7 +29,7 @@ func (s *Injector) TrackOrder(r *pbserumhist.TrackOrderRequest, stream pbserumhi
 	}
 	defer s.manager.unsubscribe(ctx, subscription)
 
-	transition, err :=  s.reader.GetInitializeOrder(ctx, market, r.OrderId)
+	transition, err := s.reader.GetInitializeOrder(ctx, market, r.OrderId)
 	if err != nil {
 		return fmt.Errorf("unable to get initialized orders: %w", err)
 	}

@@ -15,8 +15,8 @@ func (r *Reader) GetInitializeOrder(ctx context.Context, market solana.PublicKey
 	out := &pbserumhist.OrderTransition{
 		PreviousState: pbserumhist.OrderTransition_STATE_UNKNOWN,
 		Transition:    pbserumhist.OrderTransition_TRANS_INIT,
-		Order:                &pbserumhist.Order{},
-		AddedFill:            nil,
+		Order:         &pbserumhist.Order{},
+		AddedFill:     nil,
 	}
 	orderKeyPrefix := keyer.EncodeOrderPrefix(market, orderNum)
 
@@ -28,7 +28,7 @@ func (r *Reader) GetInitializeOrder(ctx context.Context, market solana.PublicKey
 	seenOrderKey := false
 	for itr.Next() {
 		seenOrderKey = true
-		event , market , slotNum, trxIdx, instIdx, orderSeqNum  := keyer.DecodeOrder(itr.Item().Key)
+		event, market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeOrder(itr.Item().Key)
 		switch event {
 		case keyer.OrderEventTypeNew:
 			err := proto.Unmarshal(itr.Item().Value, out.Order)
