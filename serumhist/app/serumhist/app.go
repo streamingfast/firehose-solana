@@ -19,17 +19,18 @@ import (
 )
 
 type Config struct {
-	BlockStreamAddr          string
-	BlocksStoreURL           string
-	FLushSlotInterval        uint64
-	StartBlock               uint64
-	KvdbDsn                  string
-	EnableInjector           bool
-	EnableServer             bool
-	GRPCListenAddr           string
-	HTTPListenAddr           string
-	IgnoreCheckpointOnLaunch bool
-	PreprocessorThreadCount  int
+	BlockStreamAddr           string
+	BlocksStoreURL            string
+	FLushSlotInterval         uint64
+	StartBlock                uint64
+	KvdbDsn                   string
+	EnableInjector            bool
+	EnableServer              bool
+	GRPCListenAddr            string
+	HTTPListenAddr            string
+	IgnoreCheckpointOnLaunch  bool
+	PreprocessorThreadCount   int
+	MergeFileParallelDownload int
 }
 
 type App struct {
@@ -42,6 +43,10 @@ func New(config *Config) *App {
 	if config.PreprocessorThreadCount == 0 {
 		config.PreprocessorThreadCount = 1
 	}
+	if config.MergeFileParallelDownload == 0 {
+		config.MergeFileParallelDownload = 1
+	}
+
 	return &App{
 		Shutter: shutter.New(),
 		Config:  config,
@@ -80,7 +85,7 @@ func (a *App) Run() error {
 			return fmt.Errorf("failed setting up blocks store: %w", err)
 		}
 
-		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, kvdb, a.Config.FLushSlotInterval, a.Config.PreprocessorThreadCount)
+		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, kvdb, a.Config.FLushSlotInterval, a.Config.PreprocessorThreadCount, a.Config.MergeFileParallelDownload)
 		err = injector.SetupSource(a.Config.StartBlock, a.Config.IgnoreCheckpointOnLaunch)
 		if err != nil {
 			return fmt.Errorf("unable to setup serumhist injector source: %w", err)

@@ -19,18 +19,19 @@ import (
 
 type Injector struct {
 	*shutter.Shutter
-	ctx                     context.Context
-	kvdb                    store.KVStore
-	flushSlotInterval       uint64
-	lastTickBlock           uint64
-	lastTickTime            time.Time
-	blockStore              dstore.Store
-	blockstreamAddr         string
-	healthy                 bool
-	cache                   *tradingAccountCache
-	source                  *firehose.Firehose
-	slotMetrics             slotMetrics
-	preprocessorThreadCount int
+	ctx                         context.Context
+	kvdb                        store.KVStore
+	flushSlotInterval           uint64
+	lastTickBlock               uint64
+	lastTickTime                time.Time
+	blockStore                  dstore.Store
+	blockstreamAddr             string
+	healthy                     bool
+	cache                       *tradingAccountCache
+	source                      *firehose.Firehose
+	slotMetrics                 slotMetrics
+	preprocessorThreadCount     int
+	parallelDownloadThreadCount int
 }
 
 func NewInjector(
@@ -40,6 +41,7 @@ func NewInjector(
 	kvdb store.KVStore,
 	flushSlotInterval uint64,
 	preprocessorThreadCount int,
+	parallelDownloadThreadCount int,
 ) *Injector {
 	return &Injector{
 		ctx:               ctx,
@@ -52,7 +54,8 @@ func NewInjector(
 		slotMetrics: slotMetrics{
 			startTime: time.Now(),
 		},
-		preprocessorThreadCount: preprocessorThreadCount,
+		preprocessorThreadCount:     preprocessorThreadCount,
+		parallelDownloadThreadCount: parallelDownloadThreadCount,
 	}
 }
 
@@ -76,6 +79,7 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 		firehose.WithLogger(zlog),
 		firehose.WithForkableSteps(forkable.StepNew | forkable.StepIrreversible),
 		firehose.WithConcurrentPreprocessor(i.preprocessorThreadCount),
+		firehose.WithConcurrentFileDownload(i.parallelDownloadThreadCount),
 	}
 
 	if i.blockstreamAddr != "" {

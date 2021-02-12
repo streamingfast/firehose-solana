@@ -25,23 +25,25 @@ func init() {
 			cmd.Flags().Uint64("serumhist-flush-slots-interval", 100, "Flush to storage each X blocks.  Use 1 when live. Use a high number in batch, serves as checkpointing between restarts.")
 			cmd.Flags().Bool("serumhist-ignore-checkpoint-on-launch", false, "Will force the serum history injector to start from the start block specified on the CLI")
 			cmd.Flags().Int("serumhist-preprocessor-thread-count", 1, "Will force the serum history injector to start from the start block specified on the CLI")
+			cmd.Flags().Int("serumhist-parallel-download-count", 1, "Number of merge files download in parallel")
 
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
 			dfuseDataDir := runtime.AbsDataDir
 			return serumhistApp.New(&serumhistApp.Config{
-				BlockStreamAddr:          viper.GetString("common-blockstream-addr"),
-				BlocksStoreURL:           mustReplaceDataDir(dfuseDataDir, viper.GetString("common-blocks-store-url")),
-				FLushSlotInterval:        viper.GetUint64("serumhist-flush-slots-interval"),
-				StartBlock:               viper.GetUint64("serumhist-start-block-num"),
-				IgnoreCheckpointOnLaunch: viper.GetBool("serumhist-ignore-checkpoint-on-launch"),
-				KvdbDsn:                  mustReplaceDataDir(dfuseDataDir, viper.GetString("serumhist-dsn")),
-				EnableInjector:           viper.GetBool("serumhist-enable-injector-mode"),
-				EnableServer:             viper.GetBool("serumhist-enable-server-mode"),
-				GRPCListenAddr:           viper.GetString("serumhist-grpc-listen-addr"),
-				HTTPListenAddr:           viper.GetString("serumhist-http-listen-addr"),
-				PreprocessorThreadCount:  viper.GetInt("serumhist-preprocessor-thread-count"),
+				BlockStreamAddr:           viper.GetString("common-blockstream-addr"),
+				BlocksStoreURL:            mustReplaceDataDir(dfuseDataDir, viper.GetString("common-blocks-store-url")),
+				FLushSlotInterval:         viper.GetUint64("serumhist-flush-slots-interval"),
+				StartBlock:                viper.GetUint64("serumhist-start-block-num"),
+				IgnoreCheckpointOnLaunch:  viper.GetBool("serumhist-ignore-checkpoint-on-launch"),
+				KvdbDsn:                   mustReplaceDataDir(dfuseDataDir, viper.GetString("serumhist-dsn")),
+				EnableInjector:            viper.GetBool("serumhist-enable-injector-mode"),
+				EnableServer:              viper.GetBool("serumhist-enable-server-mode"),
+				GRPCListenAddr:            viper.GetString("serumhist-grpc-listen-addr"),
+				HTTPListenAddr:            viper.GetString("serumhist-http-listen-addr"),
+				PreprocessorThreadCount:   viper.GetInt("serumhist-preprocessor-thread-count"),
+				MergeFileParallelDownload: viper.GetInt("serumhist-parallel-download-count"),
 			}), nil
 		},
 	})
