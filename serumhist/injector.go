@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
+	"github.com/dfuse-io/dgrpc"
+	pbhealth "github.com/dfuse-io/pbgo/grpc/health/v1"
+	"google.golang.org/grpc"
 	"time"
 
 	"github.com/dfuse-io/bstream"
@@ -31,6 +36,11 @@ type Injector struct {
 	source                  *firehose.Firehose
 	slotMetrics             slotMetrics
 	preprocessorThreadCount int
+
+	manager  *OrderManager
+	reader *reader.Reader
+	grpcAddr string
+	server   *dgrpc.Server
 }
 
 func NewInjector(
@@ -40,6 +50,7 @@ func NewInjector(
 	kvdb store.KVStore,
 	flushSlotInterval uint64,
 	preprocessorThreadCount int,
+	grpcAddr string,
 ) *Injector {
 	return &Injector{
 		ctx:               ctx,
@@ -53,6 +64,9 @@ func NewInjector(
 			startTime: time.Now(),
 		},
 		preprocessorThreadCount: preprocessorThreadCount,
+		grpcAddr: grpcAddr,
+		manager: newOrderManager(),
+		reader: reader.New(kvdb),
 	}
 }
 
@@ -102,6 +116,25 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 
 func (i *Injector) Launch() error {
 	zlog.Info("launching serumhist injector")
+
+	if i.grpcAddr != "" {
+		server := dgrpc.NewServer2(dgrpc.WithLogger(zlog))
+		server.RegisterService(func(gs *grpc.Server) {
+			pbserumhist.RegisterSerumOrderTrackerServer(gs, i)
+			pbhealth.RegisterHealthServer(gs, i)
+		})
+
+		zlog.Info("listening for serum history",
+			zap.String("addr", i.grpcAddr),
+		)
+
+		i.OnTerminating(func(err error) {
+			server.Shutdown(30 * time.Second)
+		})
+
+		go server.Launch(i.grpcAddr)
+	}
+
 	err := i.source.Run(i.ctx)
 	if err != nil {
 		if errors.Is(err, firehose.ErrStopBlockReached) {

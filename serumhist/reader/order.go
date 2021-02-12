@@ -25,7 +25,9 @@ func (r *Reader) GetInitializeOrder(ctx context.Context, market solana.PublicKey
 	)
 	itr := r.store.Prefix(ctx, orderKeyPrefix, 0)
 	var fillKeys [][]byte
+	seenOrderKey := false
 	for itr.Next() {
+		seenOrderKey = true
 		event , market , slotNum, trxIdx, instIdx, orderSeqNum  := keyer.DecodeOrder(itr.Item().Key)
 		switch event {
 		case keyer.OrderEventTypeNew:
@@ -74,6 +76,15 @@ func (r *Reader) GetInitializeOrder(ctx context.Context, market solana.PublicKey
 
 		}
 	}
+
+	if !seenOrderKey {
+		zlog.Info("unable to initialize order. no keys found",
+			zap.Stringer("market", market),
+			zap.Uint64("order_num", orderNum),
+		)
+		return nil, nil
+	}
+
 	zlog.Debug("stitched a serum order",
 		zap.Stringer("previous_state", out.PreviousState),
 		zap.Stringer("current_state", out.CurrentState),

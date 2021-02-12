@@ -18,6 +18,12 @@ type OrderManager struct {
 	subscriptions     []*subscription
 }
 
+func newOrderManager() *OrderManager {
+	return &OrderManager{
+		subscriptions:  []*subscription{},
+	}
+}
+
 func (m *OrderManager) subscribe(orderNum uint64, market solana.PublicKey, logger *zap.Logger) (*subscription, error) {
 	chanSize := 2000 // TODO fix me maybe
 	logger.Debug("creating new subscription",
