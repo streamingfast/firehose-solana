@@ -137,7 +137,7 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx
 		}
 
 		market := v.Accounts.Market.PublicKey
-		s.setSerumFillAndOutEvent(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new, false)
+		s.setSerumFillAndOutEvent(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new, true)
 
 	case *serum.InstructionMatchOrder:
 		old, new, err := decodeEventQueue(accChanges)
@@ -146,7 +146,7 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx
 		}
 
 		market := v.Accounts.Market.PublicKey
-		s.setSerumFillAndOutEvent(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new, true)
+		s.setSerumFillAndOutEvent(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new, false)
 	}
 
 	return nil
@@ -207,16 +207,19 @@ func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time
 							Timestamp:         mustProtoTimestamp(blkTime),
 						},
 					})
-				} else if e.Flag.IsOut() {
+					return
+				}
+
+				if e.Flag.IsOut() {
+					number := make([]byte, 16)
+					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
+					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
+
 					// if the new event OUT originates from a matching order instruction, we are unable to determine whether or not
 					// it is due to an order being executed or cancelled. thus, we store it as an ORDER CLOSED event and we will determine
 					// whether or not it was actually executed or cancelled when we stitch the order events together
 					// if the new event OUT originates from a new order v2 instruction, we know that it is a ORDER EXECUTED event
 					if processOutAsOrderExecuted {
-						number := make([]byte, 16)
-						binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
-						binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
-
 						s.orderExecuted = append(s.orderExecuted, &serumOrderExecuted{
 							market:      market,
 							orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
@@ -224,20 +227,17 @@ func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time
 							trxIdx:      trxIdx,
 							instIdx:     instIdx,
 						})
-					} else {
-						number := make([]byte, 16)
-						binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
-						binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
-
-						s.orderClosed = append(s.orderClosed, &serumOrderClosed{
-							market:      market,
-							orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
-							slotNumber:  slotNumber,
-							trxIdx:      trxIdx,
-							instIdx:     instIdx,
-						})
+						return
 					}
 
+					s.orderClosed = append(s.orderClosed, &serumOrderClosed{
+						market:      market,
+						orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
+						slotNumber:  slotNumber,
+						trxIdx:      trxIdx,
+						instIdx:     instIdx,
+					})
+					return
 				}
 			}
 		}

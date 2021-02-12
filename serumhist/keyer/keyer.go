@@ -20,8 +20,8 @@ const (
 	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeFill>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => null
 	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeFill>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]  => null
 	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeExecuted>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (executed) => null
-	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeCancel>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (cancelled) => null
-	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeClose>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (close (used to support serum V1 request queue & matching orders) => null
+	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeCancel>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (cancelled) => &pbseruhist.SerumTemporal{}
+	// 06:[market]:[rev_order_seq_num]:<OrderEventTypeClose>:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index] => (close (used to support serum V1 request queue & matching orders) => &pbseruhist.SerumTemporal{}
 	PrefixOrder            = byte(0x06)
 	OrderEventTypeNew      = byte(0x01)
 	OrderEventTypeFill     = byte(0x02)
@@ -152,6 +152,14 @@ func encodeOrder(event byte, market solana.PublicKey, slotNum, trxIdx, instIdx, 
 	binary.BigEndian.PutUint64(key[42:], ^slotNum)
 	binary.BigEndian.PutUint64(key[50:], ^trxIdx)
 	binary.BigEndian.PutUint64(key[58:], ^instIdx)
+	return key
+}
+
+func EncodeOrderPrefix(market solana.PublicKey, orderSeqNum uint64) Key {
+	key := make([]byte, 1+32+8)
+	key[0] = PrefixOrder
+	copy(key[1:], market[:])
+	binary.BigEndian.PutUint64(key[33:], ^orderSeqNum)
 	return key
 }
 

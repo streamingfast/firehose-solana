@@ -31,6 +31,10 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		}
 	}
 
+	// process cancellation
+	// process executed
+	// process closet
+
 	i.slotMetrics.serumFillCount += len(serumSlot.fills)
 	for _, fill := range serumSlot.fills {
 		if err := i.processSerumFill(i.ctx, fill); err != nil {
