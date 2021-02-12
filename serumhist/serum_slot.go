@@ -21,16 +21,17 @@ type serumSlot struct {
 	tradingAccountCache []*serumTradingAccount
 	newOrders           []interface{}
 
-	ordersExecuted  []*orderExecuted
-	ordersCancelled []*orderCancelled
-	ordersClosed    []*orderClosed
-	fills           []*fill
+	orderNewEvents       []*orderNewEvent
+	orderFilledEvents    []*orderFillEvent
+	orderExecutedEvents  []*orderExecutedEvent
+	orderCancelledEvents []*orderCancelledEvent
+	orderClosedEvents    []*orderClosedEvent
 }
 
 func newSerumSlot() *serumSlot {
 	return &serumSlot{
 		tradingAccountCache: nil,
-		fills:               nil,
+		orderFilledEvents:   nil,
 	}
 }
 
@@ -39,53 +40,56 @@ type serumTradingAccount struct {
 	tradingAccount solana.PublicKey
 }
 
-type fill struct {
-	trader         solana.PublicKey
-	fill           *pbserumhist.Fill
-	slotNumber     uint64
-	trxIdx         uint32
-	instIdx        uint32
+type orderEventRef struct {
+	market      solana.PublicKey
+	orderSeqNum uint64
+	slotNumber  uint64
+	trxHash     string
+	trxIdx      uint32
+	instIdx     uint32
+	slotHash    string
+	timestamp   time.Time
+}
+
+type orderNewEvent struct {
+	orderEventRef
+
+	order *pbserumhist.Order
+}
+type orderFillEvent struct {
+	orderEventRef
+
 	tradingAccount solana.PublicKey
-	market         solana.PublicKey
-	orderSeqNum    uint64
+	fill           *pbserumhist.Fill
 }
 
-type serumOrder struct {
-	order       *pbserumhist.Order
-	market      solana.PublicKey
-	orderSeqNum uint64
-	slotNumber  uint64
-	trxIdx      uint32
-	instIdx     uint32
+type orderExecutedEvent struct {
+	orderEventRef
 }
 
-type orderExecuted struct {
-	market      solana.PublicKey
-	orderSeqNum uint64
-	slotNumber  uint64
-	trxIdx      uint32
-	instIdx     uint32
+type orderClosedEvent struct {
+	orderEventRef
+
+	instrRef *pbserumhist.InstructionRef
 }
 
-type orderClosed struct {
-	market      solana.PublicKey
-	orderSeqNum uint64
-	slotNumber  uint64
-	trxIdx      uint32
-	instIdx     uint32
-	instRef     *pbserumhist.InstructionRef
-}
+type orderCancelledEvent struct {
+	orderEventRef
 
-type orderCancelled struct {
-	market      solana.PublicKey
-	orderSeqNum uint64
-	slotNumber  uint64
-	trxIdx      uint32
-	instIdx     uint32
-	instRef     *pbserumhist.InstructionRef
+	instrRef *pbserumhist.InstructionRef
 }
 
 func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32, trxId, slotHash string, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
+
+	eventRef := orderEventRef{
+		slotNumber: slotNumber,
+		trxHash:    trxId,
+		trxIdx:     trxIdx,
+		instIdx:    instIdx,
+		slotHash:   slotHash,
+		timestamp:  blkTime,
+	}
+
 	if traceEnabled {
 		zlog.Debug(fmt.Sprintf("processing instruction %T", instruction.Impl),
 			zap.Uint64("slot_number", slotNumber),
@@ -99,24 +103,25 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 			trader:         v.Accounts.Owner.PublicKey,
 			tradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
+		// TODO: We need to log the created event here....
 
 	case *serum.InstructionNewOrderV2:
 		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
 			trader:         v.Accounts.Owner.PublicKey,
 			tradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
+		// TODO: We need to log the created event here....
 
-	//case *serum.InstructionCancelOrderByClientId:
+		//case *serum.InstructionCancelOrderByClientId:
 	//case *serum.InstructionCancelOrder:
-
 	case *serum.InstructionCancelOrderByClientIdV2:
 		old, new, err := decodeEventQueue(accChanges)
 		if err != nil {
 			return fmt.Errorf("InstructionCancelOrderByClientIdV2: unable to decode event queue: %w", err)
 		}
 
-		market := v.Accounts.Market.PublicKey
-		s.setSerumCancellations(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new)
+		eventRef.market = v.Accounts.Market.PublicKey
+		s.addOrderCancellationEvent(eventRef, old, new)
 
 	case *serum.InstructionCancelOrderV2:
 		old, new, err := decodeEventQueue(accChanges)
@@ -124,8 +129,8 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 			return fmt.Errorf("InstructionCancelOrderV2: unable to decode event queue: %w", err)
 		}
 
-		market := v.Accounts.Market.PublicKey
-		s.setSerumCancellations(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new)
+		eventRef.market = v.Accounts.Market.PublicKey
+		s.addOrderCancellationEvent(eventRef, old, new)
 
 	case *serum.InstructionNewOrderV3:
 		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
@@ -138,8 +143,8 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 			return fmt.Errorf("InstructionNewOrderV3: unable to decode event queue: %w", err)
 		}
 
-		market := v.Accounts.Market.PublicKey
-		s.setSerumFillAndOutEvent(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new, true)
+		eventRef.market = v.Accounts.Market.PublicKey
+		s.addOrderFillAndCloseEvent(eventRef, old, new, true)
 
 	case *serum.InstructionMatchOrder:
 		old, new, err := decodeEventQueue(accChanges)
@@ -147,14 +152,24 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 			return fmt.Errorf("InstructionMatchOrder: unable to decode event queue: %w", err)
 		}
 
-		market := v.Accounts.Market.PublicKey
-		s.setSerumFillAndOutEvent(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new, false)
+		eventRef.market = v.Accounts.Market.PublicKey
+		s.addOrderFillAndCloseEvent(eventRef, old, new, false)
 	}
 
 	return nil
 }
 
-func (s *serumSlot) setSerumCancellations(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint32, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue) {
+func (s *serumSlot) addNewOrderEvent(eventRef orderEventRef, old, new *serum.EventQueue) {
+	// TODO: this needs to be done
+	s.orderCancelledEvents = append(s.orderCancelledEvents, &orderCancelledEvent{
+		orderEventRef: eventRef,
+		instrRef: &pbserumhist.InstructionRef{
+			TrxHash:   eventRef.trxHash,
+			SlotHash:  eventRef.slotHash,
+			Timestamp: mustProtoTimestamp(eventRef.timestamp),
+		},
+	})
+
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
@@ -164,17 +179,31 @@ func (s *serumSlot) setSerumCancellations(slotNumber uint64, blkTime time.Time, 
 					number := make([]byte, 16)
 					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
 					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
+					eventRef.orderSeqNum = extractOrderSeqNum(e.Side(), e.OrderID)
 
-					s.ordersCancelled = append(s.ordersCancelled, &orderCancelled{
-						market:      market,
-						orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
-						slotNumber:  slotNumber,
-						trxIdx:      trxIdx,
-						instIdx:     instIdx,
-						instRef: &pbserumhist.InstructionRef{
-							SlotHash:  slotHash,
-							TrxHash:   trxId,
-							Timestamp: mustProtoTimestamp(blkTime),
+				}
+			}
+		}
+	}))
+}
+
+func (s *serumSlot) addOrderCancellationEvent(eventRef orderEventRef, old, new *serum.EventQueue) {
+	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
+		if match, _ := event.Match("Events[#]"); match {
+			e := event.Element().Interface().(*serum.Event)
+			switch event.Kind {
+			case diff.KindAdded:
+				if e.Flag.IsOut() {
+					number := make([]byte, 16)
+					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
+					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
+					eventRef.orderSeqNum = extractOrderSeqNum(e.Side(), e.OrderID)
+					s.orderCancelledEvents = append(s.orderCancelledEvents, &orderCancelledEvent{
+						orderEventRef: eventRef,
+						instrRef: &pbserumhist.InstructionRef{
+							TrxHash:   eventRef.trxHash,
+							SlotHash:  eventRef.slotHash,
+							Timestamp: mustProtoTimestamp(eventRef.timestamp),
 						},
 					})
 				}
@@ -183,7 +212,7 @@ func (s *serumSlot) setSerumCancellations(slotNumber uint64, blkTime time.Time, 
 	}))
 }
 
-func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint32, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
+func (s *serumSlot) addOrderFillAndCloseEvent(eventRef orderEventRef, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
@@ -193,25 +222,21 @@ func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time
 					number := make([]byte, 16)
 					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
 					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
-
-					s.fills = append(s.fills, &fill{
-						slotNumber:     slotNumber,
-						trxIdx:         trxIdx,
-						instIdx:        instIdx,
-						market:         market,
+					eventRef.orderSeqNum = extractOrderSeqNum(e.Side(), e.OrderID)
+					s.orderFilledEvents = append(s.orderFilledEvents, &orderFillEvent{
+						orderEventRef:  eventRef,
 						tradingAccount: e.Owner,
-						orderSeqNum:    extractOrderSeqNum(e.Side(), e.OrderID),
 						fill: &pbserumhist.Fill{
 							OrderId:           hex.EncodeToString(number[:8]) + hex.EncodeToString(number[8:]),
 							Side:              pbserumhist.Side(e.Side()),
-							SlotHash:          slotHash,
-							TrxId:             trxId,
+							SlotHash:          eventRef.slotHash,
+							TrxId:             eventRef.trxHash,
 							Maker:             false,
 							NativeQtyPaid:     e.NativeQtyPaid,
 							NativeQtyReceived: e.NativeQtyReleased,
 							NativeFeeOrRebate: e.NativeFeeOrRebate,
 							FeeTier:           pbserumhist.FeeTier(e.FeeTier),
-							Timestamp:         mustProtoTimestamp(blkTime),
+							Timestamp:         mustProtoTimestamp(eventRef.timestamp),
 						},
 					})
 					return
@@ -227,26 +252,18 @@ func (s *serumSlot) setSerumFillAndOutEvent(slotNumber uint64, blkTime time.Time
 					// whether or not it was actually executed or cancelled when we stitch the order events together
 					// if the new event OUT originates from a new order v2 instruction, we know that it is a ORDER EXECUTED event
 					if processOutAsOrderExecuted {
-						s.ordersExecuted = append(s.ordersExecuted, &orderExecuted{
-							market:      market,
-							orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
-							slotNumber:  slotNumber,
-							trxIdx:      trxIdx,
-							instIdx:     instIdx,
+						s.orderExecutedEvents = append(s.orderExecutedEvents, &orderExecutedEvent{
+							orderEventRef: eventRef,
 						})
 						return
 					}
 
-					s.ordersClosed = append(s.ordersClosed, &orderClosed{
-						market:      market,
-						orderSeqNum: extractOrderSeqNum(e.Side(), e.OrderID),
-						slotNumber:  slotNumber,
-						trxIdx:      trxIdx,
-						instIdx:     instIdx,
-						instRef: &pbserumhist.InstructionRef{
-							SlotHash:  slotHash,
-							TrxHash:   trxId,
-							Timestamp: mustProtoTimestamp(blkTime),
+					s.orderClosedEvents = append(s.orderClosedEvents, &orderClosedEvent{
+						orderEventRef: eventRef,
+						instrRef: &pbserumhist.InstructionRef{
+							TrxHash:   eventRef.trxHash,
+							SlotHash:  eventRef.slotHash,
+							Timestamp: mustProtoTimestamp(eventRef.timestamp),
 						},
 					})
 					return

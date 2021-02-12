@@ -111,7 +111,7 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 	zlog.Debug("preprocessed slot completed",
 		zap.Stringer("slot", blk),
 		zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
-		zap.Int("fill_count", len(serumSlot.fills)),
+		zap.Int("fill_count", len(serumSlot.orderFilledEvents)),
 		zap.Duration("duration", time.Since(t0)),
 	)
 	return serumSlot, nil

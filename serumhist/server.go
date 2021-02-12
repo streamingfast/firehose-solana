@@ -29,36 +29,42 @@ func (s *Injector) TrackOrder(r *pbserumhist.TrackOrderRequest, stream pbserumhi
 	}
 	defer s.manager.unsubscribe(ctx, subscription)
 
-	transition, err := s.reader.GetInitializeOrder(ctx, market, r.OrderId)
+	statefulOrder, transition, err := s.GetInitializeOrder(ctx, market, r.OrderId)
 	if err != nil {
 		return fmt.Errorf("unable to get initialized orders: %w", err)
 	}
 
-	if transition != nil {
-		err := stream.Send(transition)
-		if err != nil {
-			logger.Info("failed writing to socket, shutting down subscription", zap.Error(err))
-			return err
-		}
+	err = stream.Send(transition)
+	if err != nil {
+		logger.Info("failed writing to socket, shutting down subscription", zap.Error(err))
+		return err
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case resp, opened := <-subscription.conn:
+		case orderEvent, opened := <-subscription.conn:
 			if !opened {
 				// we've been shutdown somehow, simply close the current connection.
 				// we'll have logged at the source\
 				return nil
 			}
+
+			transition, err := statefulOrder.applyEvent(orderEvent)
+			if err != nil {
+				logger.Info("unable to apply event to stateful order", zap.Error(err))
+				return err
+
+			}
+
 			logger.Debug("sending order transition",
-				zap.Stringer("current_state", resp.CurrentState),
-				zap.Stringer("previous_state", resp.PreviousState),
-				zap.Stringer("transition", resp.Transition),
+				zap.Stringer("current_state", transition.CurrentState),
+				zap.Stringer("previous_state", transition.PreviousState),
+				zap.Stringer("transition", transition.Transition),
 			)
 
-			err := stream.Send(resp)
+			err = stream.Send(transition)
 			if err != nil {
 				logger.Info("failed writing to socket, shutting down subscription", zap.Error(err))
 				return err

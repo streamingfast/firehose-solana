@@ -9,73 +9,79 @@ import (
 	"go.uber.org/zap"
 )
 
-func (i Injector) processSerumFills(serumFills []*fill) (out []*kvdb.KV, err error) {
-	for _, serumFill := range serumFills {
-		trader, err := i.cache.getTrader(i.ctx, serumFill.tradingAccount)
+func (i Injector) processSerumFills(orderFillEvents []*orderFillEvent) (out []*kvdb.KV, err error) {
+	for _, orderFillEvent := range orderFillEvents {
+		trader, err := i.cache.getTrader(i.ctx, orderFillEvent.tradingAccount)
 		if err != nil {
-			return nil, fmt.Errorf("unable to retrieve trader for trading key %q: %w", serumFill.tradingAccount.String(), err)
+			return nil, fmt.Errorf("unable to retrieve trader for trading key %q: %w", orderFillEvent.tradingAccount.String(), err)
 		}
 
 		if trader == nil {
 			zlog.Warn("unable to find trader for trading account, skipping fill",
-				zap.Stringer("trading_account", serumFill.tradingAccount),
-				zap.Uint64("slot_number", serumFill.slotNumber),
-				zap.Uint32("trx_id", serumFill.trxIdx),
-				zap.Uint32("inst_id", serumFill.instIdx),
-				zap.Stringer("market", serumFill.market),
+				zap.Stringer("trading_account", orderFillEvent.tradingAccount),
+				zap.Uint64("slot_number", orderFillEvent.slotNumber),
+				zap.Uint32("trx_id", orderFillEvent.trxIdx),
+				zap.Uint32("inst_id", orderFillEvent.instIdx),
+				zap.Stringer("market", orderFillEvent.market),
 			)
 			return nil, nil
 		}
 
 		// we need to make sure we assign the trader before we proto encode, not all the keys contains the trader
-		serumFill.fill.Trader = trader.String()
-		cnt, err := proto.Marshal(serumFill.fill)
+		orderFillEvent.fill.Trader = trader.String()
+		cnt, err := proto.Marshal(orderFillEvent.fill)
 		if err != nil {
 			return nil, fmt.Errorf("unable to marshal to fill: %w", err)
 		}
 
 		zlog.Debug("serum new fill",
-			zap.Stringer("side", serumFill.fill.Side),
-			zap.Stringer("market", serumFill.market),
+			zap.Stringer("side", orderFillEvent.fill.Side),
+			zap.Stringer("market", orderFillEvent.market),
 			zap.Stringer("trader", trader),
-			zap.Stringer("trading_Account", serumFill.tradingAccount),
-			zap.Uint64("order_seq_num", serumFill.orderSeqNum),
-			zap.Uint64("slot_num", serumFill.slotNumber),
+			zap.Stringer("trading_Account", orderFillEvent.tradingAccount),
+			zap.Uint64("order_seq_num", orderFillEvent.orderSeqNum),
+			zap.Uint64("slot_num", orderFillEvent.slotNumber),
 		)
+
+		// push the events to subscription
+		i.manager.emit(orderFillEvent, orderFillEvent.orderSeqNum, orderFillEvent.market)
 
 		out = append(out, []*kvdb.KV{
 			{
-				Key:   keyer.EncodeFill(serumFill.market, serumFill.slotNumber, uint64(serumFill.trxIdx), uint64(serumFill.instIdx), serumFill.orderSeqNum),
+				Key:   keyer.EncodeFill(orderFillEvent.market, orderFillEvent.slotNumber, uint64(orderFillEvent.trxIdx), uint64(orderFillEvent.instIdx), orderFillEvent.orderSeqNum),
 				Value: cnt,
 			},
 			{
-				Key: keyer.EncodeFillByTrader(*trader, serumFill.market, serumFill.slotNumber, uint64(serumFill.trxIdx), uint64(serumFill.instIdx), serumFill.orderSeqNum),
+				Key: keyer.EncodeFillByTrader(*trader, orderFillEvent.market, orderFillEvent.slotNumber, uint64(orderFillEvent.trxIdx), uint64(orderFillEvent.instIdx), orderFillEvent.orderSeqNum),
 			},
 			{
-				Key: keyer.EncodeFillByTraderMarket(*trader, serumFill.market, serumFill.slotNumber, uint64(serumFill.trxIdx), uint64(serumFill.instIdx), serumFill.orderSeqNum),
+				Key: keyer.EncodeFillByTraderMarket(*trader, orderFillEvent.market, orderFillEvent.slotNumber, uint64(orderFillEvent.trxIdx), uint64(orderFillEvent.instIdx), orderFillEvent.orderSeqNum),
 			},
 		}...)
 	}
 	return
 }
 
-func processSerumOrdersCancelled(ordersCancel []*orderCancelled) (out []*kvdb.KV, err error) {
-	for _, cancel := range ordersCancel {
+func (i *Injector) processSerumOrdersCancelled(orderCancelledEvents []*orderCancelledEvent) (out []*kvdb.KV, err error) {
+	for _, orderCancelledEvent := range orderCancelledEvents {
 		zlog.Debug("serum order cancelled",
-			zap.Stringer("market", cancel.market),
-			zap.Uint64("order_seq_num", cancel.orderSeqNum),
-			zap.Uint64("slot_num", cancel.slotNumber),
-			zap.Uint32("trx_idx", cancel.trxIdx),
-			zap.Uint32("inst_idx", cancel.instIdx),
+			zap.Stringer("market", orderCancelledEvent.market),
+			zap.Uint64("order_seq_num", orderCancelledEvent.orderSeqNum),
+			zap.Uint64("slot_num", orderCancelledEvent.slotNumber),
+			zap.Uint32("trx_idx", orderCancelledEvent.trxIdx),
+			zap.Uint32("inst_idx", orderCancelledEvent.instIdx),
 		)
 
-		val, err := proto.Marshal(cancel.instRef)
+		val, err := proto.Marshal(orderCancelledEvent.instrRef)
 		if err != nil {
 			return nil, fmt.Errorf("unable to marshal to fill: %w", err)
 		}
 
+		// push the events to subscription
+		i.manager.emit(orderCancelledEvent, orderCancelledEvent.orderSeqNum, orderCancelledEvent.market)
+
 		out = append(out, &kvdb.KV{
-			Key:   keyer.EncodeOrderCancel(cancel.market, cancel.slotNumber, uint64(cancel.trxIdx), uint64(cancel.instIdx), cancel.orderSeqNum),
+			Key:   keyer.EncodeOrderCancel(orderCancelledEvent.market, orderCancelledEvent.slotNumber, uint64(orderCancelledEvent.trxIdx), uint64(orderCancelledEvent.instIdx), orderCancelledEvent.orderSeqNum),
 			Value: val,
 		})
 	}
@@ -83,23 +89,26 @@ func processSerumOrdersCancelled(ordersCancel []*orderCancelled) (out []*kvdb.KV
 	return
 }
 
-func processSerumOrdersClosed(ordersClosed []*orderClosed) (out []*kvdb.KV, err error) {
-	for _, close := range ordersClosed {
+func (i *Injector) processSerumOrdersClosed(orderClosedEvents []*orderClosedEvent) (out []*kvdb.KV, err error) {
+	for _, orderClosedEvent := range orderClosedEvents {
 		zlog.Debug("serum order closed",
-			zap.Stringer("market", close.market),
-			zap.Uint64("order_seq_num", close.orderSeqNum),
-			zap.Uint64("slot_num", close.slotNumber),
-			zap.Uint32("trx_idx", close.trxIdx),
-			zap.Uint32("inst_idx", close.instIdx),
+			zap.Stringer("market", orderClosedEvent.market),
+			zap.Uint64("order_seq_num", orderClosedEvent.orderSeqNum),
+			zap.Uint64("slot_num", orderClosedEvent.slotNumber),
+			zap.Uint32("trx_idx", orderClosedEvent.trxIdx),
+			zap.Uint32("inst_idx", orderClosedEvent.instIdx),
 		)
 
-		val, err := proto.Marshal(close.instRef)
+		val, err := proto.Marshal(orderClosedEvent.instrRef)
 		if err != nil {
 			return nil, fmt.Errorf("unable to marshal to fill: %w", err)
 		}
 
+		// push the events to subscription
+		i.manager.emit(orderClosedEvent, orderClosedEvent.orderSeqNum, orderClosedEvent.market)
+
 		out = append(out, &kvdb.KV{
-			Key:   keyer.EncodeOrderClose(close.market, close.slotNumber, uint64(close.trxIdx), uint64(close.instIdx), close.orderSeqNum),
+			Key:   keyer.EncodeOrderClose(orderClosedEvent.market, orderClosedEvent.slotNumber, uint64(orderClosedEvent.trxIdx), uint64(orderClosedEvent.instIdx), orderClosedEvent.orderSeqNum),
 			Value: val,
 		})
 	}
@@ -108,7 +117,7 @@ func processSerumOrdersClosed(ordersClosed []*orderClosed) (out []*kvdb.KV, err 
 
 }
 
-func processSerumOrdersExecuted(ordersExecuted []*orderExecuted) (out []*kvdb.KV, err error) {
+func processSerumOrdersExecuted(ordersExecuted []*orderExecutedEvent) (out []*kvdb.KV, err error) {
 	for _, executed := range ordersExecuted {
 		zlog.Debug("serum order executed",
 			zap.Stringer("market", executed.market),

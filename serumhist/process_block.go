@@ -34,29 +34,30 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	}
 
 	var kvs []*kvdb.KV
-	key, err := processSerumOrdersCancelled(serumSlot.ordersCancelled)
+
+	// process close
+	i.slotMetrics.serumFillCount += len(serumSlot.orderFilledEvents)
+	key, err := i.processSerumFills(serumSlot.orderFilledEvents)
+	if err != nil {
+		return fmt.Errorf("unable to process serum order orderFilledEvents: %w", err)
+	}
+	kvs = append(kvs, key...)
+
+	key, err = processSerumOrdersExecuted(serumSlot.orderExecutedEvents)
+	if err != nil {
+		return fmt.Errorf("unable to process serum orders executed: %w", err)
+	}
+	kvs = append(kvs, key...)
+
+	key, err = i.processSerumOrdersCancelled(serumSlot.orderCancelledEvents)
 	if err != nil {
 		return fmt.Errorf("unable to process serum orders cancelled: %w", err)
 	}
 	kvs = append(kvs, key...)
 
-	key, err = processSerumOrdersExecuted(serumSlot.ordersExecuted)
+	key, err = i.processSerumOrdersClosed(serumSlot.orderClosedEvents)
 	if err != nil {
 		return fmt.Errorf("unable to process serum orders executed: %w", err)
-	}
-	kvs = append(kvs, key...)
-
-	key, err = processSerumOrdersClosed(serumSlot.ordersClosed)
-	if err != nil {
-		return fmt.Errorf("unable to process serum orders executed: %w", err)
-	}
-	kvs = append(kvs, key...)
-
-	// process close
-	i.slotMetrics.serumFillCount += len(serumSlot.fills)
-	key, err = i.processSerumFills(serumSlot.fills)
-	if err != nil {
-		return fmt.Errorf("unable to process serum order fills: %w", err)
 	}
 	kvs = append(kvs, key...)
 
@@ -91,7 +92,7 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 			zap.String("slot_id", slot.Id),
 			zap.String("previous_id", slot.PreviousId),
 			zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
-			zap.Int("fill_count", len(serumSlot.fills)),
+			zap.Int("fill_count", len(serumSlot.orderFilledEvents)),
 		}...)
 
 		zlog.Info(fmt.Sprintf("processed %d slot", logEveryXSlot),
