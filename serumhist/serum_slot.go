@@ -45,7 +45,7 @@ type serumFill struct {
 	orderSeqNum    uint64
 }
 
-func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx uint64, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
+func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx uint64, trxId, slotHash string, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
 	if traceEnabled {
 		zlog.Debug(fmt.Sprintf("processing instruction %T", instruction.Impl),
 			zap.Uint64("slot_number", slotNumber),
@@ -73,7 +73,7 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx
 		})
 
 		market := v.Accounts.Market.PublicKey
-		serumFills, err := s.extractFillsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, market, accChanges)
+		serumFills, err := s.extractFillsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, accChanges)
 		if err != nil {
 			return fmt.Errorf("generating serum fills from new order v3: %w", err)
 		}
@@ -82,7 +82,7 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx
 
 	case *serum.InstructionMatchOrder:
 		market := v.Accounts.Market.PublicKey
-		serumFills, err := s.extractFillsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, market, accChanges)
+		serumFills, err := s.extractFillsFromInstruction(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, accChanges)
 		if err != nil {
 			return fmt.Errorf("generating serum fills from matching order: %w", err)
 		}
@@ -98,6 +98,8 @@ func (s *serumSlot) extractFillsFromInstruction(
 	blkTime time.Time,
 	trxIdx uint64,
 	instIdx uint64,
+	trxId string,
+	slotHash string,
 	market solana.PublicKey,
 	accountChanges []*pbcodec.AccountChange,
 ) (out []*serumFill, err error) {
@@ -114,10 +116,10 @@ func (s *serumSlot) extractFillsFromInstruction(
 		return nil, fmt.Errorf("unable to decode event queue change: %w", err)
 	}
 
-	return s.getFillKeyValues(slotNumber, blkTime, trxIdx, instIdx, market, old, new), nil
+	return s.getFillKeyValues(slotNumber, blkTime, trxIdx, instIdx, trxId, slotHash, market, old, new), nil
 }
 
-func (i *serumSlot) getFillKeyValues(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, market solana.PublicKey, old, new *serum.EventQueue) (out []*serumFill) {
+func (i *serumSlot) getFillKeyValues(slotNumber uint64, blkTime time.Time, trxIdx, instIdx uint64, trxId, slotHash string, market solana.PublicKey, old, new *serum.EventQueue) (out []*serumFill) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Events[#]"); match {
 			e := event.Element().Interface().(*serum.Event)
@@ -138,6 +140,8 @@ func (i *serumSlot) getFillKeyValues(slotNumber uint64, blkTime time.Time, trxId
 						fill: &pbserumhist.Fill{
 							OrderId:           hex.EncodeToString(number[:8]) + hex.EncodeToString(number[8:]),
 							Side:              pbserumhist.Side(e.Side()),
+							SlotHash:          slotHash,
+							TrxId:             trxId,
 							Maker:             false,
 							NativeQtyPaid:     e.NativeQtyPaid,
 							NativeQtyReceived: e.NativeQtyReleased,
