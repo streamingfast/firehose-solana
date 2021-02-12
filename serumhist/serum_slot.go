@@ -19,6 +19,8 @@ import (
 
 type serumSlot struct {
 	tradingAccountCache []*serumTradingAccount
+	orderCancellations  []interface{}
+	newOrders           []interface{}
 	fills               []*serumFill
 }
 
