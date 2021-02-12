@@ -1,0 +1,88 @@
+
+
+enum ORDER_STATE {
+    UNKNOWN
+
+    """ Indicates when the order has been Accepted by the exchange"""
+    APPROVED
+
+    """ Indicates when a cancellation has been sent but the order has not been cancelled with the exchange. This is a direct result of a cancelled order instruction"""
+    CANCEL_PENDING
+
+    """ An order is in this status when it has been completely cancelled and the order is no longer open"""
+    CANCELLED
+
+    """A partial quantity has been executed, but there are still shares open that are waiting to be filled that are associated with the order."""
+    PARTIAL
+
+    """The entire quantity of an order has been completely filled"""
+    EXECUTED
+}
+
+
+type SerumOrderState {
+    """The order number unique identifier"""
+    Num: Uint64!
+
+    """previousState is the previous of the SerumOrder."""
+    previousState: ORDER_STATE!
+
+    """currentState is the current known state of the SerumOrder."""
+    currentState: ORDER_STATE!
+
+    """transitionName is the current transition of the transaction."""
+    transitionName: ORDER_TRANSITION!
+
+    transition: OrderTransition
+}
+
+union OrderTransition = OrderTransitionInit | OrderTransitionAccepted | OrderTransitionPendindCancellation | OrderTransitionCancelled | OrderTransitionFilled | OrderTransitionExecuted
+
+type OrderTransitionInit {
+    """`order` is the SerumOrder details."""
+    order: SerumOrder!
+
+}
+type OrderTransitionAccepted {
+    slotNum: Uint64!
+    transactionHash: String!
+    transactionIndex: Uint64!
+    instructionIndex: Uint64!
+    timestamp: Time!
+}
+
+type OrderTransitionPendindCancellation {
+    slotNum: Uint64!
+    transactionHash: String!
+    transactionIndex: Uint64!
+    instructionIndex: Uint64!
+    timestamp: Time!
+}
+
+type OrderTransitionCancelled {
+    slotNum: Uint64!
+    transactionHash: String!
+    transactionIndex: Uint64!
+    instructionIndex: Uint64!
+    timestamp: Time!
+}
+
+type OrderTransitionFilled {
+    fill: SerumFill!
+}
+
+type OrderTransitionExecuted {
+    slotNum: Uint64!
+    transactionHash: String!
+    transactionIndex: Uint64!
+    instructionIndex: Uint64!
+    timestamp: Time!
+}
+
+enum ORDER_TRANSITION {
+    ACCEPTED
+    PENDING_CANCELLATION
+    CANCELLED
+    FILLED
+    EXECUTED
+}

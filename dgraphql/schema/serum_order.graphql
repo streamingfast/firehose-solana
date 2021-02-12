@@ -1,0 +1,47 @@
+
+type SerumOrder {
+  """The order number unique identifier"""
+  Num: Uint64!
+
+  """The slot number in which the SerumOrder occurred."""
+  slotNum: Uint64!
+
+  """The transaction's hash within the slot where the SerumOrder occurred."""
+  transactionHash: String!
+
+  """The transaction's index within the slot where the SerumOrder occurred."""
+  transactionIndex: Uint64!
+
+  """The instruction's index within the transaction where the SerumOrder occurred."""
+  instructionIndex: Uint64!
+
+  """The timestamp of the block in which this SerumFill occurred."""
+  timestamp: Time!
+
+  """The trader's public key for this SerumOrder, i.e. the one that buy or sell for this market."""
+  trader: String!
+
+  """The market for in which this SerumOrder occurred."""
+  market: SerumMarket!
+
+  """Which side this SerumOrder is for, either BID (seller) or ASK (buyer)."""
+  side: SideType!
+
+  """The price specified in the SerumOrder. The denomication is always in (base token / quote token)"""
+  price: String!
+
+  """The desired quantity in the SerumOrder"""
+  quantity: TokenAmount!
+
+  """The SerumOrder type"""
+  type: ORDER_TYPE!
+
+  """The fills associated to the order"""
+  fills: [SerumFill]!
+}
+
+enum ORDER_TYPE {
+  LIMIT
+  IMMEDIATE_OR_CANCEL
+  POST_ONLY
+}
