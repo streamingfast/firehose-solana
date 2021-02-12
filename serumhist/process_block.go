@@ -32,8 +32,18 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	}
 
 	// process cancellation
+	for _, cancel := range serumSlot.orderCancellations {
+		if err := i.processSerumCancel(i.ctx, cancel); err != nil {
+			return fmt.Errorf("unable to process serum cancel: %w", err)
+		}
+	}
+
 	// process executed
-	// process closet
+	for _, execute := range serumSlot.orderExecuted {
+		i.processSerumExecute(i.ctx, execute)
+	}
+
+	// process close
 
 	i.slotMetrics.serumFillCount += len(serumSlot.fills)
 	for _, fill := range serumSlot.fills {

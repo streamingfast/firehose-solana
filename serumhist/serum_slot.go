@@ -43,8 +43,8 @@ type serumFill struct {
 	trader         solana.PublicKey
 	fill           *pbserumhist.Fill
 	slotNumber     uint64
-	trxIdx         uint64
-	instIdx        uint64
+	trxIdx      uint32
+	instIdx     uint32
 	tradingAccount solana.PublicKey
 	market         solana.PublicKey
 	orderSeqNum    uint64
@@ -55,32 +55,32 @@ type serumOrder struct {
 	market      solana.PublicKey
 	orderSeqNum uint64
 	slotNumber  uint64
-	trxIdx      uint64
-	instIdx     uint64
+	trxIdx      uint32
+	instIdx     uint32
 }
 
 type serumOrderExecuted struct {
 	market      solana.PublicKey
 	orderSeqNum uint64
 	slotNumber  uint64
-	trxIdx      uint64
-	instIdx     uint64
+	trxIdx      uint32
+	instIdx     uint32
 }
 
 type serumOrderClosed struct {
 	market      solana.PublicKey
 	orderSeqNum uint64
 	slotNumber  uint64
-	trxIdx      uint64
-	instIdx     uint64
+	trxIdx      uint32
+	instIdx     uint32
 }
 
 type serumOrderCancelled struct {
 	market      solana.PublicKey
 	orderSeqNum uint64
 	slotNumber  uint64
-	trxIdx      uint64
-	instIdx     uint64
+	trxIdx      uint32
+	instIdx     uint32
 }
 
 func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx uint64, instIdx uint64, trxId, slotHash string, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
