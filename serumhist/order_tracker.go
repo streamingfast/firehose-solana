@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
+	"github.com/dfuse-io/kvdb/store"
 	"github.com/golang/protobuf/proto"
 	"sync"
 
@@ -98,19 +99,19 @@ func (s *StatefulOrder) applyEvent(event interface{}) (*pbserumhist.OrderTransit
 	return out, nil
 }
 
-func (i *Injector) GetInitializeOrder(ctx context.Context, market solana.PublicKey, orderNum uint64) (*StatefulOrder, *pbserumhist.OrderTransition, error) {
+func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.PublicKey, orderNum uint64) (*StatefulOrder, *pbserumhist.OrderTransition, error) {
 	statefulOrder := newStatefulOrder()
 	orderKeyPrefix := keyer.EncodeOrderPrefix(market, orderNum)
 
 	zlog.Debug("get order",
 		zap.Stringer("prefix", orderKeyPrefix),
 	)
-	itr := i.kvdb.Prefix(ctx, orderKeyPrefix, 0)
+	itr := kvdb.Prefix(ctx, orderKeyPrefix, 0)
 
 	seenOrderKey := false
 	transition := &pbserumhist.OrderTransition{
-		PreviousState:        pbserumhist.OrderTransition_STATE_UNKNOWN,
-		CurrentState:         pbserumhist.OrderTransition_STATE_UNKNOWN,
+		PreviousState: pbserumhist.OrderTransition_STATE_UNKNOWN,
+		CurrentState:  pbserumhist.OrderTransition_STATE_UNKNOWN,
 	}
 	var err error
 	for itr.Next() {
@@ -132,7 +133,7 @@ func (i *Injector) GetInitializeOrder(ctx context.Context, market solana.PublicK
 					trxIdx:      uint32(trxIdx),
 					instIdx:     uint32(instIdx),
 				},
-				order:      order,
+				order: order,
 			}
 		case keyer.OrderEventTypeFill:
 			fill := &pbserumhist.Fill{}
@@ -148,7 +149,7 @@ func (i *Injector) GetInitializeOrder(ctx context.Context, market solana.PublicK
 					trxIdx:      uint32(trxIdx),
 					instIdx:     uint32(instIdx),
 				},
-				fill:        fill,
+				fill: fill,
 			}
 		case keyer.OrderEventTypeExecuted:
 			event = &orderExecutedEvent{
@@ -210,7 +211,6 @@ func (i *Injector) GetInitializeOrder(ctx context.Context, market solana.PublicK
 
 	return statefulOrder, transition, nil
 }
-
 
 type OrderManager struct {
 	subscriptionsLock sync.RWMutex
