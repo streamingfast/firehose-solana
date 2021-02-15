@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path"
 	"sort"
@@ -137,12 +136,8 @@ func (s *Superviser) restoreFrom(ctx context.Context, snapshotName string, snaps
 		return fmt.Errorf("cleaning up folder: %s: %w", dataFolder, err)
 	}
 
-	localURL, err := url.Parse("file://" + s.localSnapshotDir)
-	if err != nil {
-		return fmt.Errorf("paring local url:%s : %w", localURL, err)
-	}
-
-	localStore, err := dstore.NewLocalStore(localURL, "dbin", "zst", true)
+	localURL := "file://" + s.localSnapshotDir
+	localStore, err := dstore.NewSimpleStore(localURL)
 	if err != nil {
 		return fmt.Errorf("creating local store: %s: %w", localURL, err)
 	}
