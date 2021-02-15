@@ -16,30 +16,31 @@ import (
 	"go.uber.org/zap"
 )
 
-type serumSlot struct {
-	tradingAccountCache []*serumTradingAccount
+type SerumSlot struct {
+	TradingAccountCache []*serumTradingAccount
 	newOrders           []interface{}
 
+	events               []interface{}
 	orderNewEvents       []*db.NewOrder
-	orderFilledEvents    []*db.Fill
+	OrderFilledEvents    []*db.Fill
 	orderExecutedEvents  []*db.OrderExecuted
 	orderCancelledEvents []*db.OrderCancelled
 	orderClosedEvents    []*db.OrderClosed
 }
 
-func newSerumSlot() *serumSlot {
-	return &serumSlot{
-		tradingAccountCache: nil,
-		orderFilledEvents:   nil,
+func newSerumSlot() *SerumSlot {
+	return &SerumSlot{
+		TradingAccountCache: nil,
+		OrderFilledEvents:   nil,
 	}
 }
 
 type serumTradingAccount struct {
-	trader         solana.PublicKey
-	tradingAccount solana.PublicKey
+	Trader         solana.PublicKey
+	TradingAccount solana.PublicKey
 }
 
-func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32, trxId, slotHash string, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
+func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32, trxId, slotHash string, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
 
 	eventRef := &db.Ref{
 		SlotNumber: slotNumber,
@@ -59,23 +60,23 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 
 	switch v := instruction.Impl.(type) {
 	case *serum.InstructionNewOrder:
-		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
-			trader:         v.Accounts.Owner.PublicKey,
-			tradingAccount: v.Accounts.OpenOrders.PublicKey,
+		s.TradingAccountCache = append(s.TradingAccountCache, &serumTradingAccount{
+			Trader:         v.Accounts.Owner.PublicKey,
+			TradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
 		//  we need to look at a OpenOrder accounts and see an difss on the
 
 	case *serum.InstructionNewOrderV2:
-		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
-			trader:         v.Accounts.Owner.PublicKey,
-			tradingAccount: v.Accounts.OpenOrders.PublicKey,
+		s.TradingAccountCache = append(s.TradingAccountCache, &serumTradingAccount{
+			Trader:         v.Accounts.Owner.PublicKey,
+			TradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
 		// TODO: We need to log the created event here....
 
 	case *serum.InstructionNewOrderV3:
-		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
-			trader:         v.Accounts.Owner.PublicKey,
-			tradingAccount: v.Accounts.OpenOrders.PublicKey,
+		s.TradingAccountCache = append(s.TradingAccountCache, &serumTradingAccount{
+			Trader:         v.Accounts.Owner.PublicKey,
+			TradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
 
 		old, new, err := decodeEventQueue(accChanges)
@@ -119,14 +120,14 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 	return nil
 }
 
-func (s *serumSlot) addNewOrderEvent(eventRef db.Ref, old, new *serum.OpenOrders) {
+func (s *SerumSlot) addNewOrderEvent(eventRef db.Ref, old, new *serum.OpenOrders) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Orders[#]"); match {
 		}
 	}))
 }
 
-func (s *serumSlot) addOrderCancellationEvent(eventRef *db.Ref, old, new *serum.EventQueue) {
+func (s *SerumSlot) addOrderCancellationEvent(eventRef *db.Ref, old, new *serum.EventQueue) {
 	diff.Diff(old, new, diff.OnEvent(func(eventdiff diff.Event) {
 		if match, _ := eventdiff.Match("Events[#]"); match {
 			e := eventdiff.Element().Interface().(*serum.Event)
@@ -148,7 +149,7 @@ func (s *serumSlot) addOrderCancellationEvent(eventRef *db.Ref, old, new *serum.
 	}))
 }
 
-func (s *serumSlot) addOrderFillAndCloseEvent(eventRef *db.Ref, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
+func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *db.Ref, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
 	diff.Diff(old, new, diff.OnEvent(func(eventDiff diff.Event) {
 		if match, _ := eventDiff.Match("Events[#]"); match {
 			e := eventDiff.Element().Interface().(*serum.Event)
@@ -156,7 +157,7 @@ func (s *serumSlot) addOrderFillAndCloseEvent(eventRef *db.Ref, old, new *serum.
 			case diff.KindAdded:
 				if e.Flag.IsFill() {
 					eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
-					s.orderFilledEvents = append(s.orderFilledEvents, &db.Fill{
+					s.OrderFilledEvents = append(s.OrderFilledEvents, &db.Fill{
 						Ref:            eventRef,
 						TradingAccount: e.Owner,
 						Fill: &pbserumhist.Fill{

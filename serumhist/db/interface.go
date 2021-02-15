@@ -16,12 +16,14 @@ type Writeable interface {
 
 type DB interface {
 	Writer
-	Reader
-
+	SerumReader
+	StatsReader
 	Close()
 }
 
 type Writer interface {
+	Write(slot *SerumSlot) error
+
 	NewOrder(context.Context, *NewOrder) error
 	Fill(context.Context, *Fill) error
 	OrderExecuted(context.Context, *OrderExecuted) error
@@ -33,5 +35,8 @@ type Writer interface {
 	Flush(ctx context.Context) (err error)
 }
 
-type Reader interface {
+type SerumReader interface {
+}
+
+type StatsReader interface {
 }

@@ -19,7 +19,7 @@ type Server struct {
 	*shutter.Shutter
 
 	grpcAddr string
-	server   *grpc.Server
+	server   *dgrpc.Server
 	reader   *reader.Reader
 }
 
@@ -28,17 +28,23 @@ func New(grpcAddr string, manager *reader.Reader) *Server {
 		Shutter:  shutter.New(),
 		grpcAddr: grpcAddr,
 		reader:   manager,
-		server:   dgrpc.NewServer(dgrpc.WithLogger(zlog)),
+		server:   dgrpc.NewServer2(dgrpc.WithLogger(zlog)),
 	}
 }
 
 func (s *Server) Serve() {
-	pbaccounthist.RegisterSerumHistoryServer(s.server, s)
-	pbhealth.RegisterHealthServer(s.server, s)
+	s.server.RegisterService(func(gs *grpc.Server) {
+		pbaccounthist.RegisterSerumHistoryServer(gs, s)
+		pbhealth.RegisterHealthServer(gs, s)
+	})
 
 	zlog.Info("listening for serum history",
 		zap.String("addr", s.grpcAddr),
 	)
+
+	s.OnTerminating(func(err error) {
+		server.Shutdown(30 * time.Second)
+	})
 
 	lis, err := net.Listen("tcp", s.grpcAddr)
 	if err != nil {

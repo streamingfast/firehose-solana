@@ -10,6 +10,8 @@ import (
 )
 
 func (i *Injector) flush(ctx context.Context, slot *pbcodec.Slot) error {
+	// TODO: this needs to be more custome based on the type of DB we have
+	// bigquery will have a different flushing strategy then kvdb
 	slotNum := slot.Number
 	closeToHeadBlockTime := false
 	onFlushIntervalBoundary := slotNum%i.flushSlotInterval == 0

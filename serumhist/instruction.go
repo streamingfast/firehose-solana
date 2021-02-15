@@ -41,7 +41,7 @@ func (i Injector) processSerumFills(events []*db.Fill) error {
 		// push the events to subscription
 		i.manager.emit(event)
 
-		if err = i.db.Fill(i.ctx, event); err != nil {
+		if err = f.WriteFill(i.ctx, event); err != nil {
 			return fmt.Errorf("unable to write fill event: %w", err)
 		}
 

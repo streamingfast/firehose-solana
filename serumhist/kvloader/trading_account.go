@@ -1,4 +1,4 @@
-package serumhist
+package kvloader
 
 import (
 	"context"
@@ -32,15 +32,15 @@ func (t *tradingAccountCache) load(ctx context.Context) {
 		t.accounts[tradingAccount.String()] = trader
 	}
 	metrics.TradingAccountCount.SetUint64(uint64(len(t.accounts)))
-	zlog.Debug("trading account cache loaded",
+	serumhist.zlog.Debug("trading account cache loaded",
 		zap.Int("account_count", len(t.accounts)),
 	)
 }
 
 func (t *tradingAccountCache) setTradingAccount(ctx context.Context, tradingAccount, trader solana.PublicKey) error {
 	if _, found := t.accounts[tradingAccount.String()]; found {
-		if traceEnabled {
-			zlog.Debug("found trading account skipping the setting it to kvdb",
+		if serumhist.traceEnabled {
+			serumhist.zlog.Debug("found trading account skipping the setting it to kvdb",
 				zap.Stringer("trader", trader),
 				zap.Stringer("trading_acount", tradingAccount),
 			)

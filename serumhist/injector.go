@@ -25,21 +25,24 @@ import (
 
 type Injector struct {
 	*shutter.Shutter
-	ctx                     context.Context
-	db                      serumhistdb.DB
-	flushSlotInterval       uint64
-	lastTickBlock           uint64
-	lastTickTime            time.Time
-	blockStore              dstore.Store
-	blockstreamAddr         string
-	healthy                 bool
-	cache                   *tradingAccountCache
+	ctx context.Context
+	//db                      serumhistdb.DB
+	flushSlotInterval uint64
+	lastTickBlock     uint64
+	lastTickTime      time.Time
+	blockStore        dstore.Store
+	blockstreamAddr   string
+	healthy           bool
+
 	source                  *firehose.Firehose
 	slotMetrics             slotMetrics
 	preprocessorThreadCount int
 
-	manager                     *OrderManager
-	reader                      *reader.Reader
+	handler            bstream.Handler
+	checkpointResolver CheckpointResolver
+
+	manager *OrderManager
+	//reader                      *reader.Reader
 	grpcAddr                    string
 	server                      *dgrpc.Server
 	parallelDownloadThreadCount int
@@ -64,7 +67,7 @@ func NewInjector(
 		Shutter:           shutter.New(),
 		flushSlotInterval: flushSlotInterval,
 		db:                db,
-		cache:             newTradingAccountCache(kvdb),
+		cache:             kvloader.newTradingAccountCache(kvdb),
 		slotMetrics: slotMetrics{
 			startTime: time.Now(),
 		},
