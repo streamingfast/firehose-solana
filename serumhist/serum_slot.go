@@ -54,6 +54,12 @@ type orderNewEvent struct {
 
 	order *pbserumhist.Order
 }
+
+// serumHistWritter
+func (o *orderNewEvent) WriteTo(writer) {
+	writer.NewOrder()
+}
+
 type orderFillEvent struct {
 	orderEventRef
 
