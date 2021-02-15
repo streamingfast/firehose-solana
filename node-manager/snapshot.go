@@ -90,7 +90,9 @@ func (s *Superviser) RestoreSnapshot(snapshotName string, snapshotStore dstore.S
 			if err != nil {
 				return fmt.Errorf("parse slot to int: %s: %w", parts[0], err)
 			}
-			mergeSlotNum := uint64(slot/100) * 100
+			mergeFileBeforeSnapshot := uint64(slot/100) * 100
+			mergeFileAfterSnapshot := mergeFileBeforeSnapshot + 100
+			mergeSlotNum := mergeFileAfterSnapshot
 			mergedFileSlots = append(mergedFileSlots, mergeSlotNum)
 			snapshotsVsMergeFile[mergeSlotNum] = filename
 			return nil
