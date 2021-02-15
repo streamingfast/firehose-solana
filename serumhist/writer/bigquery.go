@@ -4,25 +4,25 @@ import (
 	"github.com/dfuse-io/dfuse-solana/serumhist/event"
 )
 
-type Bigquery struct {
+type BigQuery struct {
 }
 
-func (b Bigquery) NewOrder(order *event.NewOrder) error {
+func (b BigQuery) NewOrder(order *event.NewOrder) error {
 	panic("implement me")
 
 }
-func (b Bigquery) Fill(fill *event.Fill) error {
+func (b BigQuery) Fill(fill *event.Fill) error {
 	panic("implement me")
 }
 
-func (b Bigquery) OrderExecuted(executed *event.OrderExecuted) error {
+func (b BigQuery) OrderExecuted(executed *event.OrderExecuted) error {
 	panic("implement me")
 }
 
-func (b Bigquery) OrderClosed(closed *event.OrderClosed) error {
+func (b BigQuery) OrderClosed(closed *event.OrderClosed) error {
 	panic("implement me")
 }
 
-func (b Bigquery) OrderCancelled(cancelled *event.OrderCancelled) error {
+func (b BigQuery) OrderCancelled(cancelled *event.OrderCancelled) error {
 	panic("implement me")
 }

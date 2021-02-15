@@ -30,8 +30,6 @@ require (
 	github.com/dfuse-io/solana-go v0.2.1-0.20210215180845-7405c0c399bb
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.4.2
-	github.com/gorilla/handlers v1.5.1 // indirect
-	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
 	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/mholt/archiver/v3 v3.5.0
@@ -42,7 +40,6 @@ require (
 	go.uber.org/zap v1.16.0
 	google.golang.org/api v0.29.0
 	google.golang.org/grpc v1.29.1
-	google.golang.org/protobuf v1.25.0
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807
