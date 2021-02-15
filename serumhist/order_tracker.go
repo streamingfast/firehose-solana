@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist/event"
+	"github.com/dfuse-io/dfuse-solana/serumhist/db"
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/golang/protobuf/proto"
@@ -34,13 +34,13 @@ func newStatefulOrder() *StatefulOrder {
 
 // TODO: unify with an interface
 // the event is of type  orderFillEvent || orderExecutedEvent || orderClosedEvent || orderCancelledEvent
-func (s *StatefulOrder) applyEvent(e event.Eventeable) (*pbserumhist.OrderTransition, error) {
+func (s *StatefulOrder) applyEvent(e db.Eventeable) (*pbserumhist.OrderTransition, error) {
 	out := &pbserumhist.OrderTransition{
 		PreviousState: s.state,
 	}
 
 	switch v := e.(type) {
-	case *event.NewOrder:
+	case *db.NewOrder:
 		zlog.Debug("applying new order event")
 		s.state = pbserumhist.OrderTransition_STATE_APPROVED
 		out.Transition = pbserumhist.OrderTransition_TRANS_ACCEPTED
@@ -49,7 +49,7 @@ func (s *StatefulOrder) applyEvent(e event.Eventeable) (*pbserumhist.OrderTransi
 		s.order.SlotNum = v.Ref.SlotNumber
 		s.order.TrxIdx = v.Ref.TrxIdx
 		s.order.InstIdx = v.Ref.InstIdx
-	case *event.Fill:
+	case *db.Fill:
 		zlog.Debug("applying fill order event")
 		s.state = pbserumhist.OrderTransition_STATE_PARTIAL
 		out.Transition = pbserumhist.OrderTransition_TRANS_FILLED
@@ -62,11 +62,11 @@ func (s *StatefulOrder) applyEvent(e event.Eventeable) (*pbserumhist.OrderTransi
 		fill.OrderSeqNum = v.Ref.OrderSeqNum
 		s.order.Fills = append(s.order.Fills, fill)
 		out.AddedFill = fill
-	case *event.OrderExecuted:
+	case *db.OrderExecuted:
 		zlog.Debug("applying executed event")
 		s.state = pbserumhist.OrderTransition_STATE_EXECUTED
 		out.Transition = pbserumhist.OrderTransition_TRANS_EXECUTED
-	case *event.OrderCancelled:
+	case *db.OrderCancelled:
 		zlog.Debug("applying cancellation order event")
 		s.state = pbserumhist.OrderTransition_STATE_CANCELLED
 		out.Transition = pbserumhist.OrderTransition_TRANS_CANCELLED
@@ -77,7 +77,7 @@ func (s *StatefulOrder) applyEvent(e event.Eventeable) (*pbserumhist.OrderTransi
 		instrRef.InstIdx = v.Ref.InstIdx
 
 		s.cancelled = instrRef
-	case *event.OrderClosed:
+	case *db.OrderClosed:
 		if len(s.order.Fills) == 0 {
 			zlog.Debug("applying closed order event as a cancellation")
 			s.state = pbserumhist.OrderTransition_STATE_CANCELLED
@@ -118,7 +118,7 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 	var err error
 	for itr.Next() {
 		seenOrderKey = true
-		var e event.Eventeable
+		var e db.Eventeable
 		eventByte, market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeOrder(itr.Item().Key)
 		switch eventByte {
 		case keyer.OrderEventTypeNew:
@@ -127,8 +127,8 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to unmarshal order: %w", err)
 			}
-			e = &event.NewOrder{
-				Ref: &event.Ref{
+			e = &db.NewOrder{
+				Ref: &db.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,
@@ -143,8 +143,8 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to unmarshal fil: %w", err)
 			}
-			e = &event.Fill{
-				Ref: &event.Ref{
+			e = &db.Fill{
+				Ref: &db.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,
@@ -154,8 +154,8 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 				Fill: fill,
 			}
 		case keyer.OrderEventTypeExecuted:
-			e = &event.OrderExecuted{
-				Ref: &event.Ref{
+			e = &db.OrderExecuted{
+				Ref: &db.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,
@@ -169,8 +169,8 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to unmarshal instruction ref: %w", err)
 			}
-			e = &event.OrderCancelled{
-				Ref: &event.Ref{
+			e = &db.OrderCancelled{
+				Ref: &db.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,
@@ -185,8 +185,8 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to unmarshal instruction ref: %w", err)
 			}
-			e = &event.OrderClosed{
-				Ref: &event.Ref{
+			e = &db.OrderClosed{
+				Ref: &db.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,
@@ -225,7 +225,7 @@ func newOrderManager() *OrderManager {
 	}
 }
 
-func (m *OrderManager) emit(event event.Eventeable) {
+func (m *OrderManager) emit(event db.Eventeable) {
 	m.subscriptionsLock.RLock()
 	defer m.subscriptionsLock.RUnlock()
 	for _, sub := range m.subscriptions {

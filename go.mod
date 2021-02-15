@@ -38,6 +38,7 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	github.com/test-go/testify v1.1.4
+	github.com/tidwall/gjson v1.6.7
 	go.uber.org/zap v1.16.0
 	google.golang.org/api v0.29.0
 	google.golang.org/grpc v1.29.1

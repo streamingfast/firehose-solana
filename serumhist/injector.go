@@ -6,29 +6,27 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist/event"
-
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
-	"github.com/dfuse-io/dgrpc"
-	"github.com/dfuse-io/kvdb/store"
-	pbhealth "github.com/dfuse-io/pbgo/grpc/health/v1"
-	"google.golang.org/grpc"
-
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/bstream/blockstream"
 	"github.com/dfuse-io/bstream/firehose"
 	"github.com/dfuse-io/bstream/forkable"
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	serumhistdb "github.com/dfuse-io/dfuse-solana/serumhist/db"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
+	"github.com/dfuse-io/dgrpc"
 	"github.com/dfuse-io/dstore"
+	"github.com/dfuse-io/kvdb/store"
+	pbhealth "github.com/dfuse-io/pbgo/grpc/health/v1"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
 
 type Injector struct {
 	*shutter.Shutter
 	ctx                     context.Context
-	eventWriter             event.Writer
+	db                      serumhistdb.DB
 	flushSlotInterval       uint64
 	lastTickBlock           uint64
 	lastTickTime            time.Time
@@ -52,7 +50,7 @@ func NewInjector(
 	ctx context.Context,
 	blockstreamAddr string,
 	blockStore dstore.Store,
-	eventWriter event.Writer,
+	db serumhistdb.DB,
 	kvdb store.KVStore,
 	flushSlotInterval uint64,
 	preprocessorThreadCount int,
@@ -65,7 +63,7 @@ func NewInjector(
 		blockStore:        blockStore,
 		Shutter:           shutter.New(),
 		flushSlotInterval: flushSlotInterval,
-		eventWriter:       eventWriter,
+		db:                db,
 		cache:             newTradingAccountCache(kvdb),
 		slotMetrics: slotMetrics{
 			startTime: time.Now(),
@@ -187,7 +185,7 @@ func (i *Injector) doFlush(slotNum uint64, reason string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	err := i.eventWriter.Flush(ctx)
+	err := i.db.Flush(ctx)
 	if err != nil {
 		return fmt.Errorf("db flush: %w", err)
 	}

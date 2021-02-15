@@ -1,16 +1,36 @@
-package bigquery
+package bigq
 
 import (
-	"cloud.google.com/go/bigquery"
 	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist/event"
+	"cloud.google.com/go/bigquery"
+	serumhistdb "github.com/dfuse-io/dfuse-solana/serumhist/db"
 	"github.com/tidwall/gjson"
 )
+
+type Bigq struct {
+	client *bigquery.Client
+
+	orderCreatedMapping *Mapping
+	orderCreatedTable   *bigquery.Table
+	orderFilledMapping  *Mapping
+	orderFilledTable    *bigquery.Table
+	dataset             string
+}
+
+func New(client *bigquery.Client, dataset string) serumhistdb.DB {
+	return &Bigq{
+		client:  client,
+		dataset: dataset,
+	}
+}
+
+func (b *Bigq) Close() {
+	b.client.Close()
+}
 
 type FieldMapping struct {
 	SourceFieldJsonPath string `json:"path"`
@@ -53,20 +73,6 @@ func (r *Row) Save() (row map[string]bigquery.Value, insertID string, err error)
 	return render, "", nil
 }
 
-type BigQuery struct {
-	client *bigquery.Client
-
-	orderCreatedMapping *Mapping
-	orderCreatedTable   *bigquery.Table
-	orderFilledMapping  *Mapping
-	orderFilledTable    *bigquery.Table
-
-}
-
-func New() event.Writer {
-	return &BigQuery{}
-}
-
 func schemaUpdate(ctx context.Context, table *bigquery.Table, schema bigquery.Schema) error {
 	tableMetadataToUpdate := bigquery.TableMetadataToUpdate{
 		Schema: schema,
@@ -75,47 +81,4 @@ func schemaUpdate(ctx context.Context, table *bigquery.Table, schema bigquery.Sc
 		return err
 	}
 	return nil
-}
-
-func (b *BigQuery) NewOrder(ctx context.Context, order *event.NewOrder) error {
-	if b.orderCreatedTable == nil {
-		return nil
-	}
-
-	row := &Row{
-		mapping: b.orderCreatedMapping,
-		event:   order,
-	}
-	return b.orderCreatedTable.Inserter().Put(ctx, row)
-}
-
-func (b *BigQuery) Fill(ctx context.Context, fill *event.Fill) error {
-	if b.orderFilledTable == nil {
-		return nil
-	}
-	return b.orderFilledTable.Inserter().Put(ctx, fill)
-}
-
-func (b *BigQuery) OrderExecuted(ctx context.Context, executed *event.OrderExecuted) error {
-	return nil
-}
-
-func (b *BigQuery) OrderClosed(ctx context.Context, closed *event.OrderClosed) error {
-	return nil
-}
-
-func (b *BigQuery) OrderCancelled(ctx context.Context, cancelled *event.OrderCancelled) error {
-	return nil
-}
-
-func (b *BigQuery) WriteCheckpoint(ctx context.Context, checkpoint *pbserumhist.Checkpoint) error {
-	panic("implement me")
-}
-
-func (b *BigQuery) Checkpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {
-	panic("implement me")
-}
-
-func (b *BigQuery) Flush(ctx context.Context) (err error) {
-	panic("implement me")
 }

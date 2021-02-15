@@ -1,4 +1,4 @@
-package event
+package db
 
 import (
 	"context"
@@ -14,6 +14,13 @@ type Writeable interface {
 	WriteTo(writer Writer) error
 }
 
+type DB interface {
+	Writer
+	Reader
+
+	Close()
+}
+
 type Writer interface {
 	NewOrder(context.Context, *NewOrder) error
 	Fill(context.Context, *Fill) error
@@ -22,6 +29,9 @@ type Writer interface {
 	OrderCancelled(context.Context, *OrderCancelled) error
 
 	WriteCheckpoint(ctx context.Context, checkpoint *pbserumhist.Checkpoint) error
-	Checkpoint(ctx context.Context) (*pbserumhist.Checkpoint, error)
+	GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error)
 	Flush(ctx context.Context) (err error)
+}
+
+type Reader interface {
 }

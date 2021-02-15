@@ -35,7 +35,7 @@ func init() {
 			return serumhistApp.New(&serumhistApp.Config{
 				BlockStreamAddr:           viper.GetString("common-blockstream-addr"),
 				BlocksStoreURL:            mustReplaceDataDir(dfuseDataDir, viper.GetString("common-blocks-store-url")),
-				FLushSlotInterval:         viper.GetUint64("serumhist-flush-slots-interval"),
+				FlushSlotInterval:         viper.GetUint64("serumhist-flush-slots-interval"),
 				StartBlock:                viper.GetUint64("serumhist-start-block-num"),
 				IgnoreCheckpointOnLaunch:  viper.GetBool("serumhist-ignore-checkpoint-on-launch"),
 				KvdbDsn:                   mustReplaceDataDir(dfuseDataDir, viper.GetString("serumhist-dsn")),

@@ -1,35 +1,21 @@
-package event
+package kvdb
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/dfuse-io/dfuse-solana/serumhist/db"
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/golang/protobuf/proto"
 )
 
-type Kvdb struct {
-	kvdb store.KVStore
-}
-
-const (
-	DatabaseTimeout = 10 * time.Minute
-)
-
-func NewKvdb(kvdb store.KVStore) *Kvdb {
-	return &Kvdb{
-		kvdb: kvdb,
-	}
-}
-
-func (b *Kvdb) NewOrder(ctx context.Context, event *NewOrder) error {
+func (b *Kvdb) NewOrder(ctx context.Context, event *db.NewOrder) error {
 	panic("implement me")
 }
 
-func (b *Kvdb) Fill(ctx context.Context, e *Fill) error {
+func (b *Kvdb) Fill(ctx context.Context, e *db.Fill) error {
 	cnt, err := proto.Marshal(e.Fill)
 	if err != nil {
 		return fmt.Errorf("unable to marshal to fill: %w", err)
@@ -55,7 +41,7 @@ func (b *Kvdb) Fill(ctx context.Context, e *Fill) error {
 	return nil
 }
 
-func (b *Kvdb) OrderExecuted(ctx context.Context, event *OrderExecuted) error {
+func (b *Kvdb) OrderExecuted(ctx context.Context, event *db.OrderExecuted) error {
 	kv := store.KV{
 		Key: keyer.EncodeOrderExecute(event.Market, event.SlotNumber, uint64(event.TrxIdx), uint64(event.InstIdx), event.OrderSeqNum),
 	}
@@ -67,7 +53,7 @@ func (b *Kvdb) OrderExecuted(ctx context.Context, event *OrderExecuted) error {
 	return nil
 }
 
-func (b *Kvdb) OrderClosed(ctx context.Context, event *OrderClosed) error {
+func (b *Kvdb) OrderClosed(ctx context.Context, event *db.OrderClosed) error {
 	val, err := proto.Marshal(event.InstrRef)
 	if err != nil {
 		return fmt.Errorf("unable to marshal to fill: %w", err)
@@ -82,7 +68,7 @@ func (b *Kvdb) OrderClosed(ctx context.Context, event *OrderClosed) error {
 	return nil
 }
 
-func (b *Kvdb) OrderCancelled(ctx context.Context, event *OrderCancelled) error {
+func (b *Kvdb) OrderCancelled(ctx context.Context, event *db.OrderCancelled) error {
 	val, err := proto.Marshal(event.InstrRef)
 	if err != nil {
 		return fmt.Errorf("unable to marshal to fill: %w", err)
@@ -110,29 +96,6 @@ func (b *Kvdb) WriteCheckpoint(ctx context.Context, checkpoint *pbserumhist.Chec
 		return fmt.Errorf("unable to store checkpoint in kvdb: %w", err)
 	}
 	return nil
-}
-
-func (b *Kvdb) Checkpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {
-	key := keyer.EncodeCheckpoint()
-
-	ctx, cancel := context.WithTimeout(ctx, DatabaseTimeout)
-	defer cancel()
-
-	val, err := b.kvdb.Get(ctx, key)
-	if err == store.ErrNotFound {
-		return nil, nil
-	} else if err != nil {
-		return nil, fmt.Errorf("error while reading checkpoint: %w", err)
-	}
-
-	// Decode val as `pbaccounthist.ShardCheckpoint`
-	out := &pbserumhist.Checkpoint{}
-	if err := proto.Unmarshal(val, out); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-
 }
 
 func (b *Kvdb) Flush(ctx context.Context) error {

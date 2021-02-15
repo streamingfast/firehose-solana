@@ -5,8 +5,12 @@ import (
 	"errors"
 	"fmt"
 
+	"cloud.google.com/go/bigquery"
+	serumhistdb "github.com/dfuse-io/dfuse-solana/serumhist/db"
+
 	"github.com/dfuse-io/dfuse-solana/serumhist"
-	"github.com/dfuse-io/dfuse-solana/serumhist/event"
+	serumhistbigq "github.com/dfuse-io/dfuse-solana/serumhist/db/bigq"
+	serumhistKvdb "github.com/dfuse-io/dfuse-solana/serumhist/db/kvdb"
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
@@ -20,17 +24,23 @@ import (
 type Config struct {
 	BlockStreamAddr           string
 	BlocksStoreURL            string
-	FLushSlotInterval         uint64
-	StartBlock                uint64
-	KvdbDsn                   string
-	EnableInjector            bool
-	EnableBigQueryInjector    bool
-	EnableServer              bool
-	GRPCListenAddr            string
-	HTTPListenAddr            string
-	IgnoreCheckpointOnLaunch  bool
 	PreprocessorThreadCount   int
 	MergeFileParallelDownload int
+
+	IgnoreCheckpointOnLaunch bool
+	FlushSlotInterval        uint64
+	StartBlock               uint64
+
+	EnableServer        bool
+	EnableInjector      bool
+	EnableOrderTracking bool // for now this is only supported in injector mode
+	GRPCListenAddr      string
+	HTTPListenAddr      string
+
+	EnableBigQueryInjector bool
+	KvdbDsn                string
+	BigQueryProject        string
+	BigQueryDataset        string
 }
 
 type App struct {
@@ -65,9 +75,9 @@ func (a *App) Run() error {
 		return fmt.Errorf("invalid config: %w", err)
 	}
 
-	kvdb, err := store.New(a.Config.KvdbDsn)
+	db, err := a.getDB(appCtx)
 	if err != nil {
-		zlog.Fatal("could not create kvstore", zap.Error(err))
+		return fmt.Errorf("uynable to create serumhist db: %w", err)
 	}
 
 	if a.Config.EnableServer {
@@ -85,9 +95,7 @@ func (a *App) Run() error {
 			return fmt.Errorf("failed setting up blocks store: %w", err)
 		}
 
-		eventWritter := event.NewKvdb(kvdb)
-
-		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, eventWritter, kvdb, a.Config.FLushSlotInterval, a.Config.PreprocessorThreadCount, a.Config.MergeFileParallelDownload, a.Config.GRPCListenAddr)
+		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, db, a.Config.FlushSlotInterval, a.Config.PreprocessorThreadCount, a.Config.MergeFileParallelDownload, a.Config.GRPCListenAddr)
 		err = injector.SetupSource(a.Config.StartBlock, a.Config.IgnoreCheckpointOnLaunch)
 		if err != nil {
 			return fmt.Errorf("unable to setup serumhist injector source: %w", err)
@@ -116,9 +124,35 @@ func (a *App) Run() error {
 
 }
 
+func (a *App) getDB(ctx context.Context) (serumhistdb.DB, error) {
+	var db serumhistdb.DB
+	if a.Config.EnableBigQueryInjector {
+		bqClient, err := bigquery.NewClient(ctx, a.Config.BigQueryProject)
+		if err != nil {
+			return nil, err
+		}
+		db = serumhistbigq.New(bqClient, a.Config.BigQueryDataset)
+	} else {
+		kvdb, err := store.New(a.Config.KvdbDsn)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create kvdb store: %w", err)
+		}
+		db = serumhistKvdb.New(kvdb)
+	}
+	return db, nil
+}
+
 func (c *Config) validate() error {
 	if !c.EnableInjector && !c.EnableServer {
 		return errors.New("both enable injection and enable server were disabled, this is invalid, at least one of them must be enabled, or both")
+	}
+
+	if !c.EnableInjector && c.EnableOrderTracking {
+		return errors.New("Order tracking can only be enabled while in injector mode")
+	}
+
+	if c.EnableOrderTracking && c.GRPCListenAddr == "" {
+		return errors.New("Order tracking required a GRPC address to server the Service")
 	}
 
 	return nil

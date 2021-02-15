@@ -55,7 +55,7 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		return fmt.Errorf("unable to process serum orders executed: %w", err)
 	}
 
-	if err := i.eventWriter.WriteCheckpoint(i.ctx, &pbserumhist.Checkpoint{
+	if err := i.db.WriteCheckpoint(i.ctx, &pbserumhist.Checkpoint{
 		LastWrittenSlotNum: slot.Number,
 		LastWrittenSlotId:  slot.Id,
 	}); err != nil {

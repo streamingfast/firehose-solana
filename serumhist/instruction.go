@@ -3,12 +3,11 @@ package serumhist
 import (
 	"fmt"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist/event"
-
+	"github.com/dfuse-io/dfuse-solana/serumhist/db"
 	"go.uber.org/zap"
 )
 
-func (i Injector) processSerumFills(events []*event.Fill) error {
+func (i Injector) processSerumFills(events []*db.Fill) error {
 	for _, event := range events {
 		trader, err := i.cache.getTrader(i.ctx, event.TradingAccount)
 		if err != nil {
@@ -42,7 +41,7 @@ func (i Injector) processSerumFills(events []*event.Fill) error {
 		// push the events to subscription
 		i.manager.emit(event)
 
-		if err = i.eventWriter.Fill(i.ctx, event); err != nil {
+		if err = i.db.Fill(i.ctx, event); err != nil {
 			return fmt.Errorf("unable to write fill event: %w", err)
 		}
 
@@ -50,7 +49,7 @@ func (i Injector) processSerumFills(events []*event.Fill) error {
 	return nil
 }
 
-func (i *Injector) processSerumOrdersCancelled(events []*event.OrderCancelled) error {
+func (i *Injector) processSerumOrdersCancelled(events []*db.OrderCancelled) error {
 	for _, event := range events {
 		zlog.Debug("serum order cancelled",
 			zap.Stringer("market", event.Market),
@@ -65,7 +64,7 @@ func (i *Injector) processSerumOrdersCancelled(events []*event.OrderCancelled) e
 			i.manager.emit(event)
 		}
 
-		if err := i.eventWriter.OrderCancelled(i.ctx, event); err != nil {
+		if err := i.db.OrderCancelled(i.ctx, event); err != nil {
 			return fmt.Errorf("unable to write order canceled event: %w", err)
 		}
 	}
@@ -73,7 +72,7 @@ func (i *Injector) processSerumOrdersCancelled(events []*event.OrderCancelled) e
 	return nil
 }
 
-func (i *Injector) processSerumOrdersClosed(events []*event.OrderClosed) error {
+func (i *Injector) processSerumOrdersClosed(events []*db.OrderClosed) error {
 	for _, event := range events {
 		zlog.Debug("serum order closed",
 			zap.Stringer("market", event.Market),
@@ -88,7 +87,7 @@ func (i *Injector) processSerumOrdersClosed(events []*event.OrderClosed) error {
 			i.manager.emit(event)
 		}
 
-		if err := i.eventWriter.OrderClosed(i.ctx, event); err != nil {
+		if err := i.db.OrderClosed(i.ctx, event); err != nil {
 			return fmt.Errorf("unable to write order closed event: %w", err)
 		}
 	}
@@ -97,7 +96,7 @@ func (i *Injector) processSerumOrdersClosed(events []*event.OrderClosed) error {
 
 }
 
-func (i *Injector) processSerumOrdersExecuted(events []*event.OrderExecuted) error {
+func (i *Injector) processSerumOrdersExecuted(events []*db.OrderExecuted) error {
 	for _, event := range events {
 		zlog.Debug("serum order executed",
 			zap.Stringer("market", event.Market),
@@ -112,7 +111,7 @@ func (i *Injector) processSerumOrdersExecuted(events []*event.OrderExecuted) err
 			i.manager.emit(event)
 		}
 
-		if err := i.eventWriter.OrderExecuted(i.ctx, event); err != nil {
+		if err := i.db.OrderExecuted(i.ctx, event); err != nil {
 			return fmt.Errorf("unable to write order executed event: %w", err)
 		}
 	}
