@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist"
 	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
+	serumhistreader "github.com/dfuse-io/dfuse-solana/serumhist/reader"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/solana-go"
 	"github.com/golang/protobuf/proto"
@@ -84,19 +84,18 @@ func decoderKeyerE(cmd *cobra.Command, args []string) (err error) {
 		fmt.Println("Inst idx:", instIdx)
 		fmt.Println("Order Seq Num:", orderSeqNum)
 	case serumhistkeyer.PrefixFillByTraderMarket:
-		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByMarketTrader(key)
+		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByTraderMarket(key)
 		fmt.Println("Fill By Trader Key:")
 		fmt.Println("Trader:", trader.String())
-		fmt.Println("Marker:", market.String())
+		fmt.Println("Market:", market.String())
 		fmt.Println("Slot Num:", slotNum)
 		fmt.Println("Trx idx:", trxIdx)
 		fmt.Println("Inst idx:", instIdx)
 		fmt.Println("Order Seq Num:", orderSeqNum)
-	case serumhistkeyer.PrefixFillByMarket:
-		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByMarket(key)
+	case serumhistkeyer.PrefixFill:
+		market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFill(key)
 		fmt.Println("Fill By Market Key:")
-		fmt.Println("Trader:", trader.String())
-		fmt.Println("Marker:", market.String())
+		fmt.Println("Market:", market.String())
 		fmt.Println("Slot Num:", slotNum)
 		fmt.Println("Trx idx:", trxIdx)
 		fmt.Println("Inst idx:", instIdx)
@@ -145,7 +144,7 @@ func readTraderFillsE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	var fills []*pbserumhist.Fill
-	manager := serumhist.NewManager(kvdb)
+	reader := serumhistreader.New(kvdb)
 
 	traderAddr := args[0]
 	trader, err := solana.PublicKeyFromBase58(traderAddr)
@@ -161,10 +160,10 @@ func readTraderFillsE(cmd *cobra.Command, args []string) (err error) {
 		}
 
 		fmt.Printf("getting fills for trader %s and market %s\n", trader.String(), market.String())
-		fills, _, err = manager.GetFillsByTraderAndMarket(cmd.Context(), trader, market, viper.GetInt("limit"))
+		fills, _, err = reader.GetFillsByTraderAndMarket(cmd.Context(), trader, market, viper.GetInt("limit"))
 	} else {
 		fmt.Println("getting fills for trader", trader.String())
-		fills, _, err = manager.GetFillsByTrader(cmd.Context(), trader, viper.GetInt("limit"))
+		fills, _, err = reader.GetFillsByTrader(cmd.Context(), trader, viper.GetInt("limit"))
 	}
 
 	if err != nil {
@@ -186,7 +185,7 @@ func readMarketFillsE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	var fills []*pbserumhist.Fill
-	manager := serumhist.NewManager(kvdb)
+	reader := serumhistreader.New(kvdb)
 
 	marketAddr := args[0]
 	market, err := solana.PublicKeyFromBase58(marketAddr)
@@ -195,7 +194,7 @@ func readMarketFillsE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	fmt.Println("getting fills for market", market.String())
-	fills, _, err = manager.GetFillsByMarket(cmd.Context(), market, viper.GetInt("limit"))
+	fills, _, err = reader.GetFillsByMarket(cmd.Context(), market, viper.GetInt("limit"))
 
 	cnt, err := json.MarshalIndent(fills, "", " ")
 	if err != nil {

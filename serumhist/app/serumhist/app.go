@@ -8,6 +8,7 @@ import (
 	"github.com/dfuse-io/dfuse-solana/serumhist"
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
 	"github.com/dfuse-io/dmetrics"
 	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/kvdb/store"
@@ -68,7 +69,7 @@ func (a *App) Run() error {
 	}
 
 	if a.Config.EnableServer {
-		server := grpc.New(a.Config.GRPCListenAddr, serumhist.NewManager(kvdb))
+		server := grpc.New(a.Config.GRPCListenAddr, reader.New(kvdb))
 		a.OnTerminating(server.Terminate)
 		server.OnTerminated(a.Shutdown)
 		go server.Serve()
@@ -82,7 +83,7 @@ func (a *App) Run() error {
 			return fmt.Errorf("failed setting up blocks store: %w", err)
 		}
 
-		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, kvdb, a.Config.FLushSlotInterval, a.Config.PreprocessorThreadCount, a.Config.MergeFileParallelDownload)
+		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, kvdb, a.Config.FLushSlotInterval, a.Config.PreprocessorThreadCount, a.Config.MergeFileParallelDownload, a.Config.GRPCListenAddr)
 		err = injector.SetupSource(a.Config.StartBlock, a.Config.IgnoreCheckpointOnLaunch)
 		if err != nil {
 			return fmt.Errorf("unable to setup serumhist injector source: %w", err)

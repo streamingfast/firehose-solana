@@ -102,7 +102,7 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			}
 
 			accChanges := trxAccChanges.Instructions[instIdx].Changes
-			err = serumSlot.processInstruction(slot.Number, transaction.Index, uint64(instIdx), slot.Block.Time(), decodedInst, accChanges)
+			err = serumSlot.processInstruction(slot.Number, uint32(transaction.Index), uint32(instIdx), transaction.Id, slot.Id, slot.Block.Time(), decodedInst, accChanges)
 			if err != nil {
 				return nil, fmt.Errorf("processing instruction: %w", err)
 			}
@@ -111,7 +111,7 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 	zlog.Debug("preprocessed slot completed",
 		zap.Stringer("slot", blk),
 		zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
-		zap.Int("fill_count", len(serumSlot.fills)),
+		zap.Int("fill_count", len(serumSlot.orderFilledEvents)),
 		zap.Duration("duration", time.Since(t0)),
 	)
 	return serumSlot, nil

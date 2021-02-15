@@ -33,7 +33,7 @@ func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequ
 	if trader != nil && market == nil {
 		zlog.Debug("get fills by trader", zap.Stringer("trader_address", *trader))
 
-		fills, hasMore, err := s.manager.GetFillsByTrader(ctx, *trader, 100)
+		fills, hasMore, err := s.reader.GetFillsByTrader(ctx, *trader, 100)
 		if err != nil {
 			return nil, fmt.Errorf("unable to retrieve fills by trader: %w", err)
 		}
@@ -46,7 +46,7 @@ func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequ
 	if market != nil && trader == nil {
 		zlog.Debug("get fills by market", zap.Stringer("market_address", *market))
 
-		fills, hasMore, err := s.manager.GetFillsByMarket(ctx, *market, 100)
+		fills, hasMore, err := s.reader.GetFillsByMarket(ctx, *market, 100)
 		if err != nil {
 			return nil, fmt.Errorf("unable to retrieve fills by market: %w", err)
 		}
@@ -65,7 +65,7 @@ func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequ
 		zap.Stringer("market_address", *market),
 	)
 
-	f, hasMore, err := s.manager.GetFillsByTraderAndMarket(ctx, *trader, *market, 100)
+	f, hasMore, err := s.reader.GetFillsByTraderAndMarket(ctx, *trader, *market, 100)
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve fills by trader and market: %w", err)
 	}
