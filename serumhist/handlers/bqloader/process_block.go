@@ -2,6 +2,8 @@ package bqloader
 
 import (
 	"fmt"
+	"github.com/dfuse-io/dfuse-solana/serumhist"
+	"github.com/dfuse-io/dfuse-solana/serumhist/db"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 
@@ -11,26 +13,21 @@ import (
 	"go.uber.org/zap"
 )
 
-func (i *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
-
+func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	slot := blk.ToNative().(*pbcodec.Slot)
 	forkObj := obj.(*forkable.ForkableObject)
 
-	serumSlot := forkObj.Obj.(*serumSlot)
-
-	for _, ta := range serumSlot.tradingAccountCache {
-		err := i.cache.setTradingAccount(i.ctx, ta.tradingAccount, ta.trader)
-		if err != nil {
-			return fmt.Errorf("unable to store trading account %d (%s): %w", slot.Number, slot.Id, err)
-		}
-	}
-
-	// process close
-	i.slotMetrics.serumFillCount += len(serumSlot.orderFilledEvents)
+	serumSlot := forkObj.Obj.(*serumhist.SerumSlot)
 
 	if err := i.db.Write(serumSlot); err {
 
 	}
+
+	for _, e := range serumSlot.Events {
+		switch v := e.(type) {
+		}
+	}
+
 
 	//if err := i.processSerumFills(serumSlot.orderFilledEvents); err != nil {
 	//	return fmt.Errorf("unable to process serum order orderFilledEvents: %w", err)
@@ -48,7 +45,7 @@ func (i *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	//	return fmt.Errorf("unable to process serum orders executed: %w", err)
 	//}
 
-	if err := i.db.WriteCheckpoint(i.ctx, &pbserumhist.Checkpoint{
+	if err := bq.db.WriteCheckpoint(i.ctx, &pbserumhist.Checkpoint{
 		LastWrittenSlotNum: slot.Number,
 		LastWrittenSlotId:  slot.Id,
 	}); err != nil {
@@ -66,21 +63,5 @@ func (i *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		return err
 	}
 
-	i.slotMetrics.slotCount++
-
-	if slot.Number%logEveryXSlot == 0 {
-		opts := i.slotMetrics.dump()
-		opts = append(opts, []zap.Field{
-			zap.Uint64("slot_number", slot.Number),
-			zap.String("slot_id", slot.Id),
-			zap.String("previous_id", slot.PreviousId),
-			zap.Int("trading_account_cached_count", len(serumSlot.tradingAccountCache)),
-			zap.Int("fill_count", len(serumSlot.orderFilledEvents)),
-		}...)
-
-		zlog.Info(fmt.Sprintf("processed %d slot", logEveryXSlot),
-			opts...,
-		)
-	}
 	return nil
 }

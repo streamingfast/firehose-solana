@@ -20,7 +20,7 @@ type SerumSlot struct {
 	TradingAccountCache []*serumTradingAccount
 	newOrders           []interface{}
 
-	events               []interface{}
+	Events               []interface{}
 	orderNewEvents       []*db.NewOrder
 	OrderFilledEvents    []*db.Fill
 	orderExecutedEvents  []*db.OrderExecuted

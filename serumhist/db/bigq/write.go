@@ -16,6 +16,7 @@ func (b *Bigq) NewOrder(ctx context.Context, order *serumhistdb.NewOrder) error 
 		mapping: b.orderCreatedMapping,
 		event:   order,
 	}
+
 	return b.orderCreatedTable.Inserter().Put(ctx, row)
 
 }
