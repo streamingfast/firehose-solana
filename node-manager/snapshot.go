@@ -161,6 +161,16 @@ func (s *Superviser) restoreFrom(ctx context.Context, snapshotName string, snaps
 		return fmt.Errorf("copying genesis: %w", err)
 	}
 
+	dir, err := ioutil.ReadDir(s.localSnapshotDir)
+	if err != nil {
+		return fmt.Errorf("reading data folder:%s: %w", dir, err)
+	}
+
+	for _, d := range dir {
+		content := path.Join([]string{s.localSnapshotDir, d.Name()}...)
+		zlog.Info("element:", zap.String("content", content))
+	}
+
 	return nil
 }
 
