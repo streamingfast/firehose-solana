@@ -3,6 +3,8 @@ package serumhist
 import (
 	"fmt"
 
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+
 	kvdb "github.com/dfuse-io/kvdb/store"
 
 	"github.com/dfuse-io/bstream"
@@ -37,37 +39,26 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 
 	// process close
 	i.slotMetrics.serumFillCount += len(serumSlot.orderFilledEvents)
-	key, err := i.processSerumFills(serumSlot.orderFilledEvents)
-	if err != nil {
+	if err := i.processSerumFills(serumSlot.orderFilledEvents); err != nil {
 		return fmt.Errorf("unable to process serum order orderFilledEvents: %w", err)
 	}
-	kvs = append(kvs, key...)
 
-	key, err = processSerumOrdersExecuted(serumSlot.orderExecutedEvents)
-	if err != nil {
+	if err := i.processSerumOrdersExecuted(serumSlot.orderExecutedEvents); err != nil {
 		return fmt.Errorf("unable to process serum orders executed: %w", err)
 	}
-	kvs = append(kvs, key...)
 
-	key, err = i.processSerumOrdersCancelled(serumSlot.orderCancelledEvents)
-	if err != nil {
+	if err := i.processSerumOrdersCancelled(serumSlot.orderCancelledEvents); err != nil {
 		return fmt.Errorf("unable to process serum orders cancelled: %w", err)
 	}
-	kvs = append(kvs, key...)
 
-	key, err = i.processSerumOrdersClosed(serumSlot.orderClosedEvents)
-	if err != nil {
+	if err := i.processSerumOrdersClosed(serumSlot.orderClosedEvents); err != nil {
 		return fmt.Errorf("unable to process serum orders executed: %w", err)
 	}
-	kvs = append(kvs, key...)
 
-	for _, kv := range kvs {
-		if err := i.kvdb.Put(i.ctx, kv.Key, kv.Value); err != nil {
-			return fmt.Errorf("unable to write serumhist injector in kvdb: %w", err)
-		}
-	}
-
-	if err := i.writeCheckpoint(i.ctx, slot); err != nil {
+	if err := i.eventWriter.WriteCheckpoint(i.ctx, &pbserumhist.Checkpoint{
+		LastWrittenSlotNum: slot.Number,
+		LastWrittenSlotId:  slot.Id,
+	}); err != nil {
 		return fmt.Errorf("error while saving block checkpoint: %w", err)
 	}
 
@@ -77,8 +68,7 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 
 	t := slot.Block.Time()
 
-	err = i.flushIfNeeded(slot.Number, t)
-	if err != nil {
+	if err := i.flushIfNeeded(slot.Number, t); err != nil {
 		zlog.Error("flushIfNeeded", zap.Error(err))
 		return err
 	}

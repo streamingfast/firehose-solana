@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dfuse-io/dfuse-solana/serumhist/event"
+
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
 	"github.com/dfuse-io/dgrpc"
+	"github.com/dfuse-io/kvdb/store"
 	pbhealth "github.com/dfuse-io/pbgo/grpc/health/v1"
 	"google.golang.org/grpc"
 
@@ -18,7 +21,6 @@ import (
 	"github.com/dfuse-io/bstream/forkable"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/dstore"
-	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
 )
@@ -26,7 +28,7 @@ import (
 type Injector struct {
 	*shutter.Shutter
 	ctx                     context.Context
-	kvdb                    store.KVStore
+	eventWriter             event.Writer
 	flushSlotInterval       uint64
 	lastTickBlock           uint64
 	lastTickTime            time.Time
@@ -45,10 +47,12 @@ type Injector struct {
 	parallelDownloadThreadCount int
 }
 
+// TODO don't depend on both....
 func NewInjector(
 	ctx context.Context,
 	blockstreamAddr string,
 	blockStore dstore.Store,
+	eventWriter event.Writer,
 	kvdb store.KVStore,
 	flushSlotInterval uint64,
 	preprocessorThreadCount int,
@@ -61,7 +65,7 @@ func NewInjector(
 		blockStore:        blockStore,
 		Shutter:           shutter.New(),
 		flushSlotInterval: flushSlotInterval,
-		kvdb:              kvdb,
+		eventWriter:       eventWriter,
 		cache:             newTradingAccountCache(kvdb),
 		slotMetrics: slotMetrics{
 			startTime: time.Now(),
@@ -183,7 +187,7 @@ func (i *Injector) doFlush(slotNum uint64, reason string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	err := i.kvdb.FlushPuts(ctx)
+	err := i.eventWriter.Flush(ctx)
 	if err != nil {
 		return fmt.Errorf("db flush: %w", err)
 	}

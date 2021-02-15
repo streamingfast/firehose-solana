@@ -1,66 +1,13 @@
 package event
 
 import (
-	"time"
+	"context"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/solana-go"
 )
 
-type Ref struct {
-	market      solana.PublicKey
-	orderSeqNum uint64
-	slotNumber  uint64
-	trxHash     string
-	trxIdx      uint32
-	instIdx     uint32
-	slotHash    string
-	timestamp   time.Time
-}
-
-type NewOrder struct {
-	Ref
-	order *pbserumhist.Order
-}
-
-func (e *NewOrder) WriteTo(w Writer) error {
-	return w.NewOrder(e)
-}
-
-type Fill struct {
-	Ref
-	tradingAccount solana.PublicKey
-	fill           *pbserumhist.Fill
-}
-
-func (e *Fill) WriteTo(w Writer) error {
-	return w.Fill(e)
-}
-
-type OrderExecuted struct {
-	Ref
-}
-
-func (e *OrderExecuted) WriteTo(w Writer) error {
-	return w.OrderExecuted(e)
-}
-
-type OrderClosed struct {
-	Ref
-	instrRef *pbserumhist.InstructionRef
-}
-
-func (e *OrderClosed) WriteTo(w Writer) error {
-	return w.OrderClosed(e)
-}
-
-type OrderCancelled struct {
-	Ref
-	instrRef *pbserumhist.InstructionRef
-}
-
-func (e *OrderCancelled) WriteTo(w Writer) error {
-	return w.OrderCancelled(e)
+type Eventeable interface {
+	GetEventRef() *Ref
 }
 
 type Writeable interface {
@@ -68,9 +15,13 @@ type Writeable interface {
 }
 
 type Writer interface {
-	NewOrder(*NewOrder) error
-	Fill(*Fill) error
-	OrderExecuted(*OrderExecuted) error
-	OrderClosed(*OrderClosed) error
-	OrderCancelled(*OrderCancelled) error
+	NewOrder(context.Context, *NewOrder) error
+	Fill(context.Context, *Fill) error
+	OrderExecuted(context.Context, *OrderExecuted) error
+	OrderClosed(context.Context, *OrderClosed) error
+	OrderCancelled(context.Context, *OrderCancelled) error
+
+	WriteCheckpoint(ctx context.Context, checkpoint *pbserumhist.Checkpoint) error
+	Checkpoint(ctx context.Context) (*pbserumhist.Checkpoint, error)
+	Flush(ctx context.Context) (err error)
 }

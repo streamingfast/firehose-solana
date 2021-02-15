@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
+	"github.com/dfuse-io/dfuse-solana/serumhist/event"
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
@@ -84,7 +85,9 @@ func (a *App) Run() error {
 			return fmt.Errorf("failed setting up blocks store: %w", err)
 		}
 
-		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, kvdb, a.Config.FLushSlotInterval, a.Config.PreprocessorThreadCount, a.Config.MergeFileParallelDownload, a.Config.GRPCListenAddr)
+		eventWritter := event.NewKvdb(kvdb)
+
+		injector := serumhist.NewInjector(appCtx, a.Config.BlockStreamAddr, blocksStore, eventWritter, kvdb, a.Config.FLushSlotInterval, a.Config.PreprocessorThreadCount, a.Config.MergeFileParallelDownload, a.Config.GRPCListenAddr)
 		err = injector.SetupSource(a.Config.StartBlock, a.Config.IgnoreCheckpointOnLaunch)
 		if err != nil {
 			return fmt.Errorf("unable to setup serumhist injector source: %w", err)

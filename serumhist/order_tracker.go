@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"sync"
+
+	"github.com/dfuse-io/dfuse-solana/serumhist/event"
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/golang/protobuf/proto"
-	"sync"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 
@@ -32,59 +34,59 @@ func newStatefulOrder() *StatefulOrder {
 
 // TODO: unify with an interface
 // the event is of type  orderFillEvent || orderExecutedEvent || orderClosedEvent || orderCancelledEvent
-func (s *StatefulOrder) applyEvent(event interface{}) (*pbserumhist.OrderTransition, error) {
+func (s *StatefulOrder) applyEvent(e event.Eventeable) (*pbserumhist.OrderTransition, error) {
 	out := &pbserumhist.OrderTransition{
 		PreviousState: s.state,
 	}
 
-	switch v := event.(type) {
-	case *orderNewEvent:
+	switch v := e.(type) {
+	case *event.NewOrder:
 		zlog.Debug("applying new order event")
 		s.state = pbserumhist.OrderTransition_STATE_APPROVED
 		out.Transition = pbserumhist.OrderTransition_TRANS_ACCEPTED
 
-		s.order.Market = v.orderEventRef.market.String()
-		s.order.SlotNum = v.orderEventRef.slotNumber
-		s.order.TrxIdx = v.orderEventRef.trxIdx
-		s.order.InstIdx = v.orderEventRef.instIdx
-	case *orderFillEvent:
+		s.order.Market = v.Ref.Market.String()
+		s.order.SlotNum = v.Ref.SlotNumber
+		s.order.TrxIdx = v.Ref.TrxIdx
+		s.order.InstIdx = v.Ref.InstIdx
+	case *event.Fill:
 		zlog.Debug("applying fill order event")
 		s.state = pbserumhist.OrderTransition_STATE_PARTIAL
 		out.Transition = pbserumhist.OrderTransition_TRANS_FILLED
 
-		fill := v.fill
-		fill.Market = v.orderEventRef.market.String()
-		fill.SlotNum = v.orderEventRef.slotNumber
-		fill.TrxIdx = v.orderEventRef.trxIdx
-		fill.InstIdx = v.orderEventRef.instIdx
-		fill.OrderSeqNum = v.orderEventRef.orderSeqNum
+		fill := v.Fill
+		fill.Market = v.Ref.Market.String()
+		fill.SlotNum = v.Ref.SlotNumber
+		fill.TrxIdx = v.Ref.TrxIdx
+		fill.InstIdx = v.Ref.InstIdx
+		fill.OrderSeqNum = v.Ref.OrderSeqNum
 		s.order.Fills = append(s.order.Fills, fill)
 		out.AddedFill = fill
-	case *orderExecutedEvent:
+	case *event.OrderExecuted:
 		zlog.Debug("applying executed event")
 		s.state = pbserumhist.OrderTransition_STATE_EXECUTED
 		out.Transition = pbserumhist.OrderTransition_TRANS_EXECUTED
-	case *orderCancelledEvent:
+	case *event.OrderCancelled:
 		zlog.Debug("applying cancellation order event")
 		s.state = pbserumhist.OrderTransition_STATE_CANCELLED
 		out.Transition = pbserumhist.OrderTransition_TRANS_CANCELLED
 
-		instrRef := v.instrRef
-		instrRef.SlotNum = v.orderEventRef.slotNumber
-		instrRef.TrxIdx = v.orderEventRef.trxIdx
-		instrRef.InstIdx = v.orderEventRef.instIdx
+		instrRef := v.InstrRef
+		instrRef.SlotNum = v.Ref.SlotNumber
+		instrRef.TrxIdx = v.Ref.TrxIdx
+		instrRef.InstIdx = v.Ref.InstIdx
 
 		s.cancelled = instrRef
-	case *orderClosedEvent:
+	case *event.OrderClosed:
 		if len(s.order.Fills) == 0 {
 			zlog.Debug("applying closed order event as a cancellation")
 			s.state = pbserumhist.OrderTransition_STATE_CANCELLED
 			out.Transition = pbserumhist.OrderTransition_TRANS_CANCELLED
 
-			instrRef := v.instrRef
-			instrRef.SlotNum = v.orderEventRef.slotNumber
-			instrRef.TrxIdx = v.orderEventRef.trxIdx
-			instrRef.InstIdx = v.orderEventRef.instIdx
+			instrRef := v.InstrRef
+			instrRef.SlotNum = v.Ref.SlotNumber
+			instrRef.TrxIdx = v.Ref.TrxIdx
+			instrRef.InstIdx = v.Ref.InstIdx
 			s.cancelled = instrRef
 		} else {
 			zlog.Debug("applying closed order event as an executed")
@@ -116,7 +118,7 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 	var err error
 	for itr.Next() {
 		seenOrderKey = true
-		var event interface{}
+		var e event.Eventeable
 		eventByte, market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeOrder(itr.Item().Key)
 		switch eventByte {
 		case keyer.OrderEventTypeNew:
@@ -125,15 +127,15 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to unmarshal order: %w", err)
 			}
-			event = &orderNewEvent{
-				orderEventRef: orderEventRef{
-					market:      market,
-					orderSeqNum: orderSeqNum,
-					slotNumber:  slotNum,
-					trxIdx:      uint32(trxIdx),
-					instIdx:     uint32(instIdx),
+			e = &event.NewOrder{
+				Ref: &event.Ref{
+					Market:      market,
+					OrderSeqNum: orderSeqNum,
+					SlotNumber:  slotNum,
+					TrxIdx:      uint32(trxIdx),
+					InstIdx:     uint32(instIdx),
 				},
-				order: order,
+				Order: order,
 			}
 		case keyer.OrderEventTypeFill:
 			fill := &pbserumhist.Fill{}
@@ -141,24 +143,24 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to unmarshal fil: %w", err)
 			}
-			event = &orderFillEvent{
-				orderEventRef: orderEventRef{
-					market:      market,
-					orderSeqNum: orderSeqNum,
-					slotNumber:  slotNum,
-					trxIdx:      uint32(trxIdx),
-					instIdx:     uint32(instIdx),
+			e = &event.Fill{
+				Ref: &event.Ref{
+					Market:      market,
+					OrderSeqNum: orderSeqNum,
+					SlotNumber:  slotNum,
+					TrxIdx:      uint32(trxIdx),
+					InstIdx:     uint32(instIdx),
 				},
-				fill: fill,
+				Fill: fill,
 			}
 		case keyer.OrderEventTypeExecuted:
-			event = &orderExecutedEvent{
-				orderEventRef: orderEventRef{
-					market:      market,
-					orderSeqNum: orderSeqNum,
-					slotNumber:  slotNum,
-					trxIdx:      uint32(trxIdx),
-					instIdx:     uint32(instIdx),
+			e = &event.OrderExecuted{
+				Ref: &event.Ref{
+					Market:      market,
+					OrderSeqNum: orderSeqNum,
+					SlotNumber:  slotNum,
+					TrxIdx:      uint32(trxIdx),
+					InstIdx:     uint32(instIdx),
 				},
 			}
 		case keyer.OrderEventTypeCancel:
@@ -167,15 +169,15 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to unmarshal instruction ref: %w", err)
 			}
-			event = &orderCancelledEvent{
-				orderEventRef: orderEventRef{
-					market:      market,
-					orderSeqNum: orderSeqNum,
-					slotNumber:  slotNum,
-					trxIdx:      uint32(trxIdx),
-					instIdx:     uint32(instIdx),
+			e = &event.OrderCancelled{
+				Ref: &event.Ref{
+					Market:      market,
+					OrderSeqNum: orderSeqNum,
+					SlotNumber:  slotNum,
+					TrxIdx:      uint32(trxIdx),
+					InstIdx:     uint32(instIdx),
 				},
-				instrRef: instrRef,
+				InstrRef: instrRef,
 			}
 		case keyer.OrderEventTypeClose:
 			instrRef := &pbserumhist.InstructionRef{}
@@ -183,18 +185,18 @@ func GetInitializeOrder(ctx context.Context, kvdb store.KVStore, market solana.P
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to unmarshal instruction ref: %w", err)
 			}
-			event = &orderClosedEvent{
-				orderEventRef: orderEventRef{
-					market:      market,
-					orderSeqNum: orderSeqNum,
-					slotNumber:  slotNum,
-					trxIdx:      uint32(trxIdx),
-					instIdx:     uint32(instIdx),
+			e = &event.OrderClosed{
+				Ref: &event.Ref{
+					Market:      market,
+					OrderSeqNum: orderSeqNum,
+					SlotNumber:  slotNum,
+					TrxIdx:      uint32(trxIdx),
+					InstIdx:     uint32(instIdx),
 				},
-				instrRef: instrRef,
+				InstrRef: instrRef,
 			}
 		}
-		if transition, err = statefulOrder.applyEvent(event); err != nil {
+		if transition, err = statefulOrder.applyEvent(e); err != nil {
 			return nil, nil, fmt.Errorf("error applying the event on the stateful order event type 0x%s: %w", hex.EncodeToString([]byte{eventByte}), err)
 		}
 	}
@@ -223,11 +225,11 @@ func newOrderManager() *OrderManager {
 	}
 }
 
-func (m *OrderManager) emit(event interface{}, orderNum uint64, market solana.PublicKey) {
+func (m *OrderManager) emit(event event.Eventeable) {
 	m.subscriptionsLock.RLock()
 	defer m.subscriptionsLock.RUnlock()
 	for _, sub := range m.subscriptions {
-		if sub.orderNum == orderNum && sub.market.String() == market.String() {
+		if sub.orderNum == event.GetEventRef().OrderSeqNum && sub.market.String() == event.GetEventRef().Market.String() {
 			sub.Push(event)
 		}
 	}
