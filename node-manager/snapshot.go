@@ -176,8 +176,8 @@ func (s *Superviser) copyGenesis(ctx context.Context, localStore dstore.Store) e
 	}
 
 	genesisReader, err := genesisStore.OpenObject(ctx, genesisFileName)
-	zlog.Info("copying genesis", zap.Stringer("from_store", genesisStore.BaseURL()), zap.Stringer("to_local_store", localStore.BaseURL()))
-	if err := localStore.WriteObject(ctx, "genesisFileName", genesisReader); err != nil {
+	zlog.Info("copying genesis", zap.String("file_name", genesisFileName), zap.Stringer("from_store", genesisStore.BaseURL()), zap.Stringer("to_local_store", localStore.BaseURL()))
+	if err := localStore.WriteObject(ctx, genesisFileName, genesisReader); err != nil {
 		return fmt.Errorf("writing genesis: %s from:%s to local store: %s: %w", genesisFileName, genesisStore.BaseURL(), localStore.BaseURL(), err)
 	}
 
