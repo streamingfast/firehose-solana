@@ -122,7 +122,7 @@ func (s *Superviser) RestoreSnapshot(snapshotName string, snapshotStore dstore.S
 			}
 		}
 		if !found {
-			return fmt.Errorf("failed to found snapshot")
+			return fmt.Errorf("failed to find a snapshot")
 		}
 	}
 
@@ -165,7 +165,7 @@ func (s *Superviser) restoreFrom(ctx context.Context, snapshotName string, snaps
 }
 
 func (s *Superviser) copyGenesis(ctx context.Context, localStore dstore.Store) error {
-	genesisStore, genesisFileName, err := dstore.NewStoreFromURL(s.genesisURL, dstore.Compression("bz2"))
+	genesisStore, genesisFileName, err := dstore.NewStoreFromURL(s.genesisURL)
 	if err != nil {
 		return fmt.Errorf("creating genesis store:%s : %w", s.genesisURL, err)
 	}
