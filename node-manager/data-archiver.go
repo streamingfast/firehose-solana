@@ -92,17 +92,6 @@ func (s *BlockDataArchiver) StoreBlockData(bundle *pbcodec.AccountChangesBundle,
 	}
 	zlog.Debug("data written", zap.String("temp_file_path", tempFile), zap.Int("data_len", dataLen))
 
-	//blockWriter, err := s.blockWriterFactory.New(file)
-	//if err != nil {
-	//	file.Close()
-	//	return fmt.Errorf("write block factory: %w", err)
-	//}
-	//
-	//if err := blockWriter.Write(block); err != nil {
-	//	file.Close()
-	//	return fmt.Errorf("write block: %w", err)
-	//}
-
 	if err := file.Close(); err != nil {
 		return fmt.Errorf("close file: %w", err)
 	}

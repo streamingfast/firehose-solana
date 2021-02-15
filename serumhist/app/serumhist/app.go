@@ -5,14 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dfuse-io/dstore"
-
-	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
-
 	"github.com/dfuse-io/dfuse-solana/serumhist"
-
+	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/dmetrics"
+	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"

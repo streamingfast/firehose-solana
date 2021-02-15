@@ -42,6 +42,7 @@ type Superviser struct {
 	logger           *zap.Logger
 	localSnapshotDir string
 	uploadingJobs    map[string]interface{}
+	genesisURL       string
 }
 
 type Options struct {
@@ -55,7 +56,7 @@ type Options struct {
 	HeadBlockUpdateFunc  nodeManager.HeadBlockUpdater
 }
 
-func NewSuperviser(appLogger *zap.Logger, nodelogger *zap.Logger, localSnapshotDir string, options *Options) (*Superviser, error) {
+func NewSuperviser(appLogger *zap.Logger, nodelogger *zap.Logger, localSnapshotDir string, genesisURL string, options *Options) (*Superviser, error) {
 	// Ensure process manager line buffer is large enough (50 MiB) for our Deep Mind instrumentation outputting lot's of text.
 	overseer.DEFAULT_LINE_BUFFER_SIZE = 50 * 1024 * 1024
 
@@ -74,6 +75,7 @@ func NewSuperviser(appLogger *zap.Logger, nodelogger *zap.Logger, localSnapshotD
 		mergedBlocksStore: mergedBlocksStore,
 		localSnapshotDir:  localSnapshotDir,
 		uploadingJobs:     map[string]interface{}{},
+		genesisURL:        genesisURL,
 	}
 
 	s.RegisterLogPlugin(logplugin.NewKeepLastLinesLogPlugin(25, options.DebugDeepMind))

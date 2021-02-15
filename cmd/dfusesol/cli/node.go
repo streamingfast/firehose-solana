@@ -115,6 +115,7 @@ func RegisterSolanaNodeApp(kind string) {
 			cmd.Flags().Duration(app+"-auto-snapshot-period", 0, "If non-zero, the node manager will check on disk at this period interval to see if the underlying node has produced a snapshot. Use in conjunction with --snapshot-interval-slots in the --"+app+"-extra-arguments. Specify 1m, 2m...")
 			cmd.Flags().String(app+"-local-snapshot-folder", "", "where solana snapshots are stored by the node")
 			cmd.Flags().Int(app+"-number-of-snapshots-to-keep", 0, "if non-zero, after a successful snapshot, older snapshots will be deleted to only keep that number of recent snapshots")
+			cmd.Flags().String(app+"-genesis-url", "", "url to genesis.tar.bz2")
 
 			if kind == "mindreader" {
 				cmd.Flags().String(app+"-grpc-listen-addr", MindreaderNodeGRPCAddr, "Address to listen for incoming gRPC requests")
@@ -343,6 +344,7 @@ func RegisterSolanaNodeApp(kind string) {
 				appLogger,
 				nodeLogger,
 				viper.GetString(app+"-local-snapshot-folder"),
+				viper.GetString(app+"-genesis-url"),
 				&nodeManagerSol.Options{
 					BinaryPath: viper.GetString("global-validator-path"),
 					Arguments:  arguments,
