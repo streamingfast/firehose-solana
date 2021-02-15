@@ -526,7 +526,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 // BLOCK_ROOT 6482838121
 // Simply the root block number, when this block is done processing, and all of its votes are taken into account.
 func (ctx *parseCtx) readBlockRoot(line string) (err error) {
-	zlog.Debug("reading block root failed", zap.String("line", line))
+	zlog.Debug("reading block root", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != BlockRootChunkSize {
 		return fmt.Errorf("expected %d fields got %d", BlockRootChunkSize, len(chunks))
@@ -547,7 +547,8 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 		}
 
 		if rootBlock == bank.blk.Number {
-			return fmt.Errorf("invalid root for bank. Root block %d cannot equal bank block number %d", rootBlock, bank.blk.Number)
+			rootBlock--
+			//return fmt.Errorf("invalid root for bank. Root block %d cannot equal bank block number %d", rootBlock, bank.blk.Number)
 		}
 
 		bank.blk.RootNum = rootBlock
@@ -567,7 +568,7 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 		}
 		delete(ctx.banks, bankSlotNum)
 	}
-	zlog.Info("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
+	zlog.Debug("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
 	return nil
 }
 
