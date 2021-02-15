@@ -23,6 +23,7 @@ type Config struct {
 	StartBlock                uint64
 	KvdbDsn                   string
 	EnableInjector            bool
+	EnableBigQueryInjector    bool
 	EnableServer              bool
 	GRPCListenAddr            string
 	HTTPListenAddr            string
