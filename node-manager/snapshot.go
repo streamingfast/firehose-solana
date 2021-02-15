@@ -102,6 +102,7 @@ func (s *Superviser) RestoreSnapshot(snapshotName string, snapshotStore dstore.S
 		}
 
 		sort.Slice(mergedFileSlots, func(i, j int) bool { return mergedFileSlots[i] > mergedFileSlots[j] })
+		found := false
 		for _, mergedSlot := range mergedFileSlots {
 			zlog.Info("looking for merge file", zap.Uint64("merged_slot", mergedSlot))
 			mergeFileName := fmt.Sprintf("%010d", mergedSlot)
@@ -116,8 +117,12 @@ func (s *Superviser) RestoreSnapshot(snapshotName string, snapshotStore dstore.S
 				if err := s.restoreFrom(ctx, snapshotName, snapshotStore); err != nil {
 					return fmt.Errorf("restoring from: %s: %w", snapshotName, err)
 				}
+				found = true
 				break
 			}
+		}
+		if !found {
+			return fmt.Errorf("failed to found snapshot")
 		}
 	}
 
