@@ -42,6 +42,7 @@ require (
 	go.uber.org/zap v1.16.0
 	google.golang.org/api v0.29.0
 	google.golang.org/grpc v1.29.1
+	google.golang.org/protobuf v1.25.0
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807
