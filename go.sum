@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=
@@ -158,6 +159,8 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f/go.mod h1:xH/i4TFMt8koVQZ6WFms69WAsDWr2XsYL3Hkl7jkoLE=
 github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c h1:HOp4tOFzTxGNRaW0Ma5/VuiRfVnyIiTeLHxrdFuWKLY=
 github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
+github.com/dfuse-io/binary v0.0.0-20210215145406-f5ccab52bf49 h1:HkSBQY0kJhiBp6akwpobAHTv8FX8apiQhDyJMV6UUpc=
+github.com/dfuse-io/binary v0.0.0-20210215145406-f5ccab52bf49/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
 github.com/dfuse-io/bstream v0.0.2-0.20200714123252-e9115283f55f/go.mod h1:BHEANTxf3ORDdJdGmQ+lJyX8JqjUH45WGBvBKBaMLQg=
 github.com/dfuse-io/bstream v0.0.2-0.20200715185351-418dc70e2924/go.mod h1:BHEANTxf3ORDdJdGmQ+lJyX8JqjUH45WGBvBKBaMLQg=
 github.com/dfuse-io/bstream v0.0.2-0.20200724152201-64aae5bc532f/go.mod h1:DD1RDqq50aBHDXZLfSv/rNv/35VI+8F7doB8qFecAeM=
@@ -174,6 +177,7 @@ github.com/dfuse-io/derr v0.0.0-20200406214256-c690655246a1/go.mod h1:JW/hUKChGd
 github.com/dfuse-io/derr v0.0.0-20200417132224-d333cfd0e9a0/go.mod h1:/DjjRCyTi/KIiI1E1hnhvfWwg+K06jo+qM4VcjHvHq4=
 github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152 h1:8Ee802t3evsUTc7B/W9Lf1pavPje2dtYWEpMtMnE7TY=
 github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152/go.mod h1:8bq4KABI5QklH7a16SFIH7/R/jNCOloKu20T5VP+iTk=
+github.com/dfuse-io/dfuse-solana v0.0.0-20210215142939-a2baa3503463/go.mod h1:1uplxDflINWL8PQV8bCF3kVyTY9LQVsSjFRfQSOXRvw=
 github.com/dfuse-io/dgraphql v0.0.2-0.20210128181646-b7f03ff95e0a h1:FNxRriCoWFzSu0bGy6IVVsru4yDnaUrNOHegL+mAcZU=
 github.com/dfuse-io/dgraphql v0.0.2-0.20210128181646-b7f03ff95e0a/go.mod h1:clKTytkdmIlKVt7N9i2brj1UwC/PWRDq6SvMqt0XCSA=
 github.com/dfuse-io/dgrpc v0.0.0-20200406214416-6271093e544c/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
@@ -238,8 +242,9 @@ github.com/dfuse-io/shutter v1.4.1-0.20200319040708-c809eec458e6/go.mod h1:2mLf0
 github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f/go.mod h1:DNhYoTwU0YjpH3nixaqytVJ43uTe/4SahfipE221e68=
 github.com/dfuse-io/shutter v1.4.1 h1:a0HSmmu8vYxR4ynIv1+tH49jrv7gyenNtOJBsmm3OHA=
 github.com/dfuse-io/shutter v1.4.1/go.mod h1:/BxCU/ucC6WUyqmLbWpDhznS6Yy1HDblsstEBnTyr+4=
-github.com/dfuse-io/solana-go v0.2.1-0.20210209165506-b9803f04babe h1:W/fZSuDcVBfQFRKqXd0vba+ff0kFi26gh39KTRqx1as=
 github.com/dfuse-io/solana-go v0.2.1-0.20210209165506-b9803f04babe/go.mod h1:pY+GRAYUPdUFYED+HtIxnZIQunJhoxyB5xeLuaJqJ/4=
+github.com/dfuse-io/solana-go v0.2.1-0.20210215180845-7405c0c399bb h1:k8wgHwD8FBMJCwSeDsD0PSsLCuxMpg+1epMQk6TN8IA=
+github.com/dfuse-io/solana-go v0.2.1-0.20210215180845-7405c0c399bb/go.mod h1:grVmGHqP2YtcF1B7urq3adjPytItY6JeuSkA/CYx0AM=
 github.com/dgraph-io/badger/v2 v2.0.3 h1:inzdf6VF/NZ+tJ8RwwYMjJMvsOALTHYdozn0qSl6XJI=
 github.com/dgraph-io/badger/v2 v2.0.3/go.mod h1:3KY8+bsP8wI0OEnQJAKpd4wIJW/Mm32yw2j/9FUVnIM=
 github.com/dgraph-io/ristretto v0.0.2-0.20200115201040-8f368f2f2ab3 h1:MQLRM35Pp0yAyBYksjbj1nZI/w6eyRY/mWoM1sFf4kU=

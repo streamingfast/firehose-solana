@@ -1,8 +1,6 @@
 package serumhist
 
 import (
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -103,7 +101,7 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 			trader:         v.Accounts.Owner.PublicKey,
 			tradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
-		// TODO: We need to log the created event here....
+		//  we need to look at a OpenOrder accounts and see an difss on the
 
 	case *serum.InstructionNewOrderV2:
 		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
@@ -112,7 +110,21 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 		})
 		// TODO: We need to log the created event here....
 
-		//case *serum.InstructionCancelOrderByClientId:
+	case *serum.InstructionNewOrderV3:
+		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
+			trader:         v.Accounts.Owner.PublicKey,
+			tradingAccount: v.Accounts.OpenOrders.PublicKey,
+		})
+
+		old, new, err := decodeEventQueue(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionNewOrderV3: unable to decode event queue: %w", err)
+		}
+
+		eventRef.market = v.Accounts.Market.PublicKey
+		s.addOrderFillAndCloseEvent(eventRef, old, new, true)
+
+	//case *serum.InstructionCancelOrderByClientId:
 	//case *serum.InstructionCancelOrder:
 	case *serum.InstructionCancelOrderByClientIdV2:
 		old, new, err := decodeEventQueue(accChanges)
@@ -132,20 +144,6 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 		eventRef.market = v.Accounts.Market.PublicKey
 		s.addOrderCancellationEvent(eventRef, old, new)
 
-	case *serum.InstructionNewOrderV3:
-		s.tradingAccountCache = append(s.tradingAccountCache, &serumTradingAccount{
-			trader:         v.Accounts.Owner.PublicKey,
-			tradingAccount: v.Accounts.OpenOrders.PublicKey,
-		})
-
-		old, new, err := decodeEventQueue(accChanges)
-		if err != nil {
-			return fmt.Errorf("InstructionNewOrderV3: unable to decode event queue: %w", err)
-		}
-
-		eventRef.market = v.Accounts.Market.PublicKey
-		s.addOrderFillAndCloseEvent(eventRef, old, new, true)
-
 	case *serum.InstructionMatchOrder:
 		old, new, err := decodeEventQueue(accChanges)
 		if err != nil {
@@ -159,30 +157,9 @@ func (s *serumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 	return nil
 }
 
-func (s *serumSlot) addNewOrderEvent(eventRef orderEventRef, old, new *serum.EventQueue) {
-	// TODO: this needs to be done
-	s.orderCancelledEvents = append(s.orderCancelledEvents, &orderCancelledEvent{
-		orderEventRef: eventRef,
-		instrRef: &pbserumhist.InstructionRef{
-			TrxHash:   eventRef.trxHash,
-			SlotHash:  eventRef.slotHash,
-			Timestamp: mustProtoTimestamp(eventRef.timestamp),
-		},
-	})
-
+func (s *serumSlot) addNewOrderEvent(eventRef orderEventRef, old, new *serum.OpenOrders) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
-		if match, _ := event.Match("Events[#]"); match {
-			e := event.Element().Interface().(*serum.Event)
-			switch event.Kind {
-			case diff.KindAdded:
-				if e.Flag.IsOut() {
-					number := make([]byte, 16)
-					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
-					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
-					eventRef.orderSeqNum = extractOrderSeqNum(e.Side(), e.OrderID)
-
-				}
-			}
+		if match, _ := event.Match("Orders[#]"); match {
 		}
 	}))
 }
@@ -194,10 +171,7 @@ func (s *serumSlot) addOrderCancellationEvent(eventRef orderEventRef, old, new *
 			switch event.Kind {
 			case diff.KindAdded:
 				if e.Flag.IsOut() {
-					number := make([]byte, 16)
-					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
-					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
-					eventRef.orderSeqNum = extractOrderSeqNum(e.Side(), e.OrderID)
+					eventRef.orderSeqNum = e.OrderID.SeqNum(e.Side())
 					s.orderCancelledEvents = append(s.orderCancelledEvents, &orderCancelledEvent{
 						orderEventRef: eventRef,
 						instrRef: &pbserumhist.InstructionRef{
@@ -219,15 +193,12 @@ func (s *serumSlot) addOrderFillAndCloseEvent(eventRef orderEventRef, old, new *
 			switch event.Kind {
 			case diff.KindAdded:
 				if e.Flag.IsFill() {
-					number := make([]byte, 16)
-					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
-					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
-					eventRef.orderSeqNum = extractOrderSeqNum(e.Side(), e.OrderID)
+					eventRef.orderSeqNum = e.OrderID.SeqNum(e.Side())
 					s.orderFilledEvents = append(s.orderFilledEvents, &orderFillEvent{
 						orderEventRef:  eventRef,
 						tradingAccount: e.Owner,
 						fill: &pbserumhist.Fill{
-							OrderId:           hex.EncodeToString(number[:8]) + hex.EncodeToString(number[8:]),
+							OrderId:           e.OrderID.HexString(false),
 							Side:              pbserumhist.Side(e.Side()),
 							SlotHash:          eventRef.slotHash,
 							TrxId:             eventRef.trxHash,
@@ -243,10 +214,6 @@ func (s *serumSlot) addOrderFillAndCloseEvent(eventRef orderEventRef, old, new *
 				}
 
 				if e.Flag.IsOut() {
-					number := make([]byte, 16)
-					binary.BigEndian.PutUint64(number[:], e.OrderID.Lo)
-					binary.BigEndian.PutUint64(number[8:], e.OrderID.Hi)
-
 					// if the new event OUT originates from a matching order instruction, we are unable to determine whether or not
 					// it is due to an order being executed or cancelled. thus, we store it as an ORDER CLOSED event and we will determine
 					// whether or not it was actually executed or cancelled when we stitch the order events together

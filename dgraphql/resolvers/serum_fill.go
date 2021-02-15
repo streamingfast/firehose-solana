@@ -102,15 +102,16 @@ func (s SerumFill) QuantityReceived() TokenAmount {
 }
 
 func (s SerumFill) Price() (string, error) {
-	p, err := serum.GetPrice(s.Fill.OrderId)
+	orderID, err := serum.NewOrderID(s.Fill.OrderId)
 	if err != nil {
-		return "", err
-	}
-	if s.market == nil || s.quoteToken == nil || s.basetoken == nil {
-		return fmt.Sprintf("%d", p), nil
+		return "", fmt.Errorf("unable to get orderID: %w", err)
 	}
 
-	price := serum.PriceLotsToNumber(p, s.market.BaseLotSize, s.market.QuoteLotSize, uint64(s.basetoken.Decimals), uint64(s.quoteToken.Decimals))
+	if s.market == nil || s.quoteToken == nil || s.basetoken == nil {
+		return fmt.Sprintf("%d", orderID.Price()), nil
+	}
+
+	price := serum.PriceLotsToNumber(orderID.Price(), s.market.BaseLotSize, s.market.QuoteLotSize, uint64(s.basetoken.Decimals), uint64(s.quoteToken.Decimals))
 	return price.String(), nil
 }
 
