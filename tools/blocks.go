@@ -52,12 +52,12 @@ func init() {
 	printCmd.PersistentFlags().Uint64("transactions-for-block", 0, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
-	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1", "block store")
+	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v2", "block store")
 
 	mergedBlocksCmd.Flags().Bool("viz", false, "Output .dot file")
 	mergedBlocksCmd.Flags().Bool("data", false, "output block data statistic")
 
-	blockDataCmd.PersistentFlags().String("data-store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1-block-data", "block store")
+	blockDataCmd.PersistentFlags().String("data-store", "gs://dfuseio-global-blocks-us/sol-mainnet/v2-block-data", "block store")
 
 }
 
