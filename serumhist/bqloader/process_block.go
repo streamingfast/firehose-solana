@@ -32,6 +32,7 @@ func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	}
 
 	// TODO: we need to flush after x amount of bytes or 15 min etc....
+	//
 
 	return nil
 }

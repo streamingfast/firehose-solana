@@ -8,6 +8,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// 3 avro file handlers one per bucket
+// each avro file will have his "start block"
+
 func (bq *BQLoader) writeTradingAccount(tradingAccount, trader solana.PublicKey) error {
 	// TODO store trading account & trader
 	return nil
