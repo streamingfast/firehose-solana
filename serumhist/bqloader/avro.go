@@ -8,13 +8,17 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/dfuse-io/derr"
 	"github.com/dfuse-io/dstore"
 	"github.com/linkedin/goavro/v2"
 	"go.uber.org/zap"
+)
+
+const (
+	flushIntervalSeconds = 15 * 60
+	flushEventCount = 100000
 )
 
 type avroHandler struct {
@@ -66,7 +70,7 @@ func (h *avroHandler) HandleEvent(event map[string]interface{}, slotNum uint64, 
 		return nil
 	}
 
-	atomic.AddUint64(&h.count, 1)
+	h.count++
 	h.latestSlotNum = slotNum
 	h.latestSlotId = slotId
 
@@ -85,7 +89,7 @@ func (h *avroHandler) HandleEvent(event map[string]interface{}, slotNum uint64, 
 }
 
 func (h *avroHandler) FlushIfNeeded(ctx context.Context) error {
-	if time.Since(h.t0).Seconds() > 15*60 || atomic.LoadUint64(&h.count) > 1000000 {
+	if time.Since(h.t0).Seconds() > flushIntervalSeconds || h.count > flushEventCount {
 		return h.flush(ctx)
 	}
 	return nil
@@ -100,7 +104,7 @@ func (h *avroHandler) flush(ctx context.Context) error {
 		return nil
 	}
 
-	zlog.Info("processed message batch", zap.Uint64("count", atomic.LoadUint64(&h.count)), zap.Duration("timing_secs", time.Since(h.t0)/time.Second))
+	zlog.Info("processed message batch", zap.Uint64("count", h.count), zap.Duration("timing_secs", time.Since(h.t0)/time.Second))
 
 	err := h.ocfFile.Close()
 	derr.Check("failed to close scratch file", err)
@@ -123,6 +127,7 @@ func (h *avroHandler) flush(ctx context.Context) error {
 
 	h.ocfFile = nil
 	h.ocfWriter = nil
+	h.count = 0
 	return nil
 }
 

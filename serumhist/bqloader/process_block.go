@@ -31,10 +31,14 @@ func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		return fmt.Errorf("unable to process serum order fill events: %w", err)
 	}
 
-	// TODO: we need to flush after x amount of bytes or 15 min etc....
 	for _, handler := range bq.avroHandlers {
+		var flushError error
 		if err := handler.FlushIfNeeded(context.TODO()); err != nil {
 			zlog.Error("avro flush", zap.Error(err))
+			flushError = err
+		}
+		if flushError != nil {
+			return flushError
 		}
 	}
 
