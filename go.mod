@@ -8,7 +8,7 @@ require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/abourget/llerrgroup v0.2.0
-	github.com/dfuse-io/binary v0.0.0-20210215145406-f5ccab52bf49
+	github.com/dfuse-io/binary v0.0.0-20210216024852-4ae6830a495d
 	github.com/dfuse-io/bstream v0.0.2-0.20210212205723-d63874534076
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
@@ -28,7 +28,7 @@ require (
 	github.com/dfuse-io/pbgo v0.0.6-0.20210125181705-b17235518132
 	github.com/dfuse-io/relayer v0.0.2-0.20210202030730-e16ed570e7a9
 	github.com/dfuse-io/shutter v1.4.1
-	github.com/dfuse-io/solana-go v0.2.1-0.20210215180845-7405c0c399bb
+	github.com/dfuse-io/solana-go v0.2.1-0.20210216025033-176c084277f9
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.4.2
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
