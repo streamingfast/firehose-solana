@@ -25,6 +25,6 @@ func New(ctx context.Context, client *bigquery.Client, dataset string) *BQLoader
 	}
 }
 
-func (kv *BQLoader) Close() error {
-	return kv.bqclient.Close()
+func (bq *BQLoader) Close() error {
+	return bq.bqclient.Close()
 }

@@ -32,6 +32,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.4.2
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
+	github.com/linkedin/goavro/v2 v2.8.5
 	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/spf13/cobra v1.1.1
