@@ -12,14 +12,18 @@ import (
 // each avro file will have his "start block"
 
 func (bq *BQLoader) processTradingAccount(account, trader solana.PublicKey, slotNum uint64, slotId string) error {
-	if err := bq.avroHandlers[tradingAccount].handleEvent(TraderAccountToAvro(account, trader), slotNum, slotId); err != nil {
+	zlog.Debug("serum trading account",
+		zap.Stringer("account", account),
+		zap.Stringer("trader", trader),
+	)
+	if err := bq.avroHandlers[tradingAccount].HandleEvent(TradingAccountToAvro(account, trader), slotNum, slotId); err != nil {
 		return fmt.Errorf("unable to process trading account %w", err)
 	}
-
 	return nil
 }
 
 func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
+	handler := bq.avroHandlers[newOrder]
 	for _, event := range events {
 		zlog.Debug("serum new order",
 			zap.Stringer("market", event.Market),
@@ -27,7 +31,7 @@ func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
 			zap.Uint64("slot_num", event.SlotNumber),
 		)
 
-		if err := bq.avroHandlers[newOrder].handleEvent(OrderCreatedEventToAvro(event), event.SlotNumber, event.SlotHash); err != nil {
+		if err := handler.HandleEvent(NewOrderToAvro(event), event.SlotNumber, event.SlotHash); err != nil {
 			return fmt.Errorf("unable to process fill %w", err)
 		}
 	}
@@ -35,6 +39,7 @@ func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
 }
 
 func (bq *BQLoader) processSerumFills(events []*serumhist.FillEvent) error {
+	handler := bq.avroHandlers[fillOrder]
 	for _, event := range events {
 		zlog.Debug("serum new fill",
 			zap.Stringer("side", event.Fill.Side),
@@ -43,22 +48,21 @@ func (bq *BQLoader) processSerumFills(events []*serumhist.FillEvent) error {
 			zap.Uint64("order_seq_num", event.OrderSeqNum),
 			zap.Uint64("slot_num", event.SlotNumber),
 		)
-
-		if err := bq.avroHandlers[fillOrder].handleEvent(OrderFilledEventToAvro(event), event.SlotNumber, event.SlotHash); err != nil {
+		if err := handler.HandleEvent(FillEventToAvro(event), event.SlotNumber, event.SlotHash); err != nil {
 			return fmt.Errorf("unable to process fill %w", err)
 		}
 	}
 	return nil
 }
 
-func OrderCreatedEventToAvro(e *serumhist.NewOrder) map[string]interface{} {
+func NewOrderToAvro(e *serumhist.NewOrder) map[string]interface{} {
 	panic("implement me")
 }
 
-func OrderFilledEventToAvro(e *serumhist.FillEvent) map[string]interface{} {
+func FillEventToAvro(e *serumhist.FillEvent) map[string]interface{} {
 	panic("implement me")
 }
 
-func TraderAccountToAvro(tradingAccount, trader solana.PublicKey) map[string]interface{} {
+func TradingAccountToAvro(tradingAccount, trader solana.PublicKey) map[string]interface{} {
 	panic("implement me")
 }

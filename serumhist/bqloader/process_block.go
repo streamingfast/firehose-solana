@@ -1,12 +1,14 @@
 package bqloader
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/bstream/forkable"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist"
+	"go.uber.org/zap"
 )
 
 func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
@@ -30,7 +32,11 @@ func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	}
 
 	// TODO: we need to flush after x amount of bytes or 15 min etc....
-	//
+	for _, handler := range bq.avroHandlers {
+		if err := handler.FlushIfNeeded(context.TODO()); err != nil {
+			zlog.Error("avro flush", zap.Error(err))
+		}
+	}
 
 	return nil
 }

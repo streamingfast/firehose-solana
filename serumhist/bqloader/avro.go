@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/dfuse-io/derr"
@@ -27,7 +28,7 @@ type avroHandler struct {
 	CheckpointSlotNum uint64
 
 	t0            time.Time
-	count         int
+	count         uint64
 	startSlotNum  uint64
 	latestSlotNum uint64
 	startSlotId   string
@@ -55,61 +56,22 @@ func NewAvroHandler(scratchSpaceDir, scratchSpaceFile string, store dstore.Store
 	return agg
 }
 
-func (agg *avroHandler) Shutdown(ctx context.Context) error {
-	return agg.flushFile(ctx)
+func (h *avroHandler) Shutdown(ctx context.Context) error {
+	return h.flush(ctx)
 }
 
-func (agg *avroHandler) getOCFWriter(slotNum uint64, slotId string) (*goavro.OCFWriter, error) {
-	agg.lock.Lock()
-	defer agg.lock.Unlock()
-
-	if agg.ocfWriter != nil {
-		return agg.ocfWriter, nil
-	}
-
-	if agg.ocfFile == nil {
-		agg.t0 = time.Now()
-		agg.startSlotId = slotId
-		agg.startSlotNum = slotNum
-
-		zlog.Info("opening scratch ocf file", zap.String("filename", agg.scratchFilename))
-
-		err := os.MkdirAll(agg.scratchSpaceDir, os.ModePerm)
-		if err != nil {
-			return nil, err
-		}
-
-		agg.ocfFile, err = os.OpenFile(agg.scratchFilename, os.O_RDWR|os.O_CREATE, 0644)
-		if err != nil {
-			return nil, err
-		}
-
-		agg.ocfWriter, err = goavro.NewOCFWriter(goavro.OCFConfig{
-			W:               agg.ocfFile,
-			Codec:           agg.codec,
-			CompressionName: goavro.CompressionSnappyLabel,
-		})
-
-		if err != nil {
-			return nil, fmt.Errorf("creating ocf writer: %w", err)
-		}
-	}
-
-	return agg.ocfWriter, nil
-}
-
-func (agg *avroHandler) handleEvent(event map[string]interface{}, slotNum uint64, slotId string) error {
-	if slotNum <= agg.CheckpointSlotNum {
+func (h *avroHandler) HandleEvent(event map[string]interface{}, slotNum uint64, slotId string) error {
+	if slotNum <= h.CheckpointSlotNum {
 		zlog.Debug("")
 		return nil
 	}
 
-	agg.count++
-	agg.latestSlotNum = slotNum
-	agg.latestSlotId = slotId
+	atomic.AddUint64(&h.count, 1)
+	h.latestSlotNum = slotNum
+	h.latestSlotId = slotId
 
 	var err error
-	w, err := agg.getOCFWriter(slotNum, slotId)
+	w, err := h.getOCFWriter(slotNum, slotId)
 	if err != nil {
 		return fmt.Errorf("failed to get writer: %w", err)
 	}
@@ -122,31 +84,83 @@ func (agg *avroHandler) handleEvent(event map[string]interface{}, slotNum uint64
 	return nil
 }
 
-func (agg *avroHandler) flushFile(ctx context.Context) error {
-	agg.lock.Lock()
-	defer agg.lock.Unlock()
+func (h *avroHandler) FlushIfNeeded(ctx context.Context) error {
+	if time.Since(h.t0).Seconds() > 15 * 60 || atomic.LoadUint64(&h.count) > 1000000 {
+		return h.flush(ctx)
+	}
+	return nil
+}
 
-	zlog.Info("processed message batch", zap.Int("count", agg.count), zap.Duration("timing_secs", time.Since(agg.t0)/time.Second))
+func (h *avroHandler) flush(ctx context.Context) error {
+	h.lock.Lock()
+	defer h.lock.Unlock()
 
-	err := agg.ocfFile.Close()
-	derr.Check("failed closing to scratch file", err)
+	if h.ocfWriter != nil || h.ocfFile == nil {
+		//nothing to flush
+		return nil
+	}
 
-	destPath := fmt.Sprintf("%d-%d-%s-%s-%s.avro",
-		agg.startSlotNum,
-		agg.latestSlotNum,
-		agg.startSlotId,
-		agg.latestSlotId,
-		agg.t0.Format("2006-01-02-15-04-05-")+fmt.Sprintf("%010d", rand.Int()),
+	zlog.Info("processed message batch", zap.Uint64("count", atomic.LoadUint64(&h.count)), zap.Duration("timing_secs", time.Since(h.t0)/time.Second))
+
+	err := h.ocfFile.Close()
+	derr.Check("failed to close scratch file", err)
+
+	destPath := fmt.Sprintf("%s/%d-%d-%s-%s-%s.avro",
+		h.Prefix,
+		h.startSlotNum,
+		h.latestSlotNum,
+		h.startSlotId,
+		h.latestSlotId,
+		h.t0.Format("2006-01-02-15-04-05-")+fmt.Sprintf("%010d", rand.Int()),
 	)
 
 	zlog.Info("pushing avro file to storage", zap.String("path", destPath))
-	err = agg.Store.PushLocalFile(ctx, agg.scratchFilename, destPath)
+	err = h.Store.PushLocalFile(ctx, h.scratchFilename, destPath)
 	if err != nil {
 		return fmt.Errorf("failed pushing local file to storage: %w", err)
 	}
 	zlog.Info("done")
 
-	agg.ocfFile = nil
-	agg.ocfWriter = nil
+	h.ocfFile = nil
+	h.ocfWriter = nil
 	return nil
+}
+
+func (h *avroHandler) getOCFWriter(slotNum uint64, slotId string) (*goavro.OCFWriter, error) {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	if h.ocfWriter != nil {
+		return h.ocfWriter, nil
+	}
+
+	if h.ocfFile == nil {
+		h.t0 = time.Now()
+		h.startSlotId = slotId
+		h.startSlotNum = slotNum
+
+		zlog.Info("opening scratch ocf file", zap.String("filename", h.scratchFilename))
+
+		err := os.MkdirAll(h.scratchSpaceDir, os.ModePerm)
+		if err != nil {
+			return nil, err
+		}
+
+		h.ocfFile, err = os.OpenFile(h.scratchFilename, os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			return nil, err
+		}
+
+		h.ocfWriter, err = goavro.NewOCFWriter(goavro.OCFConfig{
+			W:               h.ocfFile,
+			Codec:           h.codec,
+			CompressionName: goavro.CompressionSnappyLabel,
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("creating ocf writer: %w", err)
+		}
+	}
+
+	return h.ocfWriter, nil
 }
