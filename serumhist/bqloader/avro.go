@@ -24,27 +24,31 @@ type avroHandler struct {
 	ocfFile   *os.File
 	ocfWriter *goavro.OCFWriter
 
+	CheckpointSlotNum uint64
+
 	t0            time.Time
 	count         int
-	startSlotNum  *uint64
-	latestSlotNum *uint64
-	startSlotId   *string
-	latestSlotId  *string
+	startSlotNum  uint64
+	latestSlotNum uint64
+	startSlotId   string
+	latestSlotId  string
 	lock          sync.Mutex
 
-	store dstore.Store
+	Store  dstore.Store
+	Prefix string
 }
 
 // NewAvroHandler creates a new Avro event handler. The `scratchSpaceDir` is expected to be a local file system path.
-func NewAvroHandler(scratchSpaceDir, scratchSpaceFile string, store dstore.Store, codec *goavro.Codec) *avroHandler {
+func NewAvroHandler(scratchSpaceDir, scratchSpaceFile string, store dstore.Store, prefix string, codec *goavro.Codec) *avroHandler {
 	if !strings.HasSuffix(scratchSpaceFile, ".ocf") {
 		scratchSpaceFile += ".ocf"
 	}
 
 	agg := &avroHandler{
+		Store:           store,
+		Prefix:          prefix,
 		scratchSpaceDir: scratchSpaceDir,
 		scratchFilename: filepath.Join(scratchSpaceDir, scratchSpaceFile),
-		store:           store,
 		codec:           codec,
 	}
 
@@ -65,8 +69,8 @@ func (agg *avroHandler) getOCFWriter(slotNum uint64, slotId string) (*goavro.OCF
 
 	if agg.ocfFile == nil {
 		agg.t0 = time.Now()
-		*agg.startSlotId = slotId
-		*agg.startSlotNum = slotNum
+		agg.startSlotId = slotId
+		agg.startSlotNum = slotNum
 
 		zlog.Info("opening scratch ocf file", zap.String("filename", agg.scratchFilename))
 
@@ -95,9 +99,14 @@ func (agg *avroHandler) getOCFWriter(slotNum uint64, slotId string) (*goavro.OCF
 }
 
 func (agg *avroHandler) handleEvent(event map[string]interface{}, slotNum uint64, slotId string) error {
+	if slotNum <= agg.CheckpointSlotNum {
+		zlog.Debug("")
+		return nil
+	}
+
 	agg.count++
-	*agg.startSlotNum = slotNum
-	*agg.latestSlotId = slotId
+	agg.latestSlotNum = slotNum
+	agg.latestSlotId = slotId
 
 	var err error
 	w, err := agg.getOCFWriter(slotNum, slotId)
@@ -123,15 +132,15 @@ func (agg *avroHandler) flushFile(ctx context.Context) error {
 	derr.Check("failed closing to scratch file", err)
 
 	destPath := fmt.Sprintf("%d-%d-%s-%s-%s.avro",
-		*agg.startSlotNum,
-		*agg.latestSlotNum,
-		*agg.startSlotId,
-		*agg.latestSlotId,
+		agg.startSlotNum,
+		agg.latestSlotNum,
+		agg.startSlotId,
+		agg.latestSlotId,
 		agg.t0.Format("2006-01-02-15-04-05-")+fmt.Sprintf("%010d", rand.Int()),
 	)
 
 	zlog.Info("pushing avro file to storage", zap.String("path", destPath))
-	err = agg.store.PushLocalFile(ctx, agg.scratchFilename, destPath)
+	err = agg.Store.PushLocalFile(ctx, agg.scratchFilename, destPath)
 	if err != nil {
 		return fmt.Errorf("failed pushing local file to storage: %w", err)
 	}
@@ -139,7 +148,5 @@ func (agg *avroHandler) flushFile(ctx context.Context) error {
 
 	agg.ocfFile = nil
 	agg.ocfWriter = nil
-	agg.startSlotNum = nil
-	agg.startSlotId = nil
 	return nil
 }
