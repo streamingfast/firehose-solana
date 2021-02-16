@@ -11,8 +11,26 @@ import (
 // 3 avro file handlers one per bucket
 // each avro file will have his "start block"
 
-func (bq *BQLoader) writeTradingAccount(tradingAccount, trader solana.PublicKey) error {
-	// TODO store trading account & trader
+func (bq *BQLoader) processTradingAccount(account, trader solana.PublicKey, slotNum uint64, slotId string) error {
+	if err := bq.avroHandlers[tradingAccount].handleEvent(TraderAccountToAvro(account, trader), slotNum, slotId); err != nil {
+		return fmt.Errorf("unable to process trading account %w", err)
+	}
+
+	return nil
+}
+
+func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
+	for _, event := range events {
+		zlog.Debug("serum new order",
+			zap.Stringer("market", event.Market),
+			zap.Uint64("order_seq_num", event.OrderSeqNum),
+			zap.Uint64("slot_num", event.SlotNumber),
+		)
+
+		if err := bq.avroHandlers[newOrder].handleEvent(OrderCreatedEventToAvro(event), event.SlotNumber, event.SlotHash); err != nil {
+			return fmt.Errorf("unable to process fill %w", err)
+		}
+	}
 	return nil
 }
 
@@ -26,30 +44,21 @@ func (bq *BQLoader) processSerumFills(events []*serumhist.FillEvent) error {
 			zap.Uint64("slot_num", event.SlotNumber),
 		)
 
-		if bq.orderFilledTable == nil {
-			return nil
-		}
-		if err := bq.orderFilledTable.Inserter().Put(bq.ctx, event.Fill); err != nil {
-			return fmt.Errorf("unable to store fills: %w", err)
+		if err := bq.avroHandlers[fillOrder].handleEvent(OrderFilledEventToAvro(event), event.SlotNumber, event.SlotHash); err != nil {
+			return fmt.Errorf("unable to process fill %w", err)
 		}
 	}
 	return nil
 }
 
-func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
-	for _, event := range events {
-		if bq.orderCreatedTable == nil {
-			return nil
-		}
+func OrderCreatedEventToAvro(e *serumhist.NewOrder) map[string]interface{} {
+	panic("implement me")
+}
 
-		row := &Row{
-			mapping: bq.orderCreatedMapping,
-			event:   event.Order,
-		}
+func OrderFilledEventToAvro(e *serumhist.FillEvent) map[string]interface{} {
+	panic("implement me")
+}
 
-		if err := bq.orderCreatedTable.Inserter().Put(bq.ctx, row); err != nil {
-			return fmt.Errorf("unable to store fills: %w", err)
-		}
-	}
-	return nil
+func TraderAccountToAvro(tradingAccount, trader solana.PublicKey) map[string]interface{} {
+	panic("implement me")
 }

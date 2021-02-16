@@ -159,8 +159,6 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f/go.mod h1:xH/i4TFMt8koVQZ6WFms69WAsDWr2XsYL3Hkl7jkoLE=
 github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c h1:HOp4tOFzTxGNRaW0Ma5/VuiRfVnyIiTeLHxrdFuWKLY=
 github.com/dfuse-io/binary v0.0.0-20210125232659-d265783d8b7c/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
-github.com/dfuse-io/binary v0.0.0-20210215145406-f5ccab52bf49 h1:HkSBQY0kJhiBp6akwpobAHTv8FX8apiQhDyJMV6UUpc=
-github.com/dfuse-io/binary v0.0.0-20210215145406-f5ccab52bf49/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
 github.com/dfuse-io/binary v0.0.0-20210216024852-4ae6830a495d h1:EvEAQZ38olo+sALrqqCo345IeB2HH4im1deNOcjbi0s=
 github.com/dfuse-io/binary v0.0.0-20210216024852-4ae6830a495d/go.mod h1:GDFX6qH3BQZPWTeYaA4ZW98T94zs2skRoG3oMz/0jw0=
 github.com/dfuse-io/bstream v0.0.2-0.20200714123252-e9115283f55f/go.mod h1:BHEANTxf3ORDdJdGmQ+lJyX8JqjUH45WGBvBKBaMLQg=
@@ -245,8 +243,6 @@ github.com/dfuse-io/shutter v1.4.1-0.20200407040739-f908f9ab727f/go.mod h1:DNhYo
 github.com/dfuse-io/shutter v1.4.1 h1:a0HSmmu8vYxR4ynIv1+tH49jrv7gyenNtOJBsmm3OHA=
 github.com/dfuse-io/shutter v1.4.1/go.mod h1:/BxCU/ucC6WUyqmLbWpDhznS6Yy1HDblsstEBnTyr+4=
 github.com/dfuse-io/solana-go v0.2.1-0.20210209165506-b9803f04babe/go.mod h1:pY+GRAYUPdUFYED+HtIxnZIQunJhoxyB5xeLuaJqJ/4=
-github.com/dfuse-io/solana-go v0.2.1-0.20210215180845-7405c0c399bb h1:k8wgHwD8FBMJCwSeDsD0PSsLCuxMpg+1epMQk6TN8IA=
-github.com/dfuse-io/solana-go v0.2.1-0.20210215180845-7405c0c399bb/go.mod h1:grVmGHqP2YtcF1B7urq3adjPytItY6JeuSkA/CYx0AM=
 github.com/dfuse-io/solana-go v0.2.1-0.20210216025033-176c084277f9 h1:3X0OzAiyXEyqKc6ZBk8GsHQxP0GGN5UnxmLOvhJtCbo=
 github.com/dfuse-io/solana-go v0.2.1-0.20210216025033-176c084277f9/go.mod h1:0mbu8DOx7CqNQ6gIdTXQXjOYWybqfyISh5i90ys7upY=
 github.com/dgraph-io/badger/v2 v2.0.3 h1:inzdf6VF/NZ+tJ8RwwYMjJMvsOALTHYdozn0qSl6XJI=
@@ -468,8 +464,6 @@ github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/linkedin/goavro/v2 v2.8.5 h1:XKFqpbLnvsaT6ckHpQgyc/ZAsWJQ4h7nNnXhKKMBA0k=
 github.com/linkedin/goavro/v2 v2.8.5/go.mod h1:UgQUb2N/pmueQYH9bfqFioWxzYCZXSfF8Jw03O5sjqA=
-github.com/linkedin/goavro/v2 v2.10.0 h1:eTBIRoInBM88gITGXYtUSqqxLTFXfOsJBiX8ZMW0o4U=
-github.com/linkedin/goavro/v2 v2.10.0/go.mod h1:UgQUb2N/pmueQYH9bfqFioWxzYCZXSfF8Jw03O5sjqA=
 github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/logrusorgru/aurora v2.0.3+incompatible h1:tOpm7WcpBTn4fjmVfgpQq0EfczGlG91VSDkswnjF5A8=
 github.com/logrusorgru/aurora v2.0.3+incompatible/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
