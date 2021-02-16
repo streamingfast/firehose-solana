@@ -23,7 +23,6 @@ type BQLoader struct {
 
 	avroHandlers  map[string]*avroHandler
 	tables        []string
-	loaderCleanup func()
 }
 
 func New(ctx context.Context, client *bigquery.Client, storeURL string, datasetName string) *BQLoader {
@@ -49,12 +48,12 @@ func New(ctx context.Context, client *bigquery.Client, storeURL string, datasetN
 		avroHandlers: avroHandlers,
 		tables:       tables,
 	}
-	bq.Start(ctx)
+	bq.startLoaders(ctx)
 
 	return bq
 }
 
-func (bq *BQLoader) Start(ctx context.Context) {
+func (bq *BQLoader) startLoaders(ctx context.Context) {
 	for _, tableName := range bq.tables {
 		ref := bigquery.NewGCSReference(bq.store.ObjectPath(tableName))
 
@@ -101,9 +100,6 @@ func (bq *BQLoader) Close() error {
 		}
 		err = fmt.Errorf("%s, %s", err.Error(), e.Error())
 	}
-
-	// stop loaders
-	bq.loaderCleanup()
 
 	return err
 }
