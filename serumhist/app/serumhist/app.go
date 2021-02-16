@@ -37,6 +37,7 @@ type Config struct {
 
 	EnableBigQueryInjector bool
 	KvdbDsn                string
+	BigQueryStoreURL       string
 	BigQueryProject        string
 	BigQueryDataset        string
 }
@@ -133,7 +134,7 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
 		if err != nil {
 			return nil, err
 		}
-		h = bqloader.New(ctx, bqClient, a.Config.BigQueryDataset)
+		h = bqloader.New(ctx, bqClient, a.Config.BlocksStoreURL, a.Config.BigQueryDataset)
 	} else {
 		kvdb, err := store.New(a.Config.KvdbDsn)
 		if err != nil {

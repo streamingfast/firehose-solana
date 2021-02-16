@@ -85,7 +85,7 @@ func (h *avroHandler) HandleEvent(event map[string]interface{}, slotNum uint64, 
 }
 
 func (h *avroHandler) FlushIfNeeded(ctx context.Context) error {
-	if time.Since(h.t0).Seconds() > 15 * 60 || atomic.LoadUint64(&h.count) > 1000000 {
+	if time.Since(h.t0).Seconds() > 15*60 || atomic.LoadUint64(&h.count) > 1000000 {
 		return h.flush(ctx)
 	}
 	return nil
