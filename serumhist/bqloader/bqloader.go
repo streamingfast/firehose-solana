@@ -21,8 +21,8 @@ type BQLoader struct {
 	dataset *bigquery.Dataset
 	store   dstore.Store
 
-	avroHandlers  map[string]*avroHandler
-	tables        []string
+	avroHandlers map[string]*avroHandler
+	tables       []string
 }
 
 func New(ctx context.Context, client *bigquery.Client, storeURL string, datasetName string) *BQLoader {
@@ -36,9 +36,9 @@ func New(ctx context.Context, client *bigquery.Client, storeURL string, datasetN
 
 	var fileDir, fileName string
 	avroHandlers := make(map[string]*avroHandler)
-	avroHandlers[newOrder] = NewAvroHandler(fileDir, fileName, store, newOrder, OrderCreatedCodec)
-	avroHandlers[fillOrder] = NewAvroHandler(fileDir, fileName, store, fillOrder, OrderFilledCodec)
-	avroHandlers[tradingAccount] = NewAvroHandler(fileDir, fileName, store, tradingAccount, TraderAccountCodec)
+	avroHandlers[newOrder] = NewAvroHandler(fileDir, fileName, store, newOrder, CodecNewOrder)
+	avroHandlers[fillOrder] = NewAvroHandler(fileDir, fileName, store, fillOrder, CodecOrderFilled)
+	avroHandlers[tradingAccount] = NewAvroHandler(fileDir, fileName, store, tradingAccount, CodecTraderAccount)
 
 	tables := []string{newOrder, fillOrder, tradingAccount}
 

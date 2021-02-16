@@ -54,15 +54,3 @@ func (bq *BQLoader) processSerumFills(events []*serumhist.FillEvent) error {
 	}
 	return nil
 }
-
-func NewOrderToAvro(e *serumhist.NewOrder) map[string]interface{} {
-	panic("implement me")
-}
-
-func FillEventToAvro(e *serumhist.FillEvent) map[string]interface{} {
-	panic("implement me")
-}
-
-func TradingAccountToAvro(tradingAccount, trader solana.PublicKey) map[string]interface{} {
-	panic("implement me")
-}
