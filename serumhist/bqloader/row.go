@@ -1,12 +1,13 @@
-package bigq
+package bqloader
 
 import (
-	"cloud.google.com/go/bigquery"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"time"
+
+	"cloud.google.com/go/bigquery"
+	"github.com/tidwall/gjson"
 )
 
 type FieldMapping struct {

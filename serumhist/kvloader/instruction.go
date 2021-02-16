@@ -1,15 +1,16 @@
-package serumhist
+package kvloader
 
 import (
 	"fmt"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist/db"
+	"github.com/dfuse-io/dfuse-solana/serumhist"
+
 	"go.uber.org/zap"
 )
 
-func (i Injector) processSerumFills(events []*db.Fill) error {
+func (kv *KVLoader) processSerumFills(events []*serumhist.FillEvent) error {
 	for _, event := range events {
-		trader, err := i.cache.getTrader(i.ctx, event.TradingAccount)
+		trader, err := kv.cache.getTrader(kv.ctx, event.TradingAccount)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve trader for trading key %q: %w", event.TradingAccount.String(), err)
 		}
@@ -38,10 +39,7 @@ func (i Injector) processSerumFills(events []*db.Fill) error {
 			zap.Uint64("slot_num", event.SlotNumber),
 		)
 
-		// push the events to subscription
-		i.manager.emit(event)
-
-		if err = f.WriteFill(i.ctx, event); err != nil {
+		if err = kv.writeFill(event); err != nil {
 			return fmt.Errorf("unable to write fill event: %w", err)
 		}
 
@@ -49,7 +47,7 @@ func (i Injector) processSerumFills(events []*db.Fill) error {
 	return nil
 }
 
-func (i *Injector) processSerumOrdersCancelled(events []*db.OrderCancelled) error {
+func (kv *KVLoader) processSerumOrdersCancelled(events []*serumhist.OrderCancelled) error {
 	for _, event := range events {
 		zlog.Debug("serum order cancelled",
 			zap.Stringer("market", event.Market),
@@ -59,12 +57,7 @@ func (i *Injector) processSerumOrdersCancelled(events []*db.OrderCancelled) erro
 			zap.Uint32("inst_idx", event.InstIdx),
 		)
 
-		if i.manager != nil {
-			// push the events to subscription
-			i.manager.emit(event)
-		}
-
-		if err := i.db.OrderCancelled(i.ctx, event); err != nil {
+		if err := kv.writeOrderCancelled(event); err != nil {
 			return fmt.Errorf("unable to write order canceled event: %w", err)
 		}
 	}
@@ -72,7 +65,7 @@ func (i *Injector) processSerumOrdersCancelled(events []*db.OrderCancelled) erro
 	return nil
 }
 
-func (i *Injector) processSerumOrdersClosed(events []*db.OrderClosed) error {
+func (kv *KVLoader) processSerumOrdersClosed(events []*serumhist.OrderClosed) error {
 	for _, event := range events {
 		zlog.Debug("serum order closed",
 			zap.Stringer("market", event.Market),
@@ -82,12 +75,7 @@ func (i *Injector) processSerumOrdersClosed(events []*db.OrderClosed) error {
 			zap.Uint32("inst_idx", event.InstIdx),
 		)
 
-		if i.manager != nil {
-			// push the events to subscription
-			i.manager.emit(event)
-		}
-
-		if err := i.db.OrderClosed(i.ctx, event); err != nil {
+		if err := kv.writeOrderClosed(event); err != nil {
 			return fmt.Errorf("unable to write order closed event: %w", err)
 		}
 	}
@@ -96,7 +84,7 @@ func (i *Injector) processSerumOrdersClosed(events []*db.OrderClosed) error {
 
 }
 
-func (i *Injector) processSerumOrdersExecuted(events []*db.OrderExecuted) error {
+func (kv *KVLoader) processSerumOrdersExecuted(events []*serumhist.OrderExecuted) error {
 	for _, event := range events {
 		zlog.Debug("serum order executed",
 			zap.Stringer("market", event.Market),
@@ -106,12 +94,7 @@ func (i *Injector) processSerumOrdersExecuted(events []*db.OrderExecuted) error 
 			zap.Uint32("inst_idx", event.InstIdx),
 		)
 
-		if i.manager != nil {
-			// push the events to subscription
-			i.manager.emit(event)
-		}
-
-		if err := i.db.OrderExecuted(i.ctx, event); err != nil {
+		if err := kv.writeOrderExecuted(event); err != nil {
 			return fmt.Errorf("unable to write order executed event: %w", err)
 		}
 	}

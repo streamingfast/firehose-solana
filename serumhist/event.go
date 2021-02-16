@@ -1,7 +1,6 @@
-package db
+package serumhist
 
 import (
-	"context"
 	"time"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
@@ -28,27 +27,15 @@ type NewOrder struct {
 	Order *pbserumhist.Order
 }
 
-func (e *NewOrder) WriteTo(ctx context.Context, w Writer) error {
-	return w.NewOrder(ctx, e)
-}
-
-type Fill struct {
+type FillEvent struct {
 	*Ref
 	TradingAccount solana.PublicKey
 	Trader         solana.PublicKey
 	Fill           *pbserumhist.Fill
 }
 
-func (e *Fill) WriteTo(ctx context.Context, w Writer) error {
-	return w.Fill(ctx, e)
-}
-
 type OrderExecuted struct {
 	*Ref
-}
-
-func (e *OrderExecuted) WriteTo(ctx context.Context, w Writer) error {
-	return w.OrderExecuted(ctx, e)
 }
 
 type OrderClosed struct {
@@ -56,15 +43,7 @@ type OrderClosed struct {
 	InstrRef *pbserumhist.InstructionRef
 }
 
-func (e *OrderClosed) WriteTo(ctx context.Context, w Writer) error {
-	return w.OrderClosed(ctx, e)
-}
-
 type OrderCancelled struct {
 	*Ref
 	InstrRef *pbserumhist.InstructionRef
-}
-
-func (e *OrderCancelled) WriteTo(ctx context.Context, w Writer) error {
-	return w.OrderCancelled(ctx, e)
 }

@@ -7,7 +7,6 @@ import (
 	bin "github.com/dfuse-io/binary"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist/db"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/diff"
 	"github.com/dfuse-io/solana-go/programs/serum"
@@ -18,14 +17,12 @@ import (
 
 type SerumSlot struct {
 	TradingAccountCache []*serumTradingAccount
-	newOrders           []interface{}
 
-	Events               []interface{}
-	orderNewEvents       []*db.NewOrder
-	OrderFilledEvents    []*db.Fill
-	orderExecutedEvents  []*db.OrderExecuted
-	orderCancelledEvents []*db.OrderCancelled
-	orderClosedEvents    []*db.OrderClosed
+	OrderNewEvents       []*NewOrder
+	OrderFilledEvents    []*FillEvent
+	OrderExecutedEvents  []*OrderExecuted
+	OrderCancelledEvents []*OrderCancelled
+	OrderClosedEvents    []*OrderClosed
 }
 
 func newSerumSlot() *SerumSlot {
@@ -42,7 +39,7 @@ type serumTradingAccount struct {
 
 func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32, trxId, slotHash string, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
 
-	eventRef := &db.Ref{
+	eventRef := &Ref{
 		SlotNumber: slotNumber,
 		TrxHash:    trxId,
 		TrxIdx:     trxIdx,
@@ -120,14 +117,14 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 	return nil
 }
 
-func (s *SerumSlot) addNewOrderEvent(eventRef db.Ref, old, new *serum.OpenOrders) {
+func (s *SerumSlot) addNewOrderEvent(eventRef Ref, old, new *serum.OpenOrders) {
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Orders[#]"); match {
 		}
 	}))
 }
 
-func (s *SerumSlot) addOrderCancellationEvent(eventRef *db.Ref, old, new *serum.EventQueue) {
+func (s *SerumSlot) addOrderCancellationEvent(eventRef *Ref, old, new *serum.EventQueue) {
 	diff.Diff(old, new, diff.OnEvent(func(eventdiff diff.Event) {
 		if match, _ := eventdiff.Match("Events[#]"); match {
 			e := eventdiff.Element().Interface().(*serum.Event)
@@ -135,7 +132,7 @@ func (s *SerumSlot) addOrderCancellationEvent(eventRef *db.Ref, old, new *serum.
 			case diff.KindAdded:
 				if e.Flag.IsOut() {
 					eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
-					s.orderCancelledEvents = append(s.orderCancelledEvents, &db.OrderCancelled{
+					s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
 						Ref: eventRef,
 						InstrRef: &pbserumhist.InstructionRef{
 							TrxHash:   eventRef.TrxHash,
@@ -149,7 +146,7 @@ func (s *SerumSlot) addOrderCancellationEvent(eventRef *db.Ref, old, new *serum.
 	}))
 }
 
-func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *db.Ref, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
+func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *Ref, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
 	diff.Diff(old, new, diff.OnEvent(func(eventDiff diff.Event) {
 		if match, _ := eventDiff.Match("Events[#]"); match {
 			e := eventDiff.Element().Interface().(*serum.Event)
@@ -157,7 +154,7 @@ func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *db.Ref, old, new *serum.
 			case diff.KindAdded:
 				if e.Flag.IsFill() {
 					eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
-					s.OrderFilledEvents = append(s.OrderFilledEvents, &db.Fill{
+					s.OrderFilledEvents = append(s.OrderFilledEvents, &FillEvent{
 						Ref:            eventRef,
 						TradingAccount: e.Owner,
 						Fill: &pbserumhist.Fill{
@@ -182,13 +179,13 @@ func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *db.Ref, old, new *serum.
 					// whether or not it was actually executed or cancelled when we stitch the order events together
 					// if the new event OUT originates from a new order v2 instruction, we know that it is a ORDER EXECUTED event
 					if processOutAsOrderExecuted {
-						s.orderExecutedEvents = append(s.orderExecutedEvents, &db.OrderExecuted{
+						s.OrderExecutedEvents = append(s.OrderExecutedEvents, &OrderExecuted{
 							Ref: eventRef,
 						})
 						return
 					}
 
-					s.orderClosedEvents = append(s.orderClosedEvents, &db.OrderClosed{
+					s.OrderClosedEvents = append(s.OrderClosedEvents, &OrderClosed{
 						Ref: eventRef,
 						InstrRef: &pbserumhist.InstructionRef{
 							TrxHash:   eventRef.TrxHash,

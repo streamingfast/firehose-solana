@@ -1,8 +1,6 @@
 package grpc
 
 import (
-	"fmt"
-	"net"
 	"time"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
@@ -43,40 +41,8 @@ func (s *Server) Serve() {
 	)
 
 	s.OnTerminating(func(err error) {
-		server.Shutdown(30 * time.Second)
+		s.server.Shutdown(30 * time.Second)
 	})
 
-	lis, err := net.Listen("tcp", s.grpcAddr)
-	if err != nil {
-		s.Shutdown(fmt.Errorf("failed listening grpc %q: %w", s.grpcAddr, err))
-		return
-	}
-
-	if err := s.server.Serve(lis); err != nil {
-		s.Shutdown(fmt.Errorf("error on grpcServer.Serve: %w", err))
-		return
-	}
-}
-
-func (s *Server) Terminate(err error) {
-	if s.server == nil {
-		return
-	}
-
-	stopped := make(chan bool)
-
-	// Stop the server gracefully
-	go func() {
-		s.server.GracefulStop()
-		close(stopped)
-	}()
-
-	// And don't wait more than 60 seconds for graceful stop to happen
-	select {
-	case <-time.After(30 * time.Second):
-		zlog.Info("gRPC server did not terminate gracefully within allowed time, forcing shutdown")
-		s.server.Stop()
-	case <-stopped:
-		zlog.Info("gRPC server teminated gracefully")
-	}
+	go s.server.Launch(s.grpcAddr)
 }
