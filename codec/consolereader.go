@@ -547,8 +547,7 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 		}
 
 		if rootBlock == bank.blk.Number {
-			rootBlock--
-			//return fmt.Errorf("invalid root for bank. Root block %d cannot equal bank block number %d", rootBlock, bank.blk.Number)
+			return fmt.Errorf("invalid root for bank. Root block %d cannot equal bank block number %d", rootBlock, bank.blk.Number)
 		}
 
 		bank.blk.RootNum = rootBlock
