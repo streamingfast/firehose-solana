@@ -6,7 +6,7 @@ import (
 	"github.com/test-go/testify/assert"
 )
 
-func Test_FileNameString(t *testing.T) {
+func TestFileNameString(t *testing.T) {
 	input := NewFileName("testPrefix", 0, 100, "a", "b", "2020-01-01-12345")
 	expected := "testPrefix/0-100-a-b-2020-01-01-12345.avro"
 
@@ -14,7 +14,7 @@ func Test_FileNameString(t *testing.T) {
 
 }
 
-func Test_parseLatestInfoFromFilename(t *testing.T) {
+func TestParseLatestInfoFromFilename(t *testing.T) {
 	input := "testPrefix/0-100-a-b-2020-01-01-12345.avro"
 	expected := &FileName{
 		LatestSlotNum: 100,

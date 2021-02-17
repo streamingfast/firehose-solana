@@ -11,7 +11,7 @@ import (
 	"github.com/test-go/testify/require"
 )
 
-func Test_getLatestCheckpointFromFiles(t *testing.T) {
+func TestGetLatestCheckpointFromFiles(t *testing.T) {
 	var fileNames []string
 	prefix := "testPrefix"
 	timestamp := "2020-01-01-12345"
