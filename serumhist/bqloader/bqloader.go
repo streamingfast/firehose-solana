@@ -38,7 +38,7 @@ func New(ctx context.Context, client *bigquery.Client, storeURL string, datasetN
 	var fileDir, fileName string
 	avroHandlers := make(map[string]*avroHandler)
 	avroHandlers[newOrder] = NewAvroHandler(fileDir, fileName, store, newOrder, CodecNewOrder)
-	avroHandlers[fillOrder] = NewAvroHandler(fileDir, fileName, store, fillOrder, CodecOrderFilled)
+	avroHandlers[fillOrder] = NewAvroHandler(fileDir, fileName, store, fillOrder, CodecOrderFill)
 	avroHandlers[tradingAccount] = NewAvroHandler(fileDir, fileName, store, tradingAccount, CodecTraderAccount)
 
 	tables := []string{newOrder, fillOrder, tradingAccount}
