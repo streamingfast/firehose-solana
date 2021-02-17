@@ -48,15 +48,32 @@ func (p *processor) processSnapshot(ctx context.Context) error {
 		zap.String("source_snapshot_folder", p.sourceSnapshotFolder),
 	)
 	_, err := listFiles(ctx, p.client, p.sourceBucket, p.sourceSnapshotFolder, p.handleFile)
-
 	if err != nil {
 		return fmt.Errorf("file listing: %w", err)
+	}
+
+	err = p.writeProcessCompleteMarker(ctx)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (p *processor) completedSnapshot(ctx context.Context) (bool, error) {
+func (p *processor) writeProcessCompleteMarker(ctx context.Context) error {
+	completedMarkerFile := p.destinationSnapshotFolder + "/" + "completed.marker"
+	o := p.client.Bucket(p.destinationBucket).Object(completedMarkerFile)
+	w := o.NewWriter(ctx)
+	defer w.Close()
+
+	_, err := w.Write([]byte{0x1})
+	if err != nil {
+		return fmt.Errorf("writting completion marker : %w", err)
+	}
+	return nil
+}
+
+func (p *processor) CompletedSnapshot(ctx context.Context) (bool, error) {
 	completedMarkerFile := p.destinationSnapshotFolder + "/" + "completed.marker"
 	_, err := p.client.Bucket(p.destinationBucket).Object(completedMarkerFile).Attrs(ctx)
 	if err != nil {

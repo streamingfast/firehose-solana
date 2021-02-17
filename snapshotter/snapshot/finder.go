@@ -84,9 +84,17 @@ func (f *Finder) launch() error {
 		zlog.Info("will process sourceSnapshotName", zap.String("sourceSnapshotName", sourceSnapshotName))
 
 		pcr := NewProcessor(f.sourceBucket, sourceSnapshotName, f.destinationBucket, f.destinationSnapshotsFolder, f.workdir, client)
-		err := pcr.processSnapshot(ctx)
+		completed, err := pcr.CompletedSnapshot(ctx)
 		if err != nil {
-			f.Shutdown(err)
+			return fmt.Errorf("checking is snapshot was completely processed: %w", err)
+		}
+		if !completed {
+			err := pcr.processSnapshot(ctx)
+			if err != nil {
+				f.Shutdown(err)
+			}
+		} else {
+			zlog.Info("skipping snapshot already processed", zap.String("snapshot", sourceSnapshotName))
 		}
 	}
 
