@@ -18,7 +18,7 @@ import (
 
 const (
 	flushIntervalSeconds = 15 * 60
-	flushEventCount = 100000
+	flushEventCount      = 100000
 )
 
 type avroHandler struct {

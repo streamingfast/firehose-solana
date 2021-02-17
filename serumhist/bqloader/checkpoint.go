@@ -96,6 +96,5 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 		}
 	}
 
-	// return lowest of the checkpoints
 	return earliestCheckpoint, nil
 }
