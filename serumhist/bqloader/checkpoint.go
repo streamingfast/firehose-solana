@@ -21,6 +21,12 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 	wg := sync.WaitGroup{}
 	wg.Add(len(bq.avroHandlers))
 
+	checkpointChan := make(chan *pbserumhist.Checkpoint)
+	go func() {
+		wg.Wait()
+		close(checkpointChan)
+	}()
+
 	for _, v := range bq.avroHandlers {
 		go func(handler *avroHandler) {
 			defer wg.Done()
@@ -73,14 +79,16 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 			}
 
 			handler.CheckpointSlotNum = highestSlotNum
-			checkpoints = append(checkpoints, &pbserumhist.Checkpoint{
+			checkpointChan <- &pbserumhist.Checkpoint{
 				LastWrittenSlotNum: highestSlotNum,
 				LastWrittenSlotId:  highestSlotId,
-			})
+			}
 		}(v)
 	}
 
-	wg.Wait()
+	for checkpoint := range checkpointChan {
+		checkpoints = append(checkpoints, checkpoint)
+	}
 
 	if len(checkpoints) == 0 {
 		return nil, nil
