@@ -15,6 +15,7 @@ func Test_getLatestCheckpointFromFiles(t *testing.T) {
 	var fileNames []string
 	prefix := "testPrefix"
 	timestamp := "2020-01-01-12345"
+	fileNames = append(fileNames, "testPrefix/invalid_file_should_not_affect_outcome")
 	for _, fi := range []struct {
 		startSlot    uint64
 		latestSlot   uint64
