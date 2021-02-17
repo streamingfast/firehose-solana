@@ -1,14 +1,15 @@
 package bqloader
 
 import (
-	"cloud.google.com/go/bigquery"
 	"context"
 	"fmt"
-	"github.com/dfuse-io/derr"
-	"github.com/dfuse-io/dstore"
 	"net/url"
 	"sync"
 	"time"
+
+	"cloud.google.com/go/bigquery"
+	"github.com/dfuse-io/derr"
+	"github.com/dfuse-io/dstore"
 )
 
 const (
@@ -58,6 +59,7 @@ func (bq *BQLoader) startLoaders(ctx context.Context) {
 		ref := bigquery.NewGCSReference(bq.store.ObjectPath(tableName))
 
 		loader := bq.dataset.Table(tableName).LoaderFrom(ref)
+		loader.UseAvroLogicalTypes = true
 		go func(l *bigquery.Loader) {
 			_, _ = l.Run(ctx) // TODO: handle these?
 		}(loader)
