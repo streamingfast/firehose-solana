@@ -3,12 +3,11 @@ package bqloader
 import (
 	"context"
 	"go.uber.org/zap"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/dfuse-io/dstore"
 )
 
 func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {
@@ -25,67 +24,26 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 		close(checkpointChan)
 	}()
 
-	for _, v := range bq.avroHandlers {
+	for _, h := range bq.avroHandlers {
 		go func(handler *avroHandler) {
 			defer wg.Done()
 
-			store := handler.Store
-			prefix := handler.Prefix
-
-			var highestSlotNum uint64
-			var highestSlotId string
-			foundAny := false
-
-			err := store.Walk(ctx, prefix, ".tmp", func(filename string) error {
-				filenameParts := strings.Split(filename, "-")
-				if len(filenameParts) < 5 {
-					zlog.Warn("could not parse slot num for file. skipping unknown file", zap.String("filename", filename))
-					return nil
-				}
-
-				fileLatestSlotNum, err := strconv.ParseUint(filenameParts[1], 10, 64)
-				if err != nil {
-					zlog.Warn("could not parse slot num for file. skipping unknown file", zap.String("filename", filename))
-					return nil
-				}
-				fileLatestSlotId := filenameParts[3]
-
-				if !foundAny {
-					highestSlotNum = fileLatestSlotNum
-					highestSlotId = fileLatestSlotId
-					foundAny = true
-					return nil
-				}
-
-				if fileLatestSlotNum <= highestSlotNum {
-					return nil
-				}
-
-				highestSlotNum = fileLatestSlotNum
-				highestSlotId = fileLatestSlotId
-				return nil
-			})
-
-			if err == context.DeadlineExceeded {
-				zlog.Info("context deadline exceeded when walking store files")
-				err = nil
-			}
-
-			if err != nil || !foundAny {
-				zlog.Warn("could not determine checkpoint")
+			checkpoint, err := getLatestCheckpointFromFiles(ctx, handler.Store, handler.Prefix)
+			if err != nil || checkpoint == nil {
 				return
 			}
 
-			handler.CheckpointSlotNum = highestSlotNum
-			checkpointChan <- &pbserumhist.Checkpoint{
-				LastWrittenSlotNum: highestSlotNum,
-				LastWrittenSlotId:  highestSlotId,
-			}
-		}(v)
+			handler.SetCheckpoint(checkpoint.LastWrittenSlotNum)
+			checkpointChan <- checkpoint
+		}(h)
 	}
 
 	var earliestCheckpoint *pbserumhist.Checkpoint
 	for checkpoint := range checkpointChan {
+		if checkpoint == nil {
+			continue
+		}
+
 		if earliestCheckpoint == nil {
 			earliestCheckpoint = checkpoint
 			continue
@@ -97,4 +55,47 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 	}
 
 	return earliestCheckpoint, nil
+}
+
+func getLatestCheckpointFromFiles(ctx context.Context, store dstore.Store, prefix string) (checkpoint *pbserumhist.Checkpoint, err error) {
+	var highestSlotNum uint64
+	var highestSlotId string
+	foundAny := false
+
+	err = store.Walk(ctx, prefix, ".tmp", func(filename string) error {
+		fn, err := parseLatestInfoFromFilename(filename)
+		if err != nil {
+			zlog.Warn("could not parse file. skipping unknown file",
+				zap.String("filename", filename),
+				zap.Error(err),
+			)
+			return nil
+		}
+		fileLatestSlotNum := fn.LatestSlotNum
+		fileLatestSlotId := fn.LatestSlotId
+
+		if !foundAny {
+			highestSlotNum = fileLatestSlotNum
+			highestSlotId = fileLatestSlotId
+			foundAny = true
+			return nil
+		}
+
+		if fileLatestSlotNum <= highestSlotNum {
+			return nil
+		}
+
+		highestSlotNum = fileLatestSlotNum
+		highestSlotId = fileLatestSlotId
+		return nil
+	})
+
+	if foundAny {
+		checkpoint = &pbserumhist.Checkpoint{
+			LastWrittenSlotNum: highestSlotNum,
+			LastWrittenSlotId:  highestSlotId,
+		}
+	}
+
+	return
 }

@@ -69,10 +69,14 @@ func (bq *BQLoader) Close() error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	errChan := make(chan error)
-
 	wg := sync.WaitGroup{}
 	wg.Add(len(bq.avroHandlers))
+
+	errChan := make(chan error)
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
 
 	for _, h := range bq.avroHandlers {
 		go func(handler *avroHandler) {
@@ -83,11 +87,6 @@ func (bq *BQLoader) Close() error {
 			}
 		}(h)
 	}
-
-	go func() {
-		wg.Wait()
-		close(errChan)
-	}()
 
 	var err error
 	for e := range errChan {

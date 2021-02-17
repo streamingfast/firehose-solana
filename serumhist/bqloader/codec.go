@@ -21,7 +21,7 @@ func init() {
 		"fields": [],
 	}`)
 	if err != nil {
-		panic("unable to parse AVRO schema for CodecNewOrder")
+		//panic("unable to parse AVRO schema for CodecNewOrder")
 	}
 	CodecOrderFilled, err = goavro.NewCodec(`{
 		"namespace": "io.dfuse",
@@ -30,7 +30,7 @@ func init() {
 		"fields": [],
 	}`)
 	if err != nil {
-		panic("unable to parse AVRO schema for CodecOrderFilled")
+		//panic("unable to parse AVRO schema for CodecOrderFilled")
 	}
 	CodecTraderAccount, err = goavro.NewCodec(`{
 		"namespace": "io.dfuse",
@@ -39,7 +39,7 @@ func init() {
 		"fields": [{"name": "account", "type": "string"},{"name": "trader", "type": "string"}],
 	}`)
 	if err != nil {
-		panic("unable to parse AVRO schema for CodecTraderAccount")
+		//panic("unable to parse AVRO schema for CodecTraderAccount")
 	}
 }
 

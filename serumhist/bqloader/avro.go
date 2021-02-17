@@ -29,7 +29,7 @@ type avroHandler struct {
 	ocfFile   *os.File
 	ocfWriter *goavro.OCFWriter
 
-	CheckpointSlotNum uint64
+	checkpointSlotNum uint64
 
 	t0            time.Time
 	count         uint64
@@ -64,9 +64,14 @@ func (h *avroHandler) Shutdown(ctx context.Context) error {
 	return h.flush(ctx)
 }
 
+func (h *avroHandler) SetCheckpoint(slotNum uint64) {
+	zlog.Debug("set checkpoint", zap.Uint64("checkpoint", slotNum))
+	h.checkpointSlotNum = slotNum
+}
+
 func (h *avroHandler) HandleEvent(event map[string]interface{}, slotNum uint64, slotId string) error {
-	if slotNum <= h.CheckpointSlotNum {
-		zlog.Debug("")
+	if slotNum <= h.checkpointSlotNum {
+		zlog.Debug("ignoring event from before our checkpoint", zap.Uint64("slot_num", slotNum), zap.Uint64("checkpoint", h.checkpointSlotNum))
 		return nil
 	}
 
@@ -109,14 +114,14 @@ func (h *avroHandler) flush(ctx context.Context) error {
 	err := h.ocfFile.Close()
 	derr.Check("failed to close scratch file", err)
 
-	destPath := fmt.Sprintf("%s/%d-%d-%s-%s-%s.avro",
+	destPath := NewFileName(
 		h.Prefix,
 		h.startSlotNum,
 		h.latestSlotNum,
 		h.startSlotId,
 		h.latestSlotId,
 		h.t0.Format("2006-01-02-15-04-05-")+fmt.Sprintf("%010d", rand.Int()),
-	)
+	).String()
 
 	zlog.Info("pushing avro file to storage", zap.String("path", destPath))
 	err = h.Store.PushLocalFile(ctx, h.scratchFilename, destPath)
