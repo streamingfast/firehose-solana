@@ -2,12 +2,12 @@ package bqloader
 
 import (
 	"context"
-	"go.uber.org/zap"
 	"sync"
 	"time"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dstore"
+	"go.uber.org/zap"
 )
 
 func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {

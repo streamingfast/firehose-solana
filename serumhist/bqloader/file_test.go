@@ -1,8 +1,9 @@
 package bqloader
 
 import (
-	"github.com/test-go/testify/assert"
 	"testing"
+
+	"github.com/test-go/testify/assert"
 )
 
 func Test_FileNameString(t *testing.T) {
@@ -16,9 +17,9 @@ func Test_FileNameString(t *testing.T) {
 func Test_parseLatestInfoFromFilename(t *testing.T) {
 	input := "testPrefix/0-100-a-b-2020-01-01-12345.avro"
 	expected := &FileName{
-	LatestSlotNum: 100,
-	LatestSlotId:  "b",
-}
+		LatestSlotNum: 100,
+		LatestSlotId:  "b",
+	}
 
 	output, err := parseLatestInfoFromFilename(input)
 	assert.Nil(t, err)

@@ -35,16 +35,18 @@ func init() {
 	CodecTraderAccount, err = goavro.NewCodec(`{
 		"namespace": "io.dfuse",
 		"type": "record",
-		"name": "",
-		"fields": [{"name": "account", "type": "string"},{"name": "trader", "type": "string"}],
+		"name": "TraderAccount",
+		"fields": [{"name": "account", "type": "string"},{"name": "trader", "type": "string"}]
 	}`)
 	if err != nil {
-		//panic("unable to parse AVRO schema for CodecTraderAccount")
+		panic("unable to parse AVRO schema for CodecTraderAccount")
 	}
 }
 
 func NewOrderToAvro(e *serumhist.NewOrder) map[string]interface{} {
-	panic("implement me")
+	return map[string]interface{}{
+		"order_num": e.Order.Num,
+	}
 }
 
 func FillEventToAvro(e *serumhist.FillEvent) map[string]interface{} {

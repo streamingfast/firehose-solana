@@ -3,11 +3,12 @@ package bqloader
 import (
 	"context"
 	"fmt"
+	"io"
+	"testing"
+
 	"github.com/dfuse-io/dstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/test-go/testify/require"
-	"io"
-	"testing"
 )
 
 func Test_getLatestCheckpointFromFiles(t *testing.T) {
