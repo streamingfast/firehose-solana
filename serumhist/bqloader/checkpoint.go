@@ -3,7 +3,6 @@ package bqloader
 import (
 	"context"
 	"go.uber.org/zap"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,7 +16,6 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	checkpoints := make([]*pbserumhist.Checkpoint, 0, len(bq.avroHandlers))
 	wg := sync.WaitGroup{}
 	wg.Add(len(bq.avroHandlers))
 
@@ -86,18 +84,18 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 		}(v)
 	}
 
+	var earliestCheckpoint *pbserumhist.Checkpoint
 	for checkpoint := range checkpointChan {
-		checkpoints = append(checkpoints, checkpoint)
-	}
+		if earliestCheckpoint == nil {
+			earliestCheckpoint = checkpoint
+			continue
+		}
 
-	if len(checkpoints) == 0 {
-		return nil, nil
+		if checkpoint.LastWrittenSlotNum < earliestCheckpoint.LastWrittenSlotNum {
+			earliestCheckpoint = checkpoint
+		}
 	}
-
-	sort.Slice(checkpoints, func(i, j int) bool {
-		return checkpoints[i].LastWrittenSlotNum < checkpoints[j].LastWrittenSlotNum
-	})
 
 	// return lowest of the checkpoints
-	return checkpoints[0], nil
+	return earliestCheckpoint, nil
 }
