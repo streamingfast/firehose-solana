@@ -2,5 +2,7 @@ start:
   args:
   - snapshotter
   flags:
-    snapshotter-solana-snapshot-bucket: "mainnet-beta-ledger-us-west1"
-    snapshotter-solana-snapshot-prefix: ""
+    snapshotter-source-bucket: "mainnet-beta-ledger-us-west1"
+    snapshotter-source-prefix: ""
+    snapshotter-destination-bucket: "dfuseio-global-backups-us"
+    snapshotter-destination-prefix: "sol-mainnet/snapshots-blocks-logs"

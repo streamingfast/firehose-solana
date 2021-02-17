@@ -9,36 +9,64 @@ import (
 	"strings"
 	"time"
 
-	"github.com/abourget/llerrgroup"
-
 	"cloud.google.com/go/storage"
+	"github.com/abourget/llerrgroup"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 )
 
 type processor struct {
-	destinationBucket string
-	destinationPrefix string
-	workingDir        string
+	sourceBucket              string
+	sourceSnapshotFolder      string
+	destinationBucket         string
+	destinationSnapshotFolder string
+	workingDir                string
+	client                    *storage.Client
 }
 
-func NewProcessor(destinationBucket string, destinationFolder string, workingDir string) *processor {
+func NewProcessor(sourceBucket string, sourceSnapshotName string, destinationBucket string, destinationSnapshotsFolder string, workingDir string, client *storage.Client) *processor {
 	return &processor{
-		destinationBucket: destinationBucket,
-		destinationPrefix: destinationFolder,
-		workingDir:        workingDir,
+		sourceBucket:              sourceBucket,
+		sourceSnapshotFolder:      sourceSnapshotName,
+		destinationBucket:         destinationBucket,
+		destinationSnapshotFolder: destinationSnapshotsFolder + "/" + paddedSnapshotName(sourceSnapshotName),
+		workingDir:                workingDir,
+		client:                    client,
 	}
 }
 
-func (p *processor) processSnapshot(ctx context.Context, client *storage.Client, snapshot string, sourceBucket string) error {
-	zlog.Info("processing snapshot", zap.String("snapshot", snapshot), zap.String("sourceBucket", sourceBucket))
-	_, err := listFiles(ctx, client, sourceBucket, snapshot, p.handleFile)
+func (p *processor) processSnapshot(ctx context.Context) error {
+	zlog.Info("processing snapshot",
+		zap.String("source_bucket", p.sourceBucket),
+		zap.String("source_snapshot_folder", p.sourceSnapshotFolder),
+		zap.String("destination_bucket", p.destinationBucket),
+		zap.String("destination_snapshot_folder", p.destinationSnapshotFolder),
+	)
+
+	zlog.Info("listing file from source",
+		zap.String("source_bucket", p.sourceBucket),
+		zap.String("source_snapshot_folder", p.sourceSnapshotFolder),
+	)
+	_, err := listFiles(ctx, p.client, p.sourceBucket, p.sourceSnapshotFolder, p.handleFile)
 
 	if err != nil {
 		return fmt.Errorf("file listing: %w", err)
 	}
 
 	return nil
+}
+
+func (p *processor) completedSnapshot(ctx context.Context) (bool, error) {
+	completedMarkerFile := p.destinationSnapshotFolder + "/" + "completed.marker"
+	_, err := p.client.Bucket(p.destinationBucket).Object(completedMarkerFile).Attrs(ctx)
+	if err != nil {
+		if err == storage.ErrObjectNotExist {
+			return false, nil
+		}
+
+		return false, err
+	}
+	return true, nil
 }
 
 func paddedSnapshotName(fileName string) string {
@@ -51,30 +79,36 @@ func relativeFilePath(fileName string) string {
 	return strings.Join(parts[1:], "/")
 }
 
-func (p *processor) handleFile(ctx context.Context, client *storage.Client, bucket string, filePath string) error {
+func (p *processor) handleFile(ctx context.Context, filePath string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 24*time.Hour)
 	defer cancel()
 
-	snapshot := paddedSnapshotName(filePath)
-	relativeFilePath := relativeFilePath(filePath)
+	zlog.Info("Handling file",
+		zap.String("src_snapshot_folder", p.sourceSnapshotFolder),
+		zap.String("src_file_path", filePath),
+		zap.String("destination_bucket", p.destinationBucket),
+		zap.String("destination_snapshot_folder", p.destinationSnapshotFolder),
+	)
 
-	zlog.Info("Handling file", zap.String("src_file_path", filePath), zap.String("snapshot", snapshot), zap.String("relative_file_path", relativeFilePath))
-	srcFileHandler := client.Bucket(bucket).Object(filePath)
+	srcFileHandler := p.client.Bucket(p.sourceBucket).Object(filePath)
+	zlog.Info("got file handler", zap.String("object_name", srcFileHandler.ObjectName()))
 
-	if strings.HasSuffix(relativeFilePath, "rocksdb.tar.bz2") {
-		zlog.Info("processing rocksdb file", zap.String("relative_file_path", relativeFilePath))
+	if strings.HasSuffix(filePath, "rocksdb.tar.bz2") {
+		zlog.Info("processing rocksdb file")
 		rocksdbReader, err := srcFileHandler.NewReader(ctx)
 		if err != nil {
 			return fmt.Errorf("reader from rockdb source handler: %w", err)
 		}
 
 		//Build a writer for the untar process.
-		rocksdbDestinationPrefix := p.destinationPrefix + "/" + snapshot
 		err = unCompress(rocksdbReader, func(fileName string) *storage.Writer {
 			//filePath is "rocksdb/001653.sst"
-			dest := rocksdbDestinationPrefix + "/" + fileName
-			zlog.Info("untaring file", zap.String("file_name", fileName), zap.String("dest_file_name", dest))
-			h := client.Bucket(p.destinationBucket).Object(dest)
+			dest := p.destinationSnapshotFolder + "/" + fileName
+			zlog.Info("untaring file",
+				zap.String("file_name", fileName),
+				zap.String("destination_bucket", p.destinationBucket),
+				zap.String("dest_file_name", dest))
+			h := p.client.Bucket(p.destinationBucket).Object(dest)
 			return h.NewWriter(ctx)
 		})
 
@@ -83,17 +117,19 @@ func (p *processor) handleFile(ctx context.Context, client *storage.Client, buck
 		}
 		zlog.Info("uncompressed file")
 
-		//todo: upload all file under rocksdb
-	} else if strings.HasPrefix(filePath, "snapshot-") {
-		//copy the file from 1 bucket to the other
-		destinationFile := p.destinationPrefix + "/" + filePath
-		destFileHandler := client.Bucket(p.destinationBucket).Object(destinationFile)
-
-		attrs, err := destFileHandler.CopierFrom(srcFileHandler).Run(ctx)
+	} else if strings.HasPrefix(relativeFilePath(filePath), "snapshot-") {
+		//copy the file from 1 sourceBucket to the other
+		destinationFile := p.destinationSnapshotFolder + "/" + relativeFilePath(filePath)
+		destFileHandler := p.client.Bucket(p.destinationBucket).Object(destinationFile)
+		_, err := destFileHandler.CopierFrom(srcFileHandler).Run(ctx)
 		if err != nil {
 			return fmt.Errorf("copy file: %s: %w", filePath, err)
 		}
-		zlog.Info("File copied", zap.String("snapshot", filePath), zap.String("filePath", bucket), zap.String("destination_bucket", p.destinationBucket), zap.String("destination_file", destinationFile), zap.String("attr_name", attrs.Name))
+		zlog.Info("File copied",
+			zap.String("file_path", filePath),
+			zap.String("destination_bucket", p.destinationBucket),
+			zap.String("destination_file", destinationFile),
+		)
 	} else {
 		zlog.Info("Ignoring file", zap.String("file_name", filePath))
 		return nil
@@ -146,14 +182,22 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 				destWriter.ContentType = "application/octet-stream"
 				destWriter.CacheControl = "public, max-age=86400"
 				// copy over contents
-				if _, err := io.Copy(destWriter, tr); err != nil {
-					return fmt.Errorf("updaling target: %s: %w", target, err)
+				size, err := io.Copy(destWriter, tr)
+				if err != nil {
+					return fmt.Errorf("uploadling target: %s: %w", target, err)
 				}
-				zlog.Info("target uploaded", zap.String("target", target))
+
+				zlog.Info("target uploaded",
+					zap.String("target", target),
+					zap.Int64("size", size),
+				)
 
 				if err := destWriter.Close(); err != nil {
 					return fmt.Errorf("closing destination write to target: %s: %w", target, err)
 				}
+				zlog.Info("target closed",
+					zap.String("target", target),
+				)
 			}
 		}
 	})

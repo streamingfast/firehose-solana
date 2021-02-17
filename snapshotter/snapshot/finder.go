@@ -14,21 +14,21 @@ import (
 
 type Finder struct {
 	*shutter.Shutter
-	bucket            string
-	prefix            string
-	workdir           string
-	snapshotPrefix    string //"sol-mainnet/snapshots"
-	destinationBucket string
+	sourceBucket               string
+	sourceSnapshotsPrefix      string
+	workdir                    string
+	destinationSnapshotsFolder string //"sol-mainnet/snapshots"
+	destinationBucket          string
 }
 
-func NewFinder(bucket string, prefix string, destinationBucket string, snapshotPrefix string, workdir string) *Finder {
+func NewFinder(sourceBucket string, sourceSnapshotsPrefix string, destinationBucket string, destinationSnapshotsFolder string, workdir string) *Finder {
 	finder := &Finder{
-		Shutter:           shutter.New(),
-		bucket:            bucket,
-		prefix:            prefix,
-		workdir:           workdir,
-		snapshotPrefix:    snapshotPrefix,
-		destinationBucket: destinationBucket,
+		Shutter:                    shutter.New(),
+		sourceBucket:               sourceBucket,
+		sourceSnapshotsPrefix:      sourceSnapshotsPrefix,
+		destinationBucket:          destinationBucket,
+		destinationSnapshotsFolder: destinationSnapshotsFolder,
+		workdir:                    workdir,
 	}
 
 	return finder
@@ -46,7 +46,7 @@ func (f *Finder) Launch() error {
 }
 
 func (f *Finder) launch() error {
-	zlog.Info("Launching", zap.String("bucket", f.bucket), zap.String("prefix", f.prefix))
+	zlog.Info("Launching", zap.String("sourceBucket", f.sourceBucket), zap.String("sourceSnapshotsPrefix", f.sourceSnapshotsPrefix))
 	ctx := context.Background()
 
 	client, err := storage.NewClient(ctx)
@@ -57,7 +57,7 @@ func (f *Finder) launch() error {
 	var validSnapshot = regexp.MustCompile(`^[0-9]*/.*$`)
 	var snapshotPrefix = regexp.MustCompile(`^[0-9]*`)
 
-	object, err := listFiles(ctx, client, f.bucket, f.prefix, nil)
+	object, err := listFiles(ctx, client, f.sourceBucket, f.sourceSnapshotsPrefix, nil)
 	if err != nil {
 		f.Shutdown(err)
 	}
@@ -80,11 +80,11 @@ func (f *Finder) launch() error {
 
 	zlog.Info("found snapshot", zap.Int("count", len(snapshots)))
 	if snapshots != nil {
-		snapshot := snapshots[len(snapshots)-1]
-		zlog.Info("will process snapshot", zap.String("snapshot", snapshot))
+		sourceSnapshotName := snapshots[len(snapshots)-1]
+		zlog.Info("will process sourceSnapshotName", zap.String("sourceSnapshotName", sourceSnapshotName))
 
-		pcr := NewProcessor(f.destinationBucket, f.snapshotPrefix, f.workdir)
-		err := pcr.processSnapshot(ctx, client, snapshot, f.bucket)
+		pcr := NewProcessor(f.sourceBucket, sourceSnapshotName, f.destinationBucket, f.destinationSnapshotsFolder, f.workdir, client)
+		err := pcr.processSnapshot(ctx)
 		if err != nil {
 			f.Shutdown(err)
 		}

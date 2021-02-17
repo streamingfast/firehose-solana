@@ -9,8 +9,8 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-// listFiles lists objects within specified bucket.
-func listFiles(ctx context.Context, client *storage.Client, bucket string, prefix string, fileHandler func(ctx context.Context, client *storage.Client, bucket string, file string) error) ([]string, error) {
+// listFiles lists objects within specified sourceBucket.
+func listFiles(ctx context.Context, client *storage.Client, bucket string, prefix string, fileHandler func(ctx context.Context, file string) error) ([]string, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, time.Second*200)
 	defer cancel()
@@ -28,7 +28,7 @@ func listFiles(ctx context.Context, client *storage.Client, bucket string, prefi
 			return nil, fmt.Errorf("SourceBucket(%q).Objects: %v", bucket, err)
 		}
 		if fileHandler != nil {
-			err := fileHandler(ctx, client, bucket, attrs.Name)
+			err := fileHandler(ctx, attrs.Name)
 			if err != nil {
 				return nil, fmt.Errorf("file handler: %w", err)
 			}
