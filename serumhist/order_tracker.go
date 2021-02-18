@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"sync"
+
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/golang/protobuf/proto"
-	"sync"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 
