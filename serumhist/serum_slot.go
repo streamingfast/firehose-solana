@@ -152,8 +152,8 @@ func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *Ref, old, new *serum.Eve
 			e := eventDiff.Element().Interface().(*serum.Event)
 			switch eventDiff.Kind {
 			case diff.KindAdded:
+				eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
 				if e.Flag.IsFill() {
-					eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
 					s.OrderFilledEvents = append(s.OrderFilledEvents, &FillEvent{
 						Ref:            eventRef,
 						TradingAccount: e.Owner,
@@ -173,28 +173,28 @@ func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *Ref, old, new *serum.Eve
 					return
 				}
 
-				if e.Flag.IsOut() {
-					// if the new event OUT originates from a matching order instruction, we are unable to determine whether or not
-					// it is due to an order being executed or cancelled. thus, we store it as an ORDER CLOSED event and we will determine
-					// whether or not it was actually executed or cancelled when we stitch the order events together
-					// if the new event OUT originates from a new order v2 instruction, we know that it is a ORDER EXECUTED event
-					if processOutAsOrderExecuted {
-						s.OrderExecutedEvents = append(s.OrderExecutedEvents, &OrderExecuted{
-							Ref: eventRef,
-						})
-						return
-					}
-
-					s.OrderClosedEvents = append(s.OrderClosedEvents, &OrderClosed{
-						Ref: eventRef,
-						InstrRef: &pbserumhist.InstructionRef{
-							TrxHash:   eventRef.TrxHash,
-							SlotHash:  eventRef.SlotHash,
-							Timestamp: mustProtoTimestamp(eventRef.Timestamp),
-						},
-					})
-					return
-				}
+				//if e.Flag.IsOut() {
+				//	// if the new event OUT originates from a matching order instruction, we are unable to determine whether or not
+				//	// it is due to an order being executed or cancelled. thus, we store it as an ORDER CLOSED event and we will determine
+				//	// whether or not it was actually executed or cancelled when we stitch the order events together
+				//	// if the new event OUT originates from a new order v2 instruction, we know that it is a ORDER EXECUTED event
+				//	if processOutAsOrderExecuted {
+				//		s.OrderExecutedEvents = append(s.OrderExecutedEvents, &OrderExecuted{
+				//			Ref: eventRef,
+				//		})
+				//		return
+				//	}
+				//
+				//	s.OrderClosedEvents = append(s.OrderClosedEvents, &OrderClosed{
+				//		Ref: eventRef,
+				//		InstrRef: &pbserumhist.InstructionRef{
+				//			TrxHash:   eventRef.TrxHash,
+				//			SlotHash:  eventRef.SlotHash,
+				//			Timestamp: mustProtoTimestamp(eventRef.Timestamp),
+				//		},
+				//	})
+				//	return
+				//}
 			}
 		}
 	}))

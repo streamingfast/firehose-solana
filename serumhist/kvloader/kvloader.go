@@ -23,7 +23,13 @@ func NewLoader(ctx context.Context, kvdb store.KVStore, flushSlotInterval uint64
 		ctx:               ctx,
 		flushSlotInterval: flushSlotInterval,
 		kvdb:              kvdb,
+		cache:             newTradingAccountCache(kvdb),
 	}
+}
+
+func (kv *KVLoader) PrimeTradeCache(ctx context.Context) {
+	zlog.Info("priming kvdb cache")
+	kv.cache.load(ctx)
 }
 
 func (kv *KVLoader) Close() error {

@@ -10,6 +10,7 @@ import (
 
 func (kv *KVLoader) processSerumFills(events []*serumhist.FillEvent) error {
 	for _, event := range events {
+		fmt.Printf("STORING FILL EVENT: %d %s\n", event.Ref.SlotNumber, event.Ref.SlotHash)
 		trader, err := kv.cache.getTrader(kv.ctx, event.TradingAccount)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve trader for trading key %q: %w", event.TradingAccount.String(), err)
@@ -38,7 +39,7 @@ func (kv *KVLoader) processSerumFills(events []*serumhist.FillEvent) error {
 			zap.Uint64("order_seq_num", event.OrderSeqNum),
 			zap.Uint64("slot_num", event.SlotNumber),
 		)
-
+		fmt.Printf("WRITING")
 		if err = kv.writeFill(event); err != nil {
 			return fmt.Errorf("unable to write fill event: %w", err)
 		}

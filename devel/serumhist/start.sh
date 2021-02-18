@@ -10,7 +10,7 @@ main() {
   clean=
   force_injection=
 
-  while getopts "hc" opt; do
+  while getopts "hci" opt; do
     case $opt in
       h) usage && exit 0;;
       c) clean=true;;
@@ -25,13 +25,14 @@ main() {
     rm -rf dfuse-data &> /dev/null || true
   fi
 
-  if [[ $force_injection == "true" ]]; then
+#  if [[ $force_injection == "true" ]]; then
      echo "running serumhist injector"
-     KILL_AFTER=${KILL_AFTER:-15} $dfusesol -c injector.yaml start "$@"
-  fi
+#     KILL_AFTER=${KILL_AFTER:-15} $dfusesol -c injector.yaml start "$@"
+     exec $dfusesol -c injector.yaml start "$@"
+#  fi
 
-  echo "running serumhist server"
-  exec $dfusesol -c server.yaml start "$@"
+#  echo "running serumhist server"
+#  exec $dfusesol -c server.yaml start "$@"
 }
 
 usage_error() {

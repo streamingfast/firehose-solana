@@ -128,21 +128,28 @@ func (a *App) Run() error {
 }
 
 func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
-	var h serumhist.Handler
 	if a.Config.EnableBigQueryInjector {
+		zlog.Info("setting up big query loader",
+			zap.String("bigquery_project_id", a.Config.BigQueryProject),
+			zap.String("bigquery_dataset_id", a.Config.BigQueryDataset),
+		)
 		bqClient, err := bigquery.NewClient(ctx, a.Config.BigQueryProject)
 		if err != nil {
 			return nil, err
 		}
-		h = bqloader.New(ctx, bqClient, a.Config.BlocksStoreURL, a.Config.BigQueryDataset)
-	} else {
-		kvdb, err := store.New(a.Config.KvdbDsn)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create kvdb store: %w", err)
-		}
-		h = kvloader.NewLoader(ctx, kvdb, a.Config.FlushSlotInterval)
+		return bqloader.New(ctx, bqClient, a.Config.BigQueryDataset), nil
 	}
-	return h, nil
+
+	zlog.Info("setting up big kvdb loader",
+		zap.String("dsn", a.Config.KvdbDsn),
+	)
+	kvdb, err := store.New(a.Config.KvdbDsn)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create kvdb store: %w", err)
+	}
+	loader := kvloader.NewLoader(ctx, kvdb, a.Config.FlushSlotInterval)
+	loader.PrimeTradeCache(ctx)
+	return loader, nil
 }
 
 func (c *Config) validate() error {
