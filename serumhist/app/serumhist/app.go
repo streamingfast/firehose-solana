@@ -142,8 +142,9 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error creating bigquery dstore: %w", err)
 		}
-
-		return bqloader.New(ctx, bqClient, store, a.Config.BigQueryDataset), nil
+		loader := bqloader.New(ctx, bqClient, store, a.Config.BigQueryDataset)
+		loader.StartLoaders(ctx)
+		return loader, nil
 	}
 
 	zlog.Info("setting up big kvdb loader",

@@ -17,6 +17,7 @@ const (
 )
 
 type BQLoader struct {
+	ctx     context.Context
 	dataset *bigquery.Dataset
 	store   dstore.Store
 
@@ -35,17 +36,16 @@ func New(ctx context.Context, client *bigquery.Client, store dstore.Store, datas
 	tables := []string{newOrder, fillOrder, tradingAccount}
 
 	bq := &BQLoader{
+		ctx:          ctx,
 		dataset:      client.Dataset(datasetName),
 		store:        store,
 		avroHandlers: avroHandlers,
 		tables:       tables,
 	}
-	bq.startLoaders(ctx)
-
 	return bq
 }
 
-func (bq *BQLoader) startLoaders(ctx context.Context) {
+func (bq *BQLoader) StartLoaders(ctx context.Context) {
 	for _, tableName := range bq.tables {
 		ref := bigquery.NewGCSReference(bq.store.ObjectPath(tableName))
 

@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	flushIntervalSeconds = 15 * 60
-	flushEventCount      = 100000
+	flushEventCount = 100000
 )
 
 type avroHandler struct {
@@ -90,7 +89,7 @@ func (h *avroHandler) HandleEvent(event map[string]interface{}, slotNum uint64, 
 }
 
 func (h *avroHandler) FlushIfNeeded(ctx context.Context) error {
-	if time.Since(h.t0).Seconds() > flushIntervalSeconds || h.count > flushEventCount {
+	if time.Since(h.t0).Seconds() > 15*time.Minute.Seconds() || h.count > flushEventCount {
 		return h.flush(ctx)
 	}
 	return nil
@@ -120,6 +119,10 @@ func (h *avroHandler) flush(ctx context.Context) error {
 	).String()
 
 	zlog.Info("pushing avro file to storage", zap.String("path", destPath))
+
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+
 	err = h.Store.PushLocalFile(ctx, h.scratchFilename, destPath)
 	if err != nil {
 		return fmt.Errorf("failed pushing local file to storage: %w", err)
