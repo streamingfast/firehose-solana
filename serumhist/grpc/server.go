@@ -1,8 +1,6 @@
 package grpc
 
 import (
-	"fmt"
-	"net"
 	"time"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
@@ -19,7 +17,7 @@ type Server struct {
 	*shutter.Shutter
 
 	grpcAddr string
-	server   *grpc.Server
+	server   *dgrpc.Server
 	reader   *reader.Reader
 }
 
@@ -28,49 +26,23 @@ func New(grpcAddr string, manager *reader.Reader) *Server {
 		Shutter:  shutter.New(),
 		grpcAddr: grpcAddr,
 		reader:   manager,
-		server:   dgrpc.NewServer(dgrpc.WithLogger(zlog)),
+		server:   dgrpc.NewServer2(dgrpc.WithLogger(zlog)),
 	}
 }
 
 func (s *Server) Serve() {
-	pbaccounthist.RegisterSerumHistoryServer(s.server, s)
-	pbhealth.RegisterHealthServer(s.server, s)
+	s.server.RegisterService(func(gs *grpc.Server) {
+		pbaccounthist.RegisterSerumHistoryServer(gs, s)
+		pbhealth.RegisterHealthServer(gs, s)
+	})
 
 	zlog.Info("listening for serum history",
 		zap.String("addr", s.grpcAddr),
 	)
 
-	lis, err := net.Listen("tcp", s.grpcAddr)
-	if err != nil {
-		s.Shutdown(fmt.Errorf("failed listening grpc %q: %w", s.grpcAddr, err))
-		return
-	}
+	s.OnTerminating(func(err error) {
+		s.server.Shutdown(30 * time.Second)
+	})
 
-	if err := s.server.Serve(lis); err != nil {
-		s.Shutdown(fmt.Errorf("error on grpcServer.Serve: %w", err))
-		return
-	}
-}
-
-func (s *Server) Terminate(err error) {
-	if s.server == nil {
-		return
-	}
-
-	stopped := make(chan bool)
-
-	// Stop the server gracefully
-	go func() {
-		s.server.GracefulStop()
-		close(stopped)
-	}()
-
-	// And don't wait more than 60 seconds for graceful stop to happen
-	select {
-	case <-time.After(30 * time.Second):
-		zlog.Info("gRPC server did not terminate gracefully within allowed time, forcing shutdown")
-		s.server.Stop()
-	case <-stopped:
-		zlog.Info("gRPC server teminated gracefully")
-	}
+	go s.server.Launch(s.grpcAddr)
 }

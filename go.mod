@@ -3,12 +3,13 @@ module github.com/dfuse-io/dfuse-solana
 go 1.14
 
 require (
+	cloud.google.com/go/bigquery v1.7.0
 	cloud.google.com/go/storage v1.8.0
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/abourget/llerrgroup v0.2.0
 	github.com/dfuse-io/binary v0.0.0-20210216024852-4ae6830a495d
-	github.com/dfuse-io/bstream v0.0.2-0.20210218141812-ec9db7af6a5e
+	github.com/dfuse-io/bstream v0.0.2-0.20210218160250-ce6144227e87
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
@@ -27,18 +28,20 @@ require (
 	github.com/dfuse-io/pbgo v0.0.6-0.20210125181705-b17235518132
 	github.com/dfuse-io/relayer v0.0.2-0.20210202030730-e16ed570e7a9
 	github.com/dfuse-io/shutter v1.4.1
-	github.com/dfuse-io/solana-go v0.2.1-0.20210216182311-f2f4f3d4b248
+	github.com/dfuse-io/solana-go v0.2.1-0.20210218144256-12dfaa0b1721
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
+	github.com/linkedin/goavro/v2 v2.8.5
 	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	github.com/test-go/testify v1.1.4
+	github.com/tidwall/gjson v1.6.7
 	go.uber.org/zap v1.16.0
 	google.golang.org/api v0.29.0
 	google.golang.org/grpc v1.29.1

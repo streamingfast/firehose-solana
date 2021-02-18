@@ -6,76 +6,62 @@ import (
 	"fmt"
 	"time"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
-	"github.com/dfuse-io/dgrpc"
-	pbhealth "github.com/dfuse-io/pbgo/grpc/health/v1"
-	"google.golang.org/grpc"
-
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/bstream/blockstream"
 	"github.com/dfuse-io/bstream/firehose"
 	"github.com/dfuse-io/bstream/forkable"
-	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/dfuse-io/dgrpc"
 	"github.com/dfuse-io/dstore"
-	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
 )
 
-type Injector struct {
-	*shutter.Shutter
-	ctx                     context.Context
-	kvdb                    store.KVStore
-	flushSlotInterval       uint64
-	lastTickBlock           uint64
-	lastTickTime            time.Time
-	blockStore              dstore.Store
-	blockstreamAddr         string
-	healthy                 bool
-	cache                   *tradingAccountCache
-	source                  *firehose.Firehose
-	slotMetrics             slotMetrics
-	preprocessorThreadCount int
-
-	manager                     *OrderManager
-	reader                      *reader.Reader
-	grpcAddr                    string
-	server                      *dgrpc.Server
-	parallelDownloadThreadCount int
+type Handler interface {
+	bstream.Handler
+	GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error)
+	Close() error
 }
 
+type Injector struct {
+	*shutter.Shutter
+	ctx                         context.Context
+	blockStore                  dstore.Store
+	blockstreamAddr             string
+	healthy                     bool
+	source                      *firehose.Firehose
+	slotMetrics                 slotMetrics
+	preprocessorThreadCount     int
+	parallelDownloadThreadCount int
+	handler                     Handler
+	server                      *dgrpc.Server
+}
+
+// TODO don't depend on both....
 func NewInjector(
 	ctx context.Context,
+	handler Handler,
 	blockstreamAddr string,
 	blockStore dstore.Store,
-	kvdb store.KVStore,
-	flushSlotInterval uint64,
 	preprocessorThreadCount int,
 	parallelDownloadThreadCount int,
-	grpcAddr string,
 ) *Injector {
 	return &Injector{
-		ctx:               ctx,
-		blockstreamAddr:   blockstreamAddr,
-		blockStore:        blockStore,
-		Shutter:           shutter.New(),
-		flushSlotInterval: flushSlotInterval,
-		kvdb:              kvdb,
-		cache:             newTradingAccountCache(kvdb),
+		ctx:             ctx,
+		handler:         handler,
+		blockstreamAddr: blockstreamAddr,
+		blockStore:      blockStore,
+		Shutter:         shutter.New(),
 		slotMetrics: slotMetrics{
 			startTime: time.Now(),
 		},
 		preprocessorThreadCount:     preprocessorThreadCount,
 		parallelDownloadThreadCount: parallelDownloadThreadCount,
-		grpcAddr:                    grpcAddr,
-		manager:                     newOrderManager(),
-		reader:                      reader.New(kvdb),
 	}
 }
 
 func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bool) error {
-	zlog.Info("setting up serhumhist source",
+	zlog.Info("setting up serumhist source",
 		zap.Uint64("start_block_num", startBlockNum),
 	)
 
@@ -132,23 +118,30 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 func (i *Injector) Launch() error {
 	zlog.Info("launching serumhist injector")
 
-	if i.grpcAddr != "" {
-		server := dgrpc.NewServer2(dgrpc.WithLogger(zlog))
-		server.RegisterService(func(gs *grpc.Server) {
-			pbserumhist.RegisterSerumOrderTrackerServer(gs, i)
-			pbhealth.RegisterHealthServer(gs, i)
-		})
+	i.OnTerminating(func(err error) {
+		zlog.Info("shutting down injector, attempting to close underlying handler")
+		if err := i.handler.Close(); err != nil {
+			zlog.Error("error closing underlying serumhist injector handler", zap.Error(err))
+		}
+	})
 
-		zlog.Info("listening for serum history",
-			zap.String("addr", i.grpcAddr),
-		)
-
-		i.OnTerminating(func(err error) {
-			server.Shutdown(30 * time.Second)
-		})
-
-		go server.Launch(i.grpcAddr)
-	}
+	//if i.grpcAddr != "" {
+	//	server := dgrpc.NewServer2(dgrpc.WithLogger(zlog))
+	//	server.RegisterService(func(gs *grpc.Server) {
+	//		pbserumhist.RegisterSerumOrderTrackerServer(gs, i)
+	//		pbhealth.RegisterHealthServer(gs, i)
+	//	})
+	//
+	//	zlog.Info("listening for serum history",
+	//		zap.String("addr", i.grpcAddr),
+	//	)
+	//
+	//	i.OnTerminating(func(err error) {
+	//		server.Shutdown(30 * time.Second)
+	//	})
+	//
+	//	go server.Launch(i.grpcAddr)
+	//}
 
 	err := i.source.Run(i.ctx)
 	if err != nil {
@@ -172,44 +165,5 @@ func (i *Injector) Launch() error {
 
 		return fmt.Errorf("firehose unexpected d error: %w", err)
 	}
-	return nil
-}
-
-func (i *Injector) doFlush(slotNum uint64, reason string) error {
-	zlog.Debug("flushing block",
-		zap.Uint64("slot_num", slotNum),
-		zap.String("reason", reason),
-	)
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
-
-	err := i.kvdb.FlushPuts(ctx)
-	if err != nil {
-		return fmt.Errorf("db flush: %w", err)
-	}
-	return nil
-}
-
-func (i *Injector) flushIfNeeded(slotNum uint64, slotTime time.Time) error {
-	batchSizeReached := slotNum%i.flushSlotInterval == 0
-	closeToHeadBlockTime := time.Since(slotTime) < 25*time.Second
-
-	if batchSizeReached || closeToHeadBlockTime {
-		reason := "needed"
-		if batchSizeReached {
-			reason += ", batch size reached"
-		}
-
-		if closeToHeadBlockTime {
-			reason += ", close to head block"
-		}
-
-		err := i.doFlush(slotNum, reason)
-		if err != nil {
-			return err
-		}
-		metrics.HeadBlockNumber.SetUint64(slotNum)
-	}
-
 	return nil
 }
