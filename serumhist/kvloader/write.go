@@ -63,6 +63,9 @@ func (kv *KVLoader) writeFill(e *serumhist.FillEvent) error {
 		{
 			Key: keyer.EncodeFillByTraderMarket(e.Trader, e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
 		},
+		{
+			Key: keyer.EncodeOrderFill(e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+		},
 	}
 
 	for _, k := range kvs {

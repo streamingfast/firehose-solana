@@ -237,11 +237,12 @@ func (s *SerumSlot) addNewOrderEvent(eventRef *Ref, old, new *serum.OpenOrders, 
 					return
 				}
 				newOrder := new.GetOrder(newOrderIndex)
+				eventRef.OrderSeqNum = newOrder.SeqNum()
 				s.OrderNewEvents = append(s.OrderNewEvents, &NewOrder{
 					Ref:    eventRef,
 					Trader: new.Owner,
 					Order: &pbserumhist.Order{
-						Num:         newOrder.SeqNum(),
+						//Num:         newOrder.SeqNum(),
 						Trader:      new.Owner.String(),
 						Side:        pbserumhist.Side(newOrder.Side),
 						LimitPrice:  limitPrice, // instruction

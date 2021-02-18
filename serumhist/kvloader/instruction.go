@@ -1,7 +1,6 @@
 package kvloader
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
@@ -11,10 +10,6 @@ import (
 
 func (kv *KVLoader) processSerumNewOrders(events []*serumhist.NewOrder) interface{} {
 	for _, event := range events {
-		cnt, err := json.Marshal(event.Order)
-		if err == nil {
-			fmt.Println(string(cnt))
-		}
 
 		zlog.Debug("serum new order",
 			zap.Stringer("side", event.Order.Side),
