@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -44,16 +43,13 @@ type avroHandler struct {
 }
 
 // NewAvroHandler creates a new Avro event handler. The `scratchSpaceDir` is expected to be a local file system path.
-func NewAvroHandler(scratchSpaceDir, scratchSpaceFile string, store dstore.Store, prefix string, codec *goavro.Codec) *avroHandler {
-	if !strings.HasSuffix(scratchSpaceFile, ".ocf") {
-		scratchSpaceFile += ".ocf"
-	}
-
+func NewAvroHandler(scratchSpaceDir string, store dstore.Store, prefix string, codec *goavro.Codec) *avroHandler {
+	scratchSpaceDir = filepath.Join(scratchSpaceDir, prefix)
 	agg := &avroHandler{
 		Store:           store,
 		Prefix:          prefix,
 		scratchSpaceDir: scratchSpaceDir,
-		scratchFilename: filepath.Join(scratchSpaceDir, scratchSpaceFile),
+		scratchFilename: filepath.Join(scratchSpaceDir, "pending.ocf"),
 		codec:           codec,
 	}
 

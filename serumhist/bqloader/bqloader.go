@@ -35,11 +35,11 @@ func New(ctx context.Context, client *bigquery.Client, storeURL string, datasetN
 	store, err = dstore.NewGSStore(gsUrl, "", "", true)
 	derr.Check("big_query_store", err)
 
-	var fileDir, fileName string
+	fileDir := "/tmp"
 	avroHandlers := make(map[string]*avroHandler)
-	avroHandlers[newOrder] = NewAvroHandler(fileDir, fileName, store, newOrder, CodecNewOrder)
-	avroHandlers[fillOrder] = NewAvroHandler(fileDir, fileName, store, fillOrder, CodecOrderFill)
-	avroHandlers[tradingAccount] = NewAvroHandler(fileDir, fileName, store, tradingAccount, CodecTraderAccount)
+	avroHandlers[newOrder] = NewAvroHandler(fileDir, store, newOrder, CodecNewOrder)
+	avroHandlers[fillOrder] = NewAvroHandler(fileDir, store, fillOrder, CodecOrderFill)
+	avroHandlers[tradingAccount] = NewAvroHandler(fileDir, store, tradingAccount, CodecTraderAccount)
 
 	tables := []string{newOrder, fillOrder, tradingAccount}
 
