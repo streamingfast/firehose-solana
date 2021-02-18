@@ -57,7 +57,7 @@ func (bq *BQLoader) StartLoaders(ctx context.Context) {
 
 //shutdown all avro handlers.  collect any errors into a single error value
 func (bq *BQLoader) Close() error {
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(bq.ctx, 10*time.Second)
 	defer cancel()
 
 	wg := sync.WaitGroup{}
