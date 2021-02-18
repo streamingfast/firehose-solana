@@ -27,7 +27,7 @@ func NewFileName(prefix string, startSlotNum uint64, latestSlotNum uint64, start
 }
 
 func (f *FileName) String() string {
-	return fmt.Sprintf("%s/%d-%d-%s-%s-%s.avro",
+	return fmt.Sprintf("%s/%d-%d-%s-%s-%s",
 		f.Prefix,
 		f.StartSlotNum,
 		f.LatestSlotNum,
