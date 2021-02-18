@@ -31,7 +31,7 @@ const (
 
 	PrefixOrderByMarket       = byte(0x07) // 07:[market]:[rev_order_seq_num] => null
 	PrefixOrderByTrader       = byte(0x08) // 08:[trader]:[rev_slot_num]:[rev_trx_index]:[rev_instruction_index]:[market]:[rev_order_seq_num] => null
-	PrefixOrderByTraderMarket = byte(0x08) // 08:[trader]:[:market]:[rev_order_seq_num] => null
+	PrefixOrderByTraderMarket = byte(0x09) // 08:[trader]:[:market]:[rev_order_seq_num] => null
 
 	PrefixCheckpoint = byte(0x10)
 )
@@ -237,7 +237,7 @@ func EncodeOrderByTraderPrefix(trader solana.PublicKey) Prefix {
 	return key
 }
 
-// 08:[trader]:[:market]:[rev_order_seq_num] => null
+// 09:[trader]:[:market]:[rev_order_seq_num] => null
 func EncodeOrderByTraderMarket(trader, market solana.PublicKey, slotNum, trxIdx, instIdx, orderSeqNum uint64) Key {
 	key := make([]byte, 1+32+32+8+8+8+8)
 	key[0] = PrefixOrderByTraderMarket

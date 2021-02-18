@@ -8,8 +8,8 @@ import (
 )
 
 type KVLoader struct {
-	kvdb              store.KVStore
 	ctx               context.Context
+	kvdb              store.KVStore
 	cache             *tradingAccountCache
 	flushSlotInterval uint64
 }

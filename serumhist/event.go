@@ -24,7 +24,8 @@ func (r *Ref) GetEventRef() *Ref {
 
 type NewOrder struct {
 	*Ref
-	Order *pbserumhist.Order
+	Trader solana.PublicKey
+	Order  *pbserumhist.Order
 }
 
 type FillEvent struct {

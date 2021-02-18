@@ -92,12 +92,12 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 			TradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
 
-		//oldOO, newOO, err := decodeOpenOrders(accChanges)
-		//if err != nil {
-		//	return fmt.Errorf("InstructionNewOrderV2: unable to decode open orders: %w", err)
-		//}
+		oldOpenOrders, newOpenOrders, err := decodeOpenOrders(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionNewOrderV2: unable to decode open orders: %w", err)
+		}
 
-		//s.addNewOrderEvent(eventRef, old, new, v.LimitPrice, v, pbserumhist.OrderType(v.OrderType))
+		s.addNewOrderEvent(eventRef, oldOpenOrders, newOpenOrders, v.LimitPrice, v.MaxCoinQuantity, pbserumhist.OrderType(v.OrderType))
 
 		old, new, err := decodeEventQueue(accChanges)
 		if err != nil {
@@ -218,39 +218,43 @@ func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *Ref, old, new *serum.Eve
 
 func (s *SerumSlot) addNewOrderEvent(eventRef *Ref, old, new *serum.OpenOrders, limitPrice uint64, maxQuantity uint64, orderType pbserumhist.OrderType) {
 	// 1. We need to Diff the OpenOrders account to retrieve the orderID
-	hasNewOrder := false
-	newOrderIndex := uint32(0)
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Orders[#]"); match {
 			switch event.Kind {
 			case diff.KindAdded:
+				hasNewOrder := false
+				newOrderIndex := uint32(0)
+
 				if index, found := event.Path.SliceIndex(); found {
 					hasNewOrder = true
 					newOrderIndex = uint32(index)
 				}
+
+				if !hasNewOrder {
+					zlog.Warn("expected to find a new order",
+						zap.Reflect("event_ref", eventRef),
+					)
+					return
+				}
+				newOrder := new.GetOrder(newOrderIndex)
+				s.OrderNewEvents = append(s.OrderNewEvents, &NewOrder{
+					Ref:    eventRef,
+					Trader: new.Owner,
+					Order: &pbserumhist.Order{
+						Num:         newOrder.SeqNum(),
+						Trader:      new.Owner.String(),
+						Side:        pbserumhist.Side(newOrder.Side),
+						LimitPrice:  limitPrice, // instruction
+						MaxQuantity: maxQuantity,
+						Type:        orderType,
+						Fills:       nil,
+						SlotHash:    eventRef.SlotHash,
+						TrxId:       eventRef.TrxHash,
+					},
+				})
 			}
 		}
 	}))
-	if !hasNewOrder {
-		zlog.Warn("expected to find a new order",
-			zap.Reflect("event_ref", eventRef),
-		)
-	}
-	newOrder := new.GetOrder(newOrderIndex)
-
-	s.OrderNewEvents = append(s.OrderNewEvents, &NewOrder{
-		Ref: eventRef,
-		Order: &pbserumhist.Order{
-			Num:         newOrder.SeqNum(),
-			Trader:      new.Owner.String(),
-			Side:        pbserumhist.Side(newOrder.Side),
-			LimitPrice:  limitPrice, // instruction
-			MaxQuantity: maxQuantity,
-			Type:        orderType,
-			SlotHash:    eventRef.SlotHash,
-			TrxId:       eventRef.TrxHash,
-		},
-	})
 }
 
 func decodeEventQueue(accountChanges []*pbcodec.AccountChange) (old, new *serum.EventQueue, err error) {

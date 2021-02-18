@@ -1,6 +1,7 @@
 package kvloader
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
@@ -8,9 +9,32 @@ import (
 	"go.uber.org/zap"
 )
 
+func (kv *KVLoader) processSerumNewOrders(events []*serumhist.NewOrder) interface{} {
+	for _, event := range events {
+		cnt, err := json.Marshal(event.Order)
+		if err == nil {
+			fmt.Println(string(cnt))
+		}
+
+		zlog.Debug("serum new order",
+			zap.Stringer("side", event.Order.Side),
+			zap.Stringer("market", event.Market),
+			zap.Stringer("trader", event.Trader),
+			zap.Uint64("order_seq_num", event.OrderSeqNum),
+			zap.Uint64("slot_num", event.SlotNumber),
+			zap.String("trx_hash", event.TrxHash),
+		)
+
+		if err := kv.writeNewOrder(event); err != nil {
+			return fmt.Errorf("unable to write fill event: %w", err)
+		}
+	}
+	return nil
+
+}
+
 func (kv *KVLoader) processSerumFills(events []*serumhist.FillEvent) error {
 	for _, event := range events {
-		fmt.Printf("STORING FILL EVENT: %d %s\n", event.Ref.SlotNumber, event.Ref.SlotHash)
 		trader, err := kv.cache.getTrader(kv.ctx, event.TradingAccount)
 		if err != nil {
 			return fmt.Errorf("unable to retrieve trader for trading key %q: %w", event.TradingAccount.String(), err)
@@ -23,6 +47,7 @@ func (kv *KVLoader) processSerumFills(events []*serumhist.FillEvent) error {
 				zap.Uint32("trx_id", event.TrxIdx),
 				zap.Uint32("inst_id", event.InstIdx),
 				zap.Stringer("market", event.Market),
+				zap.String("trx_hash", event.TrxHash),
 			)
 			return nil
 		}

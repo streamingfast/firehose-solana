@@ -27,8 +27,12 @@ func (kv *KVLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		}
 	}
 
+	if err := kv.processSerumNewOrders(serumSlot.OrderNewEvents); err != nil {
+		return fmt.Errorf("unable to process serum new order: %w", err)
+	}
+
 	if err := kv.processSerumFills(serumSlot.OrderFilledEvents); err != nil {
-		return fmt.Errorf("unable to process serum order orderFilledEvents: %w", err)
+		return fmt.Errorf("unable to process serum order fill events: %w", err)
 	}
 
 	if err := kv.processSerumOrdersExecuted(serumSlot.OrderExecutedEvents); err != nil {
