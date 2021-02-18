@@ -74,7 +74,7 @@ func (m *Reader) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, dec
 			return nil, false, fmt.Errorf("failed to unmarshal order: %w", err)
 		}
 
-		market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeFill(orderIterator.Item().Key)
+		market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeFill(fillsIter.Item().Key)
 		f.Market = market.String()
 		f.SlotNum = slotNum
 		f.TrxIdx = uint32(trxIdx)
