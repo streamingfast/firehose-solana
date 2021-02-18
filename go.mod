@@ -28,7 +28,7 @@ require (
 	github.com/dfuse-io/pbgo v0.0.6-0.20210125181705-b17235518132
 	github.com/dfuse-io/relayer v0.0.2-0.20210202030730-e16ed570e7a9
 	github.com/dfuse-io/shutter v1.4.1
-	github.com/dfuse-io/solana-go v0.2.1-0.20210216025033-176c084277f9
+	github.com/dfuse-io/solana-go v0.2.1-0.20210218144256-12dfaa0b1721
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.4.2
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653

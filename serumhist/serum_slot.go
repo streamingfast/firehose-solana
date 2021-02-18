@@ -57,71 +57,87 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 
 	switch v := instruction.Impl.(type) {
 	case *serum.InstructionNewOrder:
+		eventRef.Market = v.Accounts.Market.PublicKey
 		s.TradingAccountCache = append(s.TradingAccountCache, &serumTradingAccount{
 			Trader:         v.Accounts.Owner.PublicKey,
 			TradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
-		//  we need to look at a OpenOrder accounts and see an difss on the
+
+		old, new, err := decodeOpenOrders(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionNewOrder: unable to decode open orders: %w", err)
+		}
+
+		s.addNewOrderEvent(eventRef, old, new, v.LimitPrice, v.MaxQuantity, pbserumhist.OrderType(v.OrderType))
 
 	case *serum.InstructionNewOrderV2:
+		eventRef.Market = v.Accounts.Market.PublicKey
 		s.TradingAccountCache = append(s.TradingAccountCache, &serumTradingAccount{
 			Trader:         v.Accounts.Owner.PublicKey,
 			TradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
-		// TODO: We need to log the created event here....
+
+		old, new, err := decodeOpenOrders(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionNewOrderV2: unable to decode open orders: %w", err)
+		}
+
+		s.addNewOrderEvent(eventRef, old, new, v.LimitPrice, v.MaxQuantity, pbserumhist.OrderType(v.OrderType))
 
 	case *serum.InstructionNewOrderV3:
+		eventRef.Market = v.Accounts.Market.PublicKey
+
 		s.TradingAccountCache = append(s.TradingAccountCache, &serumTradingAccount{
 			Trader:         v.Accounts.Owner.PublicKey,
 			TradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
+
+		//oldOO, newOO, err := decodeOpenOrders(accChanges)
+		//if err != nil {
+		//	return fmt.Errorf("InstructionNewOrderV2: unable to decode open orders: %w", err)
+		//}
+
+		//s.addNewOrderEvent(eventRef, old, new, v.LimitPrice, v, pbserumhist.OrderType(v.OrderType))
 
 		old, new, err := decodeEventQueue(accChanges)
 		if err != nil {
 			return fmt.Errorf("InstructionNewOrderV3: unable to decode event queue: %w", err)
 		}
 
-		eventRef.Market = v.Accounts.Market.PublicKey
 		s.addOrderFillAndCloseEvent(eventRef, old, new, true)
 
 	//case *serum.InstructionCancelOrderByClientId:
 	//case *serum.InstructionCancelOrder:
 	case *serum.InstructionCancelOrderByClientIdV2:
+		eventRef.Market = v.Accounts.Market.PublicKey
+
 		old, new, err := decodeEventQueue(accChanges)
 		if err != nil {
 			return fmt.Errorf("InstructionCancelOrderByClientIdV2: unable to decode event queue: %w", err)
 		}
 
-		eventRef.Market = v.Accounts.Market.PublicKey
 		s.addOrderCancellationEvent(eventRef, old, new)
-
 	case *serum.InstructionCancelOrderV2:
+		eventRef.Market = v.Accounts.Market.PublicKey
+
 		old, new, err := decodeEventQueue(accChanges)
 		if err != nil {
 			return fmt.Errorf("InstructionCancelOrderV2: unable to decode event queue: %w", err)
 		}
 
-		eventRef.Market = v.Accounts.Market.PublicKey
 		s.addOrderCancellationEvent(eventRef, old, new)
-
 	case *serum.InstructionMatchOrder:
+		eventRef.Market = v.Accounts.Market.PublicKey
+
 		old, new, err := decodeEventQueue(accChanges)
 		if err != nil {
 			return fmt.Errorf("InstructionMatchOrder: unable to decode event queue: %w", err)
 		}
 
-		eventRef.Market = v.Accounts.Market.PublicKey
 		s.addOrderFillAndCloseEvent(eventRef, old, new, false)
 	}
 
 	return nil
-}
-
-func (s *SerumSlot) addNewOrderEvent(eventRef Ref, old, new *serum.OpenOrders) {
-	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
-		if match, _ := event.Match("Orders[#]"); match {
-		}
-	}))
 }
 
 func (s *SerumSlot) addOrderCancellationEvent(eventRef *Ref, old, new *serum.EventQueue) {
@@ -200,6 +216,43 @@ func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *Ref, old, new *serum.Eve
 	}))
 }
 
+func (s *SerumSlot) addNewOrderEvent(eventRef *Ref, old, new *serum.OpenOrders, limitPrice uint64, maxQuantity uint64, orderType pbserumhist.OrderType) error {
+	// 1. We need to Diff the OpenOrders account to retrieve the orderID
+	hasNewOrder := false
+	newOrderIndex := uint32(0)
+	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
+		if match, _ := event.Match("Orders[#]"); match {
+			switch event.Kind {
+			case diff.KindAdded:
+				if index, found := event.Path.SliceIndex(); found {
+					hasNewOrder = true
+					newOrderIndex = uint32(index)
+				}
+			}
+		}
+	}))
+	if !hasNewOrder {
+		zlog.Warn("expected to find a new order",
+			zap.Reflect("event_ref", eventRef),
+		)
+	}
+	newOrder := new.GetOrder(newOrderIndex)
+
+	s.OrderNewEvents = append(s.OrderNewEvents, &NewOrder{
+		Ref: eventRef,
+		Order: &pbserumhist.Order{
+			Num:         newOrder.SeqNum(),
+			Trader:      new.Owner.String(),
+			Side:        pbserumhist.Side(newOrder.Side),
+			LimitPrice:  limitPrice, // instruction
+			MaxQuantity: maxQuantity,
+			Type:        orderType,
+			SlotHash:    eventRef.SlotHash,
+			TrxId:       eventRef.TrxHash,
+		},
+	})
+}
+
 func decodeEventQueue(accountChanges []*pbcodec.AccountChange) (old, new *serum.EventQueue, err error) {
 	eventQueueAccountChange, err := findAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
 		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagEventQueue)
@@ -215,6 +268,26 @@ func decodeEventQueue(accountChanges []*pbcodec.AccountChange) (old, new *serum.
 
 	if err := bin.NewDecoder(eventQueueAccountChange.NewData).Decode(&new); err != nil {
 		return nil, nil, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
+	}
+
+	return
+}
+
+func decodeOpenOrders(accountChanges []*pbcodec.AccountChange) (old, new *serum.OpenOrders, err error) {
+	openOrdersAccountChange, err := findAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
+		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagOpenOrders)
+	})
+
+	if openOrdersAccountChange == nil {
+		return nil, nil, nil
+	}
+
+	if err := bin.NewDecoder(openOrdersAccountChange.PrevData).Decode(&old); err != nil {
+		return nil, nil, fmt.Errorf("unable to decode 'open orders' old data: %w", err)
+	}
+
+	if err := bin.NewDecoder(openOrdersAccountChange.NewData).Decode(&new); err != nil {
+		return nil, nil, fmt.Errorf("unable to decode 'open orders' new data: %w", err)
 	}
 
 	return
