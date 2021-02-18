@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dfuse-io/derr"
 	"github.com/dfuse-io/dstore"
 	"github.com/linkedin/goavro/v2"
 	"go.uber.org/zap"
@@ -96,18 +95,20 @@ func (h *avroHandler) FlushIfNeeded(ctx context.Context) error {
 }
 
 func (h *avroHandler) flush(ctx context.Context) error {
-	h.lock.Lock()
-	defer h.lock.Unlock()
-
-	if h.ocfWriter != nil || h.ocfFile == nil {
+	if h.ocfWriter == nil || h.ocfFile == nil {
 		//nothing to flush
 		return nil
 	}
 
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
 	zlog.Info("processed message batch", zap.Uint64("count", h.count), zap.Duration("timing_secs", time.Since(h.t0)/time.Second))
 
 	err := h.ocfFile.Close()
-	derr.Check("failed to close scratch file", err)
+	if err != nil {
+		return fmt.Errorf("failed to close scratch file: %w", err)
+	}
 
 	destPath := NewFileName(
 		h.Prefix,
