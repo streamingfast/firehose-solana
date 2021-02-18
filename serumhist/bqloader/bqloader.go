@@ -25,13 +25,11 @@ type BQLoader struct {
 	tables       []string
 }
 
-func New(ctx context.Context, client *bigquery.Client, store dstore.Store, datasetName string) *BQLoader {
-
-	fileDir := "/tmp"
+func New(ctx context.Context, scratchSpaceDir string, client *bigquery.Client, store dstore.Store, datasetName string) *BQLoader {
 	avroHandlers := make(map[string]*avroHandler)
-	avroHandlers[newOrder] = NewAvroHandler(fileDir, store, newOrder, CodecNewOrder)
-	avroHandlers[fillOrder] = NewAvroHandler(fileDir, store, fillOrder, CodecOrderFill)
-	avroHandlers[tradingAccount] = NewAvroHandler(fileDir, store, tradingAccount, CodecTraderAccount)
+	avroHandlers[newOrder] = NewAvroHandler(scratchSpaceDir, store, newOrder, CodecNewOrder)
+	avroHandlers[fillOrder] = NewAvroHandler(scratchSpaceDir, store, fillOrder, CodecOrderFill)
+	avroHandlers[tradingAccount] = NewAvroHandler(scratchSpaceDir, store, tradingAccount, CodecTraderAccount)
 
 	tables := []string{newOrder, fillOrder, tradingAccount}
 

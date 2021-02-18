@@ -35,11 +35,12 @@ type Config struct {
 	GRPCListenAddr string
 	HTTPListenAddr string
 
-	EnableBigQueryInjector bool
-	KvdbDsn                string
-	BigQueryStoreURL       string
-	BigQueryProject        string
-	BigQueryDataset        string
+	EnableBigQueryInjector  bool
+	KvdbDsn                 string
+	BigQueryStoreURL        string
+	BigQueryProject         string
+	BigQueryDataset         string
+	BigQueryScratchSpaceDir string
 }
 
 type App struct {
@@ -142,7 +143,8 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error creating bigquery dstore: %w", err)
 		}
-		loader := bqloader.New(ctx, bqClient, store, a.Config.BigQueryDataset)
+
+		loader := bqloader.New(ctx, a.Config.BigQueryScratchSpaceDir, bqClient, store, a.Config.BigQueryDataset)
 		loader.StartLoaders(ctx)
 		return loader, nil
 	}

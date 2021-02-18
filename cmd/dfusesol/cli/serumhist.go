@@ -25,6 +25,7 @@ func init() {
 			cmd.Flags().Bool("serumhist-enable-bigquery-injector-mode", false, "Enable mode where blocks are ingested, processed and saved to the database, when false, no write operations happen.")
 			cmd.Flags().String("serumhist-bigquery-project-id", "dfuse_development_tools", "dfuse bigquery project id")
 			cmd.Flags().String("serumhist-bigquery-dataset-id", "serum", "dfuse bigquery dataset id")
+			cmd.Flags().String("serumhist-bigquery-scratch-space-dir", "{dfuse-data-dir}/serumhist/injector", "Space where we temporary store bigquery avro file before dstore upload")
 			cmd.Flags().Uint64("serumhist-flush-slots-interval", 100, "Flush to storage each X blocks.  Use 1 when live. Use a high number in batch, serves as checkpointing between restarts.")
 			cmd.Flags().Bool("serumhist-ignore-checkpoint-on-launch", false, "Will force the serum history injector to start from the start block specified on the CLI")
 			cmd.Flags().Int("serumhist-preprocessor-thread-count", 1, "Will force the serum history injector to start from the start block specified on the CLI")
@@ -49,6 +50,7 @@ func init() {
 				KvdbDsn:                   mustReplaceDataDir(dfuseDataDir, viper.GetString("serumhist-dsn")),
 				BigQueryProject:           viper.GetString("serumhist-bigquery-project-id"),
 				BigQueryDataset:           viper.GetString("serumhist-bigquery-dataset-id"),
+				BigQueryScratchSpaceDir:   viper.GetString("serumhist-bigquery-scratch-space-dir"),
 			}), nil
 		},
 	})
