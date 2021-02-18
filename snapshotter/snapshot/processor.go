@@ -118,7 +118,7 @@ func (p *processor) handleFile(ctx context.Context, filePath string) error {
 		}
 
 		//Build a writer for the untar process.
-		err = unCompress(rocksdbReader, func(fileName string) *storage.Writer {
+		err = unCompress(rocksdbReader, func(fileName string) (w io.Writer, closer func() error) {
 			//filePath is "rocksdb/001653.sst"
 			dest := p.destinationSnapshotFolder + "/" + fileName
 			zlog.Info("untaring file",
@@ -126,7 +126,13 @@ func (p *processor) handleFile(ctx context.Context, filePath string) error {
 				zap.String("destination_bucket", p.destinationBucket),
 				zap.String("dest_file_name", dest))
 			h := p.client.Bucket(p.destinationBucket).Object(dest)
-			return h.NewWriter(ctx)
+			hw := h.NewWriter(ctx)
+			hw.ContentType = "application/octet-stream"
+			hw.CacheControl = "public, max-age=86400"
+
+			return hw, func() error {
+				return hw.Close()
+			}
 		})
 
 		if err != nil {
@@ -155,7 +161,7 @@ func (p *processor) handleFile(ctx context.Context, filePath string) error {
 	return nil
 }
 
-func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) *storage.Writer) error {
+func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) (w io.Writer, closer func() error)) error {
 	cIface, err := archiver.ByExtension("foo.bz2")
 	if err != nil {
 		return fmt.Errorf("archive by extention: %w", err)
@@ -195,9 +201,7 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 			switch header.Typeflag {
 			case tar.TypeReg:
 				zlog.Info("untar file", zap.String("target", target))
-				destWriter := getWriter(target)
-				destWriter.ContentType = "application/octet-stream"
-				destWriter.CacheControl = "public, max-age=86400"
+				destWriter, closer := getWriter(target)
 				// copy over contents
 				size, err := io.Copy(destWriter, tr)
 				if err != nil {
@@ -209,7 +213,7 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 					zap.Int64("size", size),
 				)
 
-				if err := destWriter.Close(); err != nil {
+				if err := closer(); err != nil {
 					return fmt.Errorf("closing destination write to target: %s: %w", target, err)
 				}
 				zlog.Info("target closed",
@@ -228,5 +232,8 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 		// eg.Wait() will block until everything is done, and return the first error.
 		return err
 	}
+
+	zlog.Info("decompression done.")
+
 	return nil
 }
