@@ -11,6 +11,68 @@ import (
 // 3 avro file handlers one per bucket
 // each avro file will have his "start block"
 
+type Mapper interface {
+	Map(interface{}) map[string]interface{}
+	AvroCodec() *goavro.Codec
+	LogValues(interface{}) zap.Fields
+	TableName() string
+}
+
+type orderMapper struct{
+	codec *goavro.Codec
+}
+
+func (m orderMapper) AvroCodec() *goavro.Codec { return m.codec }
+
+func (orderMapper) Map(obj interface{}) map[string]interface{} {
+	el := obj.(*serumhist.Order)
+	m := map[string]interface{}{
+		"trader":               e.TradingAccount.String(),
+		"market":               e.Ref.Market.String(),
+		"order_id":             e.Fill.OrderId,
+		"side":                 e.Fill.Side.String(),
+		"maker":                e.Fill.Maker,
+		"native_qty_paid":      int64(e.Fill.NativeQtyPaid),
+		"native_qty_received":  int64(e.Fill.NativeQtyReceived),
+		"native_fee_or_rebate": int64(e.Fill.NativeFeeOrRebate),
+		"fee_tier":             e.Fill.FeeTier.String(),
+		"timestamp":            e.Fill.Timestamp.AsTime(),
+		"slot_num":             int64(e.Ref.SlotNumber),
+		"slot_hash":            e.Ref.SlotHash,
+		"trx_id":               e.Fill.TrxId,
+		"trx_idx":              int32(e.Ref.TrxIdx),
+		"inst_idx":             int32(e.Ref.InstIdx),
+		"order_seq_num":        int64(e.Ref.OrderSeqNum),
+	}
+	return m
+}
+
+func (orderMapper) LogValues(obj interface{}) zap.Fields {
+	o := obj.(*serumhist.NewOrder)
+}
+func (order Mapper) TableName() string { return "orders" }
+
+var supportedInjectionObjects = map[reflect.Type]struct{
+	func ToAvro(interface{}) []byte
+
+}
+
+func init() {
+	supportedInjectionObjects[reflect.Type(&serumhist.NewOrder{})] = orderMapper{goavro.newCodec(`{}`)}
+	supportedInjectionObjects[reflect.Type(&serumhist.NewFille{})] = fillMapper{}
+}
+
+func (bq *BQLoader) dispatch(obj interface{}) error {
+	handler := supportedInjectionObjects[reflect.Type(obj)]
+
+	zlog.Debug("adding object", zap.String("type", reflect.Type(obj).String()), handler.LogFields()...)
+	if err := bq.avroHandlers[tradingAccount].HandleEvent(TradingAccountToAvro(account, trader), slotNum, slotId); err != nil {
+		return fmt.Errorf("unable to process trading account %w", err)
+	}
+	return nil
+
+}
+
 func (bq *BQLoader) processTradingAccount(account, trader solana.PublicKey, slotNum uint64, slotId string) error {
 	zlog.Debug("serum trading account",
 		zap.Stringer("account", account),

@@ -11,7 +11,28 @@ import (
 func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	forkObj := obj.(*forkable.ForkableObject)
 
-	// this flow will eventually change to process the list of proto meta objects
+	// If a serumhist-firehose is doing the job, then we'll receive this:
+	// blk.Meta
+	// blk.Transactions[].Meta
+	// blk.Transactions[].Instructions[].Meta
+
+	for _, meta := range blk.Meta {
+		bq.dispatch(meta)
+	}
+
+	for _, trx := range blk.Transactions {
+		for _, meta := range trx.Meta {
+			bq.dispatch(meta)
+		}
+
+		for _, inst := range trx.Instructions {
+			for _, meta := range inst.Meta {
+				bq.dispatch(meta)
+			}
+		}
+	}
+
+// this flow will eventually change to process the list of proto meta objects
 	serumSlot := forkObj.Obj.(*serumhist.SerumSlot)
 	for _, ta := range serumSlot.TradingAccountCache {
 		if err := bq.processTradingAccount(ta.TradingAccount, ta.Trader, blk.Number, blk.Id); err != nil {
