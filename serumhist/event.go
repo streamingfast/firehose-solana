@@ -18,33 +18,29 @@ type Ref struct {
 	Timestamp   time.Time
 }
 
-func (r *Ref) GetEventRef() *Ref {
-	return r
-}
-
 type NewOrder struct {
-	*Ref
+	Ref
 	Trader solana.PublicKey
 	Order  *pbserumhist.Order
 }
 
 type FillEvent struct {
-	*Ref
+	Ref
 	TradingAccount solana.PublicKey
 	Trader         solana.PublicKey
 	Fill           *pbserumhist.Fill
 }
 
 type OrderExecuted struct {
-	*Ref
+	Ref
 }
 
 type OrderClosed struct {
-	*Ref
+	Ref
 	InstrRef *pbserumhist.InstructionRef
 }
 
 type OrderCancelled struct {
-	*Ref
+	Ref
 	InstrRef *pbserumhist.InstructionRef
 }

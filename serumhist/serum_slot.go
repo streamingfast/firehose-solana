@@ -119,7 +119,7 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 		eventRef.Market = v.Accounts.Market.PublicKey
 		eventRef.OrderSeqNum = v.OrderID.SeqNum(v.Side)
 		s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
-			Ref: eventRef,
+			Ref: *eventRef,
 			InstrRef: &pbserumhist.InstructionRef{
 				TrxHash:   eventRef.TrxHash,
 				SlotHash:  eventRef.SlotHash,
@@ -142,7 +142,7 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 		eventRef.Market = v.Accounts.Market.PublicKey
 		eventRef.OrderSeqNum = v.OrderID.SeqNum(v.Side)
 		s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
-			Ref: eventRef,
+			Ref: *eventRef,
 			InstrRef: &pbserumhist.InstructionRef{
 				TrxHash:   eventRef.TrxHash,
 				SlotHash:  eventRef.SlotHash,
@@ -181,7 +181,7 @@ func (s *SerumSlot) addOrderFill(eventRef *Ref, old, new *serum.EventQueue) {
 				eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
 				if e.Flag.IsFill() {
 					s.OrderFilledEvents = append(s.OrderFilledEvents, &FillEvent{
-						Ref:            eventRef,
+						Ref:            *eventRef,
 						TradingAccount: e.Owner,
 						Fill: &pbserumhist.Fill{
 							OrderId:           e.OrderID.HexString(false),
@@ -224,8 +224,9 @@ func (s *SerumSlot) addNewOrderEvent(eventRef *Ref, old, new *serum.OpenOrders, 
 				}
 				newOrder := new.GetOrder(newOrderIndex)
 				eventRef.OrderSeqNum = newOrder.SeqNum()
+
 				s.OrderNewEvents = append(s.OrderNewEvents, &NewOrder{
-					Ref:    eventRef,
+					Ref:    *eventRef,
 					Trader: new.Owner,
 					Order: &pbserumhist.Order{
 						//Num:         newOrder.SeqNum(),
@@ -267,7 +268,7 @@ func (s *SerumSlot) addClosedOrderEvent(eventRef *Ref, old, new *serum.OpenOrder
 				newOrder := old.GetOrder(oldOrderIndex)
 				eventRef.OrderSeqNum = newOrder.SeqNum()
 				s.OrderClosedEvents = append(s.OrderClosedEvents, &OrderClosed{
-					Ref: eventRef,
+					Ref: *eventRef,
 					InstrRef: &pbserumhist.InstructionRef{
 						TrxHash:   eventRef.TrxHash,
 						SlotHash:  eventRef.SlotHash,
@@ -288,7 +289,7 @@ func (s *SerumSlot) addCancelledOrderViaEventQueue(eventRef *Ref, old, new *seru
 				eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
 				if e.Flag.IsOut() {
 					s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
-						Ref: eventRef,
+						Ref: *eventRef,
 						InstrRef: &pbserumhist.InstructionRef{
 							TrxHash:   eventRef.TrxHash,
 							SlotHash:  eventRef.SlotHash,
@@ -310,7 +311,7 @@ func (s *SerumSlot) addCancelledOrderViaRequestQueue(eventRef *Ref, old, new *se
 				eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
 				if e.Flag.IsCancelOrder() {
 					s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
-						Ref: eventRef,
+						Ref: *eventRef,
 						InstrRef: &pbserumhist.InstructionRef{
 							TrxHash:   eventRef.TrxHash,
 							SlotHash:  eventRef.SlotHash,
