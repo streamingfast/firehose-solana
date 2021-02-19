@@ -75,19 +75,18 @@ func init() {
 
 func NewOrderToAvro(e *serumhist.NewOrder) map[string]interface{} {
 	return map[string]interface{}{
-		"num":          e.Order.Num,
+		"num":          int64(e.Order.Num),
 		"market":       e.Order.Market,
 		"trader":       e.Order.Trader,
 		"side":         e.Order.Side.String(),
-		"limit_price":  e.Order.LimitPrice,
-		"max_quantity": e.Order.MaxQuantity,
+		"limit_price":  int64(e.Order.LimitPrice),
+		"max_quantity": int64(e.Order.MaxQuantity),
 		"type":         e.Order.Type.String(),
-		"fills":        e.Order.Fills,
-		"slot_num":     e.Order.SlotNum,
+		"slot_num":     int64(e.Order.SlotNum),
 		"slot_hash":    e.Order.SlotHash,
 		"trx_id":       e.Order.TrxId,
-		"trx_idx":      e.Order.TrxIdx,
-		"inst_idx":     e.Order.InstIdx,
+		"trx_idx":      int32(e.Order.TrxIdx),
+		"inst_idx":     int32(e.Order.InstIdx),
 	}
 }
 
@@ -98,17 +97,17 @@ func FillEventToAvro(e *serumhist.FillEvent) map[string]interface{} {
 		"order_id":             e.Fill.OrderId,
 		"side":                 e.Fill.Side.String(),
 		"maker":                e.Fill.Maker,
-		"native_qty_paid":      e.Fill.NativeQtyPaid,
-		"native_qty_received":  e.Fill.NativeQtyReceived,
-		"native_fee_or_rebate": e.Fill.NativeFeeOrRebate,
+		"native_qty_paid":      int64(e.Fill.NativeQtyPaid),
+		"native_qty_received":  int64(e.Fill.NativeQtyReceived),
+		"native_fee_or_rebate": int64(e.Fill.NativeFeeOrRebate),
 		"fee_tier":             e.Fill.FeeTier.String(),
 		"timestamp":            e.Fill.Timestamp,
-		"slot_num":             e.Fill.SlotNum,
+		"slot_num":             int64(e.Fill.SlotNum),
 		"slot_hash":            e.Fill.SlotHash,
 		"trx_id":               e.Fill.TrxId,
-		"trx_idx":              e.Fill.TrxIdx,
+		"trx_idx":              int32(e.Fill.TrxIdx),
 		"inst_idx":             e.Fill.InstIdx,
-		"order_seq_num":        e.Fill.OrderSeqNum,
+		"order_seq_num":        int64(e.Fill.OrderSeqNum),
 	}
 }
 

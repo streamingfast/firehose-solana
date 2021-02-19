@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
@@ -35,6 +36,17 @@ var marketFillsCmd = &cobra.Command{
 	RunE:  readMarketFillsE,
 }
 
+var ordersCmd = &cobra.Command{
+	Use:   "orders",
+	Short: "Read orders",
+}
+
+var getOrdersCmd = &cobra.Command{
+	Use:   "get {market-addr} {order-num}",
+	Short: "Read an order",
+	RunE:  readGetOrdersE,
+}
+
 var checkpointCmd = &cobra.Command{
 	Use:   "checkpoint",
 	Short: "Get checkpoint",
@@ -53,18 +65,22 @@ var decodeKeyerCmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(serumhistCmd)
+	serumhistCmd.PersistentFlags().String("dsn", "badger:///dfuse-data/kvdb/kvdb_badger.db", "kvStore DSN")
+
 	serumhistCmd.AddCommand(fillsCmd)
 	fillsCmd.AddCommand(traderFillsCmd)
 	fillsCmd.AddCommand(marketFillsCmd)
+	fillsCmd.Flags().Int("limit", 100, "Number of fills to retrieve")
+	traderFillsCmd.Flags().String("market-addr", "", "Market Address")
+
+	serumhistCmd.AddCommand(ordersCmd)
+	ordersCmd.AddCommand(getOrdersCmd)
 
 	serumhistCmd.AddCommand(KeyerCmd)
-	serumhistCmd.AddCommand(checkpointCmd)
 	KeyerCmd.AddCommand(decodeKeyerCmd)
 
-	serumhistCmd.PersistentFlags().String("dsn", "badger:///dfuse-data/kvdb/kvdb_badger.db", "kvStore DSN")
+	serumhistCmd.AddCommand(checkpointCmd)
 
-	traderFillsCmd.Flags().String("market-addr", "", "Market Address")
-	fillsCmd.Flags().Int("limit", 100, "Number of fills to retrieve")
 }
 
 func decoderKeyerE(cmd *cobra.Command, args []string) (err error) {
@@ -74,32 +90,46 @@ func decoderKeyerE(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("unable to decode key: %w", err)
 	}
 	switch key[0] {
-	case serumhistkeyer.PrefixFillByTrader:
-		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByTrader(key)
-		fmt.Println("Fill By Trader Key:")
-		fmt.Println("Trader:", trader.String())
-		fmt.Println("Marker:", market.String())
-		fmt.Println("Slot Num:", slotNum)
-		fmt.Println("Trx idx:", trxIdx)
-		fmt.Println("Inst idx:", instIdx)
-		fmt.Println("Order Seq Num:", orderSeqNum)
-	case serumhistkeyer.PrefixFillByTraderMarket:
-		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByTraderMarket(key)
-		fmt.Println("Fill By Trader Key:")
-		fmt.Println("Trader:", trader.String())
-		fmt.Println("Market:", market.String())
-		fmt.Println("Slot Num:", slotNum)
-		fmt.Println("Trx idx:", trxIdx)
-		fmt.Println("Inst idx:", instIdx)
-		fmt.Println("Order Seq Num:", orderSeqNum)
 	case serumhistkeyer.PrefixFill:
 		market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFill(key)
-		fmt.Println("Fill By Market Key:")
-		fmt.Println("Market:", market.String())
-		fmt.Println("Slot Num:", slotNum)
-		fmt.Println("Trx idx:", trxIdx)
-		fmt.Println("Inst idx:", instIdx)
+		printDecodedKey("Fill Key", market.String(), slotNum, trxIdx, instIdx, orderSeqNum)
+	case serumhistkeyer.PrefixFillByTrader:
+		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByTrader(key)
+		printDecodedKey("Fill by trader", market.String(), slotNum, trxIdx, instIdx, orderSeqNum)
+		fmt.Println("Trader: ", trader.String())
+	case serumhistkeyer.PrefixFillByTraderMarket:
+		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeFillByTraderMarket(key)
+		printDecodedKey("Fill by trader market trader", market.String(), slotNum, trxIdx, instIdx, orderSeqNum)
+		fmt.Println("Trader: ", trader.String())
+	case serumhistkeyer.PrefixOrder:
+		event := ""
+		eventPrefix, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeOrder(key)
+		switch eventPrefix {
+		case serumhistkeyer.OrderEventTypeNew:
+			event = "New Order"
+		case serumhistkeyer.OrderEventTypeFill:
+			event = "Order Filled"
+		case serumhistkeyer.OrderEventTypeExecuted:
+			event = "Order Executed"
+		case serumhistkeyer.OrderEventTypeCancel:
+			event = "Order Canceled"
+		case serumhistkeyer.OrderEventTypeClose:
+			event = "Order closed"
+		}
+		printDecodedKey(fmt.Sprintf("Order key for event: %q", event), market.String(), slotNum, trxIdx, instIdx, orderSeqNum)
+	case serumhistkeyer.PrefixOrderByMarket:
+		market, orderSeqNum := serumhistkeyer.DecodeOrderByMarket(key)
+		fmt.Println("Order by market")
+		fmt.Println("Market:", market)
 		fmt.Println("Order Seq Num:", orderSeqNum)
+	case serumhistkeyer.PrefixOrderByTrader:
+		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeOrderByTrader(key)
+		printDecodedKey("Order by trader", market.String(), slotNum, trxIdx, instIdx, orderSeqNum)
+		fmt.Println("Trader: ", trader.String())
+	case serumhistkeyer.PrefixOrderByTraderMarket:
+		trader, market, slotNum, trxIdx, instIdx, orderSeqNum := serumhistkeyer.DecodeOrderByTraderMarket(key)
+		printDecodedKey("Order by trader market", market.String(), slotNum, trxIdx, instIdx, orderSeqNum)
+		fmt.Println("Trader: ", trader.String())
 	case serumhistkeyer.PrefixTradingAccount:
 		traderAccount := serumhistkeyer.DecodeTradingAccount(key)
 		fmt.Println("Trading Account Key :")
@@ -134,6 +164,35 @@ func readCheckpointE(cmd *cobra.Command, args []string) (err error) {
 	fmt.Println("Checkpoint found:")
 	fmt.Println("LastWrittenSlotNum: ", out.LastWrittenSlotNum)
 	fmt.Println("LastWrittenSlotId: ", out.LastWrittenSlotId)
+	return nil
+}
+
+func readGetOrdersE(cmd *cobra.Command, args []string) error {
+	kvdb, err := getKVDBAndMode()
+	if err != nil {
+		return err
+	}
+	reader := serumhistreader.New(kvdb)
+	marketAddr := args[0]
+	market, err := solana.PublicKeyFromBase58(marketAddr)
+	if err != nil {
+		return fmt.Errorf("unable to create market public key: %w", err)
+	}
+
+	orderSeqNum, err := strconv.ParseUint(args[1], 10, 64)
+	if err != nil {
+		return fmt.Errorf("unable to parse order num %q: %w", args[1], err)
+	}
+	order, err := reader.GetOrder(cmd.Context(), market, orderSeqNum)
+	if err != nil {
+		return fmt.Errorf("unable to get order for market %q & num %d: %w", market.String(), orderSeqNum, err)
+	}
+
+	cnt, err := json.MarshalIndent(order, "", " ")
+	if err != nil {
+		return fmt.Errorf("unable to marshall: %w", err)
+	}
+	fmt.Println(string(cnt))
 	return nil
 }
 
@@ -210,4 +269,13 @@ func getKVDBAndMode() (store.KVStore, error) {
 		return nil, fmt.Errorf("failed to setup db: %w", err)
 	}
 	return kvdb, nil
+}
+
+func printDecodedKey(title, market string, slotNum, trxIdx, instIdx, orderSeqNum uint64) {
+	fmt.Println(title)
+	fmt.Println("Market:", market)
+	fmt.Println("Slot:", slotNum)
+	fmt.Println("Trx idx:", trxIdx)
+	fmt.Println("Inst idx:", instIdx)
+	fmt.Println("Order Seq Num:", orderSeqNum)
 }

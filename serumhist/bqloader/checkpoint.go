@@ -62,7 +62,7 @@ func getLatestCheckpointFromFiles(ctx context.Context, store dstore.Store, prefi
 	var highestSlotId string
 	foundAny := false
 
-	err = store.Walk(ctx, prefix, ".tmp", func(filename string) error {
+	err = store.Walk(ctx, prefix, "", func(filename string) error {
 		fn, err := parseLatestInfoFromFilename(filename)
 		if err != nil {
 			zlog.Warn("could not parse file. skipping unknown file",

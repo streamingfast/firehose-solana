@@ -9,15 +9,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dfuse-io/derr"
 	"github.com/dfuse-io/dstore"
 	"github.com/linkedin/goavro/v2"
 	"go.uber.org/zap"
 )
 
 const (
-	flushIntervalSeconds = 15 * 60
-	flushEventCount      = 100000
+	flushEventCount = 100000
 )
 
 type avroHandler struct {
@@ -90,25 +88,27 @@ func (h *avroHandler) HandleEvent(event map[string]interface{}, slotNum uint64, 
 }
 
 func (h *avroHandler) FlushIfNeeded(ctx context.Context) error {
-	if time.Since(h.t0).Seconds() > flushIntervalSeconds || h.count > flushEventCount {
+	if time.Since(h.t0).Seconds() > 15*time.Minute.Seconds() || h.count > flushEventCount {
 		return h.flush(ctx)
 	}
 	return nil
 }
 
 func (h *avroHandler) flush(ctx context.Context) error {
-	h.lock.Lock()
-	defer h.lock.Unlock()
-
-	if h.ocfWriter != nil || h.ocfFile == nil {
+	if h.ocfWriter == nil || h.ocfFile == nil {
 		//nothing to flush
 		return nil
 	}
 
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
 	zlog.Info("processed message batch", zap.Uint64("count", h.count), zap.Duration("timing_secs", time.Since(h.t0)/time.Second))
 
 	err := h.ocfFile.Close()
-	derr.Check("failed to close scratch file", err)
+	if err != nil {
+		return fmt.Errorf("failed to close scratch file: %w", err)
+	}
 
 	destPath := NewFileName(
 		h.Prefix,
@@ -120,6 +120,10 @@ func (h *avroHandler) flush(ctx context.Context) error {
 	).String()
 
 	zlog.Info("pushing avro file to storage", zap.String("path", destPath))
+
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+
 	err = h.Store.PushLocalFile(ctx, h.scratchFilename, destPath)
 	if err != nil {
 		return fmt.Errorf("failed pushing local file to storage: %w", err)

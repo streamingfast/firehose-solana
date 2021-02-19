@@ -17,6 +17,7 @@ const (
 )
 
 type BQLoader struct {
+	ctx     context.Context
 	dataset *bigquery.Dataset
 	store   dstore.Store
 
@@ -24,28 +25,25 @@ type BQLoader struct {
 	tables       []string
 }
 
-func New(ctx context.Context, client *bigquery.Client, store dstore.Store, datasetName string) *BQLoader {
-
-	fileDir := "/tmp"
+func New(ctx context.Context, scratchSpaceDir string, client *bigquery.Client, store dstore.Store, datasetName string) *BQLoader {
 	avroHandlers := make(map[string]*avroHandler)
-	avroHandlers[newOrder] = NewAvroHandler(fileDir, store, newOrder, CodecNewOrder)
-	avroHandlers[fillOrder] = NewAvroHandler(fileDir, store, fillOrder, CodecOrderFill)
-	avroHandlers[tradingAccount] = NewAvroHandler(fileDir, store, tradingAccount, CodecTraderAccount)
+	avroHandlers[newOrder] = NewAvroHandler(scratchSpaceDir, store, newOrder, CodecNewOrder)
+	avroHandlers[fillOrder] = NewAvroHandler(scratchSpaceDir, store, fillOrder, CodecOrderFill)
+	avroHandlers[tradingAccount] = NewAvroHandler(scratchSpaceDir, store, tradingAccount, CodecTraderAccount)
 
 	tables := []string{newOrder, fillOrder, tradingAccount}
 
 	bq := &BQLoader{
+		ctx:          ctx,
 		dataset:      client.Dataset(datasetName),
 		store:        store,
 		avroHandlers: avroHandlers,
 		tables:       tables,
 	}
-	bq.startLoaders(ctx)
-
 	return bq
 }
 
-func (bq *BQLoader) startLoaders(ctx context.Context) {
+func (bq *BQLoader) StartLoaders(ctx context.Context) {
 	for _, tableName := range bq.tables {
 		ref := bigquery.NewGCSReference(bq.store.ObjectPath(tableName))
 
@@ -59,7 +57,7 @@ func (bq *BQLoader) startLoaders(ctx context.Context) {
 
 //shutdown all avro handlers.  collect any errors into a single error value
 func (bq *BQLoader) Close() error {
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(bq.ctx, 10*time.Second)
 	defer cancel()
 
 	wg := sync.WaitGroup{}

@@ -16,8 +16,34 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func (kv *KVLoader) writeNewOrder(event *serumhist.NewOrder) error {
-	panic("implement me")
+func (kv *KVLoader) writeNewOrder(e *serumhist.NewOrder) error {
+	ctx := kv.ctx
+	cnt, err := proto.Marshal(e.Order)
+	if err != nil {
+		return fmt.Errorf("unable to marshal to fill: %w", err)
+	}
+	kvs := []*store.KV{
+		{
+			Key:   keyer.EncodeOrderNew(e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+			Value: cnt,
+		},
+		{
+			Key: keyer.EncodeOrderByMarket(e.Market, e.OrderSeqNum),
+		},
+		{
+			Key: keyer.EncodeOrderByTrader(e.Trader, e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+		},
+		{
+			Key: keyer.EncodeOrderByTraderMarket(e.Trader, e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+		},
+	}
+
+	for _, k := range kvs {
+		if err := kv.kvdb.Put(ctx, k.Key, k.Value); err != nil {
+			return fmt.Errorf("unable to write serumhist injector in kvdb: %w", err)
+		}
+	}
+	return nil
 }
 
 func (kv *KVLoader) writeFill(e *serumhist.FillEvent) error {
@@ -36,6 +62,9 @@ func (kv *KVLoader) writeFill(e *serumhist.FillEvent) error {
 		},
 		{
 			Key: keyer.EncodeFillByTraderMarket(e.Trader, e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+		},
+		{
+			Key: keyer.EncodeOrderFill(e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
 		},
 	}
 
@@ -140,7 +169,7 @@ func (kv *KVLoader) doFlush(slotNum uint64, reason string) error {
 		zap.Uint64("slot_num", slotNum),
 		zap.String("reason", reason),
 	)
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	ctx, cancel := context.WithTimeout(kv.ctx, 1*time.Minute)
 	defer cancel()
 
 	err := kv.flush(ctx)

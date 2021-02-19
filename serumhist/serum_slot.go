@@ -69,7 +69,6 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 		}
 
 		s.addNewOrderEvent(eventRef, old, new, v.LimitPrice, v.MaxQuantity, pbserumhist.OrderType(v.OrderType))
-
 	case *serum.InstructionNewOrderV2:
 		eventRef.Market = v.Accounts.Market.PublicKey
 		s.TradingAccountCache = append(s.TradingAccountCache, &serumTradingAccount{
@@ -83,7 +82,6 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 		}
 
 		s.addNewOrderEvent(eventRef, old, new, v.LimitPrice, v.MaxQuantity, pbserumhist.OrderType(v.OrderType))
-
 	case *serum.InstructionNewOrderV3:
 		eventRef.Market = v.Accounts.Market.PublicKey
 
@@ -92,23 +90,45 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 			TradingAccount: v.Accounts.OpenOrders.PublicKey,
 		})
 
-		//oldOO, newOO, err := decodeOpenOrders(accChanges)
-		//if err != nil {
-		//	return fmt.Errorf("InstructionNewOrderV2: unable to decode open orders: %w", err)
-		//}
+		oldOpenOrders, newOpenOrders, err := decodeOpenOrders(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionNewOrderV2: unable to decode open orders: %w", err)
+		}
 
-		//s.addNewOrderEvent(eventRef, old, new, v.LimitPrice, v, pbserumhist.OrderType(v.OrderType))
+		s.addNewOrderEvent(eventRef, oldOpenOrders, newOpenOrders, v.LimitPrice, v.MaxCoinQuantity, pbserumhist.OrderType(v.OrderType))
 
 		old, new, err := decodeEventQueue(accChanges)
 		if err != nil {
 			return fmt.Errorf("InstructionNewOrderV3: unable to decode event queue: %w", err)
 		}
 
-		s.addOrderFillAndCloseEvent(eventRef, old, new, true)
+		s.addOrderFill(eventRef, old, new)
 
-	//case *serum.InstructionCancelOrderByClientId:
-	//case *serum.InstructionCancelOrder:
+	case *serum.InstructionCancelOrderByClientId:
+		// V1 instruction pushes a Request::CancelOrder on the request queue, we need to find it and decode it
+		eventRef.Market = v.Accounts.Market.PublicKey
+
+		old, new, err := decodeRequestQueue(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionCancelOrderByClientId: unable to decode event queue: %w", err)
+		}
+
+		s.addCancelledOrderViaRequestQueue(eventRef, old, new)
+
+	case *serum.InstructionCancelOrder:
+		eventRef.Market = v.Accounts.Market.PublicKey
+		eventRef.OrderSeqNum = v.OrderID.SeqNum(v.Side)
+		s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
+			Ref: eventRef,
+			InstrRef: &pbserumhist.InstructionRef{
+				TrxHash:   eventRef.TrxHash,
+				SlotHash:  eventRef.SlotHash,
+				Timestamp: mustProtoTimestamp(eventRef.Timestamp),
+			},
+		})
+
 	case *serum.InstructionCancelOrderByClientIdV2:
+		// V1 instruction pushes a Event::EventOut on the event queue, we need to find it and decode it
 		eventRef.Market = v.Accounts.Market.PublicKey
 
 		old, new, err := decodeEventQueue(accChanges)
@@ -116,16 +136,19 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 			return fmt.Errorf("InstructionCancelOrderByClientIdV2: unable to decode event queue: %w", err)
 		}
 
-		s.addOrderCancellationEvent(eventRef, old, new)
+		s.addCancelledOrderViaEventQueue(eventRef, old, new)
+
 	case *serum.InstructionCancelOrderV2:
 		eventRef.Market = v.Accounts.Market.PublicKey
-
-		old, new, err := decodeEventQueue(accChanges)
-		if err != nil {
-			return fmt.Errorf("InstructionCancelOrderV2: unable to decode event queue: %w", err)
-		}
-
-		s.addOrderCancellationEvent(eventRef, old, new)
+		eventRef.OrderSeqNum = v.OrderID.SeqNum(v.Side)
+		s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
+			Ref: eventRef,
+			InstrRef: &pbserumhist.InstructionRef{
+				TrxHash:   eventRef.TrxHash,
+				SlotHash:  eventRef.SlotHash,
+				Timestamp: mustProtoTimestamp(eventRef.Timestamp),
+			},
+		})
 	case *serum.InstructionMatchOrder:
 		eventRef.Market = v.Accounts.Market.PublicKey
 
@@ -134,35 +157,22 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 			return fmt.Errorf("InstructionMatchOrder: unable to decode event queue: %w", err)
 		}
 
-		s.addOrderFillAndCloseEvent(eventRef, old, new, false)
+		s.addOrderFill(eventRef, old, new)
+	case *serum.InstructionConsumeEvents:
+		eventRef.Market = v.Accounts.Market.PublicKey
+
+		old, new, err := decodeOpenOrders(accChanges)
+		if err != nil {
+			return fmt.Errorf("InstructionConsumeEvents: unable to decode open orders: %w", err)
+		}
+
+		s.addClosedOrderEvent(eventRef, old, new)
 	}
 
 	return nil
 }
 
-func (s *SerumSlot) addOrderCancellationEvent(eventRef *Ref, old, new *serum.EventQueue) {
-	diff.Diff(old, new, diff.OnEvent(func(eventdiff diff.Event) {
-		if match, _ := eventdiff.Match("Events[#]"); match {
-			e := eventdiff.Element().Interface().(*serum.Event)
-			switch eventdiff.Kind {
-			case diff.KindAdded:
-				if e.Flag.IsOut() {
-					eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
-					s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
-						Ref: eventRef,
-						InstrRef: &pbserumhist.InstructionRef{
-							TrxHash:   eventRef.TrxHash,
-							SlotHash:  eventRef.SlotHash,
-							Timestamp: mustProtoTimestamp(eventRef.Timestamp),
-						},
-					})
-				}
-			}
-		}
-	}))
-}
-
-func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *Ref, old, new *serum.EventQueue, processOutAsOrderExecuted bool) {
+func (s *SerumSlot) addOrderFill(eventRef *Ref, old, new *serum.EventQueue) {
 	diff.Diff(old, new, diff.OnEvent(func(eventDiff diff.Event) {
 		if match, _ := eventDiff.Match("Events[#]"); match {
 			e := eventDiff.Element().Interface().(*serum.Event)
@@ -194,40 +204,124 @@ func (s *SerumSlot) addOrderFillAndCloseEvent(eventRef *Ref, old, new *serum.Eve
 }
 
 func (s *SerumSlot) addNewOrderEvent(eventRef *Ref, old, new *serum.OpenOrders, limitPrice uint64, maxQuantity uint64, orderType pbserumhist.OrderType) {
-	// 1. We need to Diff the OpenOrders account to retrieve the orderID
-	hasNewOrder := false
-	newOrderIndex := uint32(0)
 	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
 		if match, _ := event.Match("Orders[#]"); match {
 			switch event.Kind {
 			case diff.KindAdded:
+				hasNewOrder := false
+				newOrderIndex := uint32(0)
+
 				if index, found := event.Path.SliceIndex(); found {
 					hasNewOrder = true
 					newOrderIndex = uint32(index)
 				}
+
+				if !hasNewOrder {
+					zlog.Warn("expected to find a new order",
+						zap.Reflect("event_ref", eventRef),
+					)
+					return
+				}
+				newOrder := new.GetOrder(newOrderIndex)
+				eventRef.OrderSeqNum = newOrder.SeqNum()
+				s.OrderNewEvents = append(s.OrderNewEvents, &NewOrder{
+					Ref:    eventRef,
+					Trader: new.Owner,
+					Order: &pbserumhist.Order{
+						//Num:         newOrder.SeqNum(),
+						Trader:      new.Owner.String(),
+						Side:        pbserumhist.Side(newOrder.Side),
+						LimitPrice:  limitPrice, // instruction
+						MaxQuantity: maxQuantity,
+						Type:        orderType,
+						Fills:       nil,
+						SlotHash:    eventRef.SlotHash,
+						TrxId:       eventRef.TrxHash,
+					},
+				})
 			}
 		}
 	}))
-	if !hasNewOrder {
-		zlog.Warn("expected to find a new order",
-			zap.Reflect("event_ref", eventRef),
-		)
-	}
-	newOrder := new.GetOrder(newOrderIndex)
+}
 
-	s.OrderNewEvents = append(s.OrderNewEvents, &NewOrder{
-		Ref: eventRef,
-		Order: &pbserumhist.Order{
-			Num:         newOrder.SeqNum(),
-			Trader:      new.Owner.String(),
-			Side:        pbserumhist.Side(newOrder.Side),
-			LimitPrice:  limitPrice, // instruction
-			MaxQuantity: maxQuantity,
-			Type:        orderType,
-			SlotHash:    eventRef.SlotHash,
-			TrxId:       eventRef.TrxHash,
-		},
-	})
+func (s *SerumSlot) addClosedOrderEvent(eventRef *Ref, old, new *serum.OpenOrders) {
+	// 1. We need to Diff the OpenOrders account to retrieve the orderID
+	diff.Diff(old, new, diff.OnEvent(func(event diff.Event) {
+		if match, _ := event.Match("Orders[#]"); match {
+			switch event.Kind {
+			case diff.KindRemoved:
+				hasRemovedOrder := false
+				oldOrderIndex := uint32(0)
+
+				if index, found := event.Path.SliceIndex(); found {
+					hasRemovedOrder = true
+					oldOrderIndex = uint32(index)
+				}
+
+				if !hasRemovedOrder {
+					zlog.Warn("expected to find an ordered closed",
+						zap.Reflect("event_ref", eventRef),
+					)
+					return
+				}
+				newOrder := old.GetOrder(oldOrderIndex)
+				eventRef.OrderSeqNum = newOrder.SeqNum()
+				s.OrderClosedEvents = append(s.OrderClosedEvents, &OrderClosed{
+					Ref: eventRef,
+					InstrRef: &pbserumhist.InstructionRef{
+						TrxHash:   eventRef.TrxHash,
+						SlotHash:  eventRef.SlotHash,
+						Timestamp: mustProtoTimestamp(eventRef.Timestamp),
+					},
+				})
+			}
+		}
+	}))
+}
+
+func (s *SerumSlot) addCancelledOrderViaEventQueue(eventRef *Ref, old, new *serum.EventQueue) {
+	diff.Diff(old, new, diff.OnEvent(func(eventDiff diff.Event) {
+		if match, _ := eventDiff.Match("Events[#]"); match {
+			e := eventDiff.Element().Interface().(*serum.Event)
+			switch eventDiff.Kind {
+			case diff.KindAdded:
+				eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
+				if e.Flag.IsOut() {
+					s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
+						Ref: eventRef,
+						InstrRef: &pbserumhist.InstructionRef{
+							TrxHash:   eventRef.TrxHash,
+							SlotHash:  eventRef.SlotHash,
+							Timestamp: mustProtoTimestamp(eventRef.Timestamp),
+						},
+					})
+				}
+			}
+		}
+	}))
+}
+
+func (s *SerumSlot) addCancelledOrderViaRequestQueue(eventRef *Ref, old, new *serum.RequestQueue) {
+	diff.Diff(old, new, diff.OnEvent(func(eventDiff diff.Event) {
+		fmt.Println("EVENT: ", eventDiff.String())
+		if match, _ := eventDiff.Match("Requests[#]"); match {
+			e := eventDiff.Element().Interface().(*serum.Request)
+			switch eventDiff.Kind {
+			case diff.KindAdded:
+				eventRef.OrderSeqNum = e.OrderID.SeqNum(e.Side())
+				if e.Flag.IsCancelOrder() {
+					s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
+						Ref: eventRef,
+						InstrRef: &pbserumhist.InstructionRef{
+							TrxHash:   eventRef.TrxHash,
+							SlotHash:  eventRef.SlotHash,
+							Timestamp: mustProtoTimestamp(eventRef.Timestamp),
+						},
+					})
+				}
+			}
+		}
+	}))
 }
 
 func decodeEventQueue(accountChanges []*pbcodec.AccountChange) (old, new *serum.EventQueue, err error) {
@@ -245,6 +339,26 @@ func decodeEventQueue(accountChanges []*pbcodec.AccountChange) (old, new *serum.
 
 	if err := bin.NewDecoder(eventQueueAccountChange.NewData).Decode(&new); err != nil {
 		return nil, nil, fmt.Errorf("unable to decode 'event queue' new data: %w", err)
+	}
+
+	return
+}
+
+func decodeRequestQueue(accountChanges []*pbcodec.AccountChange) (old, new *serum.RequestQueue, err error) {
+	requestQueueAccountChange, err := findAccountChange(accountChanges, func(flag *serum.AccountFlag) bool {
+		return flag.Is(serum.AccountFlagInitialized) && flag.Is(serum.AccountFlagRequestQueue)
+	})
+
+	if requestQueueAccountChange == nil {
+		return nil, nil, nil
+	}
+
+	if err := bin.NewDecoder(requestQueueAccountChange.PrevData).Decode(&old); err != nil {
+		return nil, nil, fmt.Errorf("unable to decode 'request queue' old data: %w", err)
+	}
+
+	if err := bin.NewDecoder(requestQueueAccountChange.NewData).Decode(&new); err != nil {
+		return nil, nil, fmt.Errorf("unable to decode 'request queue' new data: %w", err)
 	}
 
 	return
