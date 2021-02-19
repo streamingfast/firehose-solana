@@ -66,7 +66,10 @@ usage() {
   echo "    DEBUG=<app>    Turn debug logs for <app> (multiple separated by ','), accepts app name or regexp (.* for all)"
   echo "    TRACE=true     Enables traces"
   echo "Examples"
-  echo " Find Keys with Prefix     dfusesol tools kv prefix 01 --dsn=badger:///Users/julien/codebase/dfuse-io/dfuse-solana/devel/serumhist/dfuse-data/storage/serumhist"
+  echo " Find Fill Keys             dfusesol tools kv prefix 01 --dsn=badger:///Users/julien/codebase/dfuse-io/dfuse-solana/devel/serumhist/dfuse-data/storage/serumhist"
+  echo " Decode a serumhist key     dfusesol tools serumhist keyer decode 01e77dd955f7b84e4736d066e97188f1919ba42d8b4b090752c1d236c3666cf634fffffffffc13258affffffffffffff99fffffffffffffffcffffffffffec00b3"
+  echo " Get An Order               dfusesol tools serumhist orders get GaeUpY7CT8rjoeVGjY1t3mJJDd1bdXxYWtrGSpsVFors  1310540  --dsn=badger:///Users/julien/codebase/dfuse-io/dfuse-solana/devel/serumhist/dfuse-data/storage/serumhist"
+  echo " Get Fill by market         dfusesol tools serumhist orders get GaeUpY7CT8rjoeVGjY1t3mJJDd1bdXxYWtrGSpsVFors --dsn=badger:///Users/julien/codebase/dfuse-io/dfuse-solana/devel/serumhist/dfuse-data/storage/serumhist"
 }
 
 main "$@"
