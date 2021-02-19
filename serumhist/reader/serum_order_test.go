@@ -127,18 +127,18 @@ func TestReader_GetOrder(t *testing.T) {
 				InstIdx:     2,
 			},
 		},
-		{
-			name: "New Order partial filled",
-		},
-		{
-			name: "New Order executed via closed (serum v1)",
-		},
-		{
-			name: "New Order executed (serum v2)",
-		},
-		{
-			name: "New Order invalid state (fill with canceled)",
-		},
+		//{
+		//	name: "New Order partial filled",
+		//},
+		//{
+		//	name: "New Order executed via closed (serum v1)",
+		//},
+		//{
+		//	name: "New Order executed (serum v2)",
+		//},
+		//{
+		//	name: "New Order invalid state (fill with canceled)",
+		//},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

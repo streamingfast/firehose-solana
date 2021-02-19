@@ -129,7 +129,6 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 				return nil, fmt.Errorf("failed to unmarshal order: %w", err)
 			}
 
-			fmt.Println(order.MaxQuantity)
 			e = &serumhist.NewOrder{
 				Ref: &serumhist.Ref{
 					Market:      market,

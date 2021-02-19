@@ -10,7 +10,6 @@ import (
 
 func (kv *KVLoader) processSerumNewOrders(events []*serumhist.NewOrder) interface{} {
 	for _, event := range events {
-
 		zlog.Debug("serum new order",
 			zap.Stringer("side", event.Order.Side),
 			zap.Stringer("market", event.Market),
@@ -59,7 +58,7 @@ func (kv *KVLoader) processSerumFills(events []*serumhist.FillEvent) error {
 			zap.Uint64("order_seq_num", event.OrderSeqNum),
 			zap.Uint64("slot_num", event.SlotNumber),
 		)
-		fmt.Printf("WRITING")
+
 		if err = kv.writeFill(event); err != nil {
 			return fmt.Errorf("unable to write fill event: %w", err)
 		}
