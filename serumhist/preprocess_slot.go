@@ -29,6 +29,10 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			)
 		}
 
+		if transaction.Failed {
+			zlog.Debug("skipping failed transaction")
+			continue
+		}
 		for instIdx, instruction := range transaction.Instructions {
 			// FIXME: The DEX v3 address is not known yet, we will need to update this when the address is known
 			if instruction.ProgramId != serum.DEXProgramIDV2.String() {
