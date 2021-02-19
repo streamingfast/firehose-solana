@@ -303,7 +303,6 @@ func (s *SerumSlot) addCancelledOrderViaEventQueue(eventRef *Ref, old, new *seru
 
 func (s *SerumSlot) addCancelledOrderViaRequestQueue(eventRef *Ref, old, new *serum.RequestQueue) {
 	diff.Diff(old, new, diff.OnEvent(func(eventDiff diff.Event) {
-		fmt.Println("EVENT: ", eventDiff.String())
 		if match, _ := eventDiff.Match("Requests[#]"); match {
 			e := eventDiff.Element().Interface().(*serum.Request)
 			switch eventDiff.Kind {
