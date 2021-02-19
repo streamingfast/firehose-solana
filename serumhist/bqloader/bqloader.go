@@ -3,17 +3,20 @@ package bqloader
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/dfuse-io/dstore"
+	"go.uber.org/zap"
+	"google.golang.org/api/googleapi"
 )
 
 const (
-	newOrder       = "serum-orders"
-	fillOrder      = "serum-fills"
-	tradingAccount = "serum-traders"
+	newOrder       = "orders"
+	fillOrder      = "fills"
+	tradingAccount = "traders"
 )
 
 type BQLoader struct {
@@ -25,39 +28,67 @@ type BQLoader struct {
 	tables       []string
 }
 
-func New(ctx context.Context, scratchSpaceDir string, client *bigquery.Client, store dstore.Store, datasetName string) *BQLoader {
+func New(ctx context.Context, scratchSpaceDir string, store dstore.Store, dataset *bigquery.Dataset) *BQLoader {
+	tables := []string{newOrder, fillOrder, tradingAccount}
+
 	avroHandlers := make(map[string]*avroHandler)
 	avroHandlers[newOrder] = NewAvroHandler(scratchSpaceDir, store, newOrder, CodecNewOrder)
 	avroHandlers[fillOrder] = NewAvroHandler(scratchSpaceDir, store, fillOrder, CodecOrderFill)
 	avroHandlers[tradingAccount] = NewAvroHandler(scratchSpaceDir, store, tradingAccount, CodecTraderAccount)
 
-	tables := []string{newOrder, fillOrder, tradingAccount}
-
 	bq := &BQLoader{
+		tables:       tables,
 		ctx:          ctx,
-		dataset:      client.Dataset(datasetName),
+		dataset:      dataset,
 		store:        store,
 		avroHandlers: avroHandlers,
-		tables:       tables,
 	}
+
 	return bq
 }
 
-func (bq *BQLoader) StartLoaders(ctx context.Context) {
+func (bq *BQLoader) StartLoaders(ctx context.Context, storeUrl string) {
 	for _, tableName := range bq.tables {
-		ref := bigquery.NewGCSReference(bq.store.ObjectPath(tableName))
+		err := bq.dataset.Table(tableName).Create(bq.ctx, nil)
+		if err, ok := err.(*googleapi.Error); !ok || err.Code != 409 { // ignore already-exists error
+			zlog.Error("could not create table", zap.Error(err))
+		}
 
-		loader := bq.dataset.Table(tableName).LoaderFrom(ref)
-		loader.UseAvroLogicalTypes = true
-		go func(l *bigquery.Loader) {
-			_, _ = l.Run(ctx) // TODO: handle these?
-		}(loader)
+		go func(table string) {
+			uri := strings.Join([]string{storeUrl, table, "*"}, "/")
+			ref := bigquery.NewGCSReference(uri)
+			ref.SourceFormat = bigquery.Avro
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(5 * time.Minute):
+				}
+
+				loader := bq.dataset.Table(table).LoaderFrom(ref)
+				loader.UseAvroLogicalTypes = true
+				job, err := loader.Run(ctx)
+				if err != nil {
+					zlog.Error("could not run loader", zap.String("table", table), zap.Error(err))
+					continue
+				}
+				js, err := job.Wait(ctx)
+				if err != nil {
+					zlog.Error("could not create loader job", zap.Error(err))
+					continue
+				}
+				if js.Err() != nil {
+					zlog.Error("could not run loader job", zap.Error(js.Err()))
+					continue
+				}
+			}
+		}(tableName)
 	}
 }
 
 //shutdown all avro handlers.  collect any errors into a single error value
 func (bq *BQLoader) Close() error {
-	shutdownCtx, cancel := context.WithTimeout(bq.ctx, 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	wg := sync.WaitGroup{}

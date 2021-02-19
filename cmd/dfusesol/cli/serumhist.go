@@ -23,7 +23,8 @@ func init() {
 			cmd.Flags().Bool("serumhist-enable-server-mode", false, "Enable mode where the gRPC server is started and answers request(s), when false, the server is disabled and no request(s) will be handled.")
 			cmd.Flags().Bool("serumhist-enable-injector-mode", true, "Enable mode where blocks are ingested, processed and saved to the database, when false, no write operations happen.")
 			cmd.Flags().Bool("serumhist-enable-bigquery-injector-mode", false, "Enable mode where blocks are ingested, processed and saved to the database, when false, no write operations happen.")
-			cmd.Flags().String("serumhist-bigquery-project-id", "dfuse_development_tools", "dfuse bigquery project id")
+			cmd.Flags().String("serumhist-bigquery-project-id", "dfuse-development-tools", "dfuse bigquery project id")
+			cmd.Flags().String("serumhist-bigquery-store-url", "gs://dfuse-developement-random/serumhist", "dfuse bigquery store url")
 			cmd.Flags().String("serumhist-bigquery-dataset-id", "serum", "dfuse bigquery dataset id")
 			cmd.Flags().String("serumhist-bigquery-scratch-space-dir", "{dfuse-data-dir}/serumhist/injector", "Space where we temporary store bigquery avro file before dstore upload")
 			cmd.Flags().Uint64("serumhist-flush-slots-interval", 100, "Flush to storage each X blocks.  Use 1 when live. Use a high number in batch, serves as checkpointing between restarts.")
@@ -46,11 +47,12 @@ func init() {
 				EnableInjector:            viper.GetBool("serumhist-enable-injector-mode"),
 				GRPCListenAddr:            viper.GetString("serumhist-grpc-listen-addr"),
 				HTTPListenAddr:            viper.GetString("serumhist-http-listen-addr"),
-				EnableBigQueryInjector:    viper.GetBool("serumhist-enable-bigquery-injector-mode"),
 				KvdbDsn:                   mustReplaceDataDir(dfuseDataDir, viper.GetString("serumhist-dsn")),
+				EnableBigQueryInjector:    viper.GetBool("serumhist-enable-bigquery-injector-mode"),
 				BigQueryProject:           viper.GetString("serumhist-bigquery-project-id"),
+				BigQueryStoreURL:          viper.GetString("serumhist-bigquery-store-url"),
 				BigQueryDataset:           viper.GetString("serumhist-bigquery-dataset-id"),
-				BigQueryScratchSpaceDir:   viper.GetString("serumhist-bigquery-scratch-space-dir"),
+				BigQueryScratchSpaceDir:   mustReplaceDataDir(dfuseDataDir, viper.GetString("serumhist-bigquery-scratch-space-dir")),
 			}), nil
 		},
 	})

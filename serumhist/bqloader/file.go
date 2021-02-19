@@ -37,7 +37,10 @@ func (f *FileName) String() string {
 	)
 }
 
-func parseLatestInfoFromFilename(filename string) (*FileName, error) {
+func parseLatestInfoFromFilename(filepath string) (*FileName, error) {
+	pathParts := strings.Split(filepath, "/")
+	filename := pathParts[len(pathParts)-1]
+
 	filenameParts := strings.SplitN(filename, "-", 5)
 	if len(filenameParts) < 5 {
 		return nil, fmt.Errorf("could not parse filename. invalid format")
