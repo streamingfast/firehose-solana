@@ -92,7 +92,12 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			if i, ok := decodedInst.Impl.(solana.AccountSettable); ok {
 				err = i.SetAccounts(accounts)
 				if err != nil {
-					return nil, fmt.Errorf("setting account: transaction id: %s: instruction index: %d: %w", transaction.Id, instIdx, err)
+					zlog.Warn("error setting account for instruction",
+						zap.String("transaction_id", transaction.Id),
+						zap.Int("insutrction_index", instIdx),
+						zap.Error(err),
+					)
+					continue
 				}
 			}
 
