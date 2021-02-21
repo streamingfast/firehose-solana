@@ -5,6 +5,7 @@ start:
     common-blockstream-addr: ""
     common-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v5"
     serumhist-enable-injector-mode: true
+    serumhist-enable-bigquery-injector-mode: true
     serumhist-enable-server-mode: false
     serumhist-grpc-listen-addr: ":9000"
     serumhist-http-listen-addr: ":8080"

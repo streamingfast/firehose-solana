@@ -27,7 +27,7 @@ func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		return fmt.Errorf("unable to process serum order fill events: %w", err)
 	}
 
-	for handlerId, handler := range bq.avroHandlers {
+	for handlerId, handler := range bq.eventHandlers {
 		if err := handler.FlushIfNeeded(bq.ctx); err != nil {
 			return fmt.Errorf("error flushing handler %q: %w", handlerId, err)
 		}

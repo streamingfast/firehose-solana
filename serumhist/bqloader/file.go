@@ -37,7 +37,7 @@ func (f *FileName) String() string {
 	)
 }
 
-func parseLatestInfoFromFilename(filepath string) (*FileName, error) {
+func parseLatestInfoFromFilePath(filepath string) (*FileName, error) {
 	pathParts := strings.Split(filepath, "/")
 	filename := pathParts[len(pathParts)-1]
 
