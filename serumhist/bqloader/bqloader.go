@@ -21,23 +21,31 @@ type BQLoader struct {
 	dataset *bigquery.Dataset
 	store   dstore.Store
 
-	eventHandlers map[string]*eventHandler
+	traderAccountCache *tradingAccountCache
+	eventHandlers      map[string]*eventHandler
 }
 
-func New(ctx context.Context, scratchSpaceDir string, storeUrl string, store dstore.Store, dataset *bigquery.Dataset) *BQLoader {
+func New(ctx context.Context, scratchSpaceDir string, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client) *BQLoader {
 	eventHandlers := make(map[string]*eventHandler)
 	eventHandlers[newOrder] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, newOrder, CodecNewOrder)
 	eventHandlers[fillOrder] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, fillOrder, CodecOrderFill)
 	eventHandlers[tradingAccount] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, tradingAccount, CodecTraderAccount)
 
+	cacheTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tradingAccount)
 	bq := &BQLoader{
-		ctx:           ctx,
-		dataset:       dataset,
-		store:         store,
-		eventHandlers: eventHandlers,
+		ctx:                ctx,
+		dataset:            dataset,
+		store:              store,
+		eventHandlers:      eventHandlers,
+		traderAccountCache: newTradingAccountCache(cacheTableName, client),
 	}
 
 	return bq
+}
+
+func (bq *BQLoader) PrimeTradeCache(ctx context.Context) {
+	zlog.Info("priming bq trader cache")
+	bq.traderAccountCache.load(ctx)
 }
 
 //shutdown all avro handlers.  collect any errors into a single error value

@@ -13,6 +13,17 @@ func (bq *BQLoader) processTradingAccount(account, trader solana.PublicKey, slot
 		zap.Stringer("account", account),
 		zap.Stringer("trader", trader),
 	)
+
+	_, found := bq.traderAccountCache.getTrader(trader.String())
+	if found {
+		return nil
+	}
+
+	err := bq.traderAccountCache.setTradingAccount(trader.String(), account.String())
+	if err != nil {
+		return fmt.Errorf("could not write trader to cache: %w", err)
+	}
+
 	if err := bq.eventHandlers[tradingAccount].HandleEvent(TradingAccountToAvro(account, trader), slotNum, slotId); err != nil {
 		return fmt.Errorf("unable to process trading account %w", err)
 	}

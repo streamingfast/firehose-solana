@@ -155,7 +155,8 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
 			return nil, fmt.Errorf("error creating bigquery dstore: %w", err)
 		}
 
-		loader := bqloader.New(ctx, a.Config.BigQueryScratchSpaceDir, a.Config.BigQueryStoreURL, store, dataset)
+		loader := bqloader.New(ctx, a.Config.BigQueryScratchSpaceDir, a.Config.BigQueryStoreURL, store, dataset, bqClient)
+		loader.PrimeTradeCache(ctx)
 		return loader, nil
 	}
 
