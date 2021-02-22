@@ -27,7 +27,7 @@ func NewFileName(prefix string, startSlotNum uint64, latestSlotNum uint64, start
 }
 
 func (f *FileName) String() string {
-	return fmt.Sprintf("%s/%d-%d-%s-%s-%s.avro",
+	return fmt.Sprintf("%s/%d-%d-%s-%s-%s",
 		f.Prefix,
 		f.StartSlotNum,
 		f.LatestSlotNum,
@@ -37,7 +37,10 @@ func (f *FileName) String() string {
 	)
 }
 
-func parseLatestInfoFromFilename(filename string) (*FileName, error) {
+func parseLatestInfoFromFilePath(filepath string) (*FileName, error) {
+	pathParts := strings.Split(filepath, "/")
+	filename := pathParts[len(pathParts)-1]
+
 	filenameParts := strings.SplitN(filename, "-", 5)
 	if len(filenameParts) < 5 {
 		return nil, fmt.Errorf("could not parse filename. invalid format")

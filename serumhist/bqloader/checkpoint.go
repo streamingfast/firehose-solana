@@ -11,25 +11,32 @@ import (
 )
 
 func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {
-	timeout := 120 * time.Second /// ???
+	timeout := 120 * time.Second
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(bq.avroHandlers))
+	wg.Add(len(bq.eventHandlers))
 
 	checkpointChan := make(chan *pbserumhist.Checkpoint)
+	errChan := make(chan error)
 	go func() {
 		wg.Wait()
 		close(checkpointChan)
+		close(errChan)
 	}()
 
-	for _, h := range bq.avroHandlers {
-		go func(handler *avroHandler) {
+	for _, h := range bq.eventHandlers {
+		go func(handler *eventHandler) {
 			defer wg.Done()
 
-			checkpoint, err := getLatestCheckpointFromFiles(ctx, handler.Store, handler.Prefix)
-			if err != nil || checkpoint == nil {
+			checkpoint, err := getLatestCheckpointFromFiles(ctx, handler.Store, handler.TableName)
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			if checkpoint == nil {
 				return
 			}
 
@@ -54,6 +61,14 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 		}
 	}
 
+	select {
+	case err := <-errChan:
+		if err != nil {
+			return nil, err
+		}
+	default:
+	}
+
 	return earliestCheckpoint, nil
 }
 
@@ -63,7 +78,7 @@ func getLatestCheckpointFromFiles(ctx context.Context, store dstore.Store, prefi
 	foundAny := false
 
 	err = store.Walk(ctx, prefix, "", func(filename string) error {
-		fn, err := parseLatestInfoFromFilename(filename)
+		fn, err := parseLatestInfoFromFilePath(filename)
 		if err != nil {
 			zlog.Warn("could not parse file. skipping unknown file",
 				zap.String("filename", filename),

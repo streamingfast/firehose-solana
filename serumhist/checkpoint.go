@@ -18,7 +18,7 @@ func (i *Injector) resolveCheckpoint(ctx context.Context, startBlockNum uint64, 
 		return checkpoint, nil
 	}
 
-	zlog.Info("retrieving serumhist checkpoint from kvdb")
+	zlog.Info("retrieving serumhist checkpoint from handler")
 	// Retrieved lastProcessedBlock must be in the shard's range, and that shouldn't
 	// change across invocations, or in the lifetime of the database.
 	checkpoint, err := i.handler.GetCheckpoint(ctx)

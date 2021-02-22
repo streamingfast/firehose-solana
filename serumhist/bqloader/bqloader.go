@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	newOrder       = "serum-orders"
-	fillOrder      = "serum-fills"
-	tradingAccount = "serum-traders"
+	newOrder       = "orders"
+	fillOrder      = "fills"
+	tradingAccount = "traders"
 )
 
 type BQLoader struct {
@@ -21,47 +21,40 @@ type BQLoader struct {
 	dataset *bigquery.Dataset
 	store   dstore.Store
 
-	avroHandlers map[string]*avroHandler
-	tables       []string
+	traderAccountCache *tradingAccountCache
+	eventHandlers      map[string]*eventHandler
 }
 
-func New(ctx context.Context, scratchSpaceDir string, client *bigquery.Client, store dstore.Store, datasetName string) *BQLoader {
-	avroHandlers := make(map[string]*avroHandler)
-	avroHandlers[newOrder] = NewAvroHandler(scratchSpaceDir, store, newOrder, CodecNewOrder)
-	avroHandlers[fillOrder] = NewAvroHandler(scratchSpaceDir, store, fillOrder, CodecOrderFill)
-	avroHandlers[tradingAccount] = NewAvroHandler(scratchSpaceDir, store, tradingAccount, CodecTraderAccount)
+func New(ctx context.Context, scratchSpaceDir string, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client) *BQLoader {
+	eventHandlers := make(map[string]*eventHandler)
+	eventHandlers[newOrder] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, newOrder, CodecNewOrder)
+	eventHandlers[fillOrder] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, fillOrder, CodecOrderFill)
+	eventHandlers[tradingAccount] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, tradingAccount, CodecTraderAccount)
 
-	tables := []string{newOrder, fillOrder, tradingAccount}
-
+	cacheTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tradingAccount)
 	bq := &BQLoader{
-		ctx:          ctx,
-		dataset:      client.Dataset(datasetName),
-		store:        store,
-		avroHandlers: avroHandlers,
-		tables:       tables,
+		ctx:                ctx,
+		dataset:            dataset,
+		store:              store,
+		eventHandlers:      eventHandlers,
+		traderAccountCache: newTradingAccountCache(cacheTableName, client),
 	}
+
 	return bq
 }
 
-func (bq *BQLoader) StartLoaders(ctx context.Context) {
-	for _, tableName := range bq.tables {
-		ref := bigquery.NewGCSReference(bq.store.ObjectPath(tableName))
-
-		loader := bq.dataset.Table(tableName).LoaderFrom(ref)
-		loader.UseAvroLogicalTypes = true
-		go func(l *bigquery.Loader) {
-			_, _ = l.Run(ctx) // TODO: handle these?
-		}(loader)
-	}
+func (bq *BQLoader) PrimeTradeCache(ctx context.Context) {
+	zlog.Info("priming bq trader cache")
+	bq.traderAccountCache.load(ctx)
 }
 
 //shutdown all avro handlers.  collect any errors into a single error value
 func (bq *BQLoader) Close() error {
-	shutdownCtx, cancel := context.WithTimeout(bq.ctx, 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(bq.avroHandlers))
+	wg.Add(len(bq.eventHandlers))
 
 	errChan := make(chan error)
 	go func() {
@@ -69,8 +62,8 @@ func (bq *BQLoader) Close() error {
 		close(errChan)
 	}()
 
-	for _, h := range bq.avroHandlers {
-		go func(handler *avroHandler) {
+	for _, h := range bq.eventHandlers {
+		go func(handler *eventHandler) {
 			defer wg.Done()
 			err := handler.Shutdown(shutdownCtx)
 			if err != nil {

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"google.golang.org/api/googleapi"
+
 	"cloud.google.com/go/bigquery"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
@@ -139,13 +141,22 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
 			return nil, fmt.Errorf("error creating bigquery client: %w", err)
 		}
 
+		dataset := bqClient.Dataset(a.Config.BigQueryDataset)
+		err = bqClient.Dataset(a.Config.BigQueryDataset).Create(ctx, &bigquery.DatasetMetadata{
+			Name:        a.Config.BigQueryDataset,
+			Description: "serum events",
+		})
+		if err, ok := err.(*googleapi.Error); !ok || err.Code != 409 { // ignore already-exists error
+			return nil, fmt.Errorf("could not create dataset: %w", err)
+		}
+
 		store, err := dstore.NewStore(a.Config.BigQueryStoreURL, "avro", "zsrd", false)
 		if err != nil {
 			return nil, fmt.Errorf("error creating bigquery dstore: %w", err)
 		}
 
-		loader := bqloader.New(ctx, a.Config.BigQueryScratchSpaceDir, bqClient, store, a.Config.BigQueryDataset)
-		loader.StartLoaders(ctx)
+		loader := bqloader.New(ctx, a.Config.BigQueryScratchSpaceDir, a.Config.BigQueryStoreURL, store, dataset, bqClient)
+		loader.PrimeTradeCache(ctx)
 		return loader, nil
 	}
 

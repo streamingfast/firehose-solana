@@ -50,7 +50,7 @@ func init() {
 			{"name": "native_qty_received", "type": "long"},
 			{"name": "native_fee_or_rebate", "type": "long"},
 			{"name": "fee_tier", "type": "string"},
-			{"name": "timestamp", "type": "long.timestamp-micros"},
+			{"name": "timestamp", "type": {"type": "long", "logicalType" : "timestamp-millis"}},
 			{"name": "slot_num", "type": "long"},
 			{"name": "slot_hash", "type": "string"},
 			{"name": "trx_id", "type": "string"},
@@ -74,26 +74,27 @@ func init() {
 }
 
 func NewOrderToAvro(e *serumhist.NewOrder) map[string]interface{} {
-	return map[string]interface{}{
+	m := map[string]interface{}{
 		"num":          int64(e.Order.Num),
-		"market":       e.Order.Market,
-		"trader":       e.Order.Trader,
+		"market":       e.Ref.Market.String(),
+		"trader":       e.Trader.String(),
 		"side":         e.Order.Side.String(),
 		"limit_price":  int64(e.Order.LimitPrice),
 		"max_quantity": int64(e.Order.MaxQuantity),
 		"type":         e.Order.Type.String(),
-		"slot_num":     int64(e.Order.SlotNum),
+		"slot_num":     int64(e.Ref.SlotNumber),
 		"slot_hash":    e.Order.SlotHash,
 		"trx_id":       e.Order.TrxId,
-		"trx_idx":      int32(e.Order.TrxIdx),
-		"inst_idx":     int32(e.Order.InstIdx),
+		"trx_idx":      int32(e.Ref.TrxIdx),
+		"inst_idx":     int32(e.Ref.InstIdx),
 	}
+	return m
 }
 
 func FillEventToAvro(e *serumhist.FillEvent) map[string]interface{} {
-	return map[string]interface{}{
-		"trader":               e.Fill.Trader,
-		"market":               e.Fill.Market,
+	m := map[string]interface{}{
+		"trader":               e.TradingAccount.String(),
+		"market":               e.Ref.Market.String(),
 		"order_id":             e.Fill.OrderId,
 		"side":                 e.Fill.Side.String(),
 		"maker":                e.Fill.Maker,
@@ -101,19 +102,21 @@ func FillEventToAvro(e *serumhist.FillEvent) map[string]interface{} {
 		"native_qty_received":  int64(e.Fill.NativeQtyReceived),
 		"native_fee_or_rebate": int64(e.Fill.NativeFeeOrRebate),
 		"fee_tier":             e.Fill.FeeTier.String(),
-		"timestamp":            e.Fill.Timestamp,
-		"slot_num":             int64(e.Fill.SlotNum),
-		"slot_hash":            e.Fill.SlotHash,
+		"timestamp":            e.Fill.Timestamp.AsTime(),
+		"slot_num":             int64(e.Ref.SlotNumber),
+		"slot_hash":            e.Ref.SlotHash,
 		"trx_id":               e.Fill.TrxId,
-		"trx_idx":              int32(e.Fill.TrxIdx),
-		"inst_idx":             e.Fill.InstIdx,
-		"order_seq_num":        int64(e.Fill.OrderSeqNum),
+		"trx_idx":              int32(e.Ref.TrxIdx),
+		"inst_idx":             int32(e.Ref.InstIdx),
+		"order_seq_num":        int64(e.Ref.OrderSeqNum),
 	}
+	return m
 }
 
 func TradingAccountToAvro(tradingAccount, trader solana.PublicKey) map[string]interface{} {
-	return map[string]interface{}{
+	m := map[string]interface{}{
 		"account": tradingAccount.String(),
 		"trader":  trader.String(),
 	}
+	return m
 }

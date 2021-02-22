@@ -8,22 +8,30 @@ import (
 	"go.uber.org/zap"
 )
 
-// 3 avro file handlers one per bucket
-// each avro file will have his "start block"
-
 func (bq *BQLoader) processTradingAccount(account, trader solana.PublicKey, slotNum uint64, slotId string) error {
 	zlog.Debug("serum trading account",
 		zap.Stringer("account", account),
 		zap.Stringer("trader", trader),
 	)
-	if err := bq.avroHandlers[tradingAccount].HandleEvent(TradingAccountToAvro(account, trader), slotNum, slotId); err != nil {
+
+	_, found := bq.traderAccountCache.getTrader(trader.String())
+	if found {
+		return nil
+	}
+
+	err := bq.traderAccountCache.setTradingAccount(trader.String(), account.String())
+	if err != nil {
+		return fmt.Errorf("could not write trader to cache: %w", err)
+	}
+
+	if err := bq.eventHandlers[tradingAccount].HandleEvent(TradingAccountToAvro(account, trader), slotNum, slotId); err != nil {
 		return fmt.Errorf("unable to process trading account %w", err)
 	}
 	return nil
 }
 
 func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
-	handler := bq.avroHandlers[newOrder]
+	handler := bq.eventHandlers[newOrder]
 	for _, event := range events {
 		zlog.Debug("serum new order",
 			zap.Stringer("market", event.Market),
@@ -39,7 +47,7 @@ func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
 }
 
 func (bq *BQLoader) processSerumFills(events []*serumhist.FillEvent) error {
-	handler := bq.avroHandlers[fillOrder]
+	handler := bq.eventHandlers[fillOrder]
 	for _, event := range events {
 		zlog.Debug("serum new fill",
 			zap.Stringer("side", event.Fill.Side),

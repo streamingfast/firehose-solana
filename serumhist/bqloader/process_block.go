@@ -5,19 +5,17 @@ import (
 
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/bstream/forkable"
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist"
 )
 
 func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
-	slot := blk.ToNative().(*pbcodec.Slot)
 	forkObj := obj.(*forkable.ForkableObject)
 
 	// this flow will eventually change to process the list of proto meta objects
 	serumSlot := forkObj.Obj.(*serumhist.SerumSlot)
 	for _, ta := range serumSlot.TradingAccountCache {
-		if err := bq.processTradingAccount(ta.TradingAccount, ta.Trader, slot.Number, slot.Id); err != nil {
-			return fmt.Errorf("unable to store trading account %d (%s): %w", slot.Number, slot.Id, err)
+		if err := bq.processTradingAccount(ta.TradingAccount, ta.Trader, blk.Number, blk.Id); err != nil {
+			return fmt.Errorf("unable to store trading account %d (%s): %w", blk.Number, blk.Id, err)
 		}
 	}
 
@@ -29,7 +27,7 @@ func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 		return fmt.Errorf("unable to process serum order fill events: %w", err)
 	}
 
-	for handlerId, handler := range bq.avroHandlers {
+	for handlerId, handler := range bq.eventHandlers {
 		if err := handler.FlushIfNeeded(bq.ctx); err != nil {
 			return fmt.Errorf("error flushing handler %q: %w", handlerId, err)
 		}

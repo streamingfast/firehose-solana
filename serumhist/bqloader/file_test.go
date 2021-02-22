@@ -8,7 +8,7 @@ import (
 
 func TestFileNameString(t *testing.T) {
 	input := NewFileName("testPrefix", 0, 100, "a", "b", "2020-01-01-12345")
-	expected := "testPrefix/0-100-a-b-2020-01-01-12345.avro"
+	expected := "testPrefix/0-100-a-b-2020-01-01-12345"
 
 	assert.Equal(t, expected, input.String())
 
@@ -21,7 +21,7 @@ func TestParseLatestInfoFromFilename(t *testing.T) {
 		LatestSlotId:  "b",
 	}
 
-	output, err := parseLatestInfoFromFilename(input)
+	output, err := parseLatestInfoFromFilePath(input)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, output)
 }
