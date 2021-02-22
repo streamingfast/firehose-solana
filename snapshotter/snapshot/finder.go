@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -62,28 +63,35 @@ func (f *Finder) launch() error {
 		f.Shutdown(err)
 	}
 
-	uniqueSnapshots := map[string]bool{}
+	uniqueSnapshots := map[int64]bool{}
 	for _, o := range object {
 		zlog.Debug("filtering object", zap.String("object", o))
 		if validSnapshot.MatchString(o) {
 			zlog.Debug("found a snapshot", zap.String("object", o))
 			snapshot := snapshotPrefix.FindString(o)
-			uniqueSnapshots[snapshot] = true
+
+			slot, err := strconv.ParseInt(snapshot, 10, 64)
+			if err != nil {
+				f.Shutdown(err)
+			}
+			uniqueSnapshots[slot] = true
 		}
 	}
 
-	var snapshots []string
+	var snapshots []int64
 	for s, _ := range uniqueSnapshots {
 		snapshots = append(snapshots, s)
 	}
-	sort.Strings(snapshots)
+	sort.Slice(snapshots, func(i, j int) bool {
+		return snapshots[i] > snapshots[j]
+	})
 
 	zlog.Info("found snapshot", zap.Int("count", len(snapshots)))
 	if snapshots != nil {
-		sourceSnapshotName := snapshots[len(snapshots)-1]
-		zlog.Info("will process sourceSnapshotName", zap.String("sourceSnapshotName", sourceSnapshotName))
+		sourceSnapshotName := snapshots[0]
+		zlog.Info("will process sourceSnapshotName", zap.Int64("sourceSnapshotName", sourceSnapshotName))
 
-		pcr := NewProcessor(f.sourceBucket, sourceSnapshotName, f.destinationBucket, f.destinationSnapshotsFolder, f.workdir, client)
+		pcr := NewProcessor(f.sourceBucket, fmt.Sprintf("%d", sourceSnapshotName), f.destinationBucket, f.destinationSnapshotsFolder, f.workdir, client)
 		completed, err := pcr.CompletedSnapshot(ctx)
 		if err != nil {
 			return fmt.Errorf("checking is snapshot was completely processed: %w", err)

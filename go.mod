@@ -30,9 +30,10 @@ require (
 	github.com/dfuse-io/shutter v1.4.1
 	github.com/dfuse-io/solana-go v0.2.1-0.20210218235942-214d7803f326
 	github.com/dustin/go-humanize v1.0.0
+	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
+	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
+	github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 // indirect
 	github.com/golang/protobuf v1.4.2
-	github.com/gorilla/handlers v1.5.1 // indirect
-	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
 	github.com/linkedin/goavro/v2 v2.8.5
 	github.com/lorenzosaino/go-sysctl v0.1.1
@@ -40,6 +41,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
+	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
 	github.com/test-go/testify v1.1.4
 	github.com/tidwall/gjson v1.6.7
 	go.uber.org/zap v1.16.0
