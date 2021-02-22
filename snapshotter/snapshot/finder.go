@@ -102,7 +102,7 @@ func (f *Finder) launch() error {
 				f.Shutdown(err)
 			}
 		} else {
-			zlog.Info("skipping snapshot already processed", zap.String("snapshot", sourceSnapshotName))
+			zlog.Info("skipping snapshot already processed", zap.Int64("snapshot", sourceSnapshotName))
 		}
 	}
 

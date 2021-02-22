@@ -1,12 +1,7 @@
 package tools
 
 import (
-	"fmt"
-
-	"github.com/spf13/viper"
-
 	"github.com/spf13/cobra"
-	"github.com/tecbot/gorocksdb"
 )
 
 var rocksCmd = &cobra.Command{Use: "rocks", Short: "Read from rocksdb"}
@@ -21,15 +16,15 @@ func init() {
 
 func rocksGet(cmd *cobra.Command, args []string) (err error) {
 
-	bbto := gorocksdb.NewDefaultBlockBasedTableOptions()
-	bbto.SetBlockCache(gorocksdb.NewLRUCache(3 << 30))
-	opts := gorocksdb.NewDefaultOptions()
-	opts.SetBlockBasedTableFactory(bbto)
-	opts.SetCreateIfMissing(true)
-	db, err := gorocksdb.OpenDb(opts, viper.GetString("dsn"))
-
-	if err != nil {
-		return fmt.Errorf("opening db: %w", err)
-	}
-	return
+	//bbto := gorocksdb.NewDefaultBlockBasedTableOptions()
+	//bbto.SetBlockCache(gorocksdb.NewLRUCache(3 << 30))
+	//opts := gorocksdb.NewDefaultOptions()
+	//opts.SetBlockBasedTableFactory(bbto)
+	//opts.SetCreateIfMissing(true)
+	//db, err := gorocksdb.OpenDb(opts, viper.GetString("dsn"))
+	//
+	//if err != nil {
+	//	return fmt.Errorf("opening db: %w", err)
+	//}
+	return nil
 }
