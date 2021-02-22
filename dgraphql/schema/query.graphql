@@ -4,14 +4,13 @@ type Query {
 
   token(address: String!): TokenEdge!
 
-#  registeredTokens: [RegisteredTokenResponse!]!
-
-#  registeredToken(address: String!): RegisteredTokenResponse
-
   """Return last 100 fills for the given trader, market, or both. Returns irreversible only data so live data not yet part of a slot that is in the root set will not be returned when called."""
   serumFillHistory(trader: String, market: String): SerumFillConnection!
 
   serumMarkets(count: Uint64, cursor: String): SerumMarketConnection!
+
+  """Returns Serum's Market daily data"""
+  serumMarketDailyData(address: String!): SerumMarketDailyData!
 }
 
 """Cursors required to continue either forward or backwards from a list of paginated elements"""
