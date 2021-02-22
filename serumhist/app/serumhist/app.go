@@ -9,6 +9,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 
+	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dfuse-solana/serumhist"
 	bqloader "github.com/dfuse-io/dfuse-solana/serumhist/bqloader"
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
@@ -43,6 +44,9 @@ type Config struct {
 	BigQueryProject         string
 	BigQueryDataset         string
 	BigQueryScratchSpaceDir string
+
+	TokensFileURL string
+	MarketFileURL string
 }
 
 type App struct {
@@ -155,8 +159,34 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
 			return nil, fmt.Errorf("error creating bigquery dstore: %w", err)
 		}
 
-		loader := bqloader.New(ctx, a.Config.BigQueryScratchSpaceDir, a.Config.BigQueryStoreURL, store, dataset, bqClient)
-		loader.PrimeTradeCache(ctx)
+		registryServer := registry.NewServer(nil, a.Config.TokensFileURL, a.Config.MarketFileURL, "")
+		err = registryServer.Launch(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error creating registry server: %w", err)
+		}
+
+		loader := bqloader.New(ctx, a.Config.BigQueryScratchSpaceDir, a.Config.BigQueryStoreURL, store, dataset, bqClient, registryServer)
+
+		err = loader.InitTables()
+		if err != nil {
+			return nil, fmt.Errorf("error initializing tables: %w", err)
+		}
+
+		err = loader.LoadMarkets(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error loading markets from registry server: %w", err)
+		}
+
+		err = loader.LoadTokens(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error loading tokens from registry server: %w", err)
+		}
+
+		err = loader.PrimeTradeCache(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error loading priming trading account cache from bigquery: %w", err)
+		}
+
 		return loader, nil
 	}
 

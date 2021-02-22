@@ -14,7 +14,7 @@ func (bq *BQLoader) processTradingAccount(account, trader solana.PublicKey, slot
 		zap.Stringer("trader", trader),
 	)
 
-	_, found := bq.traderAccountCache.getTrader(trader.String())
+	_, found := bq.traderAccountCache.getTrader(account.String())
 	if found {
 		return nil
 	}
