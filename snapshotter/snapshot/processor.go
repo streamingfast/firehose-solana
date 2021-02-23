@@ -184,6 +184,7 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 
 			// if no more files are found return
 			case err == io.EOF:
+				zlog.Info("got eof")
 				return nil
 
 			// return any other error
@@ -192,7 +193,9 @@ func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) 
 
 			// if the header is nil, just skip it (not sure how this happens)
 			case header == nil:
-				continue
+				//let's consider we are done
+				zlog.Info("stopping on nil header")
+				return nil
 			}
 
 			// the target location where the dir/file should be created
