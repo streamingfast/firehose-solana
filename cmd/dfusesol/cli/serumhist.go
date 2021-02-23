@@ -31,6 +31,8 @@ func init() {
 			cmd.Flags().Bool("serumhist-ignore-checkpoint-on-launch", false, "Will force the serum history injector to start from the start block specified on the CLI")
 			cmd.Flags().Int("serumhist-preprocessor-thread-count", 1, "Will force the serum history injector to start from the start block specified on the CLI")
 			cmd.Flags().Int("serumhist-parallel-download-count", 1, "Number of merge files download in parallel")
+			cmd.Flags().String("serumhist-tokens-file-url", "gs://staging.dfuseio-global.appspot.com/sol-tokens/sol-mainnet-v1.jsonl", "JSONL file containing list of known tokens")
+			cmd.Flags().String("serumhist-markets-file-url", "gs://staging.dfuseio-global.appspot.com/sol-markets/sol-mainnet-v1.jsonl", "JSONL file containing list of known markets")
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
@@ -53,6 +55,8 @@ func init() {
 				BigQueryStoreURL:          viper.GetString("serumhist-bigquery-store-url"),
 				BigQueryDataset:           viper.GetString("serumhist-bigquery-dataset-id"),
 				BigQueryScratchSpaceDir:   mustReplaceDataDir(dfuseDataDir, viper.GetString("serumhist-bigquery-scratch-space-dir")),
+				TokensFileURL:             viper.GetString("serumhist-tokens-file-url"),
+				MarketFileURL:             viper.GetString("serumhist-markets-file-url"),
 			}), nil
 		},
 	})

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dstore"
 )
 
@@ -14,18 +15,23 @@ const (
 	newOrder       = "orders"
 	fillOrder      = "fills"
 	tradingAccount = "traders"
+	markets        = "markets"
+	tokens         = "tokens"
 )
 
 type BQLoader struct {
-	ctx     context.Context
-	dataset *bigquery.Dataset
-	store   dstore.Store
+	ctx context.Context
+
+	client         *bigquery.Client
+	dataset        *bigquery.Dataset
+	store          dstore.Store
+	registryServer *registry.Server
 
 	traderAccountCache *tradingAccountCache
 	eventHandlers      map[string]*eventHandler
 }
 
-func New(ctx context.Context, scratchSpaceDir string, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client) *BQLoader {
+func New(ctx context.Context, scratchSpaceDir string, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client, registry *registry.Server) *BQLoader {
 	eventHandlers := make(map[string]*eventHandler)
 	eventHandlers[newOrder] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, newOrder, CodecNewOrder)
 	eventHandlers[fillOrder] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, fillOrder, CodecOrderFill)
@@ -34,21 +40,23 @@ func New(ctx context.Context, scratchSpaceDir string, storeUrl string, store dst
 	cacheTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tradingAccount)
 	bq := &BQLoader{
 		ctx:                ctx,
+		client:             client,
 		dataset:            dataset,
 		store:              store,
 		eventHandlers:      eventHandlers,
+		registryServer:     registry,
 		traderAccountCache: newTradingAccountCache(cacheTableName, client),
 	}
 
 	return bq
 }
 
-func (bq *BQLoader) PrimeTradeCache(ctx context.Context) {
+func (bq *BQLoader) PrimeTradeCache(ctx context.Context) error {
 	zlog.Info("priming bq trader cache")
-	bq.traderAccountCache.load(ctx)
+	return bq.traderAccountCache.load(ctx)
 }
 
-//shutdown all avro handlers.  collect any errors into a single error value
+//shutdown all handlers.  collect any errors into a single error value
 func (bq *BQLoader) Close() error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

@@ -6,15 +6,16 @@ import (
 	"sync"
 
 	"cloud.google.com/go/bigquery"
-	"go.uber.org/zap"
 	"google.golang.org/api/iterator"
 )
 
 type tradingAccountCache struct {
-	lock     sync.RWMutex
+	lock sync.RWMutex
+
 	table    string
-	bqClient *bigquery.Client
 	accounts map[string]string
+
+	bqClient *bigquery.Client
 }
 
 func newTradingAccountCache(tableName string, client *bigquery.Client) *tradingAccountCache {
@@ -25,18 +26,19 @@ func newTradingAccountCache(tableName string, client *bigquery.Client) *tradingA
 	}
 }
 
-func (t *tradingAccountCache) load(ctx context.Context) {
+func (t *tradingAccountCache) load(ctx context.Context) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
-	q := t.bqClient.Query(fmt.Sprintf("SELECT * FROM `%s`", t.table))
+	queryString := fmt.Sprintf("SELECT * FROM `%s`", t.table)
+	q := t.bqClient.Query(queryString)
 	j, err := q.Run(ctx)
 	if err != nil {
-
+		return fmt.Errorf("could not run query `%s`: %w", queryString, err)
 	}
 	it, err := j.Read(ctx)
 	if err != nil {
-
+		return fmt.Errorf("could not read query results: %w", err)
 	}
 
 	type AccountTraderRow struct {
@@ -48,11 +50,10 @@ func (t *tradingAccountCache) load(ctx context.Context) {
 		var row AccountTraderRow
 		err := it.Next(&row)
 		if err == iterator.Done {
-			return
+			return nil
 		}
 		if err != nil {
-			zlog.Error("could not load trader cache", zap.Error(err))
-			return
+			return fmt.Errorf("could not read account trader row: %w", err)
 		}
 		t.accounts[row.Account] = row.Trader
 	}
@@ -70,10 +71,10 @@ func (t *tradingAccountCache) setTradingAccount(account, trader string) error {
 	return nil
 }
 
-func (t *tradingAccountCache) getTrader(tradingAccount string) (trader string, found bool) {
+func (t *tradingAccountCache) getTrader(account string) (trader string, found bool) {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
-	trader, found = t.accounts[tradingAccount]
+	trader, found = t.accounts[account]
 	return
 }
