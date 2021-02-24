@@ -3,8 +3,8 @@ module github.com/dfuse-io/dfuse-solana
 go 1.14
 
 require (
-	cloud.google.com/go/bigquery v1.7.0
-	cloud.google.com/go/storage v1.8.0
+	cloud.google.com/go/bigquery v1.10.0
+	cloud.google.com/go/storage v1.10.0
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/abourget/llerrgroup v0.2.0
@@ -15,7 +15,7 @@ require (
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
 	github.com/dfuse-io/dgraphql v0.0.2-0.20210128181646-b7f03ff95e0a
 	github.com/dfuse-io/dgrpc v0.0.0-20210128133958-db1ca95920e4
-	github.com/dfuse-io/dlauncher v0.0.0-20201215203933-750a56ede40d
+	github.com/dfuse-io/dlauncher v0.0.0-20210224224510-27373532f11f
 	github.com/dfuse-io/dmetering v0.0.0-20210112023524-c3ddadbc0d6a
 	github.com/dfuse-io/dmetrics v0.0.0-20200508170817-3b8cb01fee68
 	github.com/dfuse-io/dstore v0.1.1-0.20210204225142-e8106bdf280f
@@ -33,7 +33,7 @@ require (
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 // indirect
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
 	github.com/linkedin/goavro/v2 v2.8.5
 	github.com/lorenzosaino/go-sysctl v0.1.1
@@ -46,8 +46,11 @@ require (
 	github.com/test-go/testify v1.1.4
 	github.com/tidwall/gjson v1.6.7
 	go.uber.org/zap v1.16.0
-	google.golang.org/api v0.29.0
-	google.golang.org/grpc v1.29.1
+	google.golang.org/api v0.36.0
+	google.golang.org/grpc v1.34.1
+	gorm.io/driver/bigquery v1.0.16
+	gorm.io/gorm v1.20.13-0.20210223113524-940da051a756
+	gotest.tools v2.2.0+incompatible
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807

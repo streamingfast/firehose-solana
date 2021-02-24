@@ -27,6 +27,7 @@ func TestQuerySerumMarketDailyData(t *testing.T) {
 	tests := []struct {
 		name        string
 		state       *preState
+		volume      float64
 		in          *SerumMarketDailyDataRequest
 		expected    *SerumMarket
 		expectedErr error
@@ -34,6 +35,7 @@ func TestQuerySerumMarketDailyData(t *testing.T) {
 		{
 			"found with daily volume",
 			&preState{markets: markets, tokens: tokens},
+			1456666.01,
 			&SerumMarketDailyDataRequest{Address: "Gw78CYLLFbgmmn4rps9KoPAnNtBQ2S1foL2Mn6Z5ZHYB"},
 			toSerumMarket(markets[0], tokens, func(m *SerumMarket) {
 				m.dailyVolumeUSD = []DailyVolume{{date: tTime(t, "2021-02-22T00:00:00Z"), value: 1456666.01}}
@@ -43,6 +45,7 @@ func TestQuerySerumMarketDailyData(t *testing.T) {
 		{
 			"not found market",
 			&preState{markets: markets, tokens: tokens},
+			0,
 			&SerumMarketDailyDataRequest{Address: "Gf78CYLLFbgmmn4rps9KoPAnNtBQ2S1foL2Mn6Z5ZHYB"},
 			nil,
 			nil,
@@ -55,8 +58,9 @@ func TestQuerySerumMarketDailyData(t *testing.T) {
 				return tTime(t, "2021-02-22T00:00:00Z")
 			}
 			root := &Root{
-				marketGetter: newMarketGetter(test.state.markets),
-				tokenGetter:  newTokenGetter(test.state.tokens),
+				marketGetter:      newMarketGetter(test.state.markets),
+				tokenGetter:       newTokenGetter(test.state.tokens),
+				serumhistAnalytic: &serumTestAnalyzable{test.volume},
 			}
 
 			actual, err := root.QuerySerumMarketDailyData(test.in)

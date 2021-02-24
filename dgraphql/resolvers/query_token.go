@@ -25,7 +25,7 @@ func (r *Root) QueryTokens(request *TokensRequest) (*TokenConnection, error) {
 		return nil, gqlerrors.Errorf("invalid arguments: %s", err)
 	}
 
-	allTokens := r.registryServer.GetTokens()
+	allTokens := r.tokensGetter()
 	if len(allTokens) <= 0 {
 		return &TokenConnection{Edges: nil, PageInfo: emptyPageInfo, TotalCount: 0}, nil
 	}
@@ -87,7 +87,7 @@ func (r *Root) QueryToken(req *TokenRequest) (*TokenEdge, error) {
 		return nil, err
 	}
 
-	t := r.registryServer.GetToken(&pubKey)
+	t := r.tokenGetter(&pubKey)
 	if t == nil {
 		return nil, nil
 	}

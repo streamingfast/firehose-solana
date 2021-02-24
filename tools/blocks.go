@@ -134,6 +134,7 @@ func readBlock(block *bstream.Block, outputDot bool) error {
 		if slot.Number != slot.Block.Number {
 			virt = " (V)"
 		}
+
 		fmt.Printf(
 			"  S%s [label=\"%s..%s\\n#%d%s t=%d lib=%d\"];\n  S%s -> S%s;\n",
 			slot.Id[:8],

@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/dfuse-io/solana-go"
@@ -26,13 +27,18 @@ func (r *Root) QuerySerumMarketDailyData(in *SerumMarketDailyDataRequest) (*Seru
 		return nil, nil
 	}
 
+	total, err := r.serumhistAnalytic.Get24hVolume()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieved market volume data: %w", err)
+	}
+
 	return &SerumMarket{
 		Address:    market.Address.String(),
 		market:     market,
 		baseToken:  r.tokenGetter(&market.BaseToken),
 		quoteToken: r.tokenGetter(&market.QuoteToken),
 
-		dailyVolumeUSD: []DailyVolume{{date: today(), value: 1456666.01}},
+		dailyVolumeUSD: []DailyVolume{{date: today(), value: total}},
 	}, nil
 }
 
