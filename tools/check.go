@@ -32,10 +32,17 @@ var checkMergedBlocksCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE:  checkMergedBlocksE,
 }
+var checkOneBlocksCmd = &cobra.Command{
+	Use:   "one-blocks {store-url}",
+	Short: "Checks for any holes in one blocks as well as ensuring merged blocks integrity",
+	Args:  cobra.ExactArgs(1),
+	RunE:  checkOneBlocksE,
+}
 
 func init() {
 	Cmd.AddCommand(checkCmd)
 	checkCmd.AddCommand(checkMergedBlocksCmd)
+	checkCmd.AddCommand(checkOneBlocksCmd)
 
 	checkCmd.PersistentFlags().StringP("range", "r", "", "Block range to use for the check, format is of the form '<start>:<stop>' (i.e. '-r 1000:2000')")
 
@@ -135,6 +142,110 @@ func checkMergedBlocksE(cmd *cobra.Command, args []string) error {
 	}
 
 	actualEndBlock := roundToBundleEndBlock(baseNum32, fileBlockSize)
+	if !blockRange.Unbounded() {
+		actualEndBlock = uint32(blockRange.Stop)
+	}
+
+	fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, actualEndBlock)
+
+	if len(seenFilters) > 0 {
+		fmt.Println()
+		fmt.Println("Seen filters")
+		for _, filters := range seenFilters {
+			fmt.Printf("- [Include %q, Exclude %q, System %q]\n", filters.Include, filters.Exclude, filters.System)
+		}
+		fmt.Println()
+	}
+
+	if holeFound {
+		fmt.Printf("🆘 Holes found!\n")
+	} else {
+		fmt.Printf("🆗 No hole found\n")
+	}
+
+	return nil
+}
+
+func checkOneBlocksE(cmd *cobra.Command, args []string) error {
+	storeURL := args[0]
+
+	fmt.Printf("Checking for block holes on %s\n", storeURL)
+
+	number := regexp.MustCompile(`(\d{10})`)
+
+	var expected uint32
+	var count int
+	var baseNum32 uint32
+	var prevSlotNum uint32
+	holeFound := false
+
+	blockRange, err := getBlockRangeFromFlag()
+	if err != nil {
+		return err
+	}
+
+	expected = uint32(blockRange.Start)
+	currentStartBlk := uint32(blockRange.Start)
+	seenFilters := map[string]FilteringFilters{}
+
+	blocksStore, err := dstore.NewDBinStore(storeURL)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	walkPrefix := walkBlockPrefix(blockRange, 1)
+
+	zlog.Debug("walking one blocks", zap.Stringer("block_range", blockRange), zap.String("walk_prefix", walkPrefix))
+	err = blocksStore.Walk(ctx, walkPrefix, ".tmp", func(filename string) error {
+		match := number.FindStringSubmatch(filename)
+		if match == nil {
+			return nil
+		}
+
+		count++
+		baseNum, _ := strconv.ParseUint(match[1], 10, 32)
+		baseNum32 = uint32(baseNum)
+
+		zlog.Debug("received one blocks", zap.String("filename", filename), zap.Uint32("prev", prevSlotNum), zap.Uint64("base_num", baseNum), zap.Uint32("expected", expected), zap.Int64("diff", int64(baseNum32)-int64(expected)))
+		if baseNum+uint64(1) < blockRange.Start {
+			zlog.Debug("base num lower then block range start, quitting")
+			return nil
+		}
+
+		if int64(baseNum32)-int64(expected) > 0 {
+			// There is no previous valid block range if we are the ever first seen file
+			if count > 1 {
+				fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, expected-1)
+			}
+
+			fmt.Printf("❌ Missing blocks range %d - %d!\n", expected, baseNum32-1)
+			currentStartBlk = baseNum32
+
+			holeFound = true
+		}
+		if baseNum32 != prevSlotNum { //dont increment expected if when seeing duplicated slot
+			expected = baseNum32 + 1
+		}
+
+		prevSlotNum = baseNum32
+
+		if count%10000 == 0 {
+			fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, baseNum32)
+			currentStartBlk = baseNum32 + 1
+		}
+
+		if !blockRange.Unbounded() && baseNum32 >= uint32(blockRange.Stop-1) {
+			return errStopWalk
+		}
+
+		return nil
+	})
+	if err != nil && err != errStopWalk {
+		return err
+	}
+
+	actualEndBlock := baseNum32
 	if !blockRange.Unbounded() {
 		actualEndBlock = uint32(blockRange.Stop)
 	}
