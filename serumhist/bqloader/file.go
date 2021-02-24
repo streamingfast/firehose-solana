@@ -16,6 +16,9 @@ type FileName struct {
 }
 
 func NewFileName(prefix string, startSlotNum uint64, latestSlotNum uint64, startSlotId, latestSlotId string, formattedTimeStamp string) *FileName {
+	startSlotId = firstEightCharacters(startSlotId)
+	latestSlotId = firstEightCharacters(latestSlotId)
+
 	return &FileName{
 		Prefix:             prefix,
 		StartSlotNum:       startSlotNum,
@@ -35,6 +38,13 @@ func (f *FileName) String() string {
 		f.LatestSlotId,
 		f.FormattedTimestamp,
 	)
+}
+
+func firstEightCharacters(s string) string {
+	if len(s) <= 8 {
+		return s
+	}
+	return s[:8]
 }
 
 func parseLatestInfoFromFilePath(filepath string) (*FileName, error) {

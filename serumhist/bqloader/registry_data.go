@@ -20,14 +20,14 @@ func (bq *BQLoader) LoadMarkets(ctx context.Context) error {
 		return nil
 	}
 
-	if err := bq.truncateTable(ctx, fmt.Sprintf("%s.serum.%s", bq.dataset.ProjectID, markets)); err != nil {
+	if err := bq.truncateTable(ctx, fmt.Sprintf("%s.serum.%s", bq.dataset.ProjectID, tableMarkets)); err != nil {
 		if isStreamingBufferError(err) {
 			return nil
 		}
 		return err
 	}
 
-	return bq.dataset.Table(markets).Inserter().Put(ctx, marketRows)
+	return bq.dataset.Table(tableMarkets).Inserter().Put(ctx, marketRows)
 }
 
 type marketRow struct {
@@ -68,14 +68,14 @@ func (bq *BQLoader) LoadTokens(ctx context.Context) error {
 		return nil
 	}
 
-	if err := bq.truncateTable(ctx, fmt.Sprintf("%s.serum.%s", bq.dataset.ProjectID, tokens)); err != nil {
+	if err := bq.truncateTable(ctx, fmt.Sprintf("%s.serum.%s", bq.dataset.ProjectID, tableTokens)); err != nil {
 		if isStreamingBufferError(err) {
 			return nil
 		}
 		return err
 	}
 
-	return bq.dataset.Table(tokens).Inserter().Put(ctx, tokenRows)
+	return bq.dataset.Table(tableTokens).Inserter().Put(ctx, tokenRows)
 }
 
 type tokenRow struct {

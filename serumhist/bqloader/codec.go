@@ -4,13 +4,14 @@ import (
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
+	"github.com/dfuse-io/dfuse-solana/serumhist/bqloader/schemas"
 	"github.com/linkedin/goavro/v2"
 )
 
 var (
-	codecNewOrder      *goavro.Codec
-	CodecOrderFill     *goavro.Codec
-	CodecTraderAccount *goavro.Codec
+	codecOrders    *goavro.Codec
+	codecOrderFill *goavro.Codec
+	codecTraders   *goavro.Codec
 )
 
 type Encoder interface {
@@ -20,62 +21,31 @@ type Encoder interface {
 
 func init() {
 	var err error
-	codecNewOrder, err = goavro.NewCodec(`{
-		"namespace": "io.dfuse",
-		"type": "record",
-		"name": "OrderFill",
-		"fields": [
-			{"name": "num", "type": "long"},
-			{"name": "market", "type": "string"},
-			{"name": "trader", "type": "string"},
-			{"name": "side", "type": "string"},
-			{"name": "limit_price", "type": "long"},
-			{"name": "max_quantity", "type": "long"},
-			{"name": "type", "type": "string"},
-			{"name": "slot_num", "type": "long"},
-			{"name": "slot_hash", "type": "string"},
-			{"name": "trx_id", "type": "string"},
-			{"name": "trx_idx", "type": "int"},
-			{"name": "inst_idx", "type": "int"}
-		]
-	}`)
+	ordersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableOrders, "v1")
 	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecNewOrder: %s", err.Error()))
+		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
 	}
-	CodecOrderFill, err = goavro.NewCodec(`{
-		"namespace": "io.dfuse",
-		"type": "record",
-		"name": "OrderFill",
-		"fields": [
-			{"name": "trader", "type": "string"},
-			{"name": "market", "type": "string"},
-			{"name": "order_id", "type": "string"},
-			{"name": "side", "type": "string"},
-			{"name": "maker", "type": "boolean"},
-			{"name": "native_qty_paid", "type": "long"},
-			{"name": "native_qty_received", "type": "long"},
-			{"name": "native_fee_or_rebate", "type": "long"},
-			{"name": "fee_tier", "type": "string"},
-			{"name": "timestamp", "type": {"type": "long", "logicalType" : "timestamp-millis"}},
-			{"name": "slot_num", "type": "long"},
-			{"name": "slot_hash", "type": "string"},
-			{"name": "trx_id", "type": "string"},
-			{"name": "trx_idx", "type": "int"},
-			{"name": "inst_idx", "type": "int"},
-			{"name": "order_seq_num", "type": "long"}
-		]
-	}`)
+	codecOrders, err = goavro.NewCodec(ordersSchemaSpecification)
 	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for CodecOrderFilled: %s", err.Error()))
+		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
 	}
-	CodecTraderAccount, err = goavro.NewCodec(`{
-		"namespace": "io.dfuse",
-		"type": "record",
-		"name": "TraderAccount",
-		"fields": [{"name": "account", "type": "string"},{"name": "trader", "type": "string"},{"name": "slot_num", "type": "long"}]
-	}`)
+
+	fillsSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableFills, "v1")
 	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for CodecTraderAccount: %s", err.Error()))
+		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
+	}
+	codecOrderFill, err = goavro.NewCodec(fillsSchemaSpecification)
+	if err != nil {
+		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
+	}
+
+	tradersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableTraders, "v1")
+	if err != nil {
+		panic(fmt.Sprintf("unable to parse AVRO schema for codecTraders: %s", err.Error()))
+	}
+	codecTraders, err = goavro.NewCodec(tradersSchemaSpecification)
+	if err != nil {
+		panic(fmt.Sprintf("unable to parse AVRO schema for codecTraders: %s", err.Error()))
 	}
 }
 
@@ -98,7 +68,7 @@ type newOrderEncoder struct {
 }
 
 func (e *newOrderEncoder) Codec() *goavro.Codec {
-	return codecNewOrder
+	return codecOrders
 }
 
 func (e *newOrderEncoder) Encode() map[string]interface{} {
@@ -124,7 +94,7 @@ type orderFillEncoder struct {
 }
 
 func (e *orderFillEncoder) Codec() *goavro.Codec {
-	return CodecOrderFill
+	return codecOrderFill
 }
 
 func (e *orderFillEncoder) Encode() map[string]interface{} {
@@ -154,7 +124,7 @@ type tradingAccountEncoder struct {
 }
 
 func (e *tradingAccountEncoder) Codec() *goavro.Codec {
-	return CodecTraderAccount
+	return codecTraders
 }
 
 func (e *tradingAccountEncoder) Encode() map[string]interface{} {

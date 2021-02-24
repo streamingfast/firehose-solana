@@ -1,0 +1,7 @@
+{
+  "fields": [
+    {"name": "table", "type": "string"},
+    {"name": "file", "type": "string"},
+    {"name": "timestamp", "type": "timestamp"}
+  ]
+}

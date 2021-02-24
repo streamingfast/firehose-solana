@@ -29,14 +29,14 @@ func (bq *BQLoader) processTradingAccount(account, trader solana.PublicKey, slot
 		Account:    account,
 		SlotNumber: slotNum,
 	}
-	if err := bq.eventHandlers[tradingAccount].HandleEvent(AsEncoder(event), slotNum, slotId); err != nil {
+	if err := bq.eventHandlers[tableTraders].HandleEvent(AsEncoder(event), slotNum, slotId); err != nil {
 		return fmt.Errorf("unable to process trading account %w", err)
 	}
 	return nil
 }
 
 func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
-	handler := bq.eventHandlers[newOrder]
+	handler := bq.eventHandlers[tableOrders]
 	for _, event := range events {
 		zlog.Debug("serum new order",
 			zap.Stringer("market", event.Market),
@@ -52,7 +52,7 @@ func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
 }
 
 func (bq *BQLoader) processSerumFills(events []*serumhist.FillEvent) error {
-	handler := bq.eventHandlers[fillOrder]
+	handler := bq.eventHandlers[tableFills]
 	for _, event := range events {
 		zlog.Debug("serum new fill",
 			zap.Stringer("side", event.Fill.Side),

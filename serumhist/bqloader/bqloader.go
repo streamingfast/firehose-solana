@@ -12,16 +12,6 @@ import (
 	"github.com/dfuse-io/dstore"
 )
 
-const (
-	newOrder       = "orders"
-	fillOrder      = "fills"
-	tradingAccount = "traders"
-	markets        = "markets"
-	tokens         = "tokens"
-
-	processedFiles = "processedFiles"
-)
-
 type BQLoader struct {
 	ctx context.Context
 
@@ -40,8 +30,8 @@ type BQLoader struct {
 }
 
 func New(ctx context.Context, startBlock uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client, registry *registry.Server) *BQLoader {
-	cacheTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tradingAccount)
-	checkpointsTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, processedFiles)
+	cacheTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tableTraders)
+	checkpointsTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tableProcessedFiles)
 	bq := &BQLoader{
 		ctx:                ctx,
 		client:             client,
@@ -68,21 +58,21 @@ func (bq *BQLoader) InitHandlers(ctx context.Context, scratchSpaceDir string) er
 	}
 
 	var newOrderStartBlock, orderFillStartBlock, tradingAccountStartBlock = bq.startBlock, bq.startBlock, bq.startBlock // default to configured start block
-	if cp, ok := bq.checkpoints[newOrder]; ok && cp != nil {
+	if cp, ok := bq.checkpoints[tableOrders]; ok && cp != nil {
 		newOrderStartBlock = cp.LastWrittenSlotNum
 	}
 
-	if cp, ok := bq.checkpoints[fillOrder]; ok && cp != nil {
+	if cp, ok := bq.checkpoints[tableFills]; ok && cp != nil {
 		orderFillStartBlock = cp.LastWrittenSlotNum
 	}
 
-	if cp, ok := bq.checkpoints[tradingAccount]; ok && cp != nil {
+	if cp, ok := bq.checkpoints[tableTraders]; ok && cp != nil {
 		tradingAccountStartBlock = cp.LastWrittenSlotNum
 	}
 
-	bq.eventHandlers[newOrder] = NewEventHandler(newOrderStartBlock, bq.storeUrl, bq.store, newOrder, bq.loader, path.Join(scratchSpaceDir, newOrder))
-	bq.eventHandlers[fillOrder] = NewEventHandler(orderFillStartBlock, bq.storeUrl, bq.store, fillOrder, bq.loader, path.Join(scratchSpaceDir, fillOrder))
-	bq.eventHandlers[tradingAccount] = NewEventHandler(tradingAccountStartBlock, bq.storeUrl, bq.store, tradingAccount, bq.loader, path.Join(scratchSpaceDir, tradingAccount))
+	bq.eventHandlers[tableOrders] = NewEventHandler(newOrderStartBlock, bq.storeUrl, bq.store, tableOrders, bq.loader, path.Join(scratchSpaceDir, tableOrders))
+	bq.eventHandlers[tableFills] = NewEventHandler(orderFillStartBlock, bq.storeUrl, bq.store, tableFills, bq.loader, path.Join(scratchSpaceDir, tableFills))
+	bq.eventHandlers[tableTraders] = NewEventHandler(tradingAccountStartBlock, bq.storeUrl, bq.store, tableTraders, bq.loader, path.Join(scratchSpaceDir, tableTraders))
 
 	bq.loader.Run(ctx)
 

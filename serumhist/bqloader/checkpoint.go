@@ -10,7 +10,7 @@ import (
 )
 
 func (bq *BQLoader) setCheckpoints(ctx context.Context) error {
-	for _, table := range []string{newOrder, fillOrder, tradingAccount} {
+	for _, table := range []string{tableOrders, tableFills, tableTraders} {
 		tableCheckpoint, err := bq.loader.ReadCheckpoint(ctx, table)
 		if err != nil {
 			return err
@@ -29,7 +29,7 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 	}
 
 	var earliestCheckpoint *pbserumhist.Checkpoint
-	for _, table := range []string{newOrder, fillOrder, tradingAccount} {
+	for _, table := range []string{tableOrders, tableFills, tableTraders} {
 		tableCheckpoint, ok := bq.checkpoints[table]
 		if !ok {
 			continue

@@ -4,10 +4,19 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/dfuse-io/dfuse-solana/serumhist/bqloader/schemas"
 	"google.golang.org/api/googleapi"
 )
 
-//TODO: define table partitions
+const (
+	tableOrders  = "orders"
+	tableFills   = "fills"
+	tableTraders = "traders"
+	tableMarkets = "markets"
+	tableTokens  = "tokens"
+
+	tableProcessedFiles = "processed_files"
+)
 
 func (bq *BQLoader) InitTables() (err error) {
 	err = bq.initNewOrdersTable()
@@ -20,7 +29,7 @@ func (bq *BQLoader) InitTables() (err error) {
 		return
 	}
 
-	err = bq.initTradingAccountTable()
+	err = bq.initTradersTable()
 	if err != nil {
 		return
 	}
@@ -71,7 +80,12 @@ func (bq *BQLoader) initTable(name string, schema *bigquery.Schema, rangePartiti
 }
 
 func (bq *BQLoader) initNewOrdersTable() error {
-	return bq.initTable(newOrder, nil, nil, nil)
+	schema, err := schemas.GetTableSchema(tableOrders, "v1")
+	if err != nil {
+		return err
+	}
+
+	return bq.initTable(tableOrders, schema, nil, nil)
 }
 
 func (bq *BQLoader) initOrderFillsTable() error {
@@ -79,58 +93,44 @@ func (bq *BQLoader) initOrderFillsTable() error {
 		Type:  bigquery.DayPartitioningType,
 		Field: "timestamp",
 	}
-	return bq.initTable(fillOrder, nil, nil, timePartition)
+
+	schema, err := schemas.GetTableSchema(tableFills, "v1")
+	if err != nil {
+		return err
+	}
+	return bq.initTable(tableFills, schema, nil, timePartition)
 }
 
-func (bq *BQLoader) initTradingAccountTable() error {
-	schema := bigquery.Schema{
-		&bigquery.FieldSchema{Name: "account", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "trader", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "slot_num", Type: bigquery.IntegerFieldType},
+func (bq *BQLoader) initTradersTable() error {
+	schema, err := schemas.GetTableSchema(tableTraders, "v1")
+	if err != nil {
+		return err
 	}
-	return bq.initTable(tradingAccount, &schema, nil, nil)
+	return bq.initTable(tableTraders, schema, nil, nil)
 }
 
 func (bq *BQLoader) initProcessedFilesTable() error {
-	schema := bigquery.Schema{
-		&bigquery.FieldSchema{Name: "table", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "file", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "timestamp", Type: bigquery.TimestampFieldType},
+	schema, err := schemas.GetTableSchema(tableProcessedFiles, "v1")
+	if err != nil {
+		return err
 	}
-	return bq.initTable(processedFiles, &schema, nil, nil)
+	return bq.initTable(tableProcessedFiles, schema, nil, nil)
 }
 
 func (bq *BQLoader) initMarketsTable() error {
-	schema := bigquery.Schema{
-		&bigquery.FieldSchema{Name: "name", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "address", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "deprecated", Type: bigquery.BooleanFieldType},
-		&bigquery.FieldSchema{Name: "program_id", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "base_token", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "quote_token", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "base_lot_size", Type: bigquery.IntegerFieldType},
-		&bigquery.FieldSchema{Name: "quote_lot_size", Type: bigquery.IntegerFieldType},
-		&bigquery.FieldSchema{Name: "request_queue", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "event_queue", Type: bigquery.StringFieldType},
+	schema, err := schemas.GetTableSchema(tableMarkets, "v1")
+	if err != nil {
+		return err
 	}
-	return bq.initTable(markets, &schema, nil, nil)
+	return bq.initTable(tableMarkets, schema, nil, nil)
 }
 
 func (bq *BQLoader) initTokensTable() error {
-	schema := bigquery.Schema{
-		&bigquery.FieldSchema{Name: "name", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "symbol", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "address", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "mint_authority_option", Type: bigquery.IntegerFieldType},
-		&bigquery.FieldSchema{Name: "mint_authority", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "supply", Type: bigquery.IntegerFieldType},
-		&bigquery.FieldSchema{Name: "decimals", Type: bigquery.IntegerFieldType},
-		&bigquery.FieldSchema{Name: "is_initialized", Type: bigquery.BooleanFieldType},
-		&bigquery.FieldSchema{Name: "freeze_authority_option", Type: bigquery.IntegerFieldType},
-		&bigquery.FieldSchema{Name: "freeze_authority", Type: bigquery.StringFieldType},
-		&bigquery.FieldSchema{Name: "verified", Type: bigquery.BooleanFieldType},
+	schema, err := schemas.GetTableSchema(tableTokens, "v1")
+	if err != nil {
+		return err
 	}
-	return bq.initTable(tokens, &schema, nil, nil)
+	return bq.initTable(tableTokens, schema, nil, nil)
 }
 
 func isErrorNotExist(err error) bool {

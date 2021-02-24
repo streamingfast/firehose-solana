@@ -30,7 +30,6 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 		}
 
 		if transaction.Failed {
-			zlog.Debug("skipping failed transaction")
 			continue
 		}
 		for instIdx, instruction := range transaction.Instructions {

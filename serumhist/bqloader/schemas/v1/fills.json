@@ -1,0 +1,20 @@
+{
+  "fields": [
+    {"name": "trader", "type": "string"},
+    {"name": "market", "type": "string"},
+    {"name": "order_id", "type": "string"},
+    {"name": "side", "type": "string"},
+    {"name": "maker", "type": "bool"},
+    {"name": "native_qty_paid", "type": "int64"},
+    {"name": "native_qty_received", "type": "int64"},
+    {"name": "native_fee_or_rebate", "type": "int64"},
+    {"name": "fee_tier", "type": "string"},
+    {"name": "timestamp", "type": "timestamp"},
+    {"name": "slot_num", "type": "int64"},
+    {"name": "slot_hash", "type": "string"},
+    {"name": "trx_id", "type": "string"},
+    {"name": "trx_idx", "type": "int"},
+    {"name": "inst_idx", "type": "int"},
+    {"name": "order_seq_num", "type": "int64"}
+  ]
+}
