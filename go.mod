@@ -38,6 +38,7 @@ require (
 	github.com/linkedin/goavro/v2 v2.8.5
 	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/mholt/archiver/v3 v3.5.0
+	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1

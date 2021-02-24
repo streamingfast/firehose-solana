@@ -326,9 +326,10 @@ func Test_readSlotBound(t *testing.T) {
 			},
 			line: "SLOT_BOUND 55295940 5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
 			expectSlot: &pbcodec.Slot{
-				Id:               "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
+				Id:               "AptC9YKiG8PVhMMAM1Lx9c2bTDRNCXxgvXvrLovTRusM",
 				Number:           55295940,
 				PreviousId:       "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+				LastEntryHash:    "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
 				Version:          1,
 				TransactionCount: 0,
 			},

@@ -16,6 +16,8 @@ package codec
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -24,6 +26,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/mr-tron/base58"
 
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/golang/protobuf/proto"
@@ -354,12 +358,25 @@ func (b *bank) registerSlot(slotNum uint64, slotID string) {
 	b.slots = append(b.slots, s)
 }
 
-func (b *bank) createSlot(slotNum uint64, slotID string) *pbcodec.Slot {
+func (b *bank) createSlot(slotNum uint64, chainSlotID string) *pbcodec.Slot {
+	slotID := chainSlotID
+
+	if slotNum != b.blk.Number {
+		blkNumBytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(blkNumBytes, b.blk.Number)
+
+		h := sha256.New()
+		h.Write([]byte(slotID))
+
+		slotID = base58.Encode(h.Sum(blkNumBytes))[:44]
+	}
+
 	s := &pbcodec.Slot{
-		Id:         slotID,
-		Number:     slotNum,
-		PreviousId: b.previousSlotID,
-		Version:    1,
+		Id:            slotID,
+		Number:        slotNum,
+		PreviousId:    b.previousSlotID,
+		LastEntryHash: chainSlotID,
+		Version:       1,
 	}
 
 	b.previousSlotID = slotID
