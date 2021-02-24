@@ -7,6 +7,8 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+//TODO: define table partitions
+
 func (bq *BQLoader) InitTables() (err error) {
 	err = bq.initNewOrdersTable()
 	if err != nil {
@@ -69,21 +71,24 @@ func (bq *BQLoader) initTable(name string, schema *bigquery.Schema, rangePartiti
 }
 
 func (bq *BQLoader) initNewOrdersTable() error {
-	return bq.initTable(newOrder, nil, &bigquery.RangePartitioning{
-		Field: "slot_num,",
-	}, nil)
+	return bq.initTable(newOrder, nil, nil, nil)
 }
 
 func (bq *BQLoader) initOrderFillsTable() error {
-	return bq.initTable(fillOrder, nil, &bigquery.RangePartitioning{
-		Field: "slot_num,",
-	}, nil)
+	timePartition := &bigquery.TimePartitioning{
+		Type:  bigquery.DayPartitioningType,
+		Field: "timestamp",
+	}
+	return bq.initTable(fillOrder, nil, nil, timePartition)
 }
 
 func (bq *BQLoader) initTradingAccountTable() error {
-	return bq.initTable(tradingAccount, nil, &bigquery.RangePartitioning{
-		Field: "slot_num,",
-	}, nil)
+	schema := bigquery.Schema{
+		&bigquery.FieldSchema{Name: "account", Type: bigquery.StringFieldType},
+		&bigquery.FieldSchema{Name: "trader", Type: bigquery.StringFieldType},
+		&bigquery.FieldSchema{Name: "slot_num", Type: bigquery.IntegerFieldType},
+	}
+	return bq.initTable(tradingAccount, &schema, nil, nil)
 }
 
 func (bq *BQLoader) initProcessedFilesTable() error {
@@ -92,9 +97,7 @@ func (bq *BQLoader) initProcessedFilesTable() error {
 		&bigquery.FieldSchema{Name: "file", Type: bigquery.StringFieldType},
 		&bigquery.FieldSchema{Name: "timestamp", Type: bigquery.TimestampFieldType},
 	}
-	return bq.initTable(processedFiles, &schema, nil, &bigquery.TimePartitioning{
-		Field: "timestamp",
-	})
+	return bq.initTable(processedFiles, &schema, nil, nil)
 }
 
 func (bq *BQLoader) initMarketsTable() error {

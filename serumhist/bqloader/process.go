@@ -25,8 +25,9 @@ func (bq *BQLoader) processTradingAccount(account, trader solana.PublicKey, slot
 	}
 
 	event := &serumhist.TradingAccount{
-		Trader:  trader,
-		Account: account,
+		Trader:     trader,
+		Account:    account,
+		SlotNumber: slotNum,
 	}
 	if err := bq.eventHandlers[tradingAccount].HandleEvent(AsEncoder(event), slotNum, slotId); err != nil {
 		return fmt.Errorf("unable to process trading account %w", err)

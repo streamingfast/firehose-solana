@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/dfuse-io/derr"
 	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/shutter"
@@ -42,7 +44,8 @@ type EventHandler struct {
 }
 
 func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, prefix string, bqloader *BigQueryLoader, scratchSpaceDir string) *EventHandler {
-	return &EventHandler{
+	h := &EventHandler{
+		Shutter:       shutter.New(),
 		startBlockNum: startBlockNum,
 		store:         store,
 		storeUrl:      storeUrl,
@@ -50,6 +53,19 @@ func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, 
 		prefix:        prefix,
 		bufferFileDir: scratchSpaceDir,
 	}
+
+	h.OnTerminating(func(err error) {
+		h.lock.Lock()
+		defer h.lock.Unlock()
+
+		if h.bufferedWriter != nil || h.bufferFile != nil {
+			_ = os.Remove(h.bufferFileName)
+		}
+		h.bufferFile = nil
+		h.bufferedWriter = nil
+	})
+
+	return h
 }
 
 func (h *EventHandler) HandleEvent(event Encoder, slotNum uint64, slotId string) error {
@@ -106,6 +122,7 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 		uri := strings.Join([]string{h.storeUrl, fmt.Sprintf("%s.avro", destPath)}, "/")
 		h.bqloader.SubmitJob(ctx, table, uri)
 
+		zlog.Debug("flushed file to store", zap.String("local_file", h.bufferFileName), zap.String("store_file", uri))
 		return nil
 	}
 

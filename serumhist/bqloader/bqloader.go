@@ -76,8 +76,8 @@ func (bq *BQLoader) InitHandlers(ctx context.Context, scratchSpaceDir string) er
 		orderFillStartBlock = cp.LastWrittenSlotNum
 	}
 
-	if cp, ok := bq.checkpoints[newOrder]; ok && cp != nil {
-		newOrderStartBlock = cp.LastWrittenSlotNum
+	if cp, ok := bq.checkpoints[tradingAccount]; ok && cp != nil {
+		tradingAccountStartBlock = cp.LastWrittenSlotNum
 	}
 
 	bq.eventHandlers[newOrder] = NewEventHandler(newOrderStartBlock, bq.storeUrl, bq.store, newOrder, bq.loader, path.Join(scratchSpaceDir, newOrder))
@@ -95,5 +95,10 @@ func (bq *BQLoader) PrimeTradeCache(ctx context.Context) error {
 }
 
 func (bq *BQLoader) Close() error {
+	for _, h := range bq.eventHandlers {
+		h.Shutdown(nil)
+	}
+
+	bq.loader.Shutdown(nil)
 	return nil
 }

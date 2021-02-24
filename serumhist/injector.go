@@ -20,6 +20,7 @@ import (
 type Handler interface {
 	bstream.Handler
 	GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error)
+	Healthy() bool
 	Close() error
 }
 

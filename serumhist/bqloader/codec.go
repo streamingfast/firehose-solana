@@ -72,7 +72,7 @@ func init() {
 		"namespace": "io.dfuse",
 		"type": "record",
 		"name": "TraderAccount",
-		"fields": [{"name": "account", "type": "string"},{"name": "trader", "type": "string"}]
+		"fields": [{"name": "account", "type": "string"},{"name": "trader", "type": "string"},{"name": "slot_num", "type": "long"}]
 	}`)
 	if err != nil {
 		panic(fmt.Sprintf("unable to parse AVRO schema for CodecTraderAccount: %s", err.Error()))
@@ -159,8 +159,9 @@ func (e *tradingAccountEncoder) Codec() *goavro.Codec {
 
 func (e *tradingAccountEncoder) Encode() map[string]interface{} {
 	m := map[string]interface{}{
-		"account": e.Account.String(),
-		"trader":  e.Trader.String(),
+		"account":  e.Account.String(),
+		"trader":   e.Trader.String(),
+		"slot_num": int64(e.SlotNumber),
 	}
 	return m
 }

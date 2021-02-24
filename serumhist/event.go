@@ -46,6 +46,7 @@ type OrderCancelled struct {
 }
 
 type TradingAccount struct {
-	Trader  solana.PublicKey
-	Account solana.PublicKey
+	Trader     solana.PublicKey
+	Account    solana.PublicKey
+	SlotNumber uint64
 }

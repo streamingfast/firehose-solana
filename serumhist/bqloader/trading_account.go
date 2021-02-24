@@ -30,7 +30,7 @@ func (t *tradingAccountCache) load(ctx context.Context) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
-	queryString := fmt.Sprintf("SELECT * FROM `%s`", t.table)
+	queryString := fmt.Sprintf("SELECT account,trader FROM `%s`", t.table)
 	q := t.bqClient.Query(queryString)
 	j, err := q.Run(ctx)
 	if err != nil {

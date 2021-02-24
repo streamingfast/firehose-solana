@@ -3,7 +3,12 @@ package bqloader
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
+
+	"go.uber.org/atomic"
+
+	"github.com/dfuse-io/shutter"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/dfuse-io/derr"
@@ -23,21 +28,41 @@ func (j jobDefinition) String() string {
 }
 
 type BigQueryLoader struct {
-	client           *bigquery.Client
-	dataset          *bigquery.Dataset
-	checkpointsTable string
+	*shutter.Shutter
+
+	wg                sync.WaitGroup
+	checkpointContext context.Context
+	client            *bigquery.Client
+	dataset           *bigquery.Dataset
+	checkpointsTable  string
 
 	jobChannel chan jobDefinition
+
+	healthy atomic.Bool
 }
 
 func NewBigQueryLoader(dataset *bigquery.Dataset, client *bigquery.Client, checkpointTable string) *BigQueryLoader {
 	jobChannel := make(chan jobDefinition, 10)
-	return &BigQueryLoader{
+	bql := &BigQueryLoader{
+		Shutter:          shutter.New(),
 		dataset:          dataset,
 		client:           client,
 		checkpointsTable: checkpointTable,
 		jobChannel:       jobChannel,
 	}
+
+	bql.OnTerminating(func(err error) {
+		zlog.Info("waiting for current loader job to end...")
+		bql.wg.Wait()
+	})
+
+	bql.healthy.Store(true)
+
+	return bql
+}
+
+func (bql *BigQueryLoader) IsHealthy() bool {
+	return bql.healthy.Load()
 }
 
 func (bql *BigQueryLoader) Run(ctx context.Context) {
@@ -50,6 +75,8 @@ func (bql *BigQueryLoader) Run(ctx context.Context) {
 			case job = <-bql.jobChannel:
 			}
 
+			bql.wg.Add(1)
+
 			ref := bigquery.NewGCSReference(job.URI)
 			ref.SourceFormat = bigquery.Avro
 
@@ -57,6 +84,12 @@ func (bql *BigQueryLoader) Run(ctx context.Context) {
 			loader.UseAvroLogicalTypes = true
 
 			loadFunc := func(ctx context.Context) error {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+				}
+
 				job, err := loader.Run(ctx)
 				if err != nil {
 					return err
@@ -73,6 +106,9 @@ func (bql *BigQueryLoader) Run(ctx context.Context) {
 
 			err := derr.RetryContext(job.Context, 3, loadFunc)
 			if err != nil {
+				zlog.Error("failed to load into big query. stopping", zap.Error(err), zap.Stringer("job", job))
+				bql.wg.Done()
+				bql.healthy.Store(false)
 				return
 			}
 
@@ -86,13 +122,18 @@ func (bql *BigQueryLoader) Run(ctx context.Context) {
 				Time:     time.Now(),
 			}
 
-			ctx, cancel := context.WithTimeout(job.Context, 3*time.Minute)
-			defer cancel()
-
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 			err = bql.dataset.Table(processedFiles).Inserter().Put(ctx, jobStatusRow)
+			cancel()
+			bql.wg.Done()
+
 			if err != nil {
 				zlog.Error("could not write checkpoint", zap.String("table", bql.checkpointsTable), zap.Error(err))
+				bql.healthy.Store(false)
+				return
 			}
+
+			zlog.Info("checkpoint written", zap.String("table", bql.checkpointsTable), zap.Stringer("job", job))
 		}
 	}()
 }
@@ -140,7 +181,7 @@ func (bql *BigQueryLoader) ReadCheckpoint(ctx context.Context, forTable string) 
 				return nil
 			}
 			if err != nil {
-				return fmt.Errorf("could not read account trader row: %w", err)
+				return fmt.Errorf("could not read row: %w", err)
 			}
 
 			fileInfo, err := parseLatestInfoFromFilePath(row.File)
