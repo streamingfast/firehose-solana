@@ -4,6 +4,7 @@ import (
 	"github.com/dfuse-io/dauth/ratelimiter"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
+	serumanalytics "github.com/dfuse-io/dfuse-solana/serumhist/analytics"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/rpc"
 )
@@ -12,32 +13,36 @@ import (
 type Root struct {
 	rpcClient          *rpc.Client
 	wsURL              string
-	registryServer     *registry.Server
 	requestRateLimiter ratelimiter.RateLimiter
 	serumHistoryClient pbserumhist.SerumHistoryClient
+	serumhistAnalytic  serumanalytics.Analyzable
 
 	// Interfaces we use internally for testing purposes
 	marketGetter  func(address *solana.PublicKey) *registry.Market
 	marketsGetter func() []*registry.Market
 	tokenGetter   func(in *solana.PublicKey) *registry.Token
+	tokensGetter  func() []*registry.Token
 }
 
 func NewRoot(
 	rpcClient *rpc.Client,
 	wsURL string,
 	mdServer *registry.Server,
+	serumhistAnalytic serumanalytics.Analyzable,
 	requestRateLimiter ratelimiter.RateLimiter,
 	serumHistoryClient pbserumhist.SerumHistoryClient,
+
 ) (*Root, error) {
 	return &Root{
 		rpcClient:          rpcClient,
 		wsURL:              wsURL,
-		registryServer:     mdServer,
 		requestRateLimiter: requestRateLimiter,
 		serumHistoryClient: serumHistoryClient,
+		serumhistAnalytic:  serumhistAnalytic,
 
 		marketGetter:  mdServer.GetMarket,
 		marketsGetter: mdServer.GetMarkets,
 		tokenGetter:   mdServer.GetToken,
+		tokensGetter:  mdServer.GetTokens,
 	}, nil
 }

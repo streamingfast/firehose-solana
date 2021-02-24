@@ -14,7 +14,7 @@ func TestLast24h(t *testing.T) {
 		return parseTime(t, "2021-02-23 20:10:10")
 	}
 
-	date_range := Last24h()
+	date_range := last24h()
 	assert.Equal(t, date_range.start, time.Date(2021, 02, 22, 20, 10, 10, 0, time.UTC))
 	assert.Equal(t, date_range.stop, time.Date(2021, 02, 23, 20, 10, 10, 0, time.UTC))
 }

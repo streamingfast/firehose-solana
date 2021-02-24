@@ -9,7 +9,6 @@ import (
 
 func TestStore_Get24hVolume(t *testing.T) {
 	store := testStore(t)
-
 	date_range := &DateRange{
 		start: parseTime(t, "2021-02-24 19:53:13"),
 		stop:  parseTime(t, "2021-02-24 19:53:31"),

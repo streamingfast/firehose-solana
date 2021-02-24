@@ -1,7 +1,6 @@
 package analytics
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/dfuse-io/solana-go"
@@ -29,15 +28,8 @@ func (fv *FillVolume) QuoteToken() solana.PublicKey {
 	return solana.MustPublicKeyFromBase58(fv.QuoteTokenAddress)
 }
 
-func (s *Store) Get24hVolume() {
-
-	var fills []FillVolume
-
-	s.db.Raw("SELECT * FROM volume_fills ORDER BY slot_num ASC").Scan(&fills)
-	for _, fill := range fills {
-		cnt, _ := json.Marshal(fill)
-		fmt.Println(string(cnt))
-	}
+func (s *Store) Get24hVolume() (float64, error) {
+	return s.totalFillsVolume(last24h())
 }
 
 func (s *Store) totalFillsVolume(date_range *DateRange) (float64, error) {

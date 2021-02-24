@@ -20,7 +20,7 @@ type SerumFill struct {
 	quoteToken *registry.Token
 }
 
-func (r *Root) newSerumFill(f *pbserumhist.Fill, reg *registry.Server) SerumFill {
+func (r *Root) newSerumFill(f *pbserumhist.Fill) SerumFill {
 	zlog.Debug("creating a new serum fill",
 		zap.String("market_address", f.Market),
 	)
@@ -31,14 +31,14 @@ func (r *Root) newSerumFill(f *pbserumhist.Fill, reg *registry.Server) SerumFill
 		return out
 	}
 
-	market := reg.GetMarket(&marketAddr)
+	market := r.marketGetter(&marketAddr)
 	if market == nil {
 		zlog.Warn("unknown market", zap.String("address", marketAddr.String()))
 		return out
 	}
 	out.market = market
 
-	baseToken := reg.GetToken(&market.BaseToken)
+	baseToken := r.tokenGetter(&market.BaseToken)
 	if baseToken != nil {
 		out.basetoken = baseToken
 	} else {
@@ -48,7 +48,7 @@ func (r *Root) newSerumFill(f *pbserumhist.Fill, reg *registry.Server) SerumFill
 		)
 	}
 
-	quoteToken := reg.GetToken(&market.QuoteToken)
+	quoteToken := r.tokenGetter(&market.QuoteToken)
 	if quoteToken != nil {
 		out.quoteToken = quoteToken
 	} else {

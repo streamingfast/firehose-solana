@@ -18,6 +18,11 @@ import (
 	"context"
 	"fmt"
 
+	serumanalytics "github.com/dfuse-io/dfuse-solana/serumhist/analytics"
+	"gorm.io/driver/bigquery"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
 	drateLimiter "github.com/dfuse-io/dauth/ratelimiter"
 	solResolver "github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
@@ -31,13 +36,14 @@ import (
 
 type Config struct {
 	dgraphqlApp.Config
-	TokensFileURL     string
-	MarketFileURL     string
-	RatelimiterPlugin string
-	RPCEndpointAddr   string
-	RPCWSEndpointAddr string
-	SerumHistoryAddr  string
-	SlotOffset        uint64
+	TokensFileURL         string
+	MarketFileURL         string
+	RatelimiterPlugin     string
+	RPCEndpointAddr       string
+	RPCWSEndpointAddr     string
+	SerumHistoryAddr      string
+	SlotOffset            uint64
+	SerumhistAnalyticsDSN string
 }
 
 func NewApp(config *Config) (*dgraphqlApp.App, error) {
@@ -74,11 +80,19 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 		return nil, fmt.Errorf("unable to load token registry: %w", err)
 	}
 
+	db, err := gorm.Open(bigquery.Open(f.config.SerumhistAnalyticsDSN), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create serumhist analytics databse connection: %w", err)
+	}
+
 	zlog.Info("configuring resolver and parsing schemas")
 	resolver, err := solResolver.NewRoot(
 		rpcClient,
 		f.config.RPCWSEndpointAddr,
 		tokenRegistry,
+		serumanalytics.NewStore(db),
 		rateLimiter,
 		serumHistoryClient,
 	)
