@@ -39,3 +39,31 @@ func (s *Store) Get24hVolume() {
 		fmt.Println(string(cnt))
 	}
 }
+
+func (s *Store) totalFillsVolume(date_range *DateRange) (float64, error) {
+
+	type result struct {
+		Total float64
+	}
+
+	var r result
+	query := `
+		SELECT
+			sum(usd_volume) as total
+		FROM 
+			volume_fills 
+		WHERE
+			timestamp >= ? AND
+			timestamp <= ?
+		`
+
+	trx := s.db.Raw(query, date_range.start, date_range.stop).Scan(&r)
+	if trx.Error != nil {
+		return 0.0, fmt.Errorf("unable to retrieve slot range: %w", trx.Error)
+	}
+	if trx.RowsAffected == 0 {
+		return 0.0, ErrNotFound
+	}
+
+	return r.Total, nil
+}

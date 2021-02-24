@@ -28,8 +28,6 @@ func parseTime(t *testing.T, timeStr string) time.Time {
 func TestStore_getSlotRange(t *testing.T) {
 	store := testStore(t)
 
-	//store.Get24hVolume()
-	//store.scanSlotTimestamp()
 	date_range := &DateRange{
 		start: parseTime(t, "2021-02-24 19:53:13"),
 		stop:  parseTime(t, "2021-02-24 19:53:31"),

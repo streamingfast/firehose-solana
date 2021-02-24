@@ -3,7 +3,7 @@ module github.com/dfuse-io/dfuse-solana
 go 1.14
 
 require (
-	cloud.google.com/go/bigquery v1.9.0
+	cloud.google.com/go/bigquery v1.10.0
 	cloud.google.com/go/storage v1.10.0
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
