@@ -1,20 +1,26 @@
 package bqloader
 
 import (
+	"fmt"
+
 	"github.com/dfuse-io/dfuse-solana/serumhist"
-	"github.com/dfuse-io/solana-go"
 	"github.com/linkedin/goavro/v2"
 )
 
 var (
-	CodecNewOrder      *goavro.Codec
+	codecNewOrder      *goavro.Codec
 	CodecOrderFill     *goavro.Codec
 	CodecTraderAccount *goavro.Codec
 )
 
+type Encoder interface {
+	Codec() *goavro.Codec
+	Encode() map[string]interface{}
+}
+
 func init() {
 	var err error
-	CodecNewOrder, err = goavro.NewCodec(`{
+	codecNewOrder, err = goavro.NewCodec(`{
 		"namespace": "io.dfuse",
 		"type": "record",
 		"name": "OrderFill",
@@ -34,7 +40,7 @@ func init() {
 		]
 	}`)
 	if err != nil {
-		panic("unable to parse AVRO schema for CodecNewOrder")
+		panic(fmt.Sprintf("unable to parse AVRO schema for codecNewOrder: %s", err.Error()))
 	}
 	CodecOrderFill, err = goavro.NewCodec(`{
 		"namespace": "io.dfuse",
@@ -60,7 +66,7 @@ func init() {
 		]
 	}`)
 	if err != nil {
-		panic("unable to parse AVRO schema for CodecOrderFilled")
+		panic(fmt.Sprintf("unable to parse AVRO schema for CodecOrderFilled: %s", err.Error()))
 	}
 	CodecTraderAccount, err = goavro.NewCodec(`{
 		"namespace": "io.dfuse",
@@ -69,11 +75,33 @@ func init() {
 		"fields": [{"name": "account", "type": "string"},{"name": "trader", "type": "string"}]
 	}`)
 	if err != nil {
-		panic("unable to parse AVRO schema for CodecTraderAccount")
+		panic(fmt.Sprintf("unable to parse AVRO schema for CodecTraderAccount: %s", err.Error()))
 	}
 }
 
-func NewOrderToAvro(e *serumhist.NewOrder) map[string]interface{} {
+func AsEncoder(i interface{}) Encoder {
+	switch v := i.(type) {
+	case *serumhist.NewOrder:
+		return &newOrderEncoder{v}
+	case *serumhist.FillEvent:
+		return &orderFillEncoder{v}
+	case *serumhist.TradingAccount:
+		return &tradingAccountEncoder{v}
+	default:
+		panic(fmt.Sprintf("Encoder not supported for type %s", v))
+	}
+	return nil
+}
+
+type newOrderEncoder struct {
+	*serumhist.NewOrder
+}
+
+func (e *newOrderEncoder) Codec() *goavro.Codec {
+	return codecNewOrder
+}
+
+func (e *newOrderEncoder) Encode() map[string]interface{} {
 	m := map[string]interface{}{
 		"num":          int64(e.Order.Num),
 		"market":       e.Ref.Market.String(),
@@ -91,7 +119,15 @@ func NewOrderToAvro(e *serumhist.NewOrder) map[string]interface{} {
 	return m
 }
 
-func FillEventToAvro(e *serumhist.FillEvent) map[string]interface{} {
+type orderFillEncoder struct {
+	*serumhist.FillEvent
+}
+
+func (e *orderFillEncoder) Codec() *goavro.Codec {
+	return CodecOrderFill
+}
+
+func (e *orderFillEncoder) Encode() map[string]interface{} {
 	m := map[string]interface{}{
 		"trader":               e.TradingAccount.String(),
 		"market":               e.Ref.Market.String(),
@@ -113,10 +149,18 @@ func FillEventToAvro(e *serumhist.FillEvent) map[string]interface{} {
 	return m
 }
 
-func TradingAccountToAvro(tradingAccount, trader solana.PublicKey) map[string]interface{} {
+type tradingAccountEncoder struct {
+	*serumhist.TradingAccount
+}
+
+func (e *tradingAccountEncoder) Codec() *goavro.Codec {
+	return CodecTraderAccount
+}
+
+func (e *tradingAccountEncoder) Encode() map[string]interface{} {
 	m := map[string]interface{}{
-		"account": tradingAccount.String(),
-		"trader":  trader.String(),
+		"account": e.Account.String(),
+		"trader":  e.Trader.String(),
 	}
 	return m
 }

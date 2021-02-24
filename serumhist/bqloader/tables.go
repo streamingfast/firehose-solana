@@ -1,6 +1,8 @@
 package bqloader
 
 import (
+	"fmt"
+
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/googleapi"
 )
@@ -31,10 +33,15 @@ func (bq *BQLoader) InitTables() (err error) {
 		return
 	}
 
+	err = bq.initProcessedFilesTable()
+	if err != nil {
+		return
+	}
+
 	return
 }
 
-func (bq *BQLoader) initTable(name string, schema *bigquery.Schema, rangePartition *bigquery.RangePartitioning) error {
+func (bq *BQLoader) initTable(name string, schema *bigquery.Schema, rangePartition *bigquery.RangePartitioning, timePartition *bigquery.TimePartitioning) error {
 	table := bq.dataset.Table(name)
 	_, err := table.Metadata(bq.ctx)
 	if err == nil {
@@ -44,9 +51,14 @@ func (bq *BQLoader) initTable(name string, schema *bigquery.Schema, rangePartiti
 		return err
 	}
 
+	if rangePartition != nil && timePartition != nil {
+		return fmt.Errorf("only one of rangePartition and timePartition may be specified")
+	}
+
 	metadata := &bigquery.TableMetadata{
 		Name:              name,
 		RangePartitioning: rangePartition,
+		TimePartitioning:  timePartition,
 	}
 	if schema != nil {
 		metadata.Schema = *schema
@@ -59,18 +71,29 @@ func (bq *BQLoader) initTable(name string, schema *bigquery.Schema, rangePartiti
 func (bq *BQLoader) initNewOrdersTable() error {
 	return bq.initTable(newOrder, nil, &bigquery.RangePartitioning{
 		Field: "slot_num,",
-	})
+	}, nil)
 }
 
 func (bq *BQLoader) initOrderFillsTable() error {
 	return bq.initTable(fillOrder, nil, &bigquery.RangePartitioning{
 		Field: "slot_num,",
-	})
+	}, nil)
 }
 
 func (bq *BQLoader) initTradingAccountTable() error {
 	return bq.initTable(tradingAccount, nil, &bigquery.RangePartitioning{
 		Field: "slot_num,",
+	}, nil)
+}
+
+func (bq *BQLoader) initProcessedFilesTable() error {
+	schema := bigquery.Schema{
+		&bigquery.FieldSchema{Name: "table", Type: bigquery.StringFieldType},
+		&bigquery.FieldSchema{Name: "file", Type: bigquery.StringFieldType},
+		&bigquery.FieldSchema{Name: "timestamp", Type: bigquery.TimestampFieldType},
+	}
+	return bq.initTable(processedFiles, &schema, nil, &bigquery.TimePartitioning{
+		Field: "timestamp",
 	})
 }
 
@@ -87,7 +110,7 @@ func (bq *BQLoader) initMarketsTable() error {
 		&bigquery.FieldSchema{Name: "request_queue", Type: bigquery.StringFieldType},
 		&bigquery.FieldSchema{Name: "event_queue", Type: bigquery.StringFieldType},
 	}
-	return bq.initTable(markets, &schema, nil)
+	return bq.initTable(markets, &schema, nil, nil)
 }
 
 func (bq *BQLoader) initTokensTable() error {
@@ -104,7 +127,7 @@ func (bq *BQLoader) initTokensTable() error {
 		&bigquery.FieldSchema{Name: "freeze_authority", Type: bigquery.StringFieldType},
 		&bigquery.FieldSchema{Name: "verified", Type: bigquery.BooleanFieldType},
 	}
-	return bq.initTable(tokens, &schema, nil)
+	return bq.initTable(tokens, &schema, nil, nil)
 }
 
 func isErrorNotExist(err error) bool {

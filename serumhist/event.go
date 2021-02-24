@@ -44,3 +44,8 @@ type OrderCancelled struct {
 	Ref
 	InstrRef *pbserumhist.InstructionRef
 }
+
+type TradingAccount struct {
+	Trader  solana.PublicKey
+	Account solana.PublicKey
+}

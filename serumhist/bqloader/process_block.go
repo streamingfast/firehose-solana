@@ -28,7 +28,7 @@ func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	}
 
 	for handlerId, handler := range bq.eventHandlers {
-		if err := handler.FlushIfNeeded(bq.ctx); err != nil {
+		if err := handler.Flush(bq.ctx); err != nil {
 			return fmt.Errorf("error flushing handler %q: %w", handlerId, err)
 		}
 	}

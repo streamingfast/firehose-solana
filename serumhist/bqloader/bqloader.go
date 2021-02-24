@@ -3,8 +3,9 @@ package bqloader
 import (
 	"context"
 	"fmt"
-	"sync"
-	"time"
+	"path"
+
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/dfuse-io/dfuse-solana/registry"
@@ -17,6 +18,8 @@ const (
 	tradingAccount = "traders"
 	markets        = "markets"
 	tokens         = "tokens"
+
+	processedFiles = "processedFiles"
 )
 
 type BQLoader struct {
@@ -25,30 +28,65 @@ type BQLoader struct {
 	client         *bigquery.Client
 	dataset        *bigquery.Dataset
 	store          dstore.Store
+	storeUrl       string
 	registryServer *registry.Server
+	loader         *BigQueryLoader
+	startBlock     uint64
+
+	checkpoints map[string]*pbserumhist.Checkpoint
 
 	traderAccountCache *tradingAccountCache
-	eventHandlers      map[string]*eventHandler
+	eventHandlers      map[string]*EventHandler
 }
 
-func New(ctx context.Context, scratchSpaceDir string, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client, registry *registry.Server) *BQLoader {
-	eventHandlers := make(map[string]*eventHandler)
-	eventHandlers[newOrder] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, newOrder, CodecNewOrder)
-	eventHandlers[fillOrder] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, fillOrder, CodecOrderFill)
-	eventHandlers[tradingAccount] = newEventHandler(scratchSpaceDir, dataset, storeUrl, store, tradingAccount, CodecTraderAccount)
-
+func New(ctx context.Context, startBlock uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client, registry *registry.Server) *BQLoader {
 	cacheTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tradingAccount)
+	checkpointsTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, processedFiles)
 	bq := &BQLoader{
 		ctx:                ctx,
 		client:             client,
 		dataset:            dataset,
 		store:              store,
-		eventHandlers:      eventHandlers,
+		storeUrl:           storeUrl,
 		registryServer:     registry,
+		loader:             NewBigQueryLoader(dataset, client, checkpointsTableName),
+		eventHandlers:      map[string]*EventHandler{},
+		startBlock:         startBlock,
+		checkpoints:        map[string]*pbserumhist.Checkpoint{},
 		traderAccountCache: newTradingAccountCache(cacheTableName, client),
 	}
 
 	return bq
+}
+
+func (bq *BQLoader) InitHandlers(ctx context.Context, scratchSpaceDir string) error {
+	if len(bq.checkpoints) == 0 {
+		err := bq.setCheckpoints(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	var newOrderStartBlock, orderFillStartBlock, tradingAccountStartBlock = bq.startBlock, bq.startBlock, bq.startBlock // default to configured start block
+	if cp, ok := bq.checkpoints[newOrder]; ok && cp != nil {
+		newOrderStartBlock = cp.LastWrittenSlotNum
+	}
+
+	if cp, ok := bq.checkpoints[fillOrder]; ok && cp != nil {
+		orderFillStartBlock = cp.LastWrittenSlotNum
+	}
+
+	if cp, ok := bq.checkpoints[newOrder]; ok && cp != nil {
+		newOrderStartBlock = cp.LastWrittenSlotNum
+	}
+
+	bq.eventHandlers[newOrder] = NewEventHandler(newOrderStartBlock, bq.storeUrl, bq.store, newOrder, bq.loader, path.Join(scratchSpaceDir, newOrder))
+	bq.eventHandlers[fillOrder] = NewEventHandler(orderFillStartBlock, bq.storeUrl, bq.store, fillOrder, bq.loader, path.Join(scratchSpaceDir, fillOrder))
+	bq.eventHandlers[tradingAccount] = NewEventHandler(tradingAccountStartBlock, bq.storeUrl, bq.store, tradingAccount, bq.loader, path.Join(scratchSpaceDir, tradingAccount))
+
+	bq.loader.Run(ctx)
+
+	return nil
 }
 
 func (bq *BQLoader) PrimeTradeCache(ctx context.Context) error {
@@ -56,41 +94,6 @@ func (bq *BQLoader) PrimeTradeCache(ctx context.Context) error {
 	return bq.traderAccountCache.load(ctx)
 }
 
-//shutdown all handlers.  collect any errors into a single error value
 func (bq *BQLoader) Close() error {
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	wg := sync.WaitGroup{}
-	wg.Add(len(bq.eventHandlers))
-
-	errChan := make(chan error)
-	go func() {
-		wg.Wait()
-		close(errChan)
-	}()
-
-	for _, h := range bq.eventHandlers {
-		go func(handler *eventHandler) {
-			defer wg.Done()
-			err := handler.Shutdown(shutdownCtx)
-			if err != nil {
-				errChan <- err
-			}
-		}(h)
-	}
-
-	var err error
-	for e := range errChan {
-		if e == nil {
-			continue
-		}
-		if err == nil {
-			err = e
-			continue
-		}
-		err = fmt.Errorf("%s, %s", err.Error(), e.Error())
-	}
-
-	return err
+	return nil
 }

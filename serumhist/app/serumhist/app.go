@@ -165,11 +165,16 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
 			return nil, fmt.Errorf("error creating registry server: %w", err)
 		}
 
-		loader := bqloader.New(ctx, a.Config.BigQueryScratchSpaceDir, a.Config.BigQueryStoreURL, store, dataset, bqClient, registryServer)
+		loader := bqloader.New(ctx, a.Config.StartBlock, a.Config.BigQueryStoreURL, store, dataset, bqClient, registryServer)
 
 		err = loader.InitTables()
 		if err != nil {
 			return nil, fmt.Errorf("error initializing tables: %w", err)
+		}
+
+		err = loader.InitHandlers(ctx, a.Config.BigQueryScratchSpaceDir)
+		if err != nil {
+			return nil, fmt.Errorf("error initializing event handlers: %w", err)
 		}
 
 		err = loader.LoadMarkets(ctx)

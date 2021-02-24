@@ -24,7 +24,11 @@ func (bq *BQLoader) processTradingAccount(account, trader solana.PublicKey, slot
 		return fmt.Errorf("could not write trader to cache: %w", err)
 	}
 
-	if err := bq.eventHandlers[tradingAccount].HandleEvent(TradingAccountToAvro(account, trader), slotNum, slotId); err != nil {
+	event := &serumhist.TradingAccount{
+		Trader:  trader,
+		Account: account,
+	}
+	if err := bq.eventHandlers[tradingAccount].HandleEvent(AsEncoder(event), slotNum, slotId); err != nil {
 		return fmt.Errorf("unable to process trading account %w", err)
 	}
 	return nil
@@ -39,7 +43,7 @@ func (bq *BQLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
 			zap.Uint64("slot_num", event.SlotNumber),
 		)
 
-		if err := handler.HandleEvent(NewOrderToAvro(event), event.SlotNumber, event.SlotHash); err != nil {
+		if err := handler.HandleEvent(AsEncoder(event), event.SlotNumber, event.SlotHash); err != nil {
 			return fmt.Errorf("unable to process fill %w", err)
 		}
 	}
@@ -56,7 +60,7 @@ func (bq *BQLoader) processSerumFills(events []*serumhist.FillEvent) error {
 			zap.Uint64("order_seq_num", event.OrderSeqNum),
 			zap.Uint64("slot_num", event.SlotNumber),
 		)
-		if err := handler.HandleEvent(FillEventToAvro(event), event.SlotNumber, event.SlotHash); err != nil {
+		if err := handler.HandleEvent(AsEncoder(event), event.SlotNumber, event.SlotHash); err != nil {
 			return fmt.Errorf("unable to process fill %w", err)
 		}
 	}
