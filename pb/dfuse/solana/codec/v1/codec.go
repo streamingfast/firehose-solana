@@ -125,7 +125,7 @@ func (s *Slot) AsRef() bstream.BlockRef {
 func (te *TransactionError) DecodedPayload() proto.Message {
 	var x ptypes.DynamicAny
 	if err := ptypes.UnmarshalAny(te.Payload, &x); err != nil {
-		panic(fmt.Sprintf("unable to unmarshall transaction error payload: : %w", err))
+		panic(fmt.Sprintf("unable to unmarshall transaction error payload: %s", err))
 	}
 	return x.Message
 }
@@ -133,7 +133,7 @@ func (te *TransactionError) DecodedPayload() proto.Message {
 func (ie *InstructionError) DecodedPayload() proto.Message {
 	var x ptypes.DynamicAny
 	if err := ptypes.UnmarshalAny(ie.Payload, &x); err != nil {
-		panic(fmt.Sprintf("unable to unmarshall instruction error payload: : %w", err))
+		panic(fmt.Sprintf("unable to unmarshall instruction error payload: %s", err))
 	}
 	return x.Message
 }

@@ -51,6 +51,9 @@ func TestQuerySerumMarketDailyData(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			todayFunc = func() time.Time {
+				return tTime(t, "2021-02-22T00:00:00Z")
+			}
 			root := &Root{
 				marketGetter: newMarketGetter(test.state.markets),
 				tokenGetter:  newTokenGetter(test.state.tokens),

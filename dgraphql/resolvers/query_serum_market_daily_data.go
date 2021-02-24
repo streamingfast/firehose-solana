@@ -7,6 +7,10 @@ import (
 	gqerrs "github.com/graph-gophers/graphql-go/errors"
 )
 
+func init() {
+	todayFunc = time.Now
+}
+
 type SerumMarketDailyDataRequest struct {
 	Address string
 }
@@ -32,8 +36,10 @@ func (r *Root) QuerySerumMarketDailyData(in *SerumMarketDailyDataRequest) (*Seru
 	}, nil
 }
 
+var todayFunc func() time.Time
+
 func today() time.Time {
-	now := time.Now().UTC()
+	now := todayFunc().UTC()
 
 	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 }
