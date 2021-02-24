@@ -17,6 +17,7 @@ type Root struct {
 	serumHistoryClient pbserumhist.SerumHistoryClient
 
 	// Interfaces we use internally for testing purposes
+	marketGetter  func(address *solana.PublicKey) *registry.Market
 	marketsGetter func() []*registry.Market
 	tokenGetter   func(in *solana.PublicKey) *registry.Token
 }
@@ -35,6 +36,7 @@ func NewRoot(
 		requestRateLimiter: requestRateLimiter,
 		serumHistoryClient: serumHistoryClient,
 
+		marketGetter:  mdServer.GetMarket,
 		marketsGetter: mdServer.GetMarkets,
 		tokenGetter:   mdServer.GetToken,
 	}, nil

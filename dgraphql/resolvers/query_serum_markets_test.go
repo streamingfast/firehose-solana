@@ -47,9 +47,9 @@ func TestQuerySerumMarkets(t *testing.T) {
 			&SerumMarketConnection{
 				TotalCount: 6,
 				Edges: []*SerumMarketEdge{
-					NewSerumMarketEdge(toSerumMarket(markets[2], tokens), markets[2].Address.String()),
-					NewSerumMarketEdge(toSerumMarket(markets[0], tokens), markets[0].Address.String()),
-					NewSerumMarketEdge(toSerumMarket(markets[3], tokens), markets[3].Address.String()),
+					NewSerumMarketEdge(toSerumMarket(markets[2], tokens, nil), markets[2].Address.String()),
+					NewSerumMarketEdge(toSerumMarket(markets[0], tokens, nil), markets[0].Address.String()),
+					NewSerumMarketEdge(toSerumMarket(markets[3], tokens, nil), markets[3].Address.String()),
 				},
 				PageInfo: NewPageInfo("4QL5AQvXdMSCVZmnKXiuMMU83Kq3LCwVfU8CyznqZELG", "GpdYLFbKHeSeDGqsnQ4jnP7D1294iBpQcsN1VPwhoaFS", true),
 			},
@@ -62,8 +62,8 @@ func TestQuerySerumMarkets(t *testing.T) {
 			&SerumMarketConnection{
 				TotalCount: 6,
 				Edges: []*SerumMarketEdge{
-					NewSerumMarketEdge(toSerumMarket(markets[4], tokens), markets[4].Address.String()),
-					NewSerumMarketEdge(toSerumMarket(markets[5], tokens), markets[5].Address.String()),
+					NewSerumMarketEdge(toSerumMarket(markets[4], tokens, nil), markets[4].Address.String()),
+					NewSerumMarketEdge(toSerumMarket(markets[5], tokens, nil), markets[5].Address.String()),
 				},
 				PageInfo: NewPageInfo("MNiXHUNkpYd1eb2HthSDGhaPfepuqMAV3QsZhAgb1wm", "ZNiXHUNkpYd1eb2HthSDGhaPfepuqMAV3QsZhAgb1wm", true),
 			},
@@ -76,9 +76,9 @@ func TestQuerySerumMarkets(t *testing.T) {
 			&SerumMarketConnection{
 				TotalCount: 6,
 				Edges: []*SerumMarketEdge{
-					NewSerumMarketEdge(toSerumMarket(markets[4], tokens), markets[4].Address.String()),
-					NewSerumMarketEdge(toSerumMarket(markets[5], tokens), markets[5].Address.String()),
-					NewSerumMarketEdge(toSerumMarket(markets[1], tokens), markets[1].Address.String()),
+					NewSerumMarketEdge(toSerumMarket(markets[4], tokens, nil), markets[4].Address.String()),
+					NewSerumMarketEdge(toSerumMarket(markets[5], tokens, nil), markets[5].Address.String()),
+					NewSerumMarketEdge(toSerumMarket(markets[1], tokens, nil), markets[1].Address.String()),
 				},
 				PageInfo: NewPageInfo("MNiXHUNkpYd1eb2HthSDGhaPfepuqMAV3QsZhAgb1wm", "97NiXHUNkpYd1eb2HthSDGhaPfepuqMAV3QsZhAgb1wm", false),
 			},
@@ -104,14 +104,30 @@ func TestQuerySerumMarkets(t *testing.T) {
 	}
 }
 
-func toSerumMarket(market *registry.Market, tokens []*registry.Token) *SerumMarket {
+func toSerumMarket(market *registry.Market, tokens []*registry.Token, customizer func(m *SerumMarket)) *SerumMarket {
 	tokenGetter := newTokenGetter(tokens)
 
-	return &SerumMarket{
+	out := &SerumMarket{
 		Address:    market.Address.String(),
 		market:     market,
 		baseToken:  tokenGetter(&market.BaseToken),
 		quoteToken: tokenGetter(&market.QuoteToken),
+	}
+	if customizer != nil {
+		customizer(out)
+	}
+
+	return out
+}
+
+func newMarketGetter(markets []*registry.Market) func(in *solana.PublicKey) *registry.Market {
+	return func(in *solana.PublicKey) *registry.Market {
+		for _, market := range markets {
+			if bytes.Equal(market.Address[:], (*in)[:]) {
+				return market
+			}
+		}
+		return nil
 	}
 }
 

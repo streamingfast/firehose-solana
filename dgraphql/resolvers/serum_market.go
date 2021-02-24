@@ -2,11 +2,15 @@ package resolvers
 
 import "github.com/dfuse-io/dfuse-solana/registry"
 
+// SerumMarket is used to implement both the GraphQL's SerumMarketDailyData and the the SerumMarket.
 type SerumMarket struct {
 	Address    string
 	market     *registry.Market
 	baseToken  *registry.Token
 	quoteToken *registry.Token
+
+	// For SerumMarketDailyData
+	dailyVolumeUSD []DailyVolume
 }
 
 func (m SerumMarket) Name() *string {
@@ -32,4 +36,8 @@ func (s SerumMarket) QuoteToken() *Token {
 		return &Token{s.quoteToken}
 	}
 	return nil
+}
+
+func (s SerumMarket) DailyVolumeUSD() []DailyVolume {
+	return s.dailyVolumeUSD
 }

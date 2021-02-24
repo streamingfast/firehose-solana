@@ -34,3 +34,20 @@ type SerumMarket  {
   """The markets quote token."""
   quoteToken: Token
 }
+
+type SerumMarketDailyData {
+  """The market's address."""
+  address: String!
+
+  """The market's display name"""
+  name: String
+
+  """The markets base token."""
+  baseToken: Token
+
+  """The markets quote token."""
+  quoteToken: Token
+
+  """The daily data."""
+  dailyVolumeUSD: [DailyVolume!]!
+}
