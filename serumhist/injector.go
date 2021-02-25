@@ -39,7 +39,6 @@ type Injector struct {
 
 type CheckpointResolver func(ctx context.Context) (*pbserumhist.Checkpoint, error)
 
-// TODO don't depend on both....
 func NewInjector(
 	ctx context.Context,
 	handler Handler,
@@ -130,24 +129,6 @@ func (i *Injector) Launch() error {
 	i.handler.OnTerminated(func(err error) {
 		i.Shutdown(err)
 	})
-
-	//if i.grpcAddr != "" {
-	//	server := dgrpc.NewServer2(dgrpc.WithLogger(zlog))
-	//	server.RegisterService(func(gs *grpc.Server) {
-	//		pbserumhist.RegisterSerumOrderTrackerServer(gs, i)
-	//		pbhealth.RegisterHealthServer(gs, i)
-	//	})
-	//
-	//	zlog.Info("listening for serum history",
-	//		zap.String("addr", i.grpcAddr),
-	//	)
-	//
-	//	i.OnTerminating(func(err error) {
-	//		server.Shutdown(30 * time.Second)
-	//	})
-	//
-	//	go server.Launch(i.grpcAddr)
-	//}
 
 	err := i.source.Run(i.ctx)
 	if err != nil {

@@ -40,7 +40,7 @@ func (s *Server) Serve() {
 		zap.String("addr", s.grpcAddr),
 	)
 
-	s.OnTerminating(func(err error) {
+	s.OnTerminating(func(_ error) {
 		s.server.Shutdown(30 * time.Second)
 	})
 

@@ -94,7 +94,7 @@ func EncodeFillByTraderPrefix(trader solana.PublicKey) Prefix {
 
 func EncodeFillByMarketPrefix(market solana.PublicKey) Prefix {
 	key := make([]byte, 1+32)
-	key[0] = PrefixFillByTrader
+	key[0] = PrefixFill
 	copy(key[1:], market[:])
 	return key
 }
