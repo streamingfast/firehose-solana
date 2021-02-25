@@ -4,49 +4,12 @@ import (
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
-	"github.com/dfuse-io/dfuse-solana/serumviz/schemas"
-	"github.com/linkedin/goavro/v2"
-)
-
-var (
-	codecOrders    *goavro.Codec
-	codecOrderFill *goavro.Codec
-	codecTraders   *goavro.Codec
+	"go.uber.org/zap"
 )
 
 type Encoder interface {
-	Codec() *goavro.Codec
 	Encode() map[string]interface{}
-}
-
-func init() {
-	var err error
-	ordersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableOrders.String(), "v1")
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
-	}
-	codecOrders, err = goavro.NewCodec(ordersSchemaSpecification)
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
-	}
-
-	fillsSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableFills.String(), "v1")
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
-	}
-	codecOrderFill, err = goavro.NewCodec(fillsSchemaSpecification)
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
-	}
-
-	tradersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableTraders.String(), "v1")
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecTraders: %s", err.Error()))
-	}
-	codecTraders, err = goavro.NewCodec(tradersSchemaSpecification)
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecTraders: %s", err.Error()))
-	}
+	Log()
 }
 
 func AsEncoder(i interface{}) Encoder {
@@ -67,8 +30,12 @@ type newOrderEncoder struct {
 	*serumhist.NewOrder
 }
 
-func (e *newOrderEncoder) Codec() *goavro.Codec {
-	return codecOrders
+func (e *newOrderEncoder) Log() {
+	zlog.Debug("serum new order",
+		zap.Stringer("market", e.Market),
+		zap.Uint64("order_seq_num", e.OrderSeqNum),
+		zap.Uint64("slot_num", e.SlotNumber),
+	)
 }
 
 func (e *newOrderEncoder) Encode() map[string]interface{} {
@@ -93,8 +60,14 @@ type orderFillEncoder struct {
 	*serumhist.FillEvent
 }
 
-func (e *orderFillEncoder) Codec() *goavro.Codec {
-	return codecOrderFill
+func (e *orderFillEncoder) Log() {
+	zlog.Debug("serum new fill",
+		zap.Stringer("side", e.Fill.Side),
+		zap.Stringer("market", e.Market),
+		zap.Stringer("trading_Account", e.TradingAccount),
+		zap.Uint64("order_seq_num", e.OrderSeqNum),
+		zap.Uint64("slot_num", e.SlotNumber),
+	)
 }
 
 func (e *orderFillEncoder) Encode() map[string]interface{} {
@@ -123,8 +96,11 @@ type tradingAccountEncoder struct {
 	*serumhist.TradingAccount
 }
 
-func (e *tradingAccountEncoder) Codec() *goavro.Codec {
-	return codecTraders
+func (e *tradingAccountEncoder) Log() {
+	zlog.Debug("serum trading account",
+		zap.Stringer("account", e.Account),
+		zap.Stringer("trader", e.Trader),
+	)
 }
 
 func (e *tradingAccountEncoder) Encode() map[string]interface{} {

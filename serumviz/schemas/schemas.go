@@ -89,7 +89,7 @@ func GetTableSchema(schemaName, version string) (*bigquery.Schema, error) {
 	return &schema, nil
 }
 
-func GetAvroSchemaDefinition(schemaName, version string) (string, error) {
+func GetAvroSpecification(schemaName, version string) (string, error) {
 	bytes, err := openSchemaFile(schemaName, version)
 	if err != nil {
 		return "", fmt.Errorf("could not open file: %w", err)

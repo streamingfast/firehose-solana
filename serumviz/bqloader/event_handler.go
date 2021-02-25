@@ -11,13 +11,11 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-
-	"go.uber.org/zap"
-
 	"github.com/dfuse-io/derr"
 	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/shutter"
 	"github.com/linkedin/goavro/v2"
+	"go.uber.org/zap"
 )
 
 type EventHandler struct {
@@ -27,11 +25,11 @@ type EventHandler struct {
 
 	startBlockNum uint64
 
-	dataset  *bigquery.Dataset
-	store    dstore.Store
-	storeUrl string
-	bqloader *BigQueryLoader
-	prefix   string
+	dataset    *bigquery.Dataset
+	store      dstore.Store
+	storeUrl   string
+	bqinjector *BigQueryInjector
+	table      Table
 
 	bufferFileDir  string
 	bufferFile     *os.File
@@ -46,14 +44,14 @@ type EventHandler struct {
 	latestSlotId  string
 }
 
-func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, prefix string, bqloader *BigQueryLoader, scratchSpaceDir string) *EventHandler {
+func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, table Table, bqloader *BigQueryInjector, scratchSpaceDir string) *EventHandler {
 	h := &EventHandler{
 		Shutter:       shutter.New(),
 		startBlockNum: startBlockNum,
 		store:         store,
 		storeUrl:      storeUrl,
-		bqloader:      bqloader,
-		prefix:        prefix,
+		bqinjector:    bqloader,
+		table:         table,
 		bufferFileDir: scratchSpaceDir,
 		dataset:       dataset,
 	}
@@ -73,6 +71,8 @@ func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, 
 }
 
 func (h *EventHandler) HandleEvent(event Encoder, slotNum uint64, slotId string) error {
+	event.Log()
+
 	if slotNum < h.startBlockNum {
 		return nil
 	}
@@ -82,7 +82,7 @@ func (h *EventHandler) HandleEvent(event Encoder, slotNum uint64, slotId string)
 	h.latestSlotId = slotId
 
 	var err error
-	bw, err := h.getBufferedWriter(event.Codec(), slotNum, slotId)
+	bw, err := h.getBufferedWriter(slotNum, slotId)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 
 	uploadFunc := func(ctx context.Context) error {
 		destPath := NewFileName(
-			h.prefix,
+			h.table.String(),
 			h.startSlotNum,
 			h.latestSlotNum,
 			h.startSlotId,
@@ -122,17 +122,18 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 			return fmt.Errorf("failed pushing local file to store: %w", err)
 		}
 
-		table := h.prefix
+		tableName := h.table.String()
 		uri := strings.Join([]string{h.storeUrl, fmt.Sprintf("%s.avro", destPath)}, "/")
 
-		h.bqloader.SubmitJob(table, uri, func(ctx context.Context) error {
+		format := bigquery.Avro
+		h.bqinjector.SubmitJob(uri, tableName, h.dataset, format, func(ctx context.Context) error {
 			//checkpoint save callback
 			jobStatusRow := struct {
 				Table    string    `bigquery:"table"`
 				Filename string    `bigquery:"file"`
 				Time     time.Time `bigquery:"timestamp"`
 			}{
-				Table:    table,
+				Table:    tableName,
 				Filename: uri,
 				Time:     time.Now(),
 			}
@@ -160,13 +161,14 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 	}
 
 	h.bufferFile = nil
+	h.bufferFileName = ""
 	h.bufferedWriter = nil
 	h.count = 0
 
 	return nil
 }
 
-func (h *EventHandler) getBufferedWriter(codec *goavro.Codec, slotNum uint64, slotId string) (*goavro.OCFWriter, error) {
+func (h *EventHandler) getBufferedWriter(slotNum uint64, slotId string) (*goavro.OCFWriter, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -187,9 +189,13 @@ func (h *EventHandler) getBufferedWriter(codec *goavro.Codec, slotNum uint64, sl
 		return nil, fmt.Errorf("could not create buffer file directory: %w", err)
 	}
 
-	h.bufferFileName = filepath.Join(h.bufferFileDir, fmt.Sprintf("pending-%010d.ocf", rand.Int()))
-
+	h.bufferFileName = filepath.Join(h.bufferFileDir, fmt.Sprintf("pending-%s-%010d.ocf", h.table.String(), rand.Int()))
 	h.bufferFile, err = os.OpenFile(h.bufferFileName, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	codec, err := h.table.Codec()
 	if err != nil {
 		return nil, err
 	}
