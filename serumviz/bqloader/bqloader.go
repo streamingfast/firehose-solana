@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dfuse-io/shutter"
-
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-
 	"cloud.google.com/go/bigquery"
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dstore"
+	"github.com/dfuse-io/shutter"
 )
 
 type BQLoader struct {

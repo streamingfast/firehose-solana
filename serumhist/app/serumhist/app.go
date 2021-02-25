@@ -5,10 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"google.golang.org/api/googleapi"
-
 	"cloud.google.com/go/bigquery"
-
 	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dfuse-solana/serumhist"
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
@@ -19,6 +16,7 @@ import (
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
+	"google.golang.org/api/googleapi"
 
 	kvloader "github.com/dfuse-io/dfuse-solana/serumhist/kvloader"
 	bqloader "github.com/dfuse-io/dfuse-solana/serumviz/bqloader"

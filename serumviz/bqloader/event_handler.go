@@ -147,7 +147,7 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 				return err
 			}
 
-			zlog.Info("checkpoint written", zap.Stringer("table", tableProcessedFiles))
+			zlog.Info("checkpoint written", zap.Stringer("checkpoints_table", tableProcessedFiles), zap.Stringer("table", h.table))
 			return nil
 		})
 

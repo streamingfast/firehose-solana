@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"sync"
-
-	"github.com/dfuse-io/shutter"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/dfuse-io/derr"
+	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
 )
 
@@ -21,13 +21,11 @@ type jobDefinition struct {
 }
 
 func (j jobDefinition) String() string {
-	return fmt.Sprintf("Table: %s | URI: %s", j.Table, j.URI)
+	return fmt.Sprintf("Table: %s | Dataset: %s-%s | URI: %s", j.Table, j.Dataset.ProjectID, j.Dataset.DatasetID, j.URI)
 }
 
 type BigQueryInjector struct {
 	*shutter.Shutter
-
-	checkpointContext context.Context
 
 	wg         sync.WaitGroup
 	jobChannel chan jobDefinition
@@ -108,8 +106,16 @@ func (inj *BigQueryInjector) SubmitJob(uri string, tableName string, dataset *bi
 		Callback:   callback,
 	}
 
-	select {
-	case inj.jobChannel <- job:
-		zlog.Info("job submitted", zap.Stringer("job", job))
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case inj.jobChannel <- job:
+			zlog.Info("job submitted", zap.Stringer("job", job))
+			return
+		case <-ticker.C:
+			zlog.Info("injector is currently too busy to accept job", zap.Stringer("job", job))
+		}
 	}
+
 }
