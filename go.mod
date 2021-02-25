@@ -13,7 +13,7 @@ require (
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
-	github.com/dfuse-io/dgraphql v0.0.2-0.20210128181646-b7f03ff95e0a
+	github.com/dfuse-io/dgraphql v0.0.2-0.20210209213422-0c203cf6bcfd
 	github.com/dfuse-io/dgrpc v0.0.0-20210128133958-db1ca95920e4
 	github.com/dfuse-io/dlauncher v0.0.0-20210224224510-27373532f11f
 	github.com/dfuse-io/dmetering v0.0.0-20210112023524-c3ddadbc0d6a
@@ -55,6 +55,6 @@ require (
 	gotest.tools v2.2.0+incompatible // indirect
 )
 
-replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807
+replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20210204202750-0e485a040a3c
 
 replace github.com/ShinyTrinkets/overseer => github.com/maoueh/overseer v0.2.1-0.20191024193921-39856397cf3f

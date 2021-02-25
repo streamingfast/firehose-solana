@@ -58,6 +58,8 @@ type OrderTransitionPartiallyFilled {
 }
 
 type OrderTransitionExecuted {
+    """`order` is the SerumOrder details."""
+    order: SerumOrder!
 }
 
 enum ORDER_TRANSITION {

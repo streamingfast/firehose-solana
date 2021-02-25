@@ -252,10 +252,10 @@ func readMarketFillsE(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("unable to create public key: %w", err)
 	}
 
-	fmt.Println("getting fills for market", market.String())
+	// fmt.Println("getting fills for market", market.String())
 	fills, _, err = reader.GetFillsByMarket(cmd.Context(), market, viper.GetInt("limit"))
 
-	cnt, err := json.MarshalIndent(fills, "", " ")
+	cnt, err := json.Marshal(fills)
 	if err != nil {
 		return fmt.Errorf("unable to marshall: %w", err)
 	}
