@@ -30,11 +30,31 @@ type avroLogicalField struct {
 	LogicalType string `json:"logicalType"`
 }
 
-func openSchemaFile(filename, version string) ([]byte, error) {
-	curDir, _ := os.Getwd()
-	path := filepath.Join(curDir, "serumhist", "bqloader", "schemas", version)
+func getProjectRootPath() (string, error) {
+	project := "dfuse-solana"
 
-	return ioutil.ReadFile(filepath.Join(path, fmt.Sprintf("%s.json", filename)))
+	curDir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("could not determine current working directory: %w", err)
+	}
+
+	pathParts := []string{"/"}
+	pathParts = append(pathParts, strings.Split(curDir, string(filepath.Separator))...)
+	for i, elem := range pathParts {
+		if elem == project {
+			return filepath.Join(pathParts[:i+1]...), nil
+		}
+	}
+
+	return "", fmt.Errorf("could not determine project root path")
+}
+
+func openSchemaFile(filename, version string) ([]byte, error) {
+	rootDir, err := getProjectRootPath()
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.ReadFile(filepath.Join(rootDir, "serumhist", "bqloader", "schemas", version, fmt.Sprintf("%s.json", filename)))
 }
 
 func GetTableSchema(schemaName, version string) (*bigquery.Schema, error) {

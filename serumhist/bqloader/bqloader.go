@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/dfuse-io/shutter"
+
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 
 	"cloud.google.com/go/bigquery"
@@ -13,6 +15,8 @@ import (
 )
 
 type BQLoader struct {
+	*shutter.Shutter
+
 	ctx context.Context
 
 	client         *bigquery.Client
@@ -31,27 +35,40 @@ type BQLoader struct {
 
 func New(ctx context.Context, startBlock uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client, registry *registry.Server) *BQLoader {
 	cacheTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tableTraders)
-	checkpointsTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tableProcessedFiles)
+	bql := NewBigQueryLoader(dataset, client)
+
 	bq := &BQLoader{
+		Shutter:            shutter.New(),
 		ctx:                ctx,
 		client:             client,
 		dataset:            dataset,
 		store:              store,
 		storeUrl:           storeUrl,
 		registryServer:     registry,
-		loader:             NewBigQueryLoader(dataset, client, checkpointsTableName),
+		loader:             bql,
 		eventHandlers:      map[string]*EventHandler{},
 		startBlock:         startBlock,
 		checkpoints:        map[string]*pbserumhist.Checkpoint{},
 		traderAccountCache: newTradingAccountCache(cacheTableName, client),
 	}
 
+	bq.OnTerminating(func(err error) {
+		for _, h := range bq.eventHandlers {
+			h.Shutdown(err)
+		}
+		bql.Shutdown(err)
+	})
+
+	bql.OnTerminated(func(err error) {
+		bq.Shutdown(err)
+	})
+
 	return bq
 }
 
 func (bq *BQLoader) InitHandlers(ctx context.Context, scratchSpaceDir string) error {
 	if len(bq.checkpoints) == 0 {
-		err := bq.setCheckpoints(ctx)
+		err := bq.readCheckpoints(ctx)
 		if err != nil {
 			return err
 		}
@@ -70,11 +87,11 @@ func (bq *BQLoader) InitHandlers(ctx context.Context, scratchSpaceDir string) er
 		tradingAccountStartBlock = cp.LastWrittenSlotNum
 	}
 
-	bq.eventHandlers[tableOrders] = NewEventHandler(newOrderStartBlock, bq.storeUrl, bq.store, tableOrders, bq.loader, path.Join(scratchSpaceDir, tableOrders))
-	bq.eventHandlers[tableFills] = NewEventHandler(orderFillStartBlock, bq.storeUrl, bq.store, tableFills, bq.loader, path.Join(scratchSpaceDir, tableFills))
-	bq.eventHandlers[tableTraders] = NewEventHandler(tradingAccountStartBlock, bq.storeUrl, bq.store, tableTraders, bq.loader, path.Join(scratchSpaceDir, tableTraders))
+	bq.eventHandlers[tableOrders] = NewEventHandler(newOrderStartBlock, bq.storeUrl, bq.store, bq.dataset, tableOrders, bq.loader, path.Join(scratchSpaceDir, tableOrders))
+	bq.eventHandlers[tableFills] = NewEventHandler(orderFillStartBlock, bq.storeUrl, bq.store, bq.dataset, tableFills, bq.loader, path.Join(scratchSpaceDir, tableFills))
+	bq.eventHandlers[tableTraders] = NewEventHandler(tradingAccountStartBlock, bq.storeUrl, bq.store, bq.dataset, tableTraders, bq.loader, path.Join(scratchSpaceDir, tableTraders))
 
-	bq.loader.Run(ctx)
+	bq.loader.Run()
 
 	return nil
 }
@@ -82,13 +99,4 @@ func (bq *BQLoader) InitHandlers(ctx context.Context, scratchSpaceDir string) er
 func (bq *BQLoader) PrimeTradeCache(ctx context.Context) error {
 	zlog.Info("priming bq trader cache")
 	return bq.traderAccountCache.load(ctx)
-}
-
-func (bq *BQLoader) Close() error {
-	for _, h := range bq.eventHandlers {
-		h.Shutdown(nil)
-	}
-
-	bq.loader.Shutdown(nil)
-	return nil
 }

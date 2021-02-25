@@ -42,15 +42,17 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
-	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c
+	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/test-go/testify v1.1.4
-	github.com/tidwall/gjson v1.6.7
+	github.com/tidwall/gjson v1.6.7 // indirect
+	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0
 	google.golang.org/api v0.36.0
 	google.golang.org/grpc v1.34.1
+	google.golang.org/grpc/examples v0.0.0-20210223174733-dabedfb38b74 // indirect
 	gorm.io/driver/bigquery v1.0.16
 	gorm.io/gorm v1.20.13-0.20210223113524-940da051a756
-	gotest.tools v2.2.0+incompatible
+	gotest.tools v2.2.0+incompatible // indirect
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807

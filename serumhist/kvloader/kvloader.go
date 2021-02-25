@@ -5,9 +5,11 @@ import (
 	"time"
 
 	"github.com/dfuse-io/kvdb/store"
+	"github.com/dfuse-io/shutter"
 )
 
 type KVLoader struct {
+	*shutter.Shutter
 	ctx               context.Context
 	kvdb              store.KVStore
 	cache             *tradingAccountCache

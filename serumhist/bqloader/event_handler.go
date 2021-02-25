@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/bigquery"
+
 	"go.uber.org/zap"
 
 	"github.com/dfuse-io/derr"
@@ -25,6 +27,7 @@ type EventHandler struct {
 
 	startBlockNum uint64
 
+	dataset  *bigquery.Dataset
 	store    dstore.Store
 	storeUrl string
 	bqloader *BigQueryLoader
@@ -43,7 +46,7 @@ type EventHandler struct {
 	latestSlotId  string
 }
 
-func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, prefix string, bqloader *BigQueryLoader, scratchSpaceDir string) *EventHandler {
+func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, prefix string, bqloader *BigQueryLoader, scratchSpaceDir string) *EventHandler {
 	h := &EventHandler{
 		Shutter:       shutter.New(),
 		startBlockNum: startBlockNum,
@@ -52,6 +55,7 @@ func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, 
 		bqloader:      bqloader,
 		prefix:        prefix,
 		bufferFileDir: scratchSpaceDir,
+		dataset:       dataset,
 	}
 
 	h.OnTerminating(func(err error) {
@@ -120,7 +124,31 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 
 		table := h.prefix
 		uri := strings.Join([]string{h.storeUrl, fmt.Sprintf("%s.avro", destPath)}, "/")
-		h.bqloader.SubmitJob(ctx, table, uri)
+
+		h.bqloader.SubmitJob(table, uri, func(ctx context.Context) error {
+			//checkpoint save callback
+			jobStatusRow := struct {
+				Table    string    `bigquery:"table"`
+				Filename string    `bigquery:"file"`
+				Time     time.Time `bigquery:"timestamp"`
+			}{
+				Table:    table,
+				Filename: uri,
+				Time:     time.Now(),
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			err = h.dataset.Table(tableProcessedFiles).Inserter().Put(ctx, jobStatusRow)
+			cancel()
+
+			if err != nil {
+				zlog.Error("could not write checkpoint", zap.String("table", tableProcessedFiles), zap.Error(err))
+				return err
+			}
+
+			zlog.Info("checkpoint written", zap.String("table", tableProcessedFiles))
+			return nil
+		})
 
 		zlog.Debug("flushed file to store", zap.String("local_file", h.bufferFileName), zap.String("store_file", uri))
 		return nil

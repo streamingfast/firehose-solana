@@ -18,10 +18,8 @@ import (
 )
 
 type Handler interface {
+	bstream.Shutterer
 	bstream.Handler
-	GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error)
-	Healthy() bool
-	Close() error
 }
 
 type Injector struct {
@@ -35,24 +33,29 @@ type Injector struct {
 	preprocessorThreadCount     int
 	parallelDownloadThreadCount int
 	handler                     Handler
+	checkpointResolver          CheckpointResolver
 	server                      *dgrpc.Server
 }
+
+type CheckpointResolver func(ctx context.Context) (*pbserumhist.Checkpoint, error)
 
 // TODO don't depend on both....
 func NewInjector(
 	ctx context.Context,
 	handler Handler,
+	checkpointResolver CheckpointResolver,
 	blockstreamAddr string,
 	blockStore dstore.Store,
 	preprocessorThreadCount int,
 	parallelDownloadThreadCount int,
 ) *Injector {
 	return &Injector{
-		ctx:             ctx,
-		handler:         handler,
-		blockstreamAddr: blockstreamAddr,
-		blockStore:      blockStore,
-		Shutter:         shutter.New(),
+		ctx:                ctx,
+		handler:            handler,
+		checkpointResolver: checkpointResolver,
+		blockstreamAddr:    blockstreamAddr,
+		blockStore:         blockStore,
+		Shutter:            shutter.New(),
 		slotMetrics: slotMetrics{
 			startTime: time.Now(),
 		},
@@ -121,9 +124,11 @@ func (i *Injector) Launch() error {
 
 	i.OnTerminating(func(err error) {
 		zlog.Info("shutting down injector, attempting to close underlying handler")
-		if err := i.handler.Close(); err != nil {
-			zlog.Error("error closing underlying serumhist injector handler", zap.Error(err))
-		}
+		i.handler.Shutdown(err)
+	})
+
+	i.handler.OnTerminated(func(err error) {
+		i.Shutdown(err)
 	})
 
 	//if i.grpcAddr != "" {

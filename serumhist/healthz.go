@@ -40,9 +40,5 @@ func (i *Injector) setHealthy() {
 }
 
 func (i *Injector) Healthy() bool {
-	if !i.handler.Healthy() {
-		return false
-	}
-
 	return i.healthy
 }
