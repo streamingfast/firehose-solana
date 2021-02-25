@@ -54,7 +54,7 @@ func openSchemaFile(filename, version string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ioutil.ReadFile(filepath.Join(rootDir, "serumhist", "bqloader", "schemas", version, fmt.Sprintf("%s.json", filename)))
+	return ioutil.ReadFile(filepath.Join(rootDir, "serumviz", "schemas", version, fmt.Sprintf("%s.json", filename)))
 }
 
 func GetTableSchema(schemaName, version string) (*bigquery.Schema, error) {

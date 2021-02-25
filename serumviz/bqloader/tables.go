@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/dfuse-io/dfuse-solana/serumhist/bqloader/schemas"
+	"github.com/dfuse-io/dfuse-solana/serumviz/schemas"
 	"google.golang.org/api/googleapi"
 )
 

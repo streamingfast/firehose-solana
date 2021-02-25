@@ -11,11 +11,11 @@ import (
 
 	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dfuse-solana/serumhist"
-	bqloader "github.com/dfuse-io/dfuse-solana/serumhist/bqloader"
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
 	kvloader "github.com/dfuse-io/dfuse-solana/serumhist/kvloader"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
+	bqloader "github.com/dfuse-io/dfuse-solana/serumviz/bqloader"
 	"github.com/dfuse-io/dmetrics"
 	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/kvdb/store"

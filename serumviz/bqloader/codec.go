@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
-	"github.com/dfuse-io/dfuse-solana/serumhist/bqloader/schemas"
+	"github.com/dfuse-io/dfuse-solana/serumviz/schemas"
 	"github.com/linkedin/goavro/v2"
 )
 
