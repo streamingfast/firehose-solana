@@ -1,6 +1,7 @@
 package bqloader
 
 import (
+	"context"
 	"fmt"
 
 	"cloud.google.com/go/bigquery"
@@ -9,65 +10,65 @@ import (
 )
 
 const (
-	tableOrders  = "orders"
-	tableFills   = "fills"
-	tableTraders = "traders"
-	tableMarkets = "markets"
-	tableTokens  = "tokens"
+	tableOrders         = Table("orders")
+	tableFills          = Table("fills")
+	tableTraders        = Table("traders")
+	tableMarkets        = Table("markets")
+	tableTokens         = Table("tokens")
+	tableProcessedFiles = Table("processed_files")
 
-	tableProcessedFiles = "processed_files"
+	schemaVersion = "v1"
 )
 
-func (bq *BQLoader) InitTables() (err error) {
-	err = bq.initNewOrdersTable()
-	if err != nil {
-		return
-	}
+var allTables = []Table{tableOrders, tableFills, tableTraders, tableMarkets, tableTokens, tableProcessedFiles}
 
-	err = bq.initOrderFillsTable()
-	if err != nil {
-		return
-	}
-
-	err = bq.initTradersTable()
-	if err != nil {
-		return
-	}
-
-	err = bq.initMarketsTable()
-	if err != nil {
-		return
-	}
-
-	err = bq.initTokensTable()
-	if err != nil {
-		return
-	}
-
-	err = bq.initProcessedFilesTable()
-	if err != nil {
-		return
-	}
-
-	return
+var rangePartitions = map[Table]*bigquery.RangePartitioning{}
+var timePartitions = map[Table]*bigquery.TimePartitioning{
+	tableFills: &bigquery.TimePartitioning{
+		Type:  bigquery.DayPartitioningType,
+		Field: "timestamp",
+	},
 }
 
-func (bq *BQLoader) initTable(name string, schema *bigquery.Schema, rangePartition *bigquery.RangePartitioning, timePartition *bigquery.TimePartitioning) error {
-	table := bq.dataset.Table(name)
-	_, err := table.Metadata(bq.ctx)
-	if err == nil {
+type Table string
+
+func (t Table) Exists(ctx context.Context, dataset *bigquery.Dataset) (bool, error) {
+	table := dataset.Table(t.String())
+	_, err := table.Metadata(ctx)
+	if err != nil {
+		if isErrorNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (t Table) Create(ctx context.Context, dataset *bigquery.Dataset) error {
+	alreadyExists, err := t.Exists(ctx, dataset)
+	if err != nil {
+		return fmt.Errorf("could not check if table already exists: %w", err)
+	}
+
+	if alreadyExists {
 		return nil
 	}
-	if !isErrorNotExist(err) {
-		return err
-	}
+
+	rangePartition := rangePartitions[t]
+	timePartition := timePartitions[t]
 
 	if rangePartition != nil && timePartition != nil {
 		return fmt.Errorf("only one of rangePartition and timePartition may be specified")
 	}
 
+	schema, err := t.Schema()
+	if err != nil {
+		return fmt.Errorf("could not get schema: %w", err)
+	}
+
 	metadata := &bigquery.TableMetadata{
-		Name:              name,
+		Name:              t.String(),
 		RangePartitioning: rangePartition,
 		TimePartitioning:  timePartition,
 	}
@@ -75,62 +76,28 @@ func (bq *BQLoader) initTable(name string, schema *bigquery.Schema, rangePartiti
 		metadata.Schema = *schema
 	}
 
-	err = table.Create(bq.ctx, metadata)
+	table := dataset.Table(string(t))
+	err = table.Create(ctx, metadata)
 	return err
 }
 
-func (bq *BQLoader) initNewOrdersTable() error {
-	schema, err := schemas.GetTableSchema(tableOrders, "v1")
-	if err != nil {
-		return err
-	}
-
-	return bq.initTable(tableOrders, schema, nil, nil)
+func (t Table) Schema() (*bigquery.Schema, error) {
+	return schemas.GetTableSchema(t.String(), schemaVersion)
 }
 
-func (bq *BQLoader) initOrderFillsTable() error {
-	timePartition := &bigquery.TimePartitioning{
-		Type:  bigquery.DayPartitioningType,
-		Field: "timestamp",
-	}
-
-	schema, err := schemas.GetTableSchema(tableFills, "v1")
-	if err != nil {
-		return err
-	}
-	return bq.initTable(tableFills, schema, nil, timePartition)
+func (t Table) String() string {
+	return string(t)
 }
 
-func (bq *BQLoader) initTradersTable() error {
-	schema, err := schemas.GetTableSchema(tableTraders, "v1")
-	if err != nil {
-		return err
+func (bq *BQLoader) InitTables() (err error) {
+	for _, table := range allTables {
+		err := table.Create(bq.ctx, bq.dataset)
+		if err != nil {
+			return err
+		}
 	}
-	return bq.initTable(tableTraders, schema, nil, nil)
-}
 
-func (bq *BQLoader) initProcessedFilesTable() error {
-	schema, err := schemas.GetTableSchema(tableProcessedFiles, "v1")
-	if err != nil {
-		return err
-	}
-	return bq.initTable(tableProcessedFiles, schema, nil, nil)
-}
-
-func (bq *BQLoader) initMarketsTable() error {
-	schema, err := schemas.GetTableSchema(tableMarkets, "v1")
-	if err != nil {
-		return err
-	}
-	return bq.initTable(tableMarkets, schema, nil, nil)
-}
-
-func (bq *BQLoader) initTokensTable() error {
-	schema, err := schemas.GetTableSchema(tableTokens, "v1")
-	if err != nil {
-		return err
-	}
-	return bq.initTable(tableTokens, schema, nil, nil)
+	return nil
 }
 
 func isErrorNotExist(err error) bool {

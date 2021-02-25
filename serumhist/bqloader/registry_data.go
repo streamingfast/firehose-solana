@@ -27,7 +27,7 @@ func (bq *BQLoader) LoadMarkets(ctx context.Context) error {
 		return err
 	}
 
-	return bq.dataset.Table(tableMarkets).Inserter().Put(ctx, marketRows)
+	return bq.dataset.Table(tableMarkets.String()).Inserter().Put(ctx, marketRows)
 }
 
 type marketRow struct {
@@ -75,7 +75,7 @@ func (bq *BQLoader) LoadTokens(ctx context.Context) error {
 		return err
 	}
 
-	return bq.dataset.Table(tableTokens).Inserter().Put(ctx, tokenRows)
+	return bq.dataset.Table(tableTokens.String()).Inserter().Put(ctx, tokenRows)
 }
 
 type tokenRow struct {

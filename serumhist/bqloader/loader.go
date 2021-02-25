@@ -41,7 +41,9 @@ func NewBigQueryLoader(dataset *bigquery.Dataset, client *bigquery.Client) *BigQ
 	}
 
 	bql.OnTerminating(func(err error) {
-		zlog.Info("waiting for current loader job to end...")
+		zlog.Info("waiting for current loader jobs to end...")
+		bql.wg.Wait()
+		zlog.Info("all loader jobs completed.")
 	})
 
 	return bql
@@ -55,6 +57,7 @@ func (bql *BigQueryLoader) Run() {
 			case <-bql.Terminating():
 				return
 			case job = <-bql.jobChannel:
+				bql.wg.Add(1)
 			}
 
 			ref := bigquery.NewGCSReference(job.URI)
@@ -63,7 +66,7 @@ func (bql *BigQueryLoader) Run() {
 			loader := bql.dataset.Table(job.Table).LoaderFrom(ref)
 			loader.UseAvroLogicalTypes = true
 
-			loadFunc := func(ctx context.Context) error {
+			if err := derr.Retry(3, func(ctx context.Context) error {
 				select {
 				case <-ctx.Done():
 					return ctx.Err()
@@ -82,19 +85,16 @@ func (bql *BigQueryLoader) Run() {
 					return jobStatus.Err()
 				}
 				return nil
-			}
-
-			err := derr.Retry(3, loadFunc)
-			if err != nil {
-				zlog.Error("failed to load into big query. stopping", zap.Error(err), zap.Stringer("job", job))
+			}); err != nil {
+				bql.wg.Done()
+				bql.Shutdown(err)
 				return
 			}
 
-			if job.Callback != nil {
-				err := job.Callback(context.TODO())
-				if err != nil {
-					bql.Shutdown(err)
-				}
+			if err := derr.Retry(3, job.Callback); err != nil {
+				bql.wg.Done()
+				bql.Shutdown(err)
+				return
 			}
 		}
 	}()
@@ -102,6 +102,7 @@ func (bql *BigQueryLoader) Run() {
 
 func (bql *BigQueryLoader) SubmitJob(tableName string, uri string, callback func(ctx context.Context) error) {
 	if callback == nil {
+		//noop
 		callback = func(ctx context.Context) error { return nil }
 	}
 

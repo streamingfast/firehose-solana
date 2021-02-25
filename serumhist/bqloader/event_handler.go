@@ -138,15 +138,15 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-			err = h.dataset.Table(tableProcessedFiles).Inserter().Put(ctx, jobStatusRow)
+			err = h.dataset.Table(tableProcessedFiles.String()).Inserter().Put(ctx, jobStatusRow)
 			cancel()
 
 			if err != nil {
-				zlog.Error("could not write checkpoint", zap.String("table", tableProcessedFiles), zap.Error(err))
+				zlog.Error("could not write checkpoint", zap.Stringer("table", tableProcessedFiles), zap.Error(err))
 				return err
 			}
 
-			zlog.Info("checkpoint written", zap.String("table", tableProcessedFiles))
+			zlog.Info("checkpoint written", zap.Stringer("table", tableProcessedFiles))
 			return nil
 		})
 

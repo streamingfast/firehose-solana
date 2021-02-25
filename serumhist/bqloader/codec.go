@@ -21,7 +21,7 @@ type Encoder interface {
 
 func init() {
 	var err error
-	ordersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableOrders, "v1")
+	ordersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableOrders.String(), "v1")
 	if err != nil {
 		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
 	}
@@ -30,7 +30,7 @@ func init() {
 		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
 	}
 
-	fillsSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableFills, "v1")
+	fillsSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableFills.String(), "v1")
 	if err != nil {
 		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
 	}
@@ -39,7 +39,7 @@ func init() {
 		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
 	}
 
-	tradersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableTraders, "v1")
+	tradersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableTraders.String(), "v1")
 	if err != nil {
 		panic(fmt.Sprintf("unable to parse AVRO schema for codecTraders: %s", err.Error()))
 	}

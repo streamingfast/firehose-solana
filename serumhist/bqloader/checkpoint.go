@@ -19,7 +19,7 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 	}
 
 	var earliestCheckpoint *pbserumhist.Checkpoint
-	for _, table := range []string{tableOrders, tableFills, tableTraders} {
+	for _, table := range []Table{tableOrders, tableFills, tableTraders} {
 		tableCheckpoint, ok := bq.checkpoints[table]
 		if !ok {
 			continue
@@ -29,7 +29,7 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 			return nil, nil
 		}
 
-		validCheckpoint, err := bq.validateCheckpoint(ctx, table, tableCheckpoint.LastWrittenSlotNum)
+		validCheckpoint, err := bq.validateCheckpoint(ctx, table.String(), tableCheckpoint.LastWrittenSlotNum)
 		if err != nil {
 			return nil, fmt.Errorf("could not validate checkpoint: %w", err)
 		}
@@ -52,8 +52,8 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 }
 
 func (bq *BQLoader) readCheckpoints(ctx context.Context) error {
-	for _, table := range []string{tableOrders, tableFills, tableTraders} {
-		tableCheckpoint, err := bq.readCheckpoint(ctx, table)
+	for _, table := range []Table{tableOrders, tableFills, tableTraders} {
+		tableCheckpoint, err := bq.readCheckpoint(ctx, table.String())
 		if err != nil {
 			return err
 		}
