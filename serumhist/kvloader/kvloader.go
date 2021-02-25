@@ -22,6 +22,7 @@ const (
 
 func NewLoader(ctx context.Context, kvdb store.KVStore, flushSlotInterval uint64) *KVLoader {
 	return &KVLoader{
+		Shutter:           shutter.New(),
 		ctx:               ctx,
 		flushSlotInterval: flushSlotInterval,
 		kvdb:              kvdb,
