@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist"
-	"github.com/dfuse-io/dfuse-solana/serumhist/bqloader/schemas"
 	"github.com/linkedin/goavro/v2"
 )
 
@@ -20,33 +19,33 @@ type Encoder interface {
 }
 
 func init() {
-	var err error
-	ordersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableOrders.String(), "v1")
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
-	}
-	codecOrders, err = goavro.NewCodec(ordersSchemaSpecification)
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
-	}
-
-	fillsSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableFills.String(), "v1")
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
-	}
-	codecOrderFill, err = goavro.NewCodec(fillsSchemaSpecification)
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
-	}
-
-	tradersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableTraders.String(), "v1")
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecTraders: %s", err.Error()))
-	}
-	codecTraders, err = goavro.NewCodec(tradersSchemaSpecification)
-	if err != nil {
-		panic(fmt.Sprintf("unable to parse AVRO schema for codecTraders: %s", err.Error()))
-	}
+	//var err error
+	//ordersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableOrders.String(), "v1")
+	//if err != nil {
+	//	panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
+	//}
+	//codecOrders, err = goavro.NewCodec(ordersSchemaSpecification)
+	//if err != nil {
+	//	panic(fmt.Sprintf("unable to parse AVRO schema for codecOrders: %s", err.Error()))
+	//}
+	//
+	//fillsSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableFills.String(), "v1")
+	//if err != nil {
+	//	panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
+	//}
+	//codecOrderFill, err = goavro.NewCodec(fillsSchemaSpecification)
+	//if err != nil {
+	//	panic(fmt.Sprintf("unable to parse AVRO schema for codecOrderFill: %s", err.Error()))
+	//}
+	//
+	//tradersSchemaSpecification, err := schemas.GetAvroSchemaDefinition(tableTraders.String(), "v1")
+	//if err != nil {
+	//	panic(fmt.Sprintf("unable to parse AVRO schema for codecTraders: %s", err.Error()))
+	//}
+	//codecTraders, err = goavro.NewCodec(tradersSchemaSpecification)
+	//if err != nil {
+	//	panic(fmt.Sprintf("unable to parse AVRO schema for codecTraders: %s", err.Error()))
+	//}
 }
 
 func AsEncoder(i interface{}) Encoder {
