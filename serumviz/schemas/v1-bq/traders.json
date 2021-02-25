@@ -1,0 +1,7 @@
+{
+  "fields": [
+    {"name": "account", "type": "string"},
+    {"name": "trader", "type": "string"},
+    {"name": "slot_num", "type": "int64"}
+  ]
+}

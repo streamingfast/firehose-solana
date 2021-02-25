@@ -1,0 +1,67 @@
+{
+  "fields": [
+    {
+      "name": "trader",
+      "type": "STRING"
+    },
+    {
+      "name": "market",
+      "type": "STRING"
+    },
+    {
+      "name": "order_id",
+      "type": "STRING"
+    },
+    {
+      "name": "side",
+      "type": "STRING"
+    },
+    {
+      "name": "maker",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "native_qty_paid",
+      "type": "INTEGER"
+    },
+    {
+      "name": "native_qty_received",
+      "type": "INTEGER"
+    },
+    {
+      "name": "native_fee_or_rebate",
+      "type": "INTEGER"
+    },
+    {
+      "name": "fee_tier",
+      "type": "STRING"
+    },
+    {
+      "name": "timestamp",
+      "type": "TIMESTAMP"
+    },
+    {
+      "name": "slot_num",
+      "type": "INTEGER"
+    },
+    {
+      "name": "slot_hash",
+      "type": "STRING"
+    },
+    {
+      "name": "trx_id",
+      "type": "STRING"},
+    {
+      "name": "trx_idx",
+      "type": "INTEGER"
+    },
+    {
+      "name": "inst_idx",
+      "type": "INTEGER"
+    },
+    {
+      "name": "order_seq_num",
+      "type": "INTEGER"
+    }
+  ]
+}
