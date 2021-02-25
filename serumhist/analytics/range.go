@@ -21,9 +21,9 @@ type DateRange struct {
 
 var timeNow func() time.Time
 
-func last24h() *DateRange {
+func last24h() DateRange {
 	t0 := timeNow()
-	return &DateRange{
+	return DateRange{
 		start: t0.Add(-24 * time.Hour),
 		stop:  t0,
 	}
