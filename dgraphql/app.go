@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	serumanalytics "github.com/dfuse-io/dfuse-solana/serumhist/analytics"
+	serumanalytics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
 	"gorm.io/driver/bigquery"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

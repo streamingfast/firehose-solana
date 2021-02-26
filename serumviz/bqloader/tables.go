@@ -5,9 +5,12 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/dfuse-io/dfuse-solana/serumhist/bqloader/schemas"
+	"github.com/dfuse-io/dfuse-solana/serumviz/schemas"
+	"github.com/linkedin/goavro/v2"
 	"google.golang.org/api/googleapi"
 )
+
+//TODO: remove table creation logic from here.  will be done in terraform
 
 const (
 	tableOrders         = Table("orders")
@@ -29,6 +32,7 @@ var timePartitions = map[Table]*bigquery.TimePartitioning{
 		Field: "timestamp",
 	},
 }
+var codecs = map[Table]*goavro.Codec{}
 
 type Table string
 
@@ -85,19 +89,26 @@ func (t Table) Schema() (*bigquery.Schema, error) {
 	return schemas.GetTableSchema(t.String(), schemaVersion)
 }
 
-func (t Table) String() string {
-	return string(t)
-}
-
-func (bq *BQLoader) InitTables() (err error) {
-	for _, table := range allTables {
-		err := table.Create(bq.ctx, bq.dataset)
-		if err != nil {
-			return err
-		}
+func (t Table) Codec() (*goavro.Codec, error) {
+	if c, ok := codecs[t]; ok {
+		return c, nil
 	}
 
-	return nil
+	specification, err := schemas.GetAvroSpecification(t.String(), schemaVersion)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := goavro.NewCodec(specification)
+	if err != nil {
+		return nil, err
+	}
+	codecs[t] = c
+	return c, nil
+}
+
+func (t Table) String() string {
+	return string(t)
 }
 
 func isErrorNotExist(err error) bool {

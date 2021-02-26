@@ -4,7 +4,7 @@ import (
 	"github.com/dfuse-io/dauth/ratelimiter"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
-	serumanalytics "github.com/dfuse-io/dfuse-solana/serumhist/analytics"
+	serumanalytics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/rpc"
 )

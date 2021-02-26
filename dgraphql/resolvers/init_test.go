@@ -3,7 +3,7 @@ package resolvers
 import (
 	"time"
 
-	serumanalytics "github.com/dfuse-io/dfuse-solana/serumhist/analytics"
+	serumanalytics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
 	"github.com/dfuse-io/solana-go"
 )
 

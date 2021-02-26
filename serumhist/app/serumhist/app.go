@@ -5,15 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"google.golang.org/api/googleapi"
-
 	"cloud.google.com/go/bigquery"
-
 	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dfuse-solana/serumhist"
-	bqloader "github.com/dfuse-io/dfuse-solana/serumhist/bqloader"
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
-	kvloader "github.com/dfuse-io/dfuse-solana/serumhist/kvloader"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
 	"github.com/dfuse-io/dmetrics"
@@ -21,6 +16,10 @@ import (
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
+	"google.golang.org/api/googleapi"
+
+	kvloader "github.com/dfuse-io/dfuse-solana/serumhist/kvloader"
+	bqloader "github.com/dfuse-io/dfuse-solana/serumviz/bqloader"
 )
 
 type Config struct {
@@ -170,12 +169,7 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, serumhist.Chec
 
 		loader := bqloader.New(ctx, a.Config.StartBlock, a.Config.BigQueryStoreURL, store, dataset, bqClient, registryServer)
 
-		err = loader.InitTables()
-		if err != nil {
-			return nil, nil, fmt.Errorf("error initializing tables: %w", err)
-		}
-
-		err = loader.InitHandlers(ctx, a.Config.BigQueryScratchSpaceDir)
+		err = loader.Init(ctx, a.Config.BigQueryScratchSpaceDir)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error initializing event handlers: %w", err)
 		}

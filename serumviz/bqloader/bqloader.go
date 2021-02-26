@@ -3,15 +3,12 @@ package bqloader
 import (
 	"context"
 	"fmt"
-	"path"
-
-	"github.com/dfuse-io/shutter"
-
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 
 	"cloud.google.com/go/bigquery"
+	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dstore"
+	"github.com/dfuse-io/shutter"
 )
 
 type BQLoader struct {
@@ -24,7 +21,7 @@ type BQLoader struct {
 	store          dstore.Store
 	storeUrl       string
 	registryServer *registry.Server
-	loader         *BigQueryLoader
+	injector       *BigQueryInjector
 	startBlock     uint64
 
 	checkpoints   map[Table]*pbserumhist.Checkpoint
@@ -35,7 +32,6 @@ type BQLoader struct {
 
 func New(ctx context.Context, startBlock uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client, registry *registry.Server) *BQLoader {
 	cacheTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tableTraders)
-	bql := NewBigQueryLoader(dataset, client)
 
 	bq := &BQLoader{
 		Shutter:            shutter.New(),
@@ -45,7 +41,7 @@ func New(ctx context.Context, startBlock uint64, storeUrl string, store dstore.S
 		store:              store,
 		storeUrl:           storeUrl,
 		registryServer:     registry,
-		loader:             bql,
+		injector:           NewBigQueryInjector(),
 		eventHandlers:      map[Table]*EventHandler{},
 		checkpoints:        map[Table]*pbserumhist.Checkpoint{},
 		startBlock:         startBlock,
@@ -56,17 +52,28 @@ func New(ctx context.Context, startBlock uint64, storeUrl string, store dstore.S
 		for _, h := range bq.eventHandlers {
 			h.Shutdown(err)
 		}
-		bql.Shutdown(err)
+		bq.injector.Shutdown(err)
 	})
 
-	bql.OnTerminated(func(err error) {
+	bq.injector.OnTerminated(func(err error) {
 		bq.Shutdown(err)
 	})
 
 	return bq
 }
 
-func (bq *BQLoader) InitHandlers(ctx context.Context, scratchSpaceDir string) error {
+func (bq *BQLoader) Init(ctx context.Context, scratchSpaceDir string) error {
+	// check that all required tables exist
+	for _, table := range allTables {
+		exists, err := table.Exists(ctx, bq.dataset)
+		if err != nil {
+			return fmt.Errorf("could not check existence of table %s: %w", table, err)
+		}
+		if !exists {
+			return fmt.Errorf("table %s does not exist", table)
+		}
+	}
+
 	if len(bq.checkpoints) == 0 {
 		err := bq.readCheckpoints(ctx)
 		if err != nil {
@@ -87,10 +94,11 @@ func (bq *BQLoader) InitHandlers(ctx context.Context, scratchSpaceDir string) er
 		tradingAccountStartBlock = cp.LastWrittenSlotNum
 	}
 
-	bq.eventHandlers[tableOrders] = NewEventHandler(newOrderStartBlock, bq.storeUrl, bq.store, bq.dataset, tableOrders.String(), bq.loader, path.Join(scratchSpaceDir, tableOrders.String()))
-	bq.eventHandlers[tableFills] = NewEventHandler(orderFillStartBlock, bq.storeUrl, bq.store, bq.dataset, tableFills.String(), bq.loader, path.Join(scratchSpaceDir, tableFills.String()))
-	bq.eventHandlers[tableTraders] = NewEventHandler(tradingAccountStartBlock, bq.storeUrl, bq.store, bq.dataset, tableTraders.String(), bq.loader, path.Join(scratchSpaceDir, tableTraders.String()))
-	bq.loader.Run()
+	bq.eventHandlers[tableOrders] = NewEventHandler(newOrderStartBlock, bq.storeUrl, bq.store, bq.dataset, tableOrders, bq.injector, scratchSpaceDir)
+	bq.eventHandlers[tableFills] = NewEventHandler(orderFillStartBlock, bq.storeUrl, bq.store, bq.dataset, tableFills, bq.injector, scratchSpaceDir)
+	bq.eventHandlers[tableTraders] = NewEventHandler(tradingAccountStartBlock, bq.storeUrl, bq.store, bq.dataset, tableTraders, bq.injector, scratchSpaceDir)
+
+	bq.injector.Run()
 
 	return nil
 }
