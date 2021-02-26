@@ -2,7 +2,6 @@ package bqloader
 
 import (
 	"context"
-	"fmt"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/dfuse-io/dfuse-solana/serumviz/schemas"
@@ -47,42 +46,6 @@ func (t Table) Exists(ctx context.Context, dataset *bigquery.Dataset) (bool, err
 	}
 
 	return true, nil
-}
-
-func (t Table) Create(ctx context.Context, dataset *bigquery.Dataset) error {
-	alreadyExists, err := t.Exists(ctx, dataset)
-	if err != nil {
-		return fmt.Errorf("could not check if table already exists: %w", err)
-	}
-
-	if alreadyExists {
-		return nil
-	}
-
-	rangePartition := rangePartitions[t]
-	timePartition := timePartitions[t]
-
-	if rangePartition != nil && timePartition != nil {
-		return fmt.Errorf("only one of rangePartition and timePartition may be specified")
-	}
-
-	schema, err := t.Schema()
-	if err != nil {
-		return fmt.Errorf("could not get schema: %w", err)
-	}
-
-	metadata := &bigquery.TableMetadata{
-		Name:              t.String(),
-		RangePartitioning: rangePartition,
-		TimePartitioning:  timePartition,
-	}
-	if schema != nil {
-		metadata.Schema = *schema
-	}
-
-	table := dataset.Table(string(t))
-	err = table.Create(ctx, metadata)
-	return err
 }
 
 func (t Table) Schema() (*bigquery.Schema, error) {
