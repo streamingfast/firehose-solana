@@ -1,0 +1,14 @@
+[
+  {
+    "name": "account",
+    "type": "STRING"
+  },
+  {
+    "name": "trader",
+    "type": "STRING"
+  },
+  {
+    "name": "slot_num",
+    "type": "INTEGER"
+  }
+]

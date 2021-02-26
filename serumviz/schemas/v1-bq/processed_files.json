@@ -1,0 +1,14 @@
+[
+  {
+    "name": "table",
+    "type": "STRING"
+  },
+  {
+    "name": "file",
+    "type": "STRING"
+  },
+  {
+    "name": "timestamp",
+    "type": "TIMESTAMP"
+  }
+]
