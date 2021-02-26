@@ -24,8 +24,8 @@ provider "google" {
 }
 
 resource "google_bigquery_dataset" "serum" {
-  dataset_id                  = "serumtest"
-  friendly_name               = "serum-test"
+  dataset_id                  = "serum"
+  friendly_name               = "serum"
   description                 = "serum events"
   location                    = "US"
   project                     = var.gcp_project
