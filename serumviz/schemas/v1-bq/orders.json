@@ -1,16 +1,53 @@
 {
   "fields": [
-    {"name": "num", "type": "int64"},
-    {"name": "market", "type": "string"},
-    {"name": "trader", "type": "string"},
-    {"name": "side", "type": "string"},
-    {"name": "limit_price", "type": "int64"},
-    {"name": "max_quantity", "type": "int64"},
-    {"name": "type", "type": "string"},
-    {"name": "slot_num", "type": "int64"},
-    {"name": "slot_hash", "type": "string"},
-    {"name": "trx_id", "type": "string"},
-    {"name": "trx_idx", "type": "int"},
-    {"name": "inst_idx", "type": "int"}
+    {
+      "name": "num",
+      "type": "INTEGER"
+    },
+    {
+      "name": "market",
+      "type": "STRING"
+    },
+
+    {
+      "name": "trader",
+      "type": "STRING"
+    },
+    {
+      "name": "side",
+      "type": "STRING"
+    },
+    {
+      "name": "limit_price",
+      "type": "INTEGER"
+    },
+    {
+      "name": "max_quantity",
+      "type": "INTEGER"
+    },
+    {
+      "name": "type",
+      "type": "STRING"
+    },
+    {
+      "name": "slot_num",
+      "type": "INTEGER"
+    },
+    {
+      "name": "slot_hash",
+      "type": "STRING"
+    },
+    {
+      "name": "trx_id",
+      "type": "STRING"
+    },
+    {
+      "name": "trx_idx",
+      "type": "INTEGER"
+    },
+    {
+      "name": "inst_idx",
+      "type": "INTEGER",
+    }
   ]
 }

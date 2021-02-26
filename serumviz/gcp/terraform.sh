@@ -10,7 +10,7 @@ if [ ! -f "$TFSTATE_FILE" ]; then
   exit 1
 fi
 
-GCP_ACCESS_TOKEN="$(gcloud auth print-access-token --impersonate-service-account=serumviz@$PROJECT.iam.gserviceaccount.com)"
+GCP_ACCESS_TOKEN="$(gcloud auth print-access-token --impersonate-service-account=terraform@$PROJECT.iam.gserviceaccount.com)"
 
 # Refresh access token for backend first
 cat <<< "$(jq ".backend.config.access_token = \"$GCP_ACCESS_TOKEN\"" < "$TFSTATE_FILE")" > "$TFSTATE_FILE"

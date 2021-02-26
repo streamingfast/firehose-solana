@@ -30,3 +30,15 @@ resource "google_bigquery_dataset" "serum" {
   location                    = "US"
   project                     = var.gcp_project
 }
+
+resource "google_bigquery_table" "fills" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "fills"
+
+  time_partitioning {
+    field = "timestamp"
+    type = "DAY"
+  }
+
+  schema = file("${path.module}/../schemas/v1-bq/fills.json")
+}

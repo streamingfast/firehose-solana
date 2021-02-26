@@ -1,14 +1,44 @@
 {
   "fields": [
-    {"name": "name", "type": "string"},
-    {"name": "address", "type": "string"},
-    {"name": "deprecated", "type": "bool"},
-    {"name": "program_id", "type": "string"},
-    {"name": "base_token", "type": "string"},
-    {"name": "quote_token", "type": "string"},
-    {"name": "base_lot_size", "type": "int64"},
-    {"name": "quote_lot_size", "type": "int64"},
-    {"name": "request_queue", "type": "string"},
-    {"name": "event_queue", "type": "string"}
+    {
+      "name": "name",
+      "type": "STRING"
+    },
+    {
+      "name": "address",
+      "type": "STRING"
+    },
+    {
+      "name": "deprecated",
+      "type": "BOOLEAN"
+    },
+    {
+      "name": "program_id",
+      "type": "STRING"
+    },
+    {
+      "name": "base_token",
+      "type": "STRING"
+    },
+    {
+      "name": "quote_token",
+      "type": "STRING"
+    },
+    {
+      "name": "base_lot_size",
+      "type": "INTEGER"
+    },
+    {
+      "name": "quote_lot_size",
+      "type": "INTEGER"
+    },
+    {
+      "name": "request_queue",
+      "type": "STRING"
+    },
+    {
+      "name": "event_queue",
+      "type": "STRING"
+    }
   ]
 }
