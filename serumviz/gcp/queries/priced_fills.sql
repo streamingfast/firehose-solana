@@ -20,7 +20,7 @@ WITH priced_fills AS
   quote_t.decimals AS quote_decimals,
   quote_t.symbol AS quote_symbol,
   f.*,
-FROM serum.fills AS f
+FROM ${dataset}.fills AS f
   LEFT JOIN serum.markets AS m ON f.market = m.address
   LEFT JOIN serum.tokens AS base_t ON m.base_token = base_t.address
   LEFT JOIN serum.tokens AS quote_t ON m.quote_token = quote_t.address

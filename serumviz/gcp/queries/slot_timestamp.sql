@@ -2,5 +2,5 @@ SELECT
     DISTINCT (slot_num),
     timestamp
 FROM
- serum.fills
+ ${dataset}.fills
 ORDER BY slot_num ASC
