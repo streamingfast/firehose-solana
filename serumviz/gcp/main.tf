@@ -24,8 +24,8 @@ provider "google" {
 }
 
 resource "google_bigquery_dataset" "serum" {
-  dataset_id                  = "serum"
-  friendly_name               = "serum"
+  dataset_id                  = "serumtest"
+  friendly_name               = "serum-test"
   description                 = "serum events"
   location                    = "US"
   project                     = var.gcp_project
@@ -34,6 +34,7 @@ resource "google_bigquery_dataset" "serum" {
 resource "google_bigquery_table" "fills" {
   dataset_id = google_bigquery_dataset.serum.dataset_id
   table_id   = "fills"
+  project                     = var.gcp_project
 
   time_partitioning {
     field = "timestamp"
@@ -41,4 +42,119 @@ resource "google_bigquery_table" "fills" {
   }
 
   schema = file("${path.module}/../schemas/v1-bq/fills.json")
+}
+
+resource "google_bigquery_table" "orders" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "orders"
+  project                     = var.gcp_project
+
+  time_partitioning {
+    field = "timestamp"
+    type = "DAY"
+  }
+
+  schema = file("${path.module}/../schemas/v1-bq/orders.json")
+}
+
+resource "google_bigquery_table" "processed_files" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "processed_files"
+  project                     = var.gcp_project
+  schema = file("${path.module}/../schemas/v1-bq/processed_files.json")
+}
+
+resource "google_bigquery_table" "traders" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "traders"
+  project                     = var.gcp_project
+  schema = file("${path.module}/../schemas/v1-bq/traders.json")
+}
+
+resource "google_bigquery_table" "markets" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "markets"
+  project                     = var.gcp_project
+
+  external_data_configuration {
+    autodetect    = true
+    source_format = "NEWLINE_DELIMITED_JSON"
+
+    source_uris = [
+      "gs://staging.dfuseio-global.appspot.com/sol-markets/sol-mainnet-v1.jsonl",
+    ]
+  }
+}
+
+resource "google_bigquery_table" "tokens" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "tokens"
+  project                     = var.gcp_project
+
+  external_data_configuration {
+    autodetect    = true
+    source_format = "NEWLINE_DELIMITED_JSON"
+
+    source_uris = [
+      "gs://staging.dfuseio-global.appspot.com/sol-tokens/sol-mainnet-v1.jsonl",
+    ]
+  }
+
+}
+
+
+//****************************************************************
+//          Logical Views
+//****************************************************************
+
+resource "google_bigquery_table" "slot_timestamp" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "slot_timestamp"
+  project                     = var.gcp_project
+
+  view {
+    query = file("${path.module}/queries/slot_timestamp.sql")
+    use_legacy_sql = false
+  }
+
+  depends_on = [google_bigquery_table.fills]
+}
+
+resource "google_bigquery_table" "priced_fills" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "priced_fills"
+  project                     = var.gcp_project
+
+  view {
+    query = file("${path.module}/queries/priced_fills.sql")
+    use_legacy_sql = false
+  }
+
+  depends_on = [google_bigquery_table.fills]
+}
+
+resource "google_bigquery_table" "usd_priced_fills" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "usd_priced_fills"
+  project                     = var.gcp_project
+
+  view {
+    query = file("${path.module}/queries/usd_priced_fills.sql")
+    use_legacy_sql = false
+  }
+
+  depends_on = [google_bigquery_table.priced_fills]
+}
+
+resource "google_bigquery_table" "volume_fills" {
+  dataset_id = google_bigquery_dataset.serum.dataset_id
+  table_id   = "volume_fills"
+  project                     = var.gcp_project
+
+  view {
+    query = file("${path.module}/queries/volume_fills.sql")
+    use_legacy_sql = false
+  }
+
+  depends_on = [google_bigquery_table.usd_priced_fills]
 }
