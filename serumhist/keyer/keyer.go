@@ -116,12 +116,12 @@ func DecodeFillByTraderMarket(key Key) (trader solana.PublicKey, market solana.P
 		panic(fmt.Sprintf("unable to decode key, expecting key prefix 0x%02x received: 0x%02x", key[0], PrefixFillByTraderMarket))
 	}
 	copy(trader[:], key[1:])
-	slotNum = ^binary.BigEndian.Uint64(key[33:])
-	trxIdx = ^binary.BigEndian.Uint64(key[41:])
-	instIdx = ^binary.BigEndian.Uint64(key[49:])
-	copy(market[:], key[57:])
-	orderSeqNum = ^binary.BigEndian.Uint64(key[89:])
+	copy(market[:], key[33:])
 
+	slotNum = ^binary.BigEndian.Uint64(key[65:])
+	trxIdx = ^binary.BigEndian.Uint64(key[73:])
+	instIdx = ^binary.BigEndian.Uint64(key[81:])
+	orderSeqNum = ^binary.BigEndian.Uint64(key[89:])
 	return
 }
 func EncodeFillByTraderMarketPrefix(trader, market solana.PublicKey) Prefix {
