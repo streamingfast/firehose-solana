@@ -2,6 +2,7 @@ package bqloader
 
 import (
 	"context"
+	"fmt"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/dfuse-io/dfuse-solana/serumviz/schemas"
@@ -11,33 +12,24 @@ import (
 
 //TODO: remove table creation logic from here.  will be done in terraform
 
-const (
-	tableOrders         = Table("orders")
-	tableFills          = Table("fills")
-	tableTraders        = Table("traders")
-	tableMarkets        = Table("markets")
-	tableTokens         = Table("tokens")
-	tableProcessedFiles = Table("processed_files")
+type Table string
 
-	schemaVersion = "v1"
+const (
+	tableOrders         Table = "orders"
+	tableFills          Table = "fills"
+	tableTraders        Table = "traders"
+	tableMarkets        Table = "markets"
+	tableTokens         Table = "tokens"
+	tableProcessedFiles Table = "processed_files"
 )
 
 var allTables = []Table{tableOrders, tableFills, tableTraders, tableMarkets, tableTokens, tableProcessedFiles}
 
-var rangePartitions = map[Table]*bigquery.RangePartitioning{}
-var timePartitions = map[Table]*bigquery.TimePartitioning{
-	tableFills: &bigquery.TimePartitioning{
-		Type:  bigquery.DayPartitioningType,
-		Field: "timestamp",
-	},
-}
+// TODO: at this point shoudn't this be part of a holistic Table struct?
 var codecs = map[Table]*goavro.Codec{}
 
-type Table string
-
 func (t Table) Exists(ctx context.Context, dataset *bigquery.Dataset) (bool, error) {
-	table := dataset.Table(t.String())
-	_, err := table.Metadata(ctx)
+	_, err := dataset.Table(t.String()).Metadata(ctx)
 	if err != nil {
 		if isErrorNotExist(err) {
 			return false, nil
@@ -48,32 +40,28 @@ func (t Table) Exists(ctx context.Context, dataset *bigquery.Dataset) (bool, err
 	return true, nil
 }
 
-func (t Table) Schema() (*bigquery.Schema, error) {
-	return schemas.GetTableSchema(t.String(), schemaVersion)
+func (t Table) Initialize() error {
+	specification, err := schemas.GetAvroSchemaV1(t.String())
+	if err != nil {
+		return fmt.Errorf("unable to retrieve avro schema for table %q: %w", t, err)
+	}
+
+	if codecs[t], err = goavro.NewCodec(specification); err != nil {
+		return fmt.Errorf("failed to create new codec for table %q: %w", t, err)
+	}
+	return nil
 }
 
 func (t Table) Codec() (*goavro.Codec, error) {
 	if c, ok := codecs[t]; ok {
 		return c, nil
 	}
-
-	specification, err := schemas.GetAvroSpecification(t.String(), schemaVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := goavro.NewCodec(specification)
-	if err != nil {
-		return nil, err
-	}
-	codecs[t] = c
-	return c, nil
+	return nil, fmt.Errorf("unable to find codec for table %q. Make sure the table was initialized before calling this function", t)
 }
 
 func (t Table) String() string {
 	return string(t)
 }
-
 func isErrorNotExist(err error) bool {
 	apiError, ok := err.(*googleapi.Error)
 	if !ok {

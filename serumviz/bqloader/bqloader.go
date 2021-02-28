@@ -67,11 +67,16 @@ func (bq *BQLoader) Init(ctx context.Context, scratchSpaceDir string) error {
 	for _, table := range allTables {
 		exists, err := table.Exists(ctx, bq.dataset)
 		if err != nil {
-			return fmt.Errorf("could not check existence of table %s: %w", table, err)
+			return fmt.Errorf("could not check existence of table %q: %w", table, err)
 		}
 		if !exists {
-			return fmt.Errorf("table %s does not exist", table)
+			return fmt.Errorf("table %q does not exist", table)
 		}
+
+		if err := table.Initialize(); err != nil {
+			return fmt.Errorf("failed to initialize table %q: %w", table, err)
+		}
+
 	}
 
 	if len(bq.checkpoints) == 0 {

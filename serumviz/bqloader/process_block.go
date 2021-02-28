@@ -34,7 +34,7 @@ func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 
 		err = tradingAccountsHandler.HandleEvent(AsEncoder(account), blk.Number, blk.Id)
 		if err != nil {
-			return fmt.Errorf("unable to process trading account %w", err)
+			return fmt.Errorf("unable to process trading account: %w", err)
 		}
 	}
 

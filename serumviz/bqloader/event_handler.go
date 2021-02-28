@@ -109,7 +109,7 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 
 	uploadFunc := func(ctx context.Context) error {
 		destPath := NewFileName(
-			h.table.String(),
+			string(h.table),
 			h.startSlotNum,
 			h.latestSlotNum,
 			h.startSlotId,
@@ -122,7 +122,7 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 			return fmt.Errorf("failed pushing local file to store: %w", err)
 		}
 
-		tableName := h.table.String()
+		tableName := string(h.table)
 		uri := strings.Join([]string{h.storeUrl, fmt.Sprintf("%s.avro", destPath)}, "/")
 
 		format := bigquery.Avro
@@ -189,10 +189,10 @@ func (h *EventHandler) getBufferedWriter(slotNum uint64, slotId string) (*goavro
 		return nil, fmt.Errorf("could not create buffer file directory: %w", err)
 	}
 
-	h.bufferFileName = filepath.Join(h.bufferFileDir, fmt.Sprintf("pending-%s-%010d.ocf", h.table.String(), rand.Int()))
+	h.bufferFileName = filepath.Join(h.bufferFileDir, fmt.Sprintf("pending-%s-%010d.ocf", string(h.table), rand.Int()))
 	h.bufferFile, err = os.OpenFile(h.bufferFileName, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to open local avro file: %w", err)
 	}
 
 	codec, err := h.table.Codec()

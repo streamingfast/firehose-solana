@@ -3,106 +3,41 @@ package schemas
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
+	rice "github.com/GeertJohan/go.rice"
 )
 
-type Definition struct {
-	Fields []DefinitionField `json:"fields"`
-}
+//go:generate rice embed-go
 
-type DefinitionField struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-}
-
-type avroField struct {
-	Name string      `json:"name"`
-	Type interface{} `json:"type"`
-}
-
-type avroLogicalField struct {
-	Type        string `json:"type"`
-	LogicalType string `json:"logicalType"`
-}
-
-func getProjectRootPath() (string, error) {
-	project := "dfuse-solana"
-
-	curDir, err := os.Getwd()
+func GetBQSchemaV1(name string) (*bigquery.Schema, error) {
+	box := rice.MustFindBox("V1")
+	cnt, err := box.Bytes(fmt.Sprintf("%s.json", name))
 	if err != nil {
-		return "", fmt.Errorf("could not determine current working directory: %w", err)
+		return nil, fmt.Errorf("unable to get schema %q: %w", name, err)
 	}
 
-	pathParts := []string{"/"}
-	pathParts = append(pathParts, strings.Split(curDir, string(filepath.Separator))...)
-	for i, elem := range pathParts {
-		if elem == project {
-			return filepath.Join(pathParts[:i+1]...), nil
-		}
-	}
-
-	return "", fmt.Errorf("could not determine project root path")
-}
-
-func openSchemaFile(filename, version string) ([]byte, error) {
-	rootDir, err := getProjectRootPath()
+	schema := bigquery.Schema{}
+	err = json.Unmarshal([]byte(cnt), &schema)
 	if err != nil {
-		return nil, err
-	}
-	return ioutil.ReadFile(filepath.Join(rootDir, "serumviz", "schemas", version, fmt.Sprintf("%s.json", filename)))
-}
-
-func GetTableSchema(schemaName, version string) (*bigquery.Schema, error) {
-	bytes, err := openSchemaFile(schemaName, version)
-	if err != nil {
-		return nil, fmt.Errorf("could not open file: %w", err)
+		return nil, fmt.Errorf("unable to parse schema: %w", err)
 	}
 
-	var schemaDef *Definition
-	err = json.Unmarshal(bytes, &schemaDef)
-	if err != nil {
-		return nil, fmt.Errorf("could not decode schema definition %s: %w", schemaName, err)
-	}
-
-	if schemaDef == nil || schemaDef.Fields == nil {
-		return nil, fmt.Errorf("no fields are defined for %s", schemaName)
-	}
-
-	fieldSchemas := make([]*bigquery.FieldSchema, 0, len(schemaDef.Fields))
-	for _, field := range schemaDef.Fields {
-		bigQueryType, err := toGoogleType(field.Type)
-		if err != nil {
-			return nil, fmt.Errorf("error reading field %s in %s: %w", field.Name, schemaName, err)
-		}
-		fieldSchemas = append(fieldSchemas, &bigquery.FieldSchema{
-			Name: field.Name,
-			Type: bigQueryType,
-		})
-	}
-
-	schema := bigquery.Schema(fieldSchemas)
 	return &schema, nil
 }
 
-func GetAvroSpecification(schemaName, version string) (string, error) {
-	bytes, err := openSchemaFile(schemaName, version)
+func GetAvroSchemaV1(schemaName string) (string, error) {
+	box := rice.MustFindBox("V1")
+	cnt, err := box.Bytes(fmt.Sprintf("%s.json", schemaName))
 	if err != nil {
-		return "", fmt.Errorf("could not open file: %w", err)
+		return "", fmt.Errorf("unable to get schema %q: %w", schemaName, err)
 	}
 
-	var schemaDef *Definition
-	err = json.Unmarshal(bytes, &schemaDef)
+	bqSchema := bigquery.Schema{}
+	err = json.Unmarshal([]byte(cnt), &bqSchema)
 	if err != nil {
-		return "", fmt.Errorf("could not decode schema definition %s: %w", schemaName, err)
-	}
-
-	if schemaDef == nil || schemaDef.Fields == nil {
-		return "", fmt.Errorf("no fields are defined for %s", schemaName)
+		return "", fmt.Errorf("unable to parse schema: %w", err)
 	}
 
 	type codec struct {
@@ -116,10 +51,10 @@ func GetAvroSpecification(schemaName, version string) (string, error) {
 		Namespace: "io.dfuse",
 		Type:      "record",
 		Name:      toCamelCase(schemaName),
-		Fields:    make([]avroField, 0, len(schemaDef.Fields)),
+		Fields:    make([]avroField, 0, len(bqSchema)),
 	}
 
-	for _, field := range schemaDef.Fields {
+	for _, field := range bqSchema {
 		avroType, err := toAvroType(field.Type)
 		if err != nil {
 			return "", fmt.Errorf("error reading field %s in %s: %w", field.Name, schemaName, err)
@@ -138,38 +73,42 @@ func GetAvroSpecification(schemaName, version string) (string, error) {
 	return string(resultBytes), nil
 }
 
-func toGoogleType(baseType string) (bigquery.FieldType, error) {
-	switch strings.ToLower(baseType) {
-	case "int", "int32", "int64", "long":
-		return bigquery.IntegerFieldType, nil
-	case "string":
-		return bigquery.StringFieldType, nil
-	case "timestamp":
-		return bigquery.TimestampFieldType, nil
-	case "bool", "boolean":
-		return bigquery.BooleanFieldType, nil
-	default:
-		return "", fmt.Errorf("unsupported avro type %s", baseType)
-	}
+type avroField struct {
+	Name string      `json:"name"`
+	Type interface{} `json:"type"`
 }
 
-func toAvroType(baseType string) (interface{}, error) {
-	switch strings.ToLower(baseType) {
-	case "int", "int32":
-		return "int", nil
-	case "int64", "long":
-		return "long", nil
-	case "string":
+type avroLogicalField struct {
+	Type        string `json:"type"`
+	LogicalType string `json:"logicalType"`
+}
+
+func toAvroType(bgFieldType bigquery.FieldType) (interface{}, error) {
+	switch bgFieldType {
+	case bigquery.StringFieldType:
 		return "string", nil
-	case "timestamp":
-		return avroLogicalField{Type: "long", LogicalType: "timestamp-millis"}, nil
-	case "bool", "boolean":
+	case bigquery.IntegerFieldType:
+		return "long", nil
+	case bigquery.FloatFieldType:
+		panic("un")
+	case bigquery.BooleanFieldType:
 		return "boolean", nil
+	case bigquery.TimestampFieldType:
+		return avroLogicalField{Type: "long", LogicalType: "timestamp-millis"}, nil
+	// TODO: add support as the need arises
+	//case bigquery.BytesFieldType:
+	//case bigquery.RecordFieldType:
+	//case bigquery.DateFieldType:
+	//case bigquery.TimeFieldType:
+	//case bigquery.DateTimeFieldType:
+	//case bigquery.NumericFieldType:
+	//case bigquery.GeographyFieldType:
 	default:
-		return "", fmt.Errorf("unsupported avro type %s", baseType)
+		return "", fmt.Errorf("unsupported avro type %q", bgFieldType)
 	}
 }
 
+// TODO: should we use package "github.com/iancoleman/strcase"??
 func toCamelCase(s string) string {
 	s = strings.TrimSpace(s)
 	if s == "" {

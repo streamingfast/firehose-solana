@@ -8,6 +8,7 @@ require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/abourget/llerrgroup v0.2.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dfuse-io/binary v0.0.0-20210216024852-4ae6830a495d
 	github.com/dfuse-io/bstream v0.0.2-0.20210218160250-ce6144227e87
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
@@ -44,7 +45,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/test-go/testify v1.1.4
-	github.com/tidwall/gjson v1.6.7 // indirect
+	github.com/tidwall/gjson v1.6.7
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/zap v1.16.0
 	google.golang.org/api v0.36.0
