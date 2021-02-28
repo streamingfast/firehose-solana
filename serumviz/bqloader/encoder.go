@@ -52,6 +52,7 @@ func (e *newOrderEncoder) Encode() map[string]interface{} {
 		"trx_id":       e.Order.TrxId,
 		"trx_idx":      int32(e.Ref.TrxIdx),
 		"inst_idx":     int32(e.Ref.InstIdx),
+		"timestamp":    e.Timestamp,
 	}
 	return m
 }

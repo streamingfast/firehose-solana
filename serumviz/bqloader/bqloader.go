@@ -80,7 +80,7 @@ func (bq *BQLoader) Init(ctx context.Context, scratchSpaceDir string) error {
 	}
 
 	if len(bq.checkpoints) == 0 {
-		err := bq.readCheckpoints(ctx)
+		err := bq.readCheckpoints(ctx)11
 		if err != nil {
 			return err
 		}

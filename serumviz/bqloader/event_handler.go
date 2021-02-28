@@ -87,8 +87,7 @@ func (h *EventHandler) HandleEvent(event Encoder, slotNum uint64, slotId string)
 		return err
 	}
 
-	err = bw.Append([]interface{}{event.Encode()})
-	if err != nil {
+	if err = bw.Append([]interface{}{event.Encode()}); err != nil {
 		return fmt.Errorf("failed writing to buffer file: %w", err)
 	}
 
