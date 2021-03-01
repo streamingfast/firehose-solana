@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/solana-go"
+	"go.uber.org/zap"
 )
 
 func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequest) (*pbserumhist.FillsResponse, error) {

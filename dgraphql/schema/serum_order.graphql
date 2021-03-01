@@ -37,7 +37,7 @@ type SerumOrder {
   type: ORDER_TYPE!
 
   """The fills associated to the order"""
-  fills: [SerumFill]!
+  fills: [SerumFill!]!
 }
 
 enum ORDER_TYPE {
