@@ -113,7 +113,6 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 			h.latestSlotNum,
 			h.startSlotId,
 			h.latestSlotId,
-			h.startTime.Format("2006-01-02-15-04-05-")+fmt.Sprintf("%010d", rand.Int()),
 		).String()
 
 		err := h.store.PushLocalFile(ctx, h.bufferFileName, destPath)
@@ -127,14 +126,14 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 		format := bigquery.Avro
 		h.bqinjector.SubmitJob(uri, tableName, h.dataset, format, func(ctx context.Context) error {
 			//checkpoint save callback
-			jobStatusRow := struct {
-				Table    string    `bigquery:"table"`
-				Filename string    `bigquery:"file"`
-				Time     time.Time `bigquery:"timestamp"`
-			}{
-				Table:    tableName,
-				Filename: uri,
-				Time:     time.Now(),
+			jobStatusRow := ProcessFile{
+				Table:        tableName,
+				Filename:     uri,
+				StartSlotNum: h.startSlotNum,
+				StartSlotID:  h.startSlotId,
+				EndSlotNum:   h.latestSlotNum,
+				EndSlotID:    h.latestSlotId,
+				Time:         time.Now(),
 			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)

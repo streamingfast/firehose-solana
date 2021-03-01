@@ -8,6 +8,22 @@
     "type": "STRING"
   },
   {
+    "name": "start_slot_num",
+    "type": "INTEGER"
+  },
+  {
+    "name": "start_slot_id",
+    "type": "STRING"
+  },
+  {
+    "name": "end_slot_num",
+    "type": "INTEGER"
+  },
+  {
+    "name": "end_slot_id",
+    "type": "STRING"
+  },
+  {
     "name": "timestamp",
     "type": "TIMESTAMP"
   }

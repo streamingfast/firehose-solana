@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dfuse-solana/serumhist"
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
 	kvloader "github.com/dfuse-io/dfuse-solana/serumhist/kvloader"
@@ -147,18 +146,13 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, serumhist.Chec
 
 		dataset := bqClient.Dataset(a.Config.BigQueryDataset)
 
-		store, err := dstore.NewStore(a.Config.BigQueryStoreURL, "avro", "zstd", false)
+		// we do not want the avro files to be compress, or else bigquery would not be able to consume them!
+		store, err := dstore.NewStore(a.Config.BigQueryStoreURL, "avro", "", false)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error creating bigquery dstore: %w", err)
 		}
 
-		registryServer := registry.NewServer(nil, a.Config.TokensFileURL, a.Config.MarketFileURL, "")
-		err = registryServer.Launch(ctx)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error creating registry server: %w", err)
-		}
-
-		loader := bqloader.New(ctx, a.Config.StartBlock, a.Config.BigQueryStoreURL, store, dataset, bqClient, registryServer)
+		loader := bqloader.New(ctx, a.Config.StartBlock, a.Config.BigQueryStoreURL, store, dataset, bqClient)
 
 		err = loader.Init(ctx, a.Config.BigQueryScratchSpaceDir)
 		if err != nil {

@@ -6,7 +6,6 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/shutter"
 )
@@ -16,13 +15,12 @@ type BQLoader struct {
 
 	ctx context.Context
 
-	client         *bigquery.Client
-	dataset        *bigquery.Dataset
-	store          dstore.Store
-	storeUrl       string
-	registryServer *registry.Server
-	injector       *BigQueryInjector
-	startBlock     uint64
+	client     *bigquery.Client
+	dataset    *bigquery.Dataset
+	store      dstore.Store
+	storeUrl   string
+	injector   *BigQueryInjector
+	startBlock uint64
 
 	checkpoints   map[Table]*pbserumhist.Checkpoint
 	eventHandlers map[Table]*EventHandler
@@ -30,7 +28,7 @@ type BQLoader struct {
 	traderAccountCache *tradingAccountCache
 }
 
-func New(ctx context.Context, startBlock uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client, registry *registry.Server) *BQLoader {
+func New(ctx context.Context, startBlock uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, client *bigquery.Client) *BQLoader {
 	cacheTableName := fmt.Sprintf("%s.serum.%s", dataset.ProjectID, tableTraders)
 
 	bq := &BQLoader{
@@ -40,7 +38,6 @@ func New(ctx context.Context, startBlock uint64, storeUrl string, store dstore.S
 		dataset:            dataset,
 		store:              store,
 		storeUrl:           storeUrl,
-		registryServer:     registry,
 		injector:           NewBigQueryInjector(),
 		eventHandlers:      map[Table]*EventHandler{},
 		checkpoints:        map[Table]*pbserumhist.Checkpoint{},

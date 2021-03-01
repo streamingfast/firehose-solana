@@ -10,9 +10,11 @@ if [ ! -f "$TFSTATE_FILE" ]; then
   exit 1
 fi
 
-GCP_ACCESS_TOKEN="$(gcloud auth print-access-token --impersonate-service-account=terraform@$GCP_PROJECT.iam.gserviceaccount.com)"
+GCP_ACCESS_TOKEN="$(gcloud auth print-access-token --impersonate-service-account=terraform@dfuseio-global.iam.gserviceaccount.com)"
 
 # Refresh access token for backend first
 cat <<< "$(jq ".backend.config.access_token = \"$GCP_ACCESS_TOKEN\"" < "$TFSTATE_FILE")" > "$TFSTATE_FILE"
 
+$TERRAFORM_BIN workspace new "$GCP_PROJECT"
+$TERRAFORM_BIN workspace select "$GCP_PROJECT"
 TF_VAR_gcp_access_token=$GCP_ACCESS_TOKEN TF_VAR_gcp_project=$GCP_PROJECT $TERRAFORM_BIN $1

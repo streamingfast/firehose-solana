@@ -10,6 +10,16 @@ import (
 	"google.golang.org/api/iterator"
 )
 
+type ProcessFile struct {
+	Table        string    `bigquery:"table"`
+	Filename     string    `bigquery:"file"`
+	StartSlotNum uint64    `bigquery:"start_slot_num"`
+	StartSlotID  string    `bigquery:"start_slot_id"`
+	EndSlotNum   uint64    `bigquery:"end_slot_num"`
+	EndSlotID    string    `bigquery:"end_slot_id"`
+	Time         time.Time `bigquery:"timestamp"`
+}
+
 func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {
 	if len(bq.checkpoints) == 0 {
 		err := bq.readCheckpoints(ctx)
@@ -79,13 +89,8 @@ func (bq *BQLoader) readCheckpoint(ctx context.Context, forTable string) (*pbser
 			return fmt.Errorf("could not read query results: %w", err)
 		}
 
-		type Row struct {
-			File      string    `bigquery:"file"`
-			Timestamp time.Time `bigquery:"timestamp"`
-		}
-
 		for {
-			var row Row
+			var row ProcessFile
 			err := it.Next(&row)
 			if err == iterator.Done {
 				return nil
@@ -94,14 +99,9 @@ func (bq *BQLoader) readCheckpoint(ctx context.Context, forTable string) (*pbser
 				return fmt.Errorf("could not read row: %w", err)
 			}
 
-			fileInfo, err := parseLatestInfoFromFilePath(row.File)
-			if err != nil {
-				return fmt.Errorf("could not parse file name: %w", err)
-			}
-
 			result = &pbserumhist.Checkpoint{
-				LastWrittenSlotNum: fileInfo.LatestSlotNum,
-				LastWrittenSlotId:  fileInfo.LatestSlotId,
+				LastWrittenSlotNum: row.EndSlotNum,
+				LastWrittenSlotId:  row.EndSlotID,
 			}
 		}
 	}

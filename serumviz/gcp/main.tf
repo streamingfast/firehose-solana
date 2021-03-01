@@ -41,7 +41,7 @@ resource "google_bigquery_table" "fills" {
     type = "DAY"
   }
 
-  schema = file("${path.module}/../schemas/v1-bq/fills.json")
+  schema = file("${path.module}/../schemas/v1/fills.json")
 }
 
 resource "google_bigquery_table" "orders" {
@@ -54,21 +54,21 @@ resource "google_bigquery_table" "orders" {
     type = "DAY"
   }
 
-  schema = file("${path.module}/../schemas/v1-bq/orders.json")
+  schema = file("${path.module}/../schemas/v1/orders.json")
 }
 
 resource "google_bigquery_table" "processed_files" {
   dataset_id = google_bigquery_dataset.serum.dataset_id
   table_id   = "processed_files"
   project                     = var.gcp_project
-  schema = file("${path.module}/../schemas/v1-bq/processed_files.json")
+  schema = file("${path.module}/../schemas/v1/processed_files.json")
 }
 
 resource "google_bigquery_table" "traders" {
   dataset_id = google_bigquery_dataset.serum.dataset_id
   table_id   = "traders"
   project                     = var.gcp_project
-  schema = file("${path.module}/../schemas/v1-bq/traders.json")
+  schema = file("${path.module}/../schemas/v1/traders.json")
 }
 
 resource "google_bigquery_table" "markets" {
