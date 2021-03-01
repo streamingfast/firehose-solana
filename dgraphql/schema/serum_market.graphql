@@ -29,10 +29,10 @@ type SerumMarket  {
   name: String
 
   """The markets base token."""
-  baseToken: Token
+  baseToken: Token!
 
   """The markets quote token."""
-  quoteToken: Token
+  quoteToken: Token!
 }
 
 type SerumMarketDailyData {
@@ -43,10 +43,10 @@ type SerumMarketDailyData {
   name: String
 
   """The markets base token."""
-  baseToken: Token
+  baseToken: Token!
 
   """The markets quote token."""
-  quoteToken: Token
+  quoteToken: Token!
 
   """The daily data."""
   dailyVolumeUSD: [DailyVolume!]!

@@ -20,13 +20,12 @@ type TokenEdge {
   node: Token!
 }
 
-
 type Token {
   address: String!
-  mintAuthority: String!
-  freezeAuthority: String!
-  supply: Uint64!
-  decimals: Int!
+  mintAuthority: String
+  freezeAuthority: String
+  supply: Uint64
+  decimals: Int
   verified: Boolean!
   meta: TokenMeta
 }

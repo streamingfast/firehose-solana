@@ -24,18 +24,20 @@ func (m SerumMarket) Name() *string {
 	return &m.market.Name
 }
 
-func (s SerumMarket) BaseToken() *Token {
+func (s SerumMarket) BaseToken() Token {
 	if s.baseToken != nil {
-		return &Token{s.baseToken}
+		return Token{nil, s.baseToken}
 	}
-	return nil
+
+	return Token{address: &s.market.BaseToken}
 }
 
-func (s SerumMarket) QuoteToken() *Token {
+func (s SerumMarket) QuoteToken() Token {
 	if s.quoteToken != nil {
-		return &Token{s.quoteToken}
+		return Token{nil, s.quoteToken}
 	}
-	return nil
+
+	return Token{address: &s.market.QuoteToken}
 }
 
 func (s SerumMarket) DailyVolumeUSD() []DailyVolume {
