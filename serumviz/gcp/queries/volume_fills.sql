@@ -17,4 +17,4 @@ SELECT
     trx_idx,
     inst_idx
 FROM
-    serum.usd_priced_fills
+    ${dataset}.usd_priced_fills

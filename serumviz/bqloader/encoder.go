@@ -50,8 +50,9 @@ func (e *newOrderEncoder) Encode() map[string]interface{} {
 		"slot_num":     int64(e.Ref.SlotNumber),
 		"slot_hash":    e.Order.SlotHash,
 		"trx_id":       e.Order.TrxId,
-		"trx_idx":      int32(e.Ref.TrxIdx),
-		"inst_idx":     int32(e.Ref.InstIdx),
+		"trx_idx":      int64(e.Ref.TrxIdx),
+		"inst_idx":     int64(e.Ref.InstIdx),
+		"timestamp":    e.Timestamp,
 	}
 	return m
 }
@@ -85,8 +86,8 @@ func (e *orderFillEncoder) Encode() map[string]interface{} {
 		"slot_num":             int64(e.Ref.SlotNumber),
 		"slot_hash":            e.Ref.SlotHash,
 		"trx_id":               e.Fill.TrxId,
-		"trx_idx":              int32(e.Ref.TrxIdx),
-		"inst_idx":             int32(e.Ref.InstIdx),
+		"trx_idx":              int64(e.Ref.TrxIdx),
+		"inst_idx":             int64(e.Ref.InstIdx),
 		"order_seq_num":        int64(e.Ref.OrderSeqNum),
 	}
 	return m

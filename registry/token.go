@@ -42,10 +42,10 @@ func (t *Token) Display(amount uint64) string {
 }
 
 type TokenMeta struct {
-	Logo    string
-	Name    string
-	Symbol  string
-	Website string
+	Logo    string `json:"logo"`
+	Name    string `json:"name"`
+	Symbol  string `json:"symbol"`
+	Website string `json:"website"`
 }
 
 type tokenJob struct {

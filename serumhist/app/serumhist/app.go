@@ -9,17 +9,15 @@ import (
 	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/dfuse-io/dfuse-solana/serumhist"
 	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
+	kvloader "github.com/dfuse-io/dfuse-solana/serumhist/kvloader"
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
+	bqloader "github.com/dfuse-io/dfuse-solana/serumviz/bqloader"
 	"github.com/dfuse-io/dmetrics"
 	"github.com/dfuse-io/dstore"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
-	"google.golang.org/api/googleapi"
-
-	kvloader "github.com/dfuse-io/dfuse-solana/serumhist/kvloader"
-	bqloader "github.com/dfuse-io/dfuse-solana/serumviz/bqloader"
 )
 
 type Config struct {
@@ -148,15 +146,8 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, serumhist.Chec
 		}
 
 		dataset := bqClient.Dataset(a.Config.BigQueryDataset)
-		err = bqClient.Dataset(a.Config.BigQueryDataset).Create(ctx, &bigquery.DatasetMetadata{
-			Name:        a.Config.BigQueryDataset,
-			Description: "serum events",
-		})
-		if err, ok := err.(*googleapi.Error); !ok || err.Code != 409 { // ignore already-exists error
-			return nil, nil, fmt.Errorf("could not create dataset: %w", err)
-		}
 
-		store, err := dstore.NewStore(a.Config.BigQueryStoreURL, "avro", "zsrd", false)
+		store, err := dstore.NewStore(a.Config.BigQueryStoreURL, "avro", "zstd", false)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error creating bigquery dstore: %w", err)
 		}
@@ -172,16 +163,6 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, serumhist.Chec
 		err = loader.Init(ctx, a.Config.BigQueryScratchSpaceDir)
 		if err != nil {
 			return nil, nil, fmt.Errorf("error initializing event handlers: %w", err)
-		}
-
-		err = loader.LoadMarkets(ctx)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error loading markets from registry server: %w", err)
-		}
-
-		err = loader.LoadTokens(ctx)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error loading tokens from registry server: %w", err)
 		}
 
 		err = loader.PrimeTradeCache(ctx)

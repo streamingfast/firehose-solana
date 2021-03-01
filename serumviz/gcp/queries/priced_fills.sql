@@ -15,15 +15,15 @@ WITH priced_fills AS
   END AS quote_amount,
   base_t.address AS base_address,
   base_t.decimals AS base_decimals,
-  base_t.symbol AS base_symbol,
+  base_t.meta.symbol AS base_symbol,
   quote_t.address AS quote_address,
   quote_t.decimals AS quote_decimals,
-  quote_t.symbol AS quote_symbol,
+  quote_t.meta.symbol AS quote_symbol,
   f.*,
-FROM serum.fills AS f
-  LEFT JOIN serum.markets AS m ON f.market = m.address
-  LEFT JOIN serum.tokens AS base_t ON m.base_token = base_t.address
-  LEFT JOIN serum.tokens AS quote_t ON m.quote_token = quote_t.address
+FROM ${dataset}.fills AS f
+  LEFT JOIN ${dataset}.markets AS m ON f.market = m.address
+  LEFT JOIN ${dataset}.tokens AS base_t ON m.base_token = base_t.address
+  LEFT JOIN ${dataset}.tokens AS quote_t ON m.quote_token = quote_t.address
 )
 SELECT
   quote_amount / base_amount as price,

@@ -24,8 +24,8 @@ provider "google" {
 }
 
 resource "google_bigquery_dataset" "serum" {
-  dataset_id                  = "serumtest"
-  friendly_name               = "serum-test"
+  dataset_id                  = "serum"
+  friendly_name               = "serum"
   description                 = "serum events"
   location                    = "US"
   project                     = var.gcp_project
@@ -104,20 +104,37 @@ resource "google_bigquery_table" "tokens" {
 
 
 //****************************************************************
-//          Logical Views
+//          Slot Timestamp View
 //****************************************************************
+
+data "template_file" "slot_timestamp_query" {
+  template = file("${path.module}/queries/slot_timestamp.sql")
+  vars = {
+    dataset = google_bigquery_dataset.serum.dataset_id
+  }
+}
 
 resource "google_bigquery_table" "slot_timestamp" {
   dataset_id = google_bigquery_dataset.serum.dataset_id
   table_id   = "slot_timestamp"
-  project                     = var.gcp_project
+  project     = var.gcp_project
 
   view {
-    query = file("${path.module}/queries/slot_timestamp.sql")
+    query = data.template_file.slot_timestamp_query.rendered
     use_legacy_sql = false
   }
 
   depends_on = [google_bigquery_table.fills]
+}
+
+//****************************************************************
+//          Priced Fills View
+//****************************************************************
+data "template_file" "priced_fills_query" {
+  template = file("${path.module}/queries/priced_fills.sql")
+  vars = {
+    dataset = google_bigquery_dataset.serum.dataset_id
+  }
 }
 
 resource "google_bigquery_table" "priced_fills" {
@@ -126,11 +143,22 @@ resource "google_bigquery_table" "priced_fills" {
   project                     = var.gcp_project
 
   view {
-    query = file("${path.module}/queries/priced_fills.sql")
+    query = data.template_file.priced_fills_query.rendered
     use_legacy_sql = false
   }
 
   depends_on = [google_bigquery_table.fills]
+}
+
+
+//****************************************************************
+//          USD Priced Fills View
+//****************************************************************
+data "template_file" "usd_priced_fills_query" {
+  template = file("${path.module}/queries/usd_priced_fills.sql")
+  vars = {
+    dataset = google_bigquery_dataset.serum.dataset_id
+  }
 }
 
 resource "google_bigquery_table" "usd_priced_fills" {
@@ -139,11 +167,21 @@ resource "google_bigquery_table" "usd_priced_fills" {
   project                     = var.gcp_project
 
   view {
-    query = file("${path.module}/queries/usd_priced_fills.sql")
+    query = data.template_file.usd_priced_fills_query.rendered
     use_legacy_sql = false
   }
 
   depends_on = [google_bigquery_table.priced_fills]
+}
+
+//****************************************************************
+//          Vole fills View
+//****************************************************************
+data "template_file" "volume_fills_query" {
+  template = file("${path.module}/queries/volume_fills.sql")
+  vars = {
+    dataset = google_bigquery_dataset.serum.dataset_id
+  }
 }
 
 resource "google_bigquery_table" "volume_fills" {
@@ -152,7 +190,7 @@ resource "google_bigquery_table" "volume_fills" {
   project                     = var.gcp_project
 
   view {
-    query = file("${path.module}/queries/volume_fills.sql")
+    query = data.template_file.volume_fills_query.rendered
     use_legacy_sql = false
   }
 
