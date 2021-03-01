@@ -12,7 +12,7 @@ import (
 //go:generate rice embed-go
 
 func GetBQSchemaV1(name string) (*bigquery.Schema, error) {
-	box := rice.MustFindBox("v1")
+	box := rice.MustFindBox("V1")
 	cnt, err := box.Bytes(fmt.Sprintf("%s.json", name))
 	if err != nil {
 		return nil, fmt.Errorf("unable to get schema %q: %w", name, err)
@@ -28,7 +28,7 @@ func GetBQSchemaV1(name string) (*bigquery.Schema, error) {
 }
 
 func GetAvroSchemaV1(schemaName string) (string, error) {
-	box := rice.MustFindBox("v1")
+	box := rice.MustFindBox("V1")
 	cnt, err := box.Bytes(fmt.Sprintf("%s.json", schemaName))
 	if err != nil {
 		return "", fmt.Errorf("unable to get schema %q: %w", schemaName, err)
