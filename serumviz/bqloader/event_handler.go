@@ -129,9 +129,9 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 			jobStatusRow := ProcessFile{
 				Table:        tableName,
 				Filename:     uri,
-				StartSlotNum: h.startSlotNum,
+				StartSlotNum: int64(h.startSlotNum),
 				StartSlotID:  h.startSlotId,
-				EndSlotNum:   h.latestSlotNum,
+				EndSlotNum:   int64(h.latestSlotNum),
 				EndSlotID:    h.latestSlotId,
 				Time:         time.Now(),
 			}

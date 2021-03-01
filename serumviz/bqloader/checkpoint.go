@@ -13,9 +13,9 @@ import (
 type ProcessFile struct {
 	Table        string    `bigquery:"table"`
 	Filename     string    `bigquery:"file"`
-	StartSlotNum uint64    `bigquery:"start_slot_num"`
+	StartSlotNum int64     `bigquery:"start_slot_num"`
 	StartSlotID  string    `bigquery:"start_slot_id"`
-	EndSlotNum   uint64    `bigquery:"end_slot_num"`
+	EndSlotNum   int64     `bigquery:"end_slot_num"`
 	EndSlotID    string    `bigquery:"end_slot_id"`
 	Time         time.Time `bigquery:"timestamp"`
 }
@@ -100,7 +100,7 @@ func (bq *BQLoader) readCheckpoint(ctx context.Context, forTable string) (*pbser
 			}
 
 			result = &pbserumhist.Checkpoint{
-				LastWrittenSlotNum: row.EndSlotNum,
+				LastWrittenSlotNum: uint64(row.EndSlotNum),
 				LastWrittenSlotId:  row.EndSlotID,
 			}
 		}
