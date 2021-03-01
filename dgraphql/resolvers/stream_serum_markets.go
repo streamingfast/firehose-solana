@@ -10,11 +10,11 @@ import (
 	"go.uber.org/zap"
 )
 
-type SerumMarketRequest struct {
+type SerumMarketSubscription struct {
 	MarketAddress string
 }
 
-func (r *Root) SubscriptionMarket(ctx context.Context, args *SerumMarketRequest) (<-chan *SerumOrderBook, error) {
+func (r *Root) SubscriptionMarket(ctx context.Context, args *SerumMarketSubscription) (<-chan *SerumOrderBook, error) {
 	zlog.Info("entering market subscription.")
 	marketPublicKey := solana.MustPublicKeyFromBase58(args.MarketAddress)
 	wsClient, err := ws.Dial(ctx, r.wsURL)

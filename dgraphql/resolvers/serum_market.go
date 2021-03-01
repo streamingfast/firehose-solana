@@ -1,17 +1,21 @@
 package resolvers
 
-import "github.com/dfuse-io/dfuse-solana/registry"
+import (
+	"fmt"
 
-// SerumMarket is used to implement both the GraphQL's SerumMarketDailyData and the the SerumMarket.
+	"github.com/dfuse-io/dfuse-solana/registry"
+	serumztics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
+)
+
 type SerumMarket struct {
 	Address    string
 	market     *registry.Market
 	baseToken  *registry.Token
 	quoteToken *registry.Token
 
-	// For SerumMarketDailyData
-	last24hVolumeUSD float64
-	dailyVolumeUSD   []DailyVolume
+	dailyVolumeUSD []DailyVolume
+
+	serumhistAnalyzable serumztics.Analyzable
 }
 
 func (m SerumMarket) Name() *string {
@@ -41,10 +45,25 @@ func (s SerumMarket) QuoteToken() Token {
 	return Token{address: &s.market.QuoteToken}
 }
 
-// For SerumMarketDailyData
+func (s SerumMarket) Last24HoursVolumeUSD() (Float64, error) {
+	return s.lastVolumeData("24 hours", serumztics.Last24Hours())
+}
 
-func (s SerumMarket) Last24hVolumeUSD() Float64 {
-	return Float64(s.last24hVolumeUSD)
+func (s SerumMarket) Last7DaysVolumeUSD() (Float64, error) {
+	return s.lastVolumeData("7 days", serumztics.Last7Days())
+}
+
+func (s SerumMarket) Last30DaysVolumeUSD() (Float64, error) {
+	return s.lastVolumeData("30 days", serumztics.Last30Days())
+}
+
+func (s SerumMarket) lastVolumeData(tag string, dateRange serumztics.DateRange) (Float64, error) {
+	volume, err := s.serumhistAnalyzable.TotalVolume(dateRange)
+	if err != nil {
+		return Float64(0), fmt.Errorf("unable to retrieved last %s market volume: %w", tag, err)
+	}
+
+	return Float64(volume), nil
 }
 
 func (s SerumMarket) DailyVolumeUSD() []DailyVolume {
