@@ -5,37 +5,80 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dfuse-io/solana-go"
-
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestStore_Get24hVolume(t *testing.T) {
+func TestStore_TotalVolume(t *testing.T) {
+	t.Skip("Do not run long running process")
 	store := testStore(t)
-	date_range := &DateRange{
-		start: parseTime(t, "2021-02-24 19:53:13"),
-		stop:  parseTime(t, "2021-02-24 19:53:31"),
+	tests := []struct {
+		name        string
+		dateRange   DateRange
+		expectValue float64
+	}{
+		{
+			name:        "Last 24 Hours",
+			dateRange:   Last24Hours(),
+			expectValue: 0,
+		},
+		{
+			name:        "Last 7 Days",
+			dateRange:   Last7Days(),
+			expectValue: 0,
+		},
+		{
+			name:        "Last 30 Days",
+			dateRange:   Last30Days(),
+			expectValue: 0,
+		},
 	}
-	usd_volume, err := store.totalFillsVolume(*date_range)
-	require.NoError(t, err)
-	assert.Equal(t, 130.727944, usd_volume)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			value, err := store.TotalVolume(test.dateRange)
+			require.NoError(t, err)
+			fmt.Printf("%s: %f\n", test.name, value)
+		})
+	}
 }
 
-func TestStore_GetHourlyFillsVolume(t *testing.T) {
-	t.Skip("long running process")
+func TestStore_FillsVolume(t *testing.T) {
+	t.Skip("Do not run long running process")
 	store := testStore(t)
-	fills, err := store.GetHourlyFillsVolume(nil, nil)
-	require.NoError(t, err)
-	assert.Equal(t, 31, len(fills))
-
-	for _, fill := range fills {
-		cnt, _ := json.Marshal(fill)
-		fmt.Println(string(cnt))
+	tests := []struct {
+		name        string
+		dateRange   DateRange
+		granularity Granularity
+		expectVaue  float64
+	}{
+		{
+			name:        "Last 24 Hours",
+			dateRange:   Last24Hours(),
+			granularity: HourlyGranularity,
+			expectVaue:  0,
+		},
+		{
+			name:        "Last 7 Days",
+			dateRange:   Last7Days(),
+			granularity: DailyGranularity,
+			expectVaue:  0,
+		},
+		{
+			name:        "Last 30 Days",
+			dateRange:   Last30Days(),
+			granularity: MonthlyGranularity,
+			expectVaue:  0,
+		},
 	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fills, err := store.FillsVolume(&test.dateRange, &test.granularity, nil)
+			require.NoError(t, err)
+			fmt.Printf("Fills granularity %s\n", test.granularity)
+			for _, fill := range fills {
+				cnt, _ := json.Marshal(fill)
+				fmt.Println(string(cnt))
+			}
 
-	marketAddress := solana.MustPublicKeyFromBase58("hBswhpNyz4m5nt4KwtCA7jYXvh7VmyZ4TuuPmpaKQb1")
-	fills, err = store.GetHourlyFillsVolume(nil, &marketAddress)
-	require.NoError(t, err)
-	assert.Equal(t, 2, len(fills))
+		})
+	}
 }

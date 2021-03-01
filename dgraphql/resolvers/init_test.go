@@ -13,7 +13,11 @@ type serumTestAnalyzable struct {
 	volume24h float64
 }
 
-func (s *serumTestAnalyzable) GetHourlyFillsVolume(dateRange *serumanalytics.DateRange, key *solana.PublicKey) ([]*serumanalytics.FillVolume, error) {
+func (s *serumTestAnalyzable) TotalVolume(dateRange serumanalytics.DateRange) (float64, error) {
+	return 1456666.01, nil
+}
+
+func (s *serumTestAnalyzable) FillsVolume(dateRange *serumanalytics.DateRange, granularity *serumanalytics.Granularity, key *solana.PublicKey) ([]*serumanalytics.FillVolume, error) {
 	return []*serumanalytics.FillVolume{
 		{
 			USDVolume:         "9618.624516786102",
@@ -26,8 +30,4 @@ func (s *serumTestAnalyzable) GetHourlyFillsVolume(dateRange *serumanalytics.Dat
 			QuoteTokenAddress: "",
 		},
 	}, nil
-}
-
-func (s *serumTestAnalyzable) Get24hVolume() (float64, error) {
-	return s.volume24h, nil
 }

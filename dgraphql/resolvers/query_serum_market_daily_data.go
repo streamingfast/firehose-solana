@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	serumztics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
 	"github.com/dfuse-io/solana-go"
 	gqerrs "github.com/graph-gophers/graphql-go/errors"
 )
@@ -27,7 +28,7 @@ func (r *Root) QuerySerumMarketDailyData(in *SerumMarketDailyDataRequest) (*Seru
 		return nil, nil
 	}
 
-	last24hVolumeUSD, err := r.serumhistAnalytic.Get24hVolume()
+	last24hVolumeUSD, err := r.serumhistAnalytic.TotalVolume(serumztics.Last24Hours())
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieved market volume data: %w", err)
 	}

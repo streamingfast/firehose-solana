@@ -45,7 +45,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/test-go/testify v1.1.4
-	github.com/tidwall/gjson v1.6.7
+	github.com/tidwall/gjson v1.6.7 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/zap v1.16.0
 	google.golang.org/api v0.36.0

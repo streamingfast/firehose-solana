@@ -30,18 +30,48 @@ func (fv *FillVolume) QuoteToken() solana.PublicKey {
 	return solana.MustPublicKeyFromBase58(fv.QuoteTokenAddress)
 }
 
-func (s *Store) Get24hVolume() (float64, error) {
-	return s.totalFillsVolume(last24h())
+func (s *Store) TotalVolume(d DateRange) (float64, error) {
+	type result struct {
+		Total float64
+	}
+	var r result
+
+	trx := s.db.Table("volume_fills").
+		Select("sum(usd_volume) as total").
+		Where("timestamp >= ?", d.start).
+		Where("timestamp <= ?", d.stop).
+		Scan(&r)
+	if trx.Error != nil {
+		return 0.0, fmt.Errorf("unable to retrieve total fill: %w", trx.Error)
+	}
+	if trx.RowsAffected == 0 {
+		return 0.0, ErrNotFound
+	}
+
+	return r.Total, nil
+
 }
 
-func (s *Store) GetHourlyFillsVolume(date_range *DateRange, market *solana.PublicKey) ([]*FillVolume, error) {
+func (s *Store) FillsVolume(date_range *DateRange, granularity *Granularity, market *solana.PublicKey) ([]*FillVolume, error) {
 	var out []*FillVolume
+	// https://cloud.google.com/bigquery/docs/reference/standard-sql/timestamp_functions#supported_format_elements_for_timestamp
+	selectTimestamp := "TIMESTAMP(FORMAT_TIMESTAMP(\"%F %H:00:00\", timestamp)) as timestamp"
+	if granularity != nil {
+		switch *granularity {
+		case HourlyGranularity:
+			selectTimestamp = "TIMESTAMP(FORMAT_TIMESTAMP(\"%F %H:00:00\", timestamp)) as timestamp"
+		case DailyGranularity:
+			selectTimestamp = "TIMESTAMP(FORMAT_TIMESTAMP(\"%F 00:00:00\", timestamp)) as timestamp"
+		case MonthlyGranularity:
+			selectTimestamp = "TIMESTAMP(FORMAT_TIMESTAMP(\"%Y-%m-01 00:00:00\", timestamp)) as timestamp"
+		}
+	}
 
 	query := s.db.Table("volume_fills").
 		Select([]string{
 			"sum(usd_volume) as usd_volume",
 			"market_address",
-			"TIMESTAMP(FORMAT_TIMESTAMP(\"%F %H:00:00\", timestamp)) as timestamp",
+			selectTimestamp,
 		})
 
 	if date_range != nil {
@@ -59,25 +89,4 @@ func (s *Store) GetHourlyFillsVolume(date_range *DateRange, market *solana.Publi
 		return nil, fmt.Errorf("unable to retrieve fils: %w", trx.Error)
 	}
 	return out, nil
-}
-
-func (s *Store) totalFillsVolume(date_range DateRange) (float64, error) {
-	type result struct {
-		Total float64
-	}
-	var r result
-
-	trx := s.db.Table("volume_fills").
-		Select("sum(usd_volume) as total").
-		Where("timestamp >= ?", date_range.start).
-		Where("timestamp <= ?", date_range.stop).
-		Scan(&r)
-	if trx.Error != nil {
-		return 0.0, fmt.Errorf("unable to retrieve total fill: %w", trx.Error)
-	}
-	if trx.RowsAffected == 0 {
-		return 0.0, ErrNotFound
-	}
-
-	return r.Total, nil
 }

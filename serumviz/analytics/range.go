@@ -14,6 +14,14 @@ func init() {
 	timeNow = time.Now
 }
 
+type Granularity string
+
+const (
+	HourlyGranularity  Granularity = "hourly"
+	DailyGranularity   Granularity = "daily"
+	MonthlyGranularity Granularity = "monthly"
+)
+
 type DateRange struct {
 	start time.Time
 	stop  time.Time
@@ -21,10 +29,22 @@ type DateRange struct {
 
 var timeNow func() time.Time
 
-func last24h() DateRange {
+func Last24Hours() DateRange {
+	return newDateRangeWithDuration(24 * time.Hour)
+}
+
+func Last7Days() DateRange {
+	return newDateRangeWithDuration(7 * 24 * time.Hour)
+}
+
+func Last30Days() DateRange {
+	return newDateRangeWithDuration(30 * 14 * time.Hour)
+}
+
+func newDateRangeWithDuration(hours time.Duration) DateRange {
 	t0 := timeNow()
 	return DateRange{
-		start: t0.Add(-24 * time.Hour),
+		start: t0.Add(-1 * hours),
 		stop:  t0,
 	}
 }

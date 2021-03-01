@@ -14,7 +14,7 @@ func TestLast24h(t *testing.T) {
 		return parseTime(t, "2021-02-23 20:10:10")
 	}
 
-	date_range := last24h()
+	date_range := Last24Hours()
 	assert.Equal(t, date_range.start, time.Date(2021, 02, 22, 20, 10, 10, 0, time.UTC))
 	assert.Equal(t, date_range.stop, time.Date(2021, 02, 23, 20, 10, 10, 0, time.UTC))
 }
@@ -26,6 +26,7 @@ func parseTime(t *testing.T, timeStr string) time.Time {
 }
 
 func TestStore_getSlotRange(t *testing.T) {
+	t.Skip("Do not run long running process")
 	store := testStore(t)
 
 	date_range := &DateRange{
