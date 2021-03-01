@@ -48,6 +48,9 @@ type SerumMarketDailyData {
   """The markets quote token."""
   quoteToken: Token!
 
+  """The USD volume value for the last 24 hours ('now' - 24h to now)."""
+  last24hVolumeUSD: Float64!
+
   """The daily data."""
   dailyVolumeUSD: [DailyVolume!]!
 }

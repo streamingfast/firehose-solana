@@ -38,7 +38,8 @@ func TestQuerySerumMarketDailyData(t *testing.T) {
 			1456666.01,
 			&SerumMarketDailyDataRequest{Address: "Gw78CYLLFbgmmn4rps9KoPAnNtBQ2S1foL2Mn6Z5ZHYB"},
 			toSerumMarket(markets[0], tokens, func(m *SerumMarket) {
-				m.dailyVolumeUSD = []DailyVolume{{date: tTime(t, "2021-02-22T00:00:00Z"), value: 1456666.01}}
+				m.last24hVolumeUSD = 1456666.01
+				m.dailyVolumeUSD = []DailyVolume{}
 			}),
 			nil,
 		},

@@ -27,7 +27,7 @@ func (r *Root) QuerySerumMarketDailyData(in *SerumMarketDailyDataRequest) (*Seru
 		return nil, nil
 	}
 
-	total, err := r.serumhistAnalytic.Get24hVolume()
+	last24hVolumeUSD, err := r.serumhistAnalytic.Get24hVolume()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieved market volume data: %w", err)
 	}
@@ -38,7 +38,8 @@ func (r *Root) QuerySerumMarketDailyData(in *SerumMarketDailyDataRequest) (*Seru
 		baseToken:  r.tokenGetter(&market.BaseToken),
 		quoteToken: r.tokenGetter(&market.QuoteToken),
 
-		dailyVolumeUSD: []DailyVolume{{date: today(), value: total}},
+		last24hVolumeUSD: last24hVolumeUSD,
+		dailyVolumeUSD:   []DailyVolume{},
 	}, nil
 }
 

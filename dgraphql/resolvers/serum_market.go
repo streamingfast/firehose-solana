@@ -10,7 +10,8 @@ type SerumMarket struct {
 	quoteToken *registry.Token
 
 	// For SerumMarketDailyData
-	dailyVolumeUSD []DailyVolume
+	last24hVolumeUSD float64
+	dailyVolumeUSD   []DailyVolume
 }
 
 func (m SerumMarket) Name() *string {
@@ -38,6 +39,12 @@ func (s SerumMarket) QuoteToken() Token {
 	}
 
 	return Token{address: &s.market.QuoteToken}
+}
+
+// For SerumMarketDailyData
+
+func (s SerumMarket) Last24hVolumeUSD() Float64 {
+	return Float64(s.last24hVolumeUSD)
 }
 
 func (s SerumMarket) DailyVolumeUSD() []DailyVolume {
