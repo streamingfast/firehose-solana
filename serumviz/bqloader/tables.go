@@ -18,12 +18,10 @@ const (
 	tableOrders         Table = "orders"
 	tableFills          Table = "fills"
 	tableTraders        Table = "traders"
-	tableMarkets        Table = "markets"
-	tableTokens         Table = "tokens"
 	tableProcessedFiles Table = "processed_files"
 )
 
-var allTables = []Table{tableOrders, tableFills, tableTraders, tableMarkets, tableTokens, tableProcessedFiles}
+var allTables = []Table{tableOrders, tableFills, tableTraders, tableProcessedFiles}
 
 // TODO: at this point shoudn't this be part of a holistic Table struct?
 var codecs = map[Table]*goavro.Codec{}
@@ -62,6 +60,7 @@ func (t Table) Codec() (*goavro.Codec, error) {
 func (t Table) String() string {
 	return string(t)
 }
+
 func isErrorNotExist(err error) bool {
 	apiError, ok := err.(*googleapi.Error)
 	if !ok {
