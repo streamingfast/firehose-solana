@@ -4,5 +4,5 @@ start:
   flags:
     snapshotter-source-bucket: "mainnet-beta-ledger-us-west1"
     snapshotter-source-prefix: ""
-    snapshotter-destination-bucket: "dfuseio-global-backups-us"
-    snapshotter-destination-prefix: "sol-mainnet/snapshots-blocks-logs"
+    snapshotter-destination-bucket: "dfuse-developement-random"
+    snapshotter-destination-prefix: "sol-mainnet/snapshots-blocks-logs-test"

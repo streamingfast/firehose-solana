@@ -5,12 +5,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/abourget/llerrgroup"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
 )
@@ -116,12 +114,13 @@ func (p *processor) handleFile(ctx context.Context, filePath string) error {
 		if err != nil {
 			return fmt.Errorf("reader from rockdb source handler: %w", err)
 		}
+		defer rocksdbReader.Close()
 
 		//Build a writer for the untar process.
-		err = unCompress(rocksdbReader, func(fileName string) (w io.Writer, closer func() error) {
+		err = uncompress(rocksdbReader, func(fileName string) (w io.WriteCloser) {
 			//filePath is "rocksdb/001653.sst"
 			dest := p.destinationSnapshotFolder + "/" + fileName
-			zlog.Info("untaring file",
+			zlog.Info("untarring file",
 				zap.String("file_name", fileName),
 				zap.String("destination_bucket", p.destinationBucket),
 				zap.String("dest_file_name", dest))
@@ -130,13 +129,11 @@ func (p *processor) handleFile(ctx context.Context, filePath string) error {
 			hw.ContentType = "application/octet-stream"
 			hw.CacheControl = "public, max-age=86400"
 
-			return hw, func() error {
-				return hw.Close()
-			}
+			return hw
 		})
 
 		if err != nil {
-			return fmt.Errorf("uncompressing rocked: %w", err)
+			return fmt.Errorf("uncompressing rockdb: %w", err)
 		}
 		zlog.Info("uncompressed file")
 
@@ -161,82 +158,101 @@ func (p *processor) handleFile(ctx context.Context, filePath string) error {
 	return nil
 }
 
-func unCompress(compressedDataReader io.Reader, getWriter func(fileName string) (w io.Writer, closer func() error)) error {
-	cIface, err := archiver.ByExtension("foo.bz2")
-	if err != nil {
-		return fmt.Errorf("archive by extention: %w", err)
-	}
+func uncompress(sourceReader io.Reader, destinationWriterFunc func(fileName string) (w io.WriteCloser)) error {
+	pr, pw := io.Pipe()
 
-	c, ok := cIface.(archiver.Decompressor)
-	if !ok {
-		return fmt.Errorf("not a decompressor by extention")
-	}
-	piper, pipew := io.Pipe()
+	readErrStream := make(chan error)
+	go func() {
+		var err error
+		defer func() {
+			_ = pw.Close()
+			if err != nil && err != io.EOF {
+				readErrStream <- err
+			}
+			close(readErrStream)
+		}()
 
-	eg := llerrgroup.New(1)
-	eg.Go(func() error {
-		tr := tar.NewReader(piper)
-		for {
-			zlog.Info("waiting for header")
-			header, err := tr.Next()
-			zlog.Info("got an header", zap.Reflect("header", header))
-			switch {
+		archiverInterface, err := archiver.ByExtension("-.bz2")
+		if err != nil {
+			return
+		}
 
-			// if no more files are found return
-			case err == io.EOF:
+		decompressor, ok := archiverInterface.(archiver.Decompressor)
+		if !ok {
+			err = fmt.Errorf("archiver does not satisfy interface")
+			return
+		}
+
+		err = decompressor.Decompress(sourceReader, pw)
+		return
+	}()
+
+	writeErrStream := make(chan error)
+	go func() {
+		var err error
+		defer func() {
+			_ = pr.CloseWithError(err)
+			if err == io.EOF {
 				zlog.Info("got eof")
-				return nil
-
-			// return any other error
-			case err != nil:
-				return err
-
-			// if the header is nil, just skip it (not sure how this happens)
-			case header == nil:
-				//let's consider we are done
-				zlog.Info("stopping on nil header")
-				return nil
 			}
 
-			// the target location where the dir/file should be created
-			target := filepath.Join(header.Name)
+			if err != nil && err != io.EOF {
+				writeErrStream <- err
+			}
+			close(writeErrStream)
+		}()
 
+		tarReader := tar.NewReader(pr)
+	Out: // needed to break out of for-loop from inside switch statement
+		for {
+			var header *tar.Header
+			header, err = tarReader.Next()
+			switch {
+			case err != nil:
+				break Out
+			case header == nil:
+				err = fmt.Errorf("empty header")
+				break Out
+			}
+
+			target := header.Name
 			switch header.Typeflag {
 			case tar.TypeReg:
-				zlog.Info("untar file", zap.String("target", target))
-				destWriter, closer := getWriter(target)
-				// copy over contents
-				size, err := io.Copy(destWriter, tr)
-				if err != nil {
-					return fmt.Errorf("uploadling target: %s: %w", target, err)
-				}
+				// done in func call here so that we can cleanly defer our Close() call inside this for-loop
+				err = func() (copyError error) {
+					wc := destinationWriterFunc(target)
+					defer func() {
+						err := wc.Close()
+						if err != nil {
+							copyError = err
+						}
+						zlog.Info("target closed", zap.String("target", target))
+					}()
 
-				zlog.Info("target uploaded",
-					zap.String("target", target),
-					zap.Int64("size", size),
-				)
+					var size int64
+					size, copyError = io.Copy(wc, tarReader)
+					if copyError != nil {
+						return copyError
+					}
 
-				if err := closer(); err != nil {
-					return fmt.Errorf("closing destination write to target: %s: %w", target, err)
-				}
-				zlog.Info("target closed",
-					zap.String("target", target),
-				)
+					zlog.Info("target uploaded", zap.String("target", target), zap.Int64("size", size))
+					return nil
+				}()
 			}
 		}
-	})
+	}()
 
-	err = c.Decompress(compressedDataReader, pipew)
+	zlog.Info("waiting")
+
+	err := <-writeErrStream
 	if err != nil {
-		return fmt.Errorf("decompressing: %w", err)
-	}
-
-	if err := eg.Wait(); err != nil {
-		// eg.Wait() will block until everything is done, and return the first error.
 		return err
 	}
 
-	zlog.Info("decompression done.")
+	err = <-readErrStream
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
