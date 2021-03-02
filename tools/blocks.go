@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -135,17 +136,19 @@ func readBlock(block *bstream.Block, outputDot bool) error {
 			virt = " (V)"
 		}
 
+		currentID := fmt.Sprintf("%s%s", slot.Id[:8], slot.Id[len(slot.Id)-8:])
+		previousID := fmt.Sprintf("%s%s", slot.PreviousId[:8], slot.PreviousId[len(slot.PreviousId)-8:])
 		fmt.Printf(
 			"  S%s [label=\"%s..%s\\n#%d%s t=%d lib=%d\"];\n  S%s -> S%s;\n",
-			slot.Id[:8],
+			currentID,
 			slot.Id[:8],
 			slot.Id[len(slot.Id)-8:],
 			slot.Number,
 			virt,
 			slot.TransactionCount,
 			slot.Block.RootNum,
-			slot.Id[:8],
-			slot.PreviousId[:8],
+			currentID,
+			previousID,
 		)
 
 	} else {
@@ -182,7 +185,10 @@ func readBlock(block *bstream.Block, outputDot bool) error {
 			}
 			trxStr = fmt.Sprintf("%s ", trxStr)
 			fmt.Println(trxStr)
-
+			accs, _ := t.AccountMetaList()
+			for _, acc := range accs {
+				fmt.Println("account: ", acc)
+			}
 			totalInstr += len(t.Instructions)
 			if viper.GetBool("instructions") {
 				for instrx, inst := range t.Instructions {
@@ -196,6 +202,7 @@ func readBlock(block *bstream.Block, outputDot bool) error {
 					}
 					instStr = fmt.Sprintf("%s ", instStr)
 					fmt.Println(instStr)
+					fmt.Println(hex.EncodeToString(inst.Data))
 				}
 			}
 

@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
 	"strconv"
+
+	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/dstore"
@@ -31,19 +34,158 @@ var inspectBlocksCmd = &cobra.Command{
 	RunE:  inspectBlocksE,
 }
 
+var inspectBlocksGraphCmd = &cobra.Command{
+	Use:   "range {start_block_num:stop_block}",
+	Short: "Prints the content summary of a merged blocks file",
+	Args:  cobra.ExactArgs(1),
+	RunE:  inspectRangeE,
+}
+
 func init() {
 	Cmd.AddCommand(inspectCmd)
 	inspectCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v5", "block store")
-
-	inspectCmd.AddCommand(inspectBlockCmd)
-	inspectCmd.AddCommand(inspectBlocksCmd)
 
 	inspectCmd.PersistentFlags().Uint64("transactions-for-block", 0, "Include transaction IDs in output")
 	inspectCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	inspectCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
 
+	inspectCmd.AddCommand(inspectBlockCmd)
+
+	inspectCmd.AddCommand(inspectBlocksCmd)
 	inspectBlocksCmd.Flags().Bool("viz", false, "Output .dot file")
 	inspectBlocksCmd.Flags().Bool("data", false, "output block data statistic")
+
+	inspectCmd.AddCommand(inspectBlocksGraphCmd)
+}
+
+func inspectRangeE(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+	number := regexp.MustCompile(`(\d{10})`)
+	str := viper.GetString("store")
+	store, err := dstore.NewDBinStore(str)
+	if err != nil {
+		return fmt.Errorf("unable to create store at path %q: %w", store, err)
+	}
+	fileBlockSize := uint32(100)
+
+	blockRange, err := decodeBlockRange(args[0])
+	if err != nil {
+		return err
+	}
+
+	walkPrefix := walkBlockPrefix(blockRange, fileBlockSize)
+	type virtualSlot struct {
+		previousID string
+		endID      string
+		starNum    uint64
+		endNum     uint64
+
+		Id    string
+		count uint64
+	}
+	virtualSlots := map[string]*virtualSlot{}
+
+	fmt.Println("// Run: dot -Tpdf file.dot -o file.pdf")
+	fmt.Println("digraph D {")
+
+	err = store.Walk(ctx, walkPrefix, ".tmp", func(filename string) error {
+		match := number.FindStringSubmatch(filename)
+		if match == nil {
+			return nil
+		}
+
+		baseNum, _ := strconv.ParseUint(match[1], 10, 32)
+		if baseNum < (blockRange.Start - uint64(fileBlockSize)) {
+			return nil
+		}
+
+		if baseNum > blockRange.Stop {
+			return errStopWalk
+		}
+
+		reader, err := store.OpenObject(ctx, filename)
+		if err != nil {
+			return fmt.Errorf("unable to read blocks filename: %s: %w", filename, err)
+		}
+		defer reader.Close()
+
+		readerFactory, err := bstream.GetBlockReaderFactory.New(reader)
+		if err != nil {
+			return fmt.Errorf("unable to read block in file %s: %w", filename, err)
+		}
+
+		for {
+			block, err := readerFactory.Read()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				return fmt.Errorf("reading block: %w", err)
+			}
+
+			if block.Number < blockRange.Start {
+				continue
+			}
+
+			slot := block.ToNative().(*pbcodec.Slot)
+
+			isVirutal := false
+			if slot.Number != slot.Block.Number {
+				isVirutal = true
+			}
+
+			currentID := fmt.Sprintf("%s%s", slot.Id[:8], slot.Id[len(slot.Id)-8:])
+			previousID := fmt.Sprintf("%s%s", slot.PreviousId[:8], slot.PreviousId[len(slot.PreviousId)-8:])
+			if !isVirutal {
+				fmt.Printf(
+					"  S%s [label=\"%s..%s\\n#%d t=%d\\nblk=%d lib=%d\"];\n  S%s -> S%s;\n",
+					currentID,
+					slot.Id[:8],
+					slot.Id[len(slot.Id)-8:],
+					slot.Number,
+					slot.TransactionCount,
+					slot.Block.Number,
+					slot.Block.RootNum,
+					currentID,
+					previousID,
+				)
+				continue
+			}
+
+			if vslot, found := virtualSlots[slot.PreviousId]; found {
+				delete(virtualSlots, slot.PreviousId)
+				vslot.count++
+				vslot.endID = slot.Id
+				vslot.endNum = slot.Number
+				virtualSlots[slot.Id] = vslot
+			} else {
+				virtualSlots[slot.Id] = &virtualSlot{
+					starNum:    slot.Number,
+					previousID: slot.PreviousId,
+					endID:      slot.Id,
+					count:      1,
+				}
+			}
+		}
+		return nil
+	})
+
+	for _, vslot := range virtualSlots {
+		currentID := fmt.Sprintf("%s%s", vslot.endID[:8], vslot.endID[len(vslot.endID)-8:])
+		previousID := fmt.Sprintf("%s%s", vslot.previousID[:8], vslot.previousID[len(vslot.previousID)-8:])
+
+		fmt.Printf(
+			"  S%s [label=\"%d virtual slots\\n# %d -> %d\"];\n  S%s -> S%s;\n",
+			currentID,
+			vslot.count,
+			vslot.starNum,
+			vslot.endNum,
+			currentID,
+			previousID,
+		)
+	}
+	fmt.Println("}")
+	return nil
 }
 
 func inspectBlocksE(cmd *cobra.Command, args []string) error {
@@ -162,173 +304,3 @@ func readMergedBlockFile(ctx context.Context, blockStore dstore.Store, baseBlock
 	}
 	return readerFactory, cleanUpFunc, blockStore.ObjectURL(filename), nil
 }
-
-//
-//func printBlockDataE(cmd *cobra.Command, args []string) error {
-//	ctx := cmd.Context()
-//
-//	blockNum, err := strconv.ParseUint(args[0], 10, 64)
-//	if err != nil {
-//		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
-//	}
-//
-//	str := viper.GetString("data-store")
-//
-//	store, err := dstore.NewDBinStore(str)
-//	if err != nil {
-//		return fmt.Errorf("unable to create store at path %q: %w", store, err)
-//	}
-//
-//	var files []string
-//	filePrefix := fmt.Sprintf("%010d", blockNum)
-//	err = store.Walk(ctx, filePrefix, "", func(filename string) (err error) {
-//		files = append(files, filename)
-//		return nil
-//	})
-//	if err != nil {
-//		return fmt.Errorf("unable to find on block files: %w", err)
-//	}
-//
-//	fmt.Printf("Found %d oneblock files for block number %d\n", len(files), blockNum)
-//
-//	for _, filepath := range files {
-//		reader, err := store.OpenObject(ctx, filepath)
-//		if err != nil {
-//			fmt.Printf("❌ Unable to read block filename %s: %s\n", filepath, err)
-//			return err
-//		}
-//		defer reader.Close()
-//
-//		bundle := &pbcodec.AccountChangesBundle{}
-//
-//		data, err := ioutil.ReadAll(reader)
-//		if err != nil {
-//			fmt.Printf("❌ Unable to read data from filename %s: %s\n", filepath, err)
-//			return err
-//		}
-//
-//		err = proto.Unmarshal(data, bundle)
-//		if err != nil {
-//			fmt.Printf("❌ Unable to unmarshal proto %s: %s\n", filepath, err)
-//			return err
-//		}
-//
-//		totalInst := 0
-//		for i, transaction := range bundle.Transactions {
-//			fmt.Printf("* Trx [%d] %s: %d instructions\n", i, transaction.TrxId, len(transaction.Instructions))
-//			totalInst += len(transaction.Instructions)
-//			for j, instruction := range transaction.Instructions {
-//				fmt.Printf("instruction %d changes: %d\n", j, len(instruction.Changes))
-//			}
-//		}
-//
-//		fmt.Println("total inst: ", totalInst)
-//
-//	}
-//	return nil
-//}
-//
-//func readBlock(reader bstream.BlockReader, outputDot bool) error {
-//	block, err := reader.Read()
-//	if err != nil {
-//		return err
-//	}
-//
-//	payloadSize := len(block.PayloadBuffer)
-//
-//	slot := block.ToNative().(*pbcodec.Slot)
-//	var accChangesBundle *pbcodec.AccountChangesBundle
-//	if viper.GetBool("data") {
-//		store, filename, err := dstore.NewStoreFromURL(slot.AccountChangesFileRef,
-//			dstore.Compression("zstd"),
-//		)
-//		if err != nil {
-//			return fmt.Errorf("unable to create block data store from url: %s: %w", filename, err)
-//		}
-//
-//		reader, err := store.OpenObject(context.Background(), filename)
-//		if err != nil {
-//			return fmt.Errorf("unable to open block data: %s : %w", filename, err)
-//		}
-//		defer reader.Close()
-//
-//		data, err := ioutil.ReadAll(reader)
-//		if err != nil {
-//			return fmt.Errorf("unable to read all: %s : %w", filename, err)
-//		}
-//
-//		accChangesBundle = &pbcodec.AccountChangesBundle{}
-//		err = proto.Unmarshal(data, accChangesBundle)
-//		if err != nil {
-//			return fmt.Errorf("unable to proto unmarshal account changed: %s : %w", filename, err)
-//		}
-//	}
-//
-//	if outputDot {
-//		var virt string
-//		if slot.Number != slot.Block.Number {
-//			virt = " (V)"
-//		}
-//		fmt.Printf(
-//			"  S%s [label=\"%s..%s\\n#%d%s t=%d lib=%d\"];\n  S%s -> S%s;\n",
-//			slot.Id[:8],
-//			slot.Id[:8],
-//			slot.Id[len(slot.Id)-8:],
-//			slot.Number,
-//			virt,
-//			slot.TransactionCount,
-//			slot.Block.RootNum,
-//			slot.Id[:8],
-//			slot.PreviousId[:8],
-//		)
-//
-//	} else {
-//		fmt.Printf("Slot #%d (%s) (prev: %s...) (blk: %d) (LIB: %d) (%d bytes) (@: %s): %d transactions\n",
-//			slot.Num(),
-//			slot.ID(),
-//
-//			slot.PreviousId[0:6],
-//			slot.Block.Number,
-//			slot.Block.RootNum,
-//			payloadSize,
-//			slot.Block.Time(),
-//			len(slot.Transactions),
-//		)
-//	}
-//
-//	if viper.GetBool("transactions") || viper.GetUint64("transactions-for-block") == slot.Number {
-//		totalInstr := 0
-//		fmt.Println("- Transactions: ")
-//		for trxIdx, t := range slot.Transactions {
-//			trxStr := fmt.Sprintf("    * Trx [%d] %s: %d instructions", trxIdx, t.Id, len(t.Instructions))
-//			if accChangesBundle != nil {
-//				if trxIdx < len(accChangesBundle.Transactions) {
-//					trxStr = fmt.Sprintf("%s ✅ acc change", trxStr)
-//				} else {
-//					trxStr = fmt.Sprintf("%s ❌ invalid account change index mismatch (%d,%d)", trxStr, trxIdx, len(accChangesBundle.Transactions))
-//				}
-//			}
-//			trxStr = fmt.Sprintf("%s ", trxStr)
-//			fmt.Println(trxStr)
-//			totalInstr += len(t.Instructions)
-//			if viper.GetBool("instructions") {
-//				for instrx, inst := range t.Instructions {
-//					instStr := fmt.Sprintf("      * Inst [%d]: program_id %s", inst.Ordinal, inst.ProgramId)
-//					if accChangesBundle != nil {
-//						if instrx < len(accChangesBundle.Transactions[trxIdx].Instructions) {
-//							instStr = fmt.Sprintf("%s ✅ account change", trxStr)
-//						} else {
-//							instStr = fmt.Sprintf("%s ❌ invalid account change index mismatch (%d,%d)", trxStr, instrx, len(accChangesBundle.Transactions[trxIdx].Instructions))
-//						}
-//					}
-//					instStr = fmt.Sprintf("%s ", instStr)
-//					fmt.Println(instStr)
-//				}
-//			}
-//
-//		}
-//		fmt.Println("total instruction:", totalInstr)
-//		fmt.Println()
-//	}
-//	return nil
-//}
