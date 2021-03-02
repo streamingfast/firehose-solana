@@ -47,7 +47,7 @@ func (f *Finder) Launch() error {
 }
 
 func (f *Finder) launch() error {
-	ticker := time.NewTicker(5 * time.Minute)
+	ticker := time.NewTicker(15 * time.Minute)
 	defer ticker.Stop()
 
 	zlog.Info("Launching", zap.String("sourceBucket", f.sourceBucket), zap.String("sourceSnapshotsPrefix", f.sourceSnapshotsPrefix))
