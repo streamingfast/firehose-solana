@@ -77,7 +77,7 @@ func (bq *BQLoader) readCheckpoint(ctx context.Context, forTable string) (*pbser
 
 	var result *pbserumhist.Checkpoint
 	queryFunc := func(ctx context.Context) error {
-		queryString := fmt.Sprintf(`SELECT file,timestamp FROM %s WHERE table="%s" ORDER BY timestamp DESC LIMIT 1`, checkpointsTableName, forTable)
+		queryString := fmt.Sprintf(`SELECT * FROM %s WHERE table="%s" ORDER BY timestamp DESC LIMIT 1`, checkpointsTableName, forTable)
 
 		q := bq.client.Query(queryString)
 		j, err := q.Run(ctx)
