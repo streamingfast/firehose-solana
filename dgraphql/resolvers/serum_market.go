@@ -58,6 +58,10 @@ func (s SerumMarket) Last30DaysVolumeUSD() (Float64, error) {
 }
 
 func (s SerumMarket) lastVolumeData(tag string, dateRange serumztics.DateRange) (Float64, error) {
+	if s.serumhistAnalyzable == nil {
+		return Float64(0), fmt.Errorf("data unavailable for this specific query type")
+	}
+
 	volume, err := s.serumhistAnalyzable.TotalVolume(dateRange)
 	if err != nil {
 		return Float64(0), fmt.Errorf("unable to retrieved last %s market volume: %w", tag, err)

@@ -32,7 +32,8 @@ func (r *Root) QuerySerumMarket(in *SerumMarketRequest) (*SerumMarket, error) {
 		baseToken:  r.tokenGetter(&market.BaseToken),
 		quoteToken: r.tokenGetter(&market.QuoteToken),
 
-		dailyVolumeUSD: []DailyVolume{},
+		dailyVolumeUSD:      []DailyVolume{},
+		serumhistAnalyzable: r.serumhistAnalyzable,
 	}, nil
 }
 
