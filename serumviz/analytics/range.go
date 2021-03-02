@@ -38,7 +38,7 @@ func Last7Days() DateRange {
 }
 
 func Last30Days() DateRange {
-	return newDateRangeWithDuration(30 * 14 * time.Hour)
+	return newDateRangeWithDuration(30 * 24 * time.Hour)
 }
 
 func newDateRangeWithDuration(hours time.Duration) DateRange {
