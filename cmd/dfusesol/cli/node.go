@@ -215,11 +215,10 @@ func RegisterSolanaNodeApp(kind string) {
 			if kind == "peering" || kind == "mindreader" {
 				appLogger.Info("configuring node for syncing", zap.String("network", network))
 
-				limitLedgerSizeArg := "--limit-ledger-size"
+				arguments = append(arguments, "--limit-ledger-size")
 				if kind == "peering" {
-					limitLedgerSizeArg += " 400000000"
+					arguments = append(arguments, " 400000000")
 				}
-				arguments = append(arguments, limitLedgerSizeArg)
 
 				// FIXME: Maybe some of those flags are good only for development networks ... not clear yet
 				arguments = append(arguments,
