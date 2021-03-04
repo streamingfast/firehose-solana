@@ -217,7 +217,7 @@ func RegisterSolanaNodeApp(kind string) {
 
 				arguments = append(arguments, "--limit-ledger-size")
 				if kind == "peering" {
-					arguments = append(arguments, " 400000000")
+					arguments = append(arguments, "400000000")
 				}
 
 				// FIXME: Maybe some of those flags are good only for development networks ... not clear yet
