@@ -264,12 +264,7 @@ github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79/go.mod h1:V+ED4kT
 github.com/dfuse-io/logging v0.0.0-20201125153217-f29c382faa42/go.mod h1:n0Np6Dr/Yv56l8Rq2wgDZpv4vfjT8qlvY34pb3dcI0k=
 github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70 h1:CuJS05R9jmNlUK8GOxrEELPbfXm0EuGh/30LjkjN5vo=
 github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70/go.mod h1:EoK/8RFbMEteaCaz89uessDTnCWjbbcr+DXcBh4el5o=
-github.com/dfuse-io/merger v0.0.3-0.20210211180220-82756da29a41 h1:pPzs997Ki7OXnxruV4Nchyg6foffZgvklkNjR2lL/FQ=
 github.com/dfuse-io/merger v0.0.3-0.20210211180220-82756da29a41/go.mod h1:Dp769aARRjBQ9Ur3K5Rl8cQmB29XWueudFa9JOH2f8Q=
-github.com/dfuse-io/merger v0.0.3-0.20210218184002-6b3b6ba94465 h1:+Oey/6YZpOut30YoeAu3LCgeywiSwKmFUcFm0aoyPaU=
-github.com/dfuse-io/merger v0.0.3-0.20210218184002-6b3b6ba94465/go.mod h1:Dp769aARRjBQ9Ur3K5Rl8cQmB29XWueudFa9JOH2f8Q=
-github.com/dfuse-io/merger v0.0.3-0.20210226144304-7e370a347999 h1:PR8a1VQR1Ree+2qm2+onBpM+swR9r2wTIxaOQJCJp5Y=
-github.com/dfuse-io/merger v0.0.3-0.20210226144304-7e370a347999/go.mod h1:Dp769aARRjBQ9Ur3K5Rl8cQmB29XWueudFa9JOH2f8Q=
 github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37 h1:zHI48+k2WPt4QZOwWISiMaZlyLnbl4n9bUNGkm4fCaM=
 github.com/dfuse-io/node-manager v0.0.2-0.20201211170554-49cc7e083f37/go.mod h1:41xyeLWKtU90QH1uBvfDWAJzZbP+gmDmrxR3Dh5n+gU=
 github.com/dfuse-io/opaque v0.0.0-20210108174126-bc02ec905d48 h1:nf8r2ROrv80taXLyyUXXtK2ugnn+x2Qd2nABRZAQAHA=
@@ -773,6 +768,14 @@ github.com/spf13/viper v1.6.2/go.mod h1:t3iDnF5Jlj76alVNuyFBk5oUMCvsrkbvZK0WQdfD
 github.com/spf13/viper v1.7.0/go.mod h1:8WkrPz2fc9jxqZNCJI/76HCieCp4Q8HaLFoCha5qpdg=
 github.com/spf13/viper v1.7.1 h1:pM5oEahlgWv/WnHXpgbKz7iLIxRf65tye2Ci+XFK5sk=
 github.com/spf13/viper v1.7.1/go.mod h1:8WkrPz2fc9jxqZNCJI/76HCieCp4Q8HaLFoCha5qpdg=
+github.com/streamingfast/merger v0.0.3-0.20210211180220-82756da29a41 h1:pPzs997Ki7OXnxruV4Nchyg6foffZgvklkNjR2lL/FQ=
+github.com/streamingfast/merger v0.0.3-0.20210211180220-82756da29a41/go.mod h1:Dp769aARRjBQ9Ur3K5Rl8cQmB29XWueudFa9JOH2f8Q=
+github.com/streamingfast/merger v0.0.3-0.20210218184002-6b3b6ba94465 h1:+Oey/6YZpOut30YoeAu3LCgeywiSwKmFUcFm0aoyPaU=
+github.com/streamingfast/merger v0.0.3-0.20210218184002-6b3b6ba94465/go.mod h1:Dp769aARRjBQ9Ur3K5Rl8cQmB29XWueudFa9JOH2f8Q=
+github.com/streamingfast/merger v0.0.3-0.20210226144304-7e370a347999 h1:PR8a1VQR1Ree+2qm2+onBpM+swR9r2wTIxaOQJCJp5Y=
+github.com/streamingfast/merger v0.0.3-0.20210226144304-7e370a347999/go.mod h1:Dp769aARRjBQ9Ur3K5Rl8cQmB29XWueudFa9JOH2f8Q=
+github.com/streamingfast/merger v0.0.3-0.20210809165038-14f85d21b69b h1:2TZK549dvo9W+o0RyIkYw42f6ny9H/ntxRZC/8yTJzs=
+github.com/streamingfast/merger v0.0.3-0.20210809165038-14f85d21b69b/go.mod h1:JZUuGTibm1hYfzlLpezr2XRN4gExndNOTv+D/NBNQCE=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
