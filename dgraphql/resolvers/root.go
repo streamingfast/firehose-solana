@@ -1,12 +1,12 @@
 package resolvers
 
 import (
-	"github.com/dfuse-io/dauth/ratelimiter"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
 	serumztics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
 	"github.com/dfuse-io/solana-go"
 	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/dauth/ratelimiter"
 )
 
 // Root is the root resolvers of the schema

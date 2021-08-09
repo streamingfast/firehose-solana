@@ -11,12 +11,10 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dfuse-io/binary v0.0.0-20210216024852-4ae6830a495d
 	github.com/dfuse-io/bstream v0.0.2-0.20210218160250-ce6144227e87
-	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
 	github.com/dfuse-io/dgrpc v0.0.0-20210424033943-10e04dd5b19c
 	github.com/dfuse-io/dlauncher v0.0.0-20210224224510-27373532f11f
-	github.com/dfuse-io/dmetering v0.0.0-20210112023524-c3ddadbc0d6a
 	github.com/dfuse-io/dmetrics v0.0.0-20200508170817-3b8cb01fee68
 	github.com/dfuse-io/dstore v0.1.1-0.20210204225142-e8106bdf280f
 	github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2
@@ -38,8 +36,10 @@ require (
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
+	github.com/streamingfast/dauth v0.0.0-20210809192433-4c758fd333ac // indirect
 	github.com/streamingfast/dgraphql v0.0.2-0.20210809194855-abdc276216a4 // indirect
-	github.com/streamingfast/firehose v0.1.1-0.20210809172230-12665dcfb713 // indirect
+	github.com/streamingfast/dmetering v0.0.0-20210809193048-81d008c90843 // indirect
+	github.com/streamingfast/firehose v0.1.1-0.20210809193802-776cf9f9942e // indirect
 	github.com/streamingfast/merger v0.0.3-0.20210809165038-14f85d21b69b // indirect
 	github.com/streamingfast/node-manager v0.0.2-0.20210809174523-1392abec0243
 	github.com/stretchr/testify v1.6.1
