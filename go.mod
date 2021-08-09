@@ -21,7 +21,6 @@ require (
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
 	github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70
 	github.com/dfuse-io/pbgo v0.0.6-0.20210125181705-b17235518132
-	github.com/dfuse-io/relayer v0.0.2-0.20210202030730-e16ed570e7a9
 	github.com/dfuse-io/shutter v1.4.1
 	github.com/dfuse-io/solana-go v0.2.1-0.20210218235942-214d7803f326
 	github.com/dustin/go-humanize v1.0.0
@@ -42,6 +41,7 @@ require (
 	github.com/streamingfast/firehose v0.1.1-0.20210809193802-776cf9f9942e // indirect
 	github.com/streamingfast/merger v0.0.3-0.20210809165038-14f85d21b69b // indirect
 	github.com/streamingfast/node-manager v0.0.2-0.20210809174523-1392abec0243
+	github.com/streamingfast/relayer v0.0.2-0.20210809195208-c686bf91e083 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/test-go/testify v1.1.4
