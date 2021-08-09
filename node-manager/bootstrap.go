@@ -27,29 +27,45 @@ import (
 	"go.uber.org/zap"
 )
 
-func (s *Superviser) Bootstrap(bootstrapDataURL string) error {
-	s.logger.Info("bootstrapping geth chain data from pre-built data", zap.String("bootstrap_data_url", bootstrapDataURL))
+type Bootstrapper struct {
+	dataURL     string
+	dataDirPath string
+	logger      *zap.Logger
+}
+
+func NewBootstrapper(dataURL string, dataDirPath string, logger *zap.Logger) *Bootstrapper {
+	return &Bootstrapper{
+		dataURL:     dataURL,
+		dataDirPath: dataDirPath,
+		logger:      logger,
+	}
+}
+
+func (b *Bootstrapper) Bootstrap() error {
+	b.logger.Info("bootstrapping solana chain data from pre-built data",
+		zap.String("bootstrap_data_url", b.dataURL),
+	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
-	reader, _, _, err := dstore.OpenObject(ctx, bootstrapDataURL, dstore.Compression("zstd"))
+	reader, _, _, err := dstore.OpenObject(ctx, b.dataURL, dstore.Compression("zstd"))
 	if err != nil {
 		return fmt.Errorf("cannot get snapshot from gstore: %w", err)
 	}
 	defer reader.Close()
 
-	s.createChainData(reader)
+	b.createChainData(reader)
 	return nil
-}
 
-func (s *Superviser) createChainData(reader io.Reader) error {
-	err := os.MkdirAll(s.options.DataDirPath, os.ModePerm)
+}
+func (b *Bootstrapper) createChainData(reader io.Reader) error {
+	err := os.MkdirAll(b.dataDirPath, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("unable to create blocks log file: %w", err)
 	}
 
-	s.logger.Info("extracting bootstrapping data into node data directory", zap.String("data_dir", s.options.DataDirPath))
+	b.logger.Info("extracting bootstrapping data into node data directory", zap.String("data_dir", b.dataDirPath))
 	tr := tar.NewReader(reader)
 	for {
 		header, err := tr.Next()
@@ -61,8 +77,8 @@ func (s *Superviser) createChainData(reader io.Reader) error {
 			return err
 		}
 
-		path := filepath.Join(s.options.DataDirPath, header.Name)
-		s.logger.Debug("about to write content of entry", zap.String("name", header.Name), zap.String("path", path), zap.Bool("is_dir", header.FileInfo().IsDir()))
+		path := filepath.Join(b.dataDirPath, header.Name)
+		b.logger.Debug("about to write content of entry", zap.String("name", header.Name), zap.String("path", path), zap.Bool("is_dir", header.FileInfo().IsDir()))
 		if header.FileInfo().IsDir() {
 			err = os.MkdirAll(path, os.ModePerm)
 			if err != nil {

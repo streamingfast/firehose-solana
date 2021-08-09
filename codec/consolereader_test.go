@@ -28,20 +28,14 @@ import (
 )
 
 func Test_readFromFile(t *testing.T) {
-	filepath := "syncer_20210211"
-
-	cleanup, testdir, err := copyTestDir(filepath)
+	testPath := "testdata/syncer_20210211"
+	cleanup, testdir, err := copyTestDir(testPath, "syncer_20210211")
 	require.NoError(t, err)
 	defer func() {
 		cleanup()
 	}()
 
-	f, err := os.Open(fmt.Sprintf("./test_data/%s/syncer.dmlog", filepath))
-	require.NoError(t, err)
-
-	cr, err := NewConsoleReader(f, testdir)
-	require.NoError(t, err)
-
+	cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", testPath), testdir)
 	s, err := cr.Read()
 	require.NoError(t, err)
 
@@ -67,6 +61,7 @@ func Test_readFromFile(t *testing.T) {
 	transaction := slot.Transactions[0]
 	assert.Equal(t, "2PFKgG8Uq9yHWig6HEEGQUmP8XnpyBi2zeaLAFUKR9rus33QQ1ad1PPmcvGR1hpq77fQEPFmFu8qiMNjmQGbGH6E", transaction.Id)
 	assert.Equal(t, 1, len(transaction.Instructions))
+
 }
 
 func Test_processBatchAggregation(t *testing.T) {
@@ -526,12 +521,12 @@ func trxSlice(trxIDs []string) (out []*pbcodec.Transaction) {
 	return
 }
 
-func copyTestDir(test string) (func(), string, error) {
+func copyTestDir(testPath, testName string) (func(), string, error) {
 	var err error
 	var fds []os.FileInfo
 
-	src := fmt.Sprintf("./test_data/%s/dmlogs", test)
-	dst, err := ioutil.TempDir("", test)
+	src := fmt.Sprintf("%s/dmlogs", testPath)
+	dst, err := ioutil.TempDir("", testName)
 	if err != nil {
 		return func() {}, "", fmt.Errorf("unable to create test directory: %w", err)
 	}
@@ -579,4 +574,29 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	return os.Chmod(dst, srcinfo.Mode())
+}
+
+func testFileConsoleReader(t *testing.T, dmlogFile, batchFilesPath string) *ConsoleReader {
+	t.Helper()
+
+	fl, err := os.Open(dmlogFile)
+	require.NoError(t, err)
+
+	cr := testReaderConsoleReader(t, make(chan string, 10000), func() { fl.Close() }, batchFilesPath)
+
+	go cr.ProcessData(fl)
+
+	return cr
+}
+
+func testReaderConsoleReader(t *testing.T, lines chan string, closer func(), batchFilesPath string) *ConsoleReader {
+	t.Helper()
+
+	l := &ConsoleReader{
+		lines: lines,
+		close: closer,
+		ctx:   newParseCtx(batchFilesPath),
+	}
+
+	return l
 }
