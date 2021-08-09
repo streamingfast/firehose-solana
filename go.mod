@@ -14,7 +14,6 @@ require (
 	github.com/dfuse-io/dauth v0.0.0-20200601190857-60bc6a4b4665
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
-	github.com/dfuse-io/dgraphql v0.0.2-0.20210209213422-0c203cf6bcfd
 	github.com/dfuse-io/dgrpc v0.0.0-20210424033943-10e04dd5b19c
 	github.com/dfuse-io/dlauncher v0.0.0-20210224224510-27373532f11f
 	github.com/dfuse-io/dmetering v0.0.0-20210112023524-c3ddadbc0d6a
@@ -39,6 +38,7 @@ require (
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
+	github.com/streamingfast/dgraphql v0.0.2-0.20210809194855-abdc276216a4 // indirect
 	github.com/streamingfast/firehose v0.1.1-0.20210809172230-12665dcfb713 // indirect
 	github.com/streamingfast/merger v0.0.3-0.20210809165038-14f85d21b69b // indirect
 	github.com/streamingfast/node-manager v0.0.2-0.20210809174523-1392abec0243

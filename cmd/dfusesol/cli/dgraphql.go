@@ -2,10 +2,10 @@ package cli
 
 import (
 	dgraphqlSol "github.com/dfuse-io/dfuse-solana/dgraphql"
-	dgraphqlApp "github.com/dfuse-io/dgraphql/app/dgraphql"
 	"github.com/dfuse-io/dlauncher/launcher"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
 )
 
 func init() {

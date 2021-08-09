@@ -211,10 +211,7 @@ github.com/dfuse-io/derr v0.0.0-20200417132224-d333cfd0e9a0/go.mod h1:/DjjRCyTi/
 github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152 h1:8Ee802t3evsUTc7B/W9Lf1pavPje2dtYWEpMtMnE7TY=
 github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152/go.mod h1:8bq4KABI5QklH7a16SFIH7/R/jNCOloKu20T5VP+iTk=
 github.com/dfuse-io/dfuse-solana v0.0.0-20210215142939-a2baa3503463/go.mod h1:1uplxDflINWL8PQV8bCF3kVyTY9LQVsSjFRfQSOXRvw=
-github.com/dfuse-io/dgraphql v0.0.2-0.20210128181646-b7f03ff95e0a h1:FNxRriCoWFzSu0bGy6IVVsru4yDnaUrNOHegL+mAcZU=
 github.com/dfuse-io/dgraphql v0.0.2-0.20210128181646-b7f03ff95e0a/go.mod h1:clKTytkdmIlKVt7N9i2brj1UwC/PWRDq6SvMqt0XCSA=
-github.com/dfuse-io/dgraphql v0.0.2-0.20210209213422-0c203cf6bcfd h1:eVewYg1V08kUximAyKANP/AwPZ/OMy6Yzp2zDd+pQak=
-github.com/dfuse-io/dgraphql v0.0.2-0.20210209213422-0c203cf6bcfd/go.mod h1:VXMflpeId/G6j7eiIbvMswWIomVV+Synsqp23TQqkVk=
 github.com/dfuse-io/dgrpc v0.0.0-20200406214416-6271093e544c/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
 github.com/dfuse-io/dgrpc v0.0.0-20200417124327-c8f215bc4ce5/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
 github.com/dfuse-io/dgrpc v0.0.0-20201117184322-6724bb1e1b60/go.mod h1:DANTlPl++VJnjf/wFlLrFQ1GJBSNoieP5808WQJfl9o=
@@ -552,6 +549,7 @@ github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFB
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.2.0 h1:s5hAObm+yFO5uHYt5dYjxi2rXrsnmRpJx4OYvIWUaQs=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
+github.com/kr/pretty v0.2.1/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
@@ -769,6 +767,16 @@ github.com/spf13/viper v1.6.2/go.mod h1:t3iDnF5Jlj76alVNuyFBk5oUMCvsrkbvZK0WQdfD
 github.com/spf13/viper v1.7.0/go.mod h1:8WkrPz2fc9jxqZNCJI/76HCieCp4Q8HaLFoCha5qpdg=
 github.com/spf13/viper v1.7.1 h1:pM5oEahlgWv/WnHXpgbKz7iLIxRf65tye2Ci+XFK5sk=
 github.com/spf13/viper v1.7.1/go.mod h1:8WkrPz2fc9jxqZNCJI/76HCieCp4Q8HaLFoCha5qpdg=
+github.com/streamingfast/dauth v0.0.0-20210809192433-4c758fd333ac h1:/FOjEkm9/di7wWos1rKGtSBUDWWwO5ebKJntRdNcw48=
+github.com/streamingfast/dauth v0.0.0-20210809192433-4c758fd333ac/go.mod h1:x7pFMAim8Tesn45YwdLV+yZdg0ItQE2DXtEFQhn1U/Q=
+github.com/streamingfast/dgraphql v0.0.2-0.20210128181646-b7f03ff95e0a h1:FNxRriCoWFzSu0bGy6IVVsru4yDnaUrNOHegL+mAcZU=
+github.com/streamingfast/dgraphql v0.0.2-0.20210128181646-b7f03ff95e0a/go.mod h1:clKTytkdmIlKVt7N9i2brj1UwC/PWRDq6SvMqt0XCSA=
+github.com/streamingfast/dgraphql v0.0.2-0.20210209213422-0c203cf6bcfd h1:eVewYg1V08kUximAyKANP/AwPZ/OMy6Yzp2zDd+pQak=
+github.com/streamingfast/dgraphql v0.0.2-0.20210209213422-0c203cf6bcfd/go.mod h1:VXMflpeId/G6j7eiIbvMswWIomVV+Synsqp23TQqkVk=
+github.com/streamingfast/dgraphql v0.0.2-0.20210809194855-abdc276216a4 h1:6c1Eq/wDaWARv9rAK4sRSJl1Z2zXxWMI8TX7jpBXpKI=
+github.com/streamingfast/dgraphql v0.0.2-0.20210809194855-abdc276216a4/go.mod h1:8As47MTUskT/5uW2fLUX6vK7DBOqC4J5qNeTDitGQjM=
+github.com/streamingfast/dmetering v0.0.0-20210809193048-81d008c90843 h1:2n/ex44O140RSBuMCshtCbq5grMyIVvayT7fS9nrrIU=
+github.com/streamingfast/dmetering v0.0.0-20210809193048-81d008c90843/go.mod h1:oZESKnHkWdCRng9ds6bELIZo+49dRIR2Z9VF4FRZYVo=
 github.com/streamingfast/firehose v0.1.1-0.20210208183237-ab19a73e5842 h1:KOQW6Te0OFXvbCbazQNqCMnFshhTjpDuhycNaZW7uuI=
 github.com/streamingfast/firehose v0.1.1-0.20210208183237-ab19a73e5842/go.mod h1:G5QGhkFpmkx21lWMrUvGQhdEudpxtssnv5HgjcGLgR0=
 github.com/streamingfast/firehose v0.1.1-0.20210809172230-12665dcfb713 h1:R+jxk25JuQPRaX10JzzkXl+6y0ANuXVcDoDw8kMmXRk=
@@ -1056,6 +1064,7 @@ golang.org/x/sys v0.0.0-20200828194041-157a740278f4/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20200905004654-be1d3432aa8f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20201113233024-12cec1faf1ba/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201201145000-ef89a241ccb3/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c h1:VwygUrnw9jn88c4u8GD3rZQbqrP/tgas88tPUbBxQrk=
@@ -1140,6 +1149,7 @@ golang.org/x/tools v0.0.0-20200904185747-39188db58858/go.mod h1:Cj7w3i3Rnn0Xh82u
 golang.org/x/tools v0.0.0-20200915173823-2db8f0ff891c/go.mod h1:z6u4i615ZeAfBE4XtMziQW1fSVJXACjjbWkB/mvPzlU=
 golang.org/x/tools v0.0.0-20200918232735-d647fc253266/go.mod h1:z6u4i615ZeAfBE4XtMziQW1fSVJXACjjbWkB/mvPzlU=
 golang.org/x/tools v0.0.0-20201110124207-079ba7bd75cd/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
+golang.org/x/tools v0.0.0-20201114224030-61ea331ec02b/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20201201161351-ac6f37ff4c2a h1:+77BOOi9CMFjpy3D2P/OnfSSmC/Hx/fGAQJUAQaM2gc=
 golang.org/x/tools v0.0.0-20201201161351-ac6f37ff4c2a/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20210108195828-e2f9c7f1fc8e/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=

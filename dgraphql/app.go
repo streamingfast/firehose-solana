@@ -27,10 +27,10 @@ import (
 	solResolver "github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/dfuse-io/dgraphql"
-	dgraphqlApp "github.com/dfuse-io/dgraphql/app/dgraphql"
 	"github.com/dfuse-io/dgrpc"
 	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/dgraphql"
+	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
 	"go.uber.org/zap"
 )
 

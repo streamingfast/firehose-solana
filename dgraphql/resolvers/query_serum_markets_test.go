@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/dfuse-io/dgraphql/types"
 	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/dgraphql/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

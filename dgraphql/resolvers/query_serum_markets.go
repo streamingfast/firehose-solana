@@ -5,9 +5,9 @@ import (
 	"sort"
 
 	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/dfuse-io/dgraphql"
-	"github.com/dfuse-io/dgraphql/types"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/streamingfast/dgraphql"
+	"github.com/streamingfast/dgraphql/types"
 )
 
 type SerumMarketsRequest struct {
