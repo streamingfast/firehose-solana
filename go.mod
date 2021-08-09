@@ -14,7 +14,6 @@ require (
 	github.com/dfuse-io/dbin v0.0.0-20200406215642-ec7f22e794eb
 	github.com/dfuse-io/derr v0.0.0-20201001203637-4dc9d8014152
 	github.com/dfuse-io/dgrpc v0.0.0-20210424033943-10e04dd5b19c
-	github.com/dfuse-io/dlauncher v0.0.0-20210224224510-27373532f11f
 	github.com/dfuse-io/dmetrics v0.0.0-20200508170817-3b8cb01fee68
 	github.com/dfuse-io/dstore v0.1.1-0.20210204225142-e8106bdf280f
 	github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2
@@ -37,6 +36,7 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/streamingfast/dauth v0.0.0-20210809192433-4c758fd333ac // indirect
 	github.com/streamingfast/dgraphql v0.0.2-0.20210809194855-abdc276216a4 // indirect
+	github.com/streamingfast/dlauncher v0.0.0-20210809203103-fe27d137acc7 // indirect
 	github.com/streamingfast/dmetering v0.0.0-20210809193048-81d008c90843 // indirect
 	github.com/streamingfast/firehose v0.1.1-0.20210809193802-776cf9f9942e // indirect
 	github.com/streamingfast/merger v0.0.3-0.20210809165038-14f85d21b69b // indirect

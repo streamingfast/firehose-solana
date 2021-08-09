@@ -221,10 +221,7 @@ github.com/dfuse-io/dgrpc v0.0.0-20210424033943-10e04dd5b19c h1:WbdnyAayWMxOnUj9
 github.com/dfuse-io/dgrpc v0.0.0-20210424033943-10e04dd5b19c/go.mod h1:SQUqYjDen2kzhbM+pvNceNtbevla8o7eNX8idtDJDHA=
 github.com/dfuse-io/dipp v1.0.1-0.20200407033930-5c17c531c3c4 h1:2y5Tbm8RPbhCSutKgJwa328F/bJ23rpWC8clt5LhCiA=
 github.com/dfuse-io/dipp v1.0.1-0.20200407033930-5c17c531c3c4/go.mod h1:4OSkJC9kCEQMw9f79Kl4Dl2vQZxQLknn0W7hZlZLsPM=
-github.com/dfuse-io/dlauncher v0.0.0-20201215203933-750a56ede40d h1:PLB7mL4uRSNsaIjzIYaS7f7BytSQ4XRn8VVmWLqZmZE=
 github.com/dfuse-io/dlauncher v0.0.0-20201215203933-750a56ede40d/go.mod h1:G9vejXtUwSj+YuCzlPxlzW7x+85ffvNAL7Mk1t4O5fw=
-github.com/dfuse-io/dlauncher v0.0.0-20210224224510-27373532f11f h1:w78in1hC+9suFOmLpTQhdVdvWCwJvxxqH/i0WoGyXnQ=
-github.com/dfuse-io/dlauncher v0.0.0-20210224224510-27373532f11f/go.mod h1:JZZ1oOCX9rw9Jm6W8Hqe7bZmTex1Nqby0dL6w4b7Tuo=
 github.com/dfuse-io/dmesh v0.0.0-20201117184409-6a094bb91fca h1:mbpkMBmoOCLu5xyhRebZMbv4b0fPNOhyk6IEqKkV4Ko=
 github.com/dfuse-io/dmesh v0.0.0-20201117184409-6a094bb91fca/go.mod h1:XhSRmGQiR+2/vOVGXpwCqnF1/FDunrZxsdkDjgxAtZs=
 github.com/dfuse-io/dmesh v0.0.0-20210224224128-9a9ef510dce1 h1:4dcAcoEd+Q8Khj9zhOVeTQ45y+wzVCU35yyT5eQB87I=
@@ -775,6 +772,12 @@ github.com/streamingfast/dgraphql v0.0.2-0.20210209213422-0c203cf6bcfd h1:eVewYg
 github.com/streamingfast/dgraphql v0.0.2-0.20210209213422-0c203cf6bcfd/go.mod h1:VXMflpeId/G6j7eiIbvMswWIomVV+Synsqp23TQqkVk=
 github.com/streamingfast/dgraphql v0.0.2-0.20210809194855-abdc276216a4 h1:6c1Eq/wDaWARv9rAK4sRSJl1Z2zXxWMI8TX7jpBXpKI=
 github.com/streamingfast/dgraphql v0.0.2-0.20210809194855-abdc276216a4/go.mod h1:8As47MTUskT/5uW2fLUX6vK7DBOqC4J5qNeTDitGQjM=
+github.com/streamingfast/dlauncher v0.0.0-20201215203933-750a56ede40d h1:PLB7mL4uRSNsaIjzIYaS7f7BytSQ4XRn8VVmWLqZmZE=
+github.com/streamingfast/dlauncher v0.0.0-20201215203933-750a56ede40d/go.mod h1:G9vejXtUwSj+YuCzlPxlzW7x+85ffvNAL7Mk1t4O5fw=
+github.com/streamingfast/dlauncher v0.0.0-20210224224510-27373532f11f h1:w78in1hC+9suFOmLpTQhdVdvWCwJvxxqH/i0WoGyXnQ=
+github.com/streamingfast/dlauncher v0.0.0-20210224224510-27373532f11f/go.mod h1:JZZ1oOCX9rw9Jm6W8Hqe7bZmTex1Nqby0dL6w4b7Tuo=
+github.com/streamingfast/dlauncher v0.0.0-20210809203103-fe27d137acc7 h1:6uMZbAK1kKEEkGwj1h86g1LCa2g84XZTEpT/K0B1kjQ=
+github.com/streamingfast/dlauncher v0.0.0-20210809203103-fe27d137acc7/go.mod h1:FTCDbr+flyxxEKRNc6Qu9VfAACOkIFOpto0fXt7TCRU=
 github.com/streamingfast/dmetering v0.0.0-20200529171737-525c3029795c/go.mod h1:Qtr0qJsu5zfOJEKxNhp+hlTB785Psam/iAR2VbMa7uA=
 github.com/streamingfast/dmetering v0.0.0-20210112023524-c3ddadbc0d6a h1:p8UQaHbdKvVRRko0E2FFTuzbAgQhwZUtogdrfQ3C1ow=
 github.com/streamingfast/dmetering v0.0.0-20210112023524-c3ddadbc0d6a/go.mod h1:QFR4Lo8aueGD5u+0HO2A3Un3dM+1pj6NjxYhLGKSNNI=

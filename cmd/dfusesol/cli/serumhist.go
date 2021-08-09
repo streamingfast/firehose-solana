@@ -2,9 +2,9 @@ package cli
 
 import (
 	serumhistApp "github.com/dfuse-io/dfuse-solana/serumhist/app/serumhist"
-	"github.com/dfuse-io/dlauncher/launcher"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/streamingfast/dlauncher/launcher"
 )
 
 func init() {
