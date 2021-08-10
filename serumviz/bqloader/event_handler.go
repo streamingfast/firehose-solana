@@ -12,7 +12,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/streamingfast/derr"
-	"github.com/dfuse-io/dstore"
+	"github.com/streamingfast/dstore"
 	"github.com/dfuse-io/shutter"
 	"github.com/linkedin/goavro/v2"
 	"go.uber.org/zap"

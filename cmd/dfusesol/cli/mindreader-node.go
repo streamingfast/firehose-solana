@@ -10,7 +10,7 @@ import (
 
 	"github.com/dfuse-io/bstream/blockstream"
 	nodeManagerSol "github.com/dfuse-io/dfuse-solana/node-manager"
-	"github.com/dfuse-io/dstore"
+	"github.com/streamingfast/dstore"
 
 	"github.com/dfuse-io/bstream"
 	"github.com/dfuse-io/dfuse-solana/codec"

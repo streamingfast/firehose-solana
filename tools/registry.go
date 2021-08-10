@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/dfuse-io/dstore"
+	"github.com/streamingfast/dstore"
 	"github.com/dfuse-io/solana-go/programs/serum"
 	solrpc "github.com/dfuse-io/solana-go/rpc"
 	"github.com/spf13/cobra"

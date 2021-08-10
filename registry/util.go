@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dfuse-io/dstore"
+	"github.com/streamingfast/dstore"
 )
 
 func readFile(ctx context.Context, filepath string, f func(line string) error) error {

@@ -28,7 +28,7 @@ import (
 	"github.com/abourget/llerrgroup"
 	"github.com/dfuse-io/bstream"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/dfuse-io/dstore"
+	"github.com/streamingfast/dstore"
 	"github.com/golang/protobuf/proto"
 	"go.uber.org/zap"
 )
