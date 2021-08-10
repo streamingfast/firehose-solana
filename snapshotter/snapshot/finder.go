@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/dfuse-io/shutter"
+	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
 )
 

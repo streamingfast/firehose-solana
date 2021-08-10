@@ -15,7 +15,7 @@ import (
 	"github.com/dfuse-io/dmetrics"
 	"github.com/streamingfast/dstore"
 	"github.com/dfuse-io/kvdb/store"
-	"github.com/dfuse-io/shutter"
+	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
 )
 

@@ -10,14 +10,13 @@ require (
 	github.com/abourget/llerrgroup v0.2.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dfuse-io/binary v0.0.0-20210216024852-4ae6830a495d
-	github.com/dfuse-io/bstream v0.0.2-0.20210810112308-458fdfd5441b
-	github.com/dfuse-io/dgrpc v0.0.0-20210424033943-10e04dd5b19c
+	github.com/dfuse-io/bstream v0.0.2-0.20210810125844-72912424b968
+	github.com/dfuse-io/dgrpc v0.0.0-20210810041652-d033fee35ae0
 	github.com/dfuse-io/dmetrics v0.0.0-20200508170817-3b8cb01fee68
 	github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
 	github.com/dfuse-io/logging v0.0.0-20210109005628-b97a57253f70
 	github.com/dfuse-io/pbgo v0.0.6-0.20210429181308-d54fc7723ad3
-	github.com/dfuse-io/shutter v1.4.1
 	github.com/dfuse-io/solana-go v0.2.1-0.20210218235942-214d7803f326
 	github.com/dustin/go-humanize v1.0.0
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
@@ -38,10 +37,12 @@ require (
 	github.com/streamingfast/dlauncher v0.0.0-20210809203103-fe27d137acc7
 	github.com/streamingfast/dmetering v0.0.0-20210809193048-81d008c90843
 	github.com/streamingfast/dstore v0.1.1-0.20210810110932-928f221474e4 // indirect
+	github.com/streamingfast/dtracing v0.0.0-20210810040633-7c6259bea4a7 // indirect
 	github.com/streamingfast/firehose v0.1.1-0.20210810113056-a3a9485e646d
 	github.com/streamingfast/merger v0.0.3-0.20210810115151-e781e2853250
 	github.com/streamingfast/node-manager v0.0.2-0.20210810115258-dd11752ad2d3
 	github.com/streamingfast/relayer v0.0.2-0.20210810115400-583b20cd0525
+	github.com/streamingfast/shutter v1.5.0 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/test-go/testify v1.1.4
