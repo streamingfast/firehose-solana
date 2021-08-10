@@ -19,7 +19,7 @@ import (
 	"io"
 
 	"github.com/dfuse-io/bstream"
-	"github.com/dfuse-io/dbin"
+	"github.com/streamingfast/dbin"
 	"github.com/golang/protobuf/proto"
 )
 
