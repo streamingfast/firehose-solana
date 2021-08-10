@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dfuse-io/derr"
+	"github.com/streamingfast/derr"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"google.golang.org/api/iterator"
 )

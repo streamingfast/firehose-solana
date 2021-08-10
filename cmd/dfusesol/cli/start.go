@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/dfuse-io/bstream"
-	"github.com/dfuse-io/derr"
+	"github.com/streamingfast/derr"
 	_ "github.com/dfuse-io/dfuse-solana/codec"
 	_ "github.com/dfuse-io/kvdb/store/badger"
 	_ "github.com/dfuse-io/kvdb/store/bigkv"

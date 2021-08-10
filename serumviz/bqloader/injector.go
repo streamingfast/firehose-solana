@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/dfuse-io/derr"
+	"github.com/streamingfast/derr"
 	"github.com/dfuse-io/shutter"
 	"go.uber.org/zap"
 )
