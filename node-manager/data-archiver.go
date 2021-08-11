@@ -26,10 +26,10 @@ import (
 	"time"
 
 	"github.com/abourget/llerrgroup"
-	"github.com/dfuse-io/bstream"
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/dfuse-io/dstore"
 	"github.com/golang/protobuf/proto"
+	"github.com/streamingfast/bstream"
+	"github.com/streamingfast/dstore"
+	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
 	"go.uber.org/zap"
 )
 

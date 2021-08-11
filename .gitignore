@@ -8,3 +8,11 @@
 /ethq/app/ethq/rice-box.go
 /proj
 /dfusesol
+.idea
+venv
+*.tfstate
+*.tfstate.*.backup
+*.tfstate.backup
+*.tfvars
+.terraform/
+*.auto.pkrvars.hcl

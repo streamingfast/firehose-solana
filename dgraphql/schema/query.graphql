@@ -9,8 +9,8 @@ type Query {
 
   serumMarkets(count: Uint64, cursor: String): SerumMarketConnection!
 
-  """Returns Serum's Market daily data"""
-  serumMarketDailyData(address: String!): SerumMarketDailyData!
+  """Returns a specific Serum's Market data """
+  serumMarket(address: String!): SerumMarket!
 }
 
 """Cursors required to continue either forward or backwards from a list of paginated elements"""

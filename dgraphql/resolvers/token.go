@@ -1,38 +1,70 @@
 package resolvers
 
 import (
-	"github.com/dfuse-io/dfuse-solana/registry"
-	gtype "github.com/dfuse-io/dgraphql/types"
+	gtype "github.com/streamingfast/dgraphql/types"
+	"github.com/streamingfast/sf-solana/registry"
+	"github.com/streamingfast/solana-go"
 )
 
 type Token struct {
-	t *registry.Token
+	address *solana.PublicKey
+	t       *registry.Token
 }
 
-func (t Token) Address() string { return t.t.Address.String() }
+func (t Token) Address() string {
+	if t.t == nil {
+		return t.address.String()
+	}
 
-func (t Token) MintAuthority() string {
-	return t.t.MintAuthority.String()
+	return t.t.Address.String()
 }
 
-func (t Token) FreezeAuthority() string {
-	return t.t.FreezeAuthority.String()
+func (t Token) MintAuthority() *string {
+	if t.t == nil {
+		return nil
+	}
+
+	v := t.t.MintAuthority.String()
+	return &v
 }
 
-func (t Token) Supply() gtype.Uint64 {
-	return gtype.Uint64(t.t.Supply)
+func (t Token) FreezeAuthority() *string {
+	if t.t == nil {
+		return nil
+	}
+
+	v := t.t.FreezeAuthority.String()
+	return &v
 }
 
-func (t Token) Decimals() int32 {
-	return int32(t.t.Decimals)
+func (t Token) Supply() *gtype.Uint64 {
+	if t.t == nil {
+		return nil
+	}
+
+	v := gtype.Uint64(t.t.Supply)
+	return &v
+}
+
+func (t Token) Decimals() *int32 {
+	if t.t == nil {
+		return nil
+	}
+
+	v := int32(t.t.Decimals)
+	return &v
 }
 
 func (t Token) Verified() bool {
+	if t.t == nil {
+		return false
+	}
+
 	return t.t.Verified
 }
 
 func (t Token) Meta() *TokenMeta {
-	if t.t.Meta != nil {
+	if t.t != nil && t.t.Meta != nil {
 		return &TokenMeta{
 			Symbol:  t.t.Meta.Symbol,
 			Name:    t.t.Meta.Name,
@@ -71,7 +103,7 @@ type TokenAmount struct {
 
 func (t TokenAmount) Token() *Token {
 	if t.t != nil {
-		return &Token{t.t}
+		return &Token{nil, t.t}
 	}
 	return nil
 }

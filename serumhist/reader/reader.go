@@ -1,7 +1,7 @@
 package reader
 
 import (
-	"github.com/dfuse-io/kvdb/store"
+	"github.com/streamingfast/kvdb/store"
 )
 
 type Reader struct {

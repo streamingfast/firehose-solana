@@ -15,7 +15,10 @@ type BlockRange struct {
 }
 
 func getBlockRangeFromFlag() (out BlockRange, err error) {
-	stringRange := viper.GetString("range")
+	return decodeBlockRange(viper.GetString("range"))
+}
+
+func decodeBlockRange(stringRange string) (out BlockRange, err error) {
 	if stringRange == "" {
 		return
 	}

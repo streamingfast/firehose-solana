@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	"github.com/dfuse-io/kvdb/store"
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/kvdb/store"
+	"github.com/streamingfast/sf-solana/serumhist/keyer"
+	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
 

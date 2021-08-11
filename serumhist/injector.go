@@ -6,21 +6,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dfuse-io/bstream"
-	"github.com/dfuse-io/bstream/blockstream"
-	"github.com/dfuse-io/bstream/firehose"
-	"github.com/dfuse-io/bstream/forkable"
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dgrpc"
-	"github.com/dfuse-io/dstore"
-	"github.com/dfuse-io/shutter"
+	"github.com/streamingfast/bstream"
+	"github.com/streamingfast/bstream/blockstream"
+	"github.com/streamingfast/bstream/firehose"
+	"github.com/streamingfast/bstream/forkable"
+	"github.com/streamingfast/dgrpc"
+	"github.com/streamingfast/dstore"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
 )
 
 type Handler interface {
+	bstream.Shutterer
 	bstream.Handler
-	GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error)
-	Close() error
 }
 
 type Injector struct {
@@ -34,24 +33,28 @@ type Injector struct {
 	preprocessorThreadCount     int
 	parallelDownloadThreadCount int
 	handler                     Handler
+	checkpointResolver          CheckpointResolver
 	server                      *dgrpc.Server
 }
 
-// TODO don't depend on both....
+type CheckpointResolver func(ctx context.Context) (*pbserumhist.Checkpoint, error)
+
 func NewInjector(
 	ctx context.Context,
 	handler Handler,
+	checkpointResolver CheckpointResolver,
 	blockstreamAddr string,
 	blockStore dstore.Store,
 	preprocessorThreadCount int,
 	parallelDownloadThreadCount int,
 ) *Injector {
 	return &Injector{
-		ctx:             ctx,
-		handler:         handler,
-		blockstreamAddr: blockstreamAddr,
-		blockStore:      blockStore,
-		Shutter:         shutter.New(),
+		ctx:                ctx,
+		handler:            handler,
+		checkpointResolver: checkpointResolver,
+		blockstreamAddr:    blockstreamAddr,
+		blockStore:         blockStore,
+		Shutter:            shutter.New(),
 		slotMetrics: slotMetrics{
 			startTime: time.Now(),
 		},
@@ -120,28 +123,12 @@ func (i *Injector) Launch() error {
 
 	i.OnTerminating(func(err error) {
 		zlog.Info("shutting down injector, attempting to close underlying handler")
-		if err := i.handler.Close(); err != nil {
-			zlog.Error("error closing underlying serumhist injector handler", zap.Error(err))
-		}
+		i.handler.Shutdown(err)
 	})
 
-	//if i.grpcAddr != "" {
-	//	server := dgrpc.NewServer2(dgrpc.WithLogger(zlog))
-	//	server.RegisterService(func(gs *grpc.Server) {
-	//		pbserumhist.RegisterSerumOrderTrackerServer(gs, i)
-	//		pbhealth.RegisterHealthServer(gs, i)
-	//	})
-	//
-	//	zlog.Info("listening for serum history",
-	//		zap.String("addr", i.grpcAddr),
-	//	)
-	//
-	//	i.OnTerminating(func(err error) {
-	//		server.Shutdown(30 * time.Second)
-	//	})
-	//
-	//	go server.Launch(i.grpcAddr)
-	//}
+	i.handler.OnTerminated(func(err error) {
+		i.Shutdown(err)
+	})
 
 	err := i.source.Run(i.ctx)
 	if err != nil {

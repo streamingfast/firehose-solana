@@ -3,12 +3,12 @@ package grpc
 import (
 	"time"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
+	"github.com/streamingfast/sf-solana/serumhist/reader"
 
-	pbaccounthist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dgrpc"
-	pbhealth "github.com/dfuse-io/pbgo/grpc/health/v1"
-	"github.com/dfuse-io/shutter"
+	"github.com/streamingfast/dgrpc"
+	pbhealth "github.com/streamingfast/pbgo/grpc/health/v1"
+	pbaccounthist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -40,7 +40,7 @@ func (s *Server) Serve() {
 		zap.String("addr", s.grpcAddr),
 	)
 
-	s.OnTerminating(func(err error) {
+	s.OnTerminating(func(_ error) {
 		s.server.Shutdown(30 * time.Second)
 	})
 

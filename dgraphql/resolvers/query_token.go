@@ -6,11 +6,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/dfuse-io/dgraphql"
-	"github.com/dfuse-io/dgraphql/types"
-	"github.com/dfuse-io/solana-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/streamingfast/dgraphql"
+	"github.com/streamingfast/dgraphql/types"
+	"github.com/streamingfast/sf-solana/registry"
+	"github.com/streamingfast/solana-go"
 )
 
 type TokensRequest struct {
@@ -25,7 +25,7 @@ func (r *Root) QueryTokens(request *TokensRequest) (*TokenConnection, error) {
 		return nil, gqlerrors.Errorf("invalid arguments: %s", err)
 	}
 
-	allTokens := r.registryServer.GetTokens()
+	allTokens := r.tokensGetter()
 	if len(allTokens) <= 0 {
 		return &TokenConnection{Edges: nil, PageInfo: emptyPageInfo, TotalCount: 0}, nil
 	}
@@ -87,7 +87,7 @@ func (r *Root) QueryToken(req *TokenRequest) (*TokenEdge, error) {
 		return nil, err
 	}
 
-	t := r.registryServer.GetToken(&pubKey)
+	t := r.tokenGetter(&pubKey)
 	if t == nil {
 		return nil, nil
 	}

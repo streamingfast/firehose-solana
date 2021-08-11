@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	"github.com/dfuse-io/kvdb/store"
-	"github.com/dfuse-io/solana-go"
 	"github.com/golang/protobuf/proto"
+	"github.com/streamingfast/kvdb/store"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/sf-solana/serumhist/keyer"
+	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
 
@@ -33,7 +33,7 @@ func (m *Reader) GetFillsByTraderAndMarket(ctx context.Context, trader, market s
 
 func (m *Reader) GetFillsByMarket(ctx context.Context, market solana.PublicKey, limit int) (fills []*pbserumhist.Fill, hasMore bool, err error) {
 	prefix := keyer.EncodeFillByMarketPrefix(market)
-	zlog.Debug("get fills by trader",
+	zlog.Debug("get fills by market",
 		zap.Stringer("prefix", prefix),
 		zap.Stringer("market", market),
 	)
@@ -41,10 +41,6 @@ func (m *Reader) GetFillsByMarket(ctx context.Context, market solana.PublicKey, 
 }
 
 func (m *Reader) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, decoder keyer.KeyDecoder, limit int) (out []*pbserumhist.Fill, hasMore bool, err error) {
-	zlog.Debug("get fills for prefix",
-		zap.Stringer("prefix", prefix),
-	)
-
 	orderIterator := m.store.Prefix(ctx, prefix, limit+1, store.KeyOnly())
 	var fillKeys [][]byte
 	for orderIterator.Next() {
@@ -56,7 +52,16 @@ func (m *Reader) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, dec
 		}
 	}
 
-	fillsIter := m.store.BatchGet(ctx, fillKeys)
+	if orderIterator.Err() != nil {
+		return nil, false, fmt.Errorf("unable to get fills keys: %w", err)
+	}
+
+	zlog.Debug("resolved fill keys to retrieve", zap.Int("key_count", len(fillKeys)))
+
+	subCtx, cancelFills := context.WithCancel(ctx)
+	defer cancelFills()
+
+	fillsIter := m.store.BatchGet(subCtx, fillKeys)
 	for fillsIter.Next() {
 		f := &pbserumhist.Fill{}
 		err := proto.Unmarshal(fillsIter.Item().Value, f)
@@ -73,25 +78,29 @@ func (m *Reader) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, dec
 		out = append(out, f)
 	}
 
+	if fillsIter.Err() != nil {
+		return nil, false, fmt.Errorf("unable to resolve fills keys: %w", err)
+	}
+
 	zlog.Debug("found fills ", zap.Int("count", len(out)), zap.Bool("has_more", hasMore))
 	return
 }
 
 func (m *Reader) getFillsForMarket(ctx context.Context, prefix keyer.Prefix, limit int) (out []*pbserumhist.Fill, hasMore bool, err error) {
-	zlog.Debug("get fills for prefix",
+	zlog.Debug("get fills for market prefix",
 		zap.Stringer("prefix", prefix),
 	)
 
-	orderIterator := m.store.Prefix(ctx, prefix, limit+1, store.KeyOnly())
-	for orderIterator.Next() {
+	fillIterator := m.store.Prefix(ctx, prefix, limit+1)
+	for fillIterator.Next() {
 		if len(out) < limit {
 			f := &pbserumhist.Fill{}
-			err := proto.Unmarshal(orderIterator.Item().Value, f)
+			err := proto.Unmarshal(fillIterator.Item().Value, f)
 			if err != nil {
 				return nil, false, fmt.Errorf("failed to unmarshal order: %w", err)
 			}
 
-			market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeFill(orderIterator.Item().Key)
+			market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeFill(fillIterator.Item().Key)
 			f.Market = market.String()
 			f.SlotNum = slotNum
 			f.TrxIdx = uint32(trxIdx)
@@ -103,6 +112,6 @@ func (m *Reader) getFillsForMarket(ctx context.Context, prefix keyer.Prefix, lim
 		}
 	}
 
-	zlog.Debug("found fills ", zap.Int("count", len(out)), zap.Bool("has_more", hasMore))
+	zlog.Debug("found fills", zap.Int("count", len(out)), zap.Bool("has_more", hasMore))
 	return
 }

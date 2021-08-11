@@ -15,13 +15,13 @@
 package codec
 
 import (
-	"github.com/dfuse-io/logging"
+	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 )
 
-var traceEnabled = logging.IsTraceEnabled("codec", "github.com/dfuse-io/dfuse-solana/codec")
+var traceEnabled = logging.IsTraceEnabled("codec", "github.com/streamingfast/sf-solana/codec")
 var zlog *zap.Logger = zap.NewNop()
 
 func init() {
-	logging.Register("github.com/dfuse-io/dfuse-solana/codec", &zlog)
+	logging.Register("github.com/streamingfast/sf-solana/codec", &zlog)
 }

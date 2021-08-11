@@ -1,59 +1,22 @@
-# dfuse-solana
+# Solana on StreamingFast
+[![reference](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square)](https://pkg.go.dev/github.com/streamingfast/sf-solana)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+# Usage
 
-- We need to keep a local history of all fill events for a list of given markets... 
-    1) load all the markets into cache getAccountOnEach
-    2) we need to watch all the event address of each market.... (1 market -> 1 event queue address)
-    3) we need to filter out the fills of all the incoming events and store that per market
-    4) we need to persist this cache wise
-    
-- When a new  graphql subscription occurs we need to retrieve historically all hist transactions
-- filter out the NewOrder
-- Attempt to cross match a new Order & fill events per market to see if it is a recent trade... (i.e. to see if the order got filled)
+## Contributing
 
+**Issues and PR in this repo related strictly to the Solana on StreamingFast.**
 
-Questions)
+Report any protocol-specific issues in their
+[respective repositories](https://github.com/streamingfast/streamingfast#protocols)
 
-- Is there pagination on `getAccountInfo`?
-    There is pagination based on offset
-    
-    
-- 1) load a cache/store from disk (sts)    
-- 2) read jsonl with all markets, and add the ones that aren't the cache
-- 3)
+**Please first refer to the general
+[StreamingFast contribution guide](https://github.com/streamingfast/streamingfast/blob/master/CONTRIBUTING.md)**,
+if you wish to contribute to this code base.
 
+This codebase uses unit tests extensively, please write and run tests.
 
+## License
 
-
-type Store struct {
-    map[string] MarketMeta {
-           
-    }
-}
-
-
-store Market version => data decoder
-
-getAcountInfo(eventAddress)
--> HEAD EVENT, EVENT, EVENT, EVENT, EVENT, .....EVENT
-
-
-->load markets
--> go routine
-        getAccountInfo(eventAddress)
-        load all events store
-        ws.subscribeAccount(eventAccount)
-            -> update events list
-            -> update events list
-            
-3 min
-->       
-            
-
-
-
- 
-
-
-// We are not tracking the the IRR block correctly (current hard wired to -10)
-//
+[Apache 2.0](LICENSE)

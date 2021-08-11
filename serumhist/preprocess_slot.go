@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	bin "github.com/dfuse-io/binary"
-	"github.com/dfuse-io/bstream"
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/programs/serum"
+	bin "github.com/streamingfast/binary"
+	"github.com/streamingfast/bstream"
+	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
+	"github.com/streamingfast/solana-go"
+	"github.com/streamingfast/solana-go/programs/serum"
 	"go.uber.org/zap"
 )
 
@@ -29,6 +29,9 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			)
 		}
 
+		if transaction.Failed {
+			continue
+		}
 		for instIdx, instruction := range transaction.Instructions {
 			// FIXME: The DEX v3 address is not known yet, we will need to update this when the address is known
 			if instruction.ProgramId != serum.DEXProgramIDV2.String() {
@@ -88,7 +91,12 @@ func (i *Injector) preprocessSlot(blk *bstream.Block) (interface{}, error) {
 			if i, ok := decodedInst.Impl.(solana.AccountSettable); ok {
 				err = i.SetAccounts(accounts)
 				if err != nil {
-					return nil, fmt.Errorf("setting account: transaction id: %s: instruction index: %d: %w", transaction.Id, instIdx, err)
+					zlog.Warn("error setting account for instruction",
+						zap.String("transaction_id", transaction.Id),
+						zap.Int("insutrction_index", instIdx),
+						zap.Error(err),
+					)
+					continue
 				}
 			}
 

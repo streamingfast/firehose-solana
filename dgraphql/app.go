@@ -18,26 +18,32 @@ import (
 	"context"
 	"fmt"
 
-	drateLimiter "github.com/dfuse-io/dauth/ratelimiter"
-	solResolver "github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/dfuse-io/dgraphql"
-	dgraphqlApp "github.com/dfuse-io/dgraphql/app/dgraphql"
-	"github.com/dfuse-io/dgrpc"
-	"github.com/dfuse-io/solana-go/rpc"
+	serumanalytics "github.com/streamingfast/sf-solana/serumviz/analytics"
+	"gorm.io/driver/bigquery"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	drateLimiter "github.com/streamingfast/dauth/ratelimiter"
+	"github.com/streamingfast/dgraphql"
+	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
+	"github.com/streamingfast/dgrpc"
+	solResolver "github.com/streamingfast/sf-solana/dgraphql/resolvers"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/sf-solana/registry"
+	"github.com/streamingfast/solana-go/rpc"
 	"go.uber.org/zap"
 )
 
 type Config struct {
 	dgraphqlApp.Config
-	TokensFileURL     string
-	MarketFileURL     string
-	RatelimiterPlugin string
-	RPCEndpointAddr   string
-	RPCWSEndpointAddr string
-	SerumHistoryAddr  string
-	SlotOffset        uint64
+	TokensFileURL         string
+	MarketFileURL         string
+	RatelimiterPlugin     string
+	RPCEndpointAddr       string
+	RPCWSEndpointAddr     string
+	SerumHistoryAddr      string
+	SlotOffset            uint64
+	SerumhistAnalyticsDSN string
 }
 
 func NewApp(config *Config) (*dgraphqlApp.App, error) {
@@ -74,11 +80,19 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 		return nil, fmt.Errorf("unable to load token registry: %w", err)
 	}
 
+	db, err := gorm.Open(bigquery.Open(f.config.SerumhistAnalyticsDSN), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create serumhist analytics databse connection: %w", err)
+	}
+
 	zlog.Info("configuring resolver and parsing schemas")
 	resolver, err := solResolver.NewRoot(
 		rpcClient,
 		f.config.RPCWSEndpointAddr,
 		tokenRegistry,
+		serumanalytics.NewStore(db),
 		rateLimiter,
 		serumHistoryClient,
 	)

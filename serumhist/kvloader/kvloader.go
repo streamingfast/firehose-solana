@@ -4,10 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/dfuse-io/kvdb/store"
+	"github.com/streamingfast/kvdb/store"
+	"github.com/streamingfast/shutter"
 )
 
 type KVLoader struct {
+	*shutter.Shutter
 	ctx               context.Context
 	kvdb              store.KVStore
 	cache             *tradingAccountCache
@@ -20,6 +22,7 @@ const (
 
 func NewLoader(ctx context.Context, kvdb store.KVStore, flushSlotInterval uint64) *KVLoader {
 	return &KVLoader{
+		Shutter:           shutter.New(),
 		ctx:               ctx,
 		flushSlotInterval: flushSlotInterval,
 		kvdb:              kvdb,

@@ -5,11 +5,11 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist"
-	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	"github.com/dfuse-io/solana-go"
 	"github.com/golang/protobuf/proto"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/sf-solana/serumhist"
+	"github.com/streamingfast/sf-solana/serumhist/keyer"
+	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
 
@@ -130,7 +130,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 			}
 
 			e = &serumhist.NewOrder{
-				Ref: &serumhist.Ref{
+				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,
@@ -158,7 +158,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 				return nil, fmt.Errorf("failed to unmarshal fil: %w", err)
 			}
 			e = &serumhist.FillEvent{
-				Ref: &serumhist.Ref{
+				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,
@@ -169,7 +169,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 			}
 		case keyer.OrderEventTypeExecuted:
 			e = &serumhist.OrderExecuted{
-				Ref: &serumhist.Ref{
+				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,
@@ -184,7 +184,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 				return nil, fmt.Errorf("failed to unmarshal instruction ref: %w", err)
 			}
 			e = &serumhist.OrderCancelled{
-				Ref: &serumhist.Ref{
+				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,
@@ -200,7 +200,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 				return nil, fmt.Errorf("failed to unmarshal instruction ref: %w", err)
 			}
 			e = &serumhist.OrderClosed{
-				Ref: &serumhist.Ref{
+				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
 					SlotNumber:  slotNum,

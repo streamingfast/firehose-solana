@@ -1,11 +1,11 @@
 package cli
 
 import (
-	dgraphqlSol "github.com/dfuse-io/dfuse-solana/dgraphql"
-	dgraphqlApp "github.com/dfuse-io/dgraphql/app/dgraphql"
-	"github.com/dfuse-io/dlauncher/launcher"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
+	"github.com/streamingfast/dlauncher/launcher"
+	dgraphqlSol "github.com/streamingfast/sf-solana/dgraphql"
 )
 
 func init() {
@@ -26,18 +26,20 @@ func init() {
 			cmd.Flags().Uint64("dgraphql-slot-offset", 100, "Number of slots offset")
 			cmd.Flags().String("dgraphql-tokens-file-url", "gs://staging.dfuseio-global.appspot.com/sol-tokens/sol-mainnet-v1.jsonl", "JSONL file containing list of known tokens")
 			cmd.Flags().String("dgraphql-markets-file-url", "gs://staging.dfuseio-global.appspot.com/sol-markets/sol-mainnet-v1.jsonl", "JSONL file containing list of known markets")
+			cmd.Flags().String("dgraphql-serumviz-bigquery-dsn", "bigquery://dfuse-development-tools/us/serum", "The BigQuery DSN to use to retrieve data for Serum Vizualisation needs via BigQuery.")
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
 			return dgraphqlSol.NewApp(&dgraphqlSol.Config{
 				// Solana specifc configs
-				RatelimiterPlugin: viper.GetString("common-ratelimiter-plugin"),
-				RPCEndpointAddr:   viper.GetString("common-rpc-endpoint"),
-				RPCWSEndpointAddr: viper.GetString("common-rpc-ws-endpoint"),
-				SlotOffset:        viper.GetUint64("dgraphql-slot-offset"),
-				SerumHistoryAddr:  viper.GetString("dgraphql-serumhist-grpc-addr"),
-				TokensFileURL:     viper.GetString("dgraphql-tokens-file-url"),
-				MarketFileURL:     viper.GetString("dgraphql-markets-file-url"),
+				RatelimiterPlugin:     viper.GetString("common-ratelimiter-plugin"),
+				RPCEndpointAddr:       viper.GetString("common-rpc-endpoint"),
+				RPCWSEndpointAddr:     viper.GetString("common-rpc-ws-endpoint"),
+				SlotOffset:            viper.GetUint64("dgraphql-slot-offset"),
+				SerumHistoryAddr:      viper.GetString("dgraphql-serumhist-grpc-addr"),
+				TokensFileURL:         viper.GetString("dgraphql-tokens-file-url"),
+				MarketFileURL:         viper.GetString("dgraphql-markets-file-url"),
+				SerumhistAnalyticsDSN: viper.GetString("dgraphql-serumviz-bigquery-dsn"),
 				Config: dgraphqlApp.Config{
 					// Base dgraphql configs
 					Protocol:        "sol",

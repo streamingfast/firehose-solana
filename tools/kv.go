@@ -7,16 +7,16 @@ import (
 	"fmt"
 	"os"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	"github.com/dfuse-io/jsonpb"
-	"github.com/dfuse-io/kvdb/store"
-	_ "github.com/dfuse-io/kvdb/store/badger"
-	_ "github.com/dfuse-io/kvdb/store/bigkv"
-	_ "github.com/dfuse-io/kvdb/store/tikv"
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/streamingfast/jsonpb"
+	"github.com/streamingfast/kvdb/store"
+	_ "github.com/streamingfast/kvdb/store/badger"
+	_ "github.com/streamingfast/kvdb/store/bigkv"
+	_ "github.com/streamingfast/kvdb/store/tikv"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	serumhistkeyer "github.com/streamingfast/sf-solana/serumhist/keyer"
 )
 
 var kvCmd = &cobra.Command{Use: "kv", Short: "Read from a kvStore"}

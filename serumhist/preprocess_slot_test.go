@@ -3,8 +3,8 @@ package serumhist
 import (
 	"testing"
 
-	bin "github.com/dfuse-io/binary"
-	"github.com/dfuse-io/solana-go/programs/serum"
+	bin "github.com/streamingfast/binary"
+	"github.com/streamingfast/solana-go/programs/serum"
 	"github.com/test-go/testify/assert"
 )
 

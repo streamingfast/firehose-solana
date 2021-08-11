@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/dfuse-io/shutter"
+	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
 )
 
@@ -46,6 +47,9 @@ func (f *Finder) Launch() error {
 }
 
 func (f *Finder) launch() error {
+	ticker := time.NewTicker(15 * time.Minute)
+	defer ticker.Stop()
+
 	zlog.Info("Launching", zap.String("sourceBucket", f.sourceBucket), zap.String("sourceSnapshotsPrefix", f.sourceSnapshotsPrefix))
 	ctx := context.Background()
 
@@ -57,50 +61,61 @@ func (f *Finder) launch() error {
 	var validSnapshot = regexp.MustCompile(`^[0-9]*/.*$`)
 	var snapshotPrefix = regexp.MustCompile(`^[0-9]*`)
 
-	object, err := listFiles(ctx, client, f.sourceBucket, f.sourceSnapshotsPrefix, nil)
-	if err != nil {
-		f.Shutdown(err)
-	}
-
-	uniqueSnapshots := map[string]bool{}
-	for _, o := range object {
-		zlog.Debug("filtering object", zap.String("object", o))
-		if validSnapshot.MatchString(o) {
-			zlog.Debug("found a snapshot", zap.String("object", o))
-			snapshot := snapshotPrefix.FindString(o)
-			uniqueSnapshots[snapshot] = true
+	for c := ticker; ; <-c.C {
+		select {
+		case <-f.Terminating():
+			return nil
+		default:
 		}
-	}
 
-	var snapshots []string
-	for s, _ := range uniqueSnapshots {
-		snapshots = append(snapshots, s)
-	}
-	sort.Strings(snapshots)
-
-	zlog.Info("found snapshot", zap.Int("count", len(snapshots)))
-	if snapshots != nil {
-		sourceSnapshotName := snapshots[len(snapshots)-1]
-		zlog.Info("will process sourceSnapshotName", zap.String("sourceSnapshotName", sourceSnapshotName))
-
-		pcr := NewProcessor(f.sourceBucket, sourceSnapshotName, f.destinationBucket, f.destinationSnapshotsFolder, f.workdir, client)
-		completed, err := pcr.CompletedSnapshot(ctx)
+		object, err := listFiles(ctx, client, f.sourceBucket, f.sourceSnapshotsPrefix, nil)
 		if err != nil {
-			return fmt.Errorf("checking is snapshot was completely processed: %w", err)
+			return err
 		}
-		if !completed {
-			err := pcr.processSnapshot(ctx)
-			if err != nil {
-				f.Shutdown(err)
+
+		uniqueSnapshots := map[int64]bool{}
+		for _, o := range object {
+			zlog.Debug("filtering object", zap.String("object", o))
+			if validSnapshot.MatchString(o) {
+				zlog.Debug("found a snapshot", zap.String("object", o))
+				snapshot := snapshotPrefix.FindString(o)
+
+				slot, err := strconv.ParseInt(snapshot, 10, 64)
+				if err != nil {
+					f.Shutdown(err)
+				}
+				uniqueSnapshots[slot] = true
 			}
-		} else {
-			zlog.Info("skipping snapshot already processed", zap.String("snapshot", sourceSnapshotName))
+		}
+
+		var snapshots []int64
+		for s, _ := range uniqueSnapshots {
+			snapshots = append(snapshots, s)
+		}
+		sort.Slice(snapshots, func(i, j int) bool {
+			return snapshots[i] > snapshots[j]
+		})
+
+		zlog.Info("found snapshot", zap.Int("count", len(snapshots)))
+		if snapshots != nil {
+			sourceSnapshotName := snapshots[0]
+			zlog.Info("will process sourceSnapshotName", zap.Int64("sourceSnapshotName", sourceSnapshotName))
+
+			pcr := NewProcessor(f.sourceBucket, fmt.Sprintf("%d", sourceSnapshotName), f.destinationBucket, f.destinationSnapshotsFolder, f.workdir, client)
+			completed, err := pcr.CompletedSnapshot(ctx)
+			if err != nil {
+				return fmt.Errorf("error checking if snapshot was already processed: %w", err)
+			}
+
+			if completed {
+				zlog.Info("snapshot already processed. skipping", zap.Int64("snapshot", sourceSnapshotName))
+				continue
+			}
+
+			err = pcr.processSnapshot(ctx)
+			if err != nil {
+				return err
+			}
 		}
 	}
-
-	zlog.Info("WAITING FOR 200 HOURs")
-	time.Sleep(200 * time.Hour)
-	//should not reach that code
-	f.Shutdown(fmt.Errorf("unexpect shutdown"))
-	return nil
 }

@@ -17,13 +17,13 @@ package dgraphql
 import (
 	"testing"
 
-	"github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
-	"github.com/dfuse-io/dgraphql"
+	"github.com/streamingfast/dgraphql"
+	"github.com/streamingfast/sf-solana/dgraphql/resolvers"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSchema(t *testing.T) {
-	resolver, err := resolvers.NewRoot(nil, "", nil, nil, nil)
+	resolver, err := resolvers.NewRoot(nil, "", nil, nil, nil, nil)
 	require.NoError(t, err)
 
 	// This makes the necessary parsing of all schemas to ensure resolver correctly

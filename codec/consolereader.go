@@ -16,6 +16,8 @@ package codec
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,8 +27,10 @@ import (
 	"strings"
 	"sync"
 
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
+	"github.com/mr-tron/base58"
+
 	"github.com/golang/protobuf/proto"
+	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
 	"go.uber.org/zap"
 )
 
@@ -56,18 +60,40 @@ type ConsoleReaderOption interface {
 // ConsoleReader is what reads the `nodeos` output directly. It builds
 // up some LogEntry objects. See `LogReader to read those entries .
 type ConsoleReader struct {
-	src            io.Reader
-	scanner        *bufio.Scanner
-	close          func()
-	readBuffer     chan string
+	lines chan string
+	close func()
+
 	done           chan interface{}
 	ctx            *parseCtx
 	batchFilesPath string
 }
 
-func NewConsoleReader(reader io.Reader, batchFilesPath string, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
+func (c *ConsoleReader) ProcessData(reader io.Reader) error {
+	scanner := c.buildScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		c.lines <- line
+	}
+
+	if scanner.Err() == nil {
+		close(c.lines)
+		return io.EOF
+	}
+
+	return scanner.Err()
+}
+
+func (c *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
+	buf := make([]byte, 50*1024*1024)
+	scanner := bufio.NewScanner(reader)
+	scanner.Buffer(buf, 50*1024*1024)
+
+	return scanner
+}
+
+func NewConsoleReader(lines chan string, batchFilesPath string, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
 	l := &ConsoleReader{
-		src:   reader,
+		lines: lines,
 		close: func() {},
 		ctx:   newParseCtx(batchFilesPath),
 		done:  make(chan interface{}),
@@ -77,52 +103,7 @@ func NewConsoleReader(reader io.Reader, batchFilesPath string, opts ...ConsoleRe
 		opt.apply(l)
 	}
 
-	l.setupScanner()
 	return l, nil
-}
-
-func newScanner(reader io.Reader) *bufio.Scanner {
-	buf := make([]byte, MaxTokenSize)
-	scanner := bufio.NewScanner(reader)
-	scanner.Buffer(buf, len(buf))
-	return scanner
-}
-
-func scan(scanner *bufio.Scanner, handleLine func(line string) error) error {
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !strings.HasPrefix(line, "DMLOG ") {
-			continue
-		}
-		err := handleLine(line)
-		if err != nil {
-			return fmt.Errorf("scan: handle line: %w", err)
-		}
-	}
-	return nil
-}
-
-func (l *ConsoleReader) setupScanner() {
-	l.scanner = newScanner(l.src)
-	l.readBuffer = make(chan string, 2000)
-
-	go func() {
-		err := scan(l.scanner, func(line string) error {
-			l.readBuffer <- line
-			return nil
-		})
-
-		if err == nil {
-			err = l.scanner.Err()
-		}
-
-		if err != nil && err != io.EOF {
-			zlog.Error("console read line scanner encountered an error", zap.Error(err))
-		}
-
-		close(l.readBuffer)
-		close(l.done)
-	}()
 }
 
 func (l *ConsoleReader) Done() <-chan interface{} {
@@ -151,28 +132,31 @@ func newParseCtx(batchFilesPath string) *parseCtx {
 }
 
 func (l *ConsoleReader) Read() (out interface{}, err error) {
+	return l.next()
+}
+
+func (l *ConsoleReader) next() (out interface{}, err error) {
 	ctx := l.ctx
-	for {
+	for line := range l.lines {
+		fmt.Println("processing lines")
+		if !strings.HasPrefix(line, "DMLOG ") {
+			continue
+		}
+
+		line = line[6:] // removes the DMLOG prefix
+		if err = parseLine(ctx, line); err != nil {
+			return nil, l.formatError(line, err)
+		}
+
 		select {
 		case s := <-ctx.slotBuffer:
 			return s, nil
 		default:
 		}
-
-		line, ok := <-l.readBuffer
-		if !ok {
-			if l.scanner.Err() == nil {
-				return nil, io.EOF
-			}
-			return nil, l.scanner.Err()
-		}
-
-		line = line[6:]
-
-		if err = parseLine(ctx, line); err != nil {
-			return nil, l.formatError(line, err)
-		}
 	}
+
+	zlog.Info("lines channel has been closed")
+	return nil, io.EOF
 }
 
 func parseLine(ctx *parseCtx, line string) (err error) {
@@ -354,12 +338,25 @@ func (b *bank) registerSlot(slotNum uint64, slotID string) {
 	b.slots = append(b.slots, s)
 }
 
-func (b *bank) createSlot(slotNum uint64, slotID string) *pbcodec.Slot {
+func (b *bank) createSlot(slotNum uint64, chainSlotID string) *pbcodec.Slot {
+	slotID := chainSlotID
+
+	if slotNum != b.blk.Number {
+		blkNumBytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(blkNumBytes, b.blk.Number)
+
+		h := sha256.New()
+		h.Write([]byte(slotID))
+
+		slotID = base58.Encode(h.Sum(blkNumBytes))[:44]
+	}
+
 	s := &pbcodec.Slot{
-		Id:         slotID,
-		Number:     slotNum,
-		PreviousId: b.previousSlotID,
-		Version:    1,
+		Id:            slotID,
+		Number:        slotNum,
+		PreviousId:    b.previousSlotID,
+		LastEntryHash: chainSlotID,
+		Version:       1,
 	}
 
 	b.previousSlotID = slotID

@@ -1,7 +1,7 @@
 """The Connection type for a SerumMarket. See the [GraphQL core concepts](https://docs.dfuse.io/guides/core-concepts/graphql/)"""
 type SerumMarketConnection {
   """A list of edges to SerumFill"""
-  edges: [SerumMarketEdge]!
+  edges: [SerumMarketEdge!]!
 
   """Information to aid pagination"""
   pageInfo: PageInfo!
@@ -29,24 +29,19 @@ type SerumMarket  {
   name: String
 
   """The markets base token."""
-  baseToken: Token
+  baseToken: Token!
 
   """The markets quote token."""
-  quoteToken: Token
-}
+  quoteToken: Token!
 
-type SerumMarketDailyData {
-  """The market's address."""
-  address: String!
+  """The USD volume value for the last 24 hours ('now' - 24h to now)."""
+  last24HoursVolumeUSD: Float64!
 
-  """The market's display name"""
-  name: String
+  """The USD volume value for the last 7 days ('now' - 7 days to now)."""
+  last7DaysVolumeUSD: Float64!
 
-  """The markets base token."""
-  baseToken: Token
-
-  """The markets quote token."""
-  quoteToken: Token
+  """The USD volume value for the last 30 days ('now' - 30 days to now)."""
+  last30DaysVolumeUSD: Float64!
 
   """The daily data."""
   dailyVolumeUSD: [DailyVolume!]!

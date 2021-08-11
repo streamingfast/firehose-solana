@@ -1,16 +1,21 @@
 package resolvers
 
-import "github.com/dfuse-io/dfuse-solana/registry"
+import (
+	"fmt"
 
-// SerumMarket is used to implement both the GraphQL's SerumMarketDailyData and the the SerumMarket.
+	"github.com/streamingfast/sf-solana/registry"
+	serumztics "github.com/streamingfast/sf-solana/serumviz/analytics"
+)
+
 type SerumMarket struct {
 	Address    string
 	market     *registry.Market
 	baseToken  *registry.Token
 	quoteToken *registry.Token
 
-	// For SerumMarketDailyData
 	dailyVolumeUSD []DailyVolume
+
+	serumhistAnalyzable serumztics.Analyzable
 }
 
 func (m SerumMarket) Name() *string {
@@ -24,18 +29,45 @@ func (m SerumMarket) Name() *string {
 	return &m.market.Name
 }
 
-func (s SerumMarket) BaseToken() *Token {
+func (s SerumMarket) BaseToken() Token {
 	if s.baseToken != nil {
-		return &Token{s.baseToken}
+		return Token{nil, s.baseToken}
 	}
-	return nil
+
+	return Token{address: &s.market.BaseToken}
 }
 
-func (s SerumMarket) QuoteToken() *Token {
+func (s SerumMarket) QuoteToken() Token {
 	if s.quoteToken != nil {
-		return &Token{s.quoteToken}
+		return Token{nil, s.quoteToken}
 	}
-	return nil
+
+	return Token{address: &s.market.QuoteToken}
+}
+
+func (s SerumMarket) Last24HoursVolumeUSD() (Float64, error) {
+	return s.lastVolumeData("24 hours", serumztics.Last24Hours())
+}
+
+func (s SerumMarket) Last7DaysVolumeUSD() (Float64, error) {
+	return s.lastVolumeData("7 days", serumztics.Last7Days())
+}
+
+func (s SerumMarket) Last30DaysVolumeUSD() (Float64, error) {
+	return s.lastVolumeData("30 days", serumztics.Last30Days())
+}
+
+func (s SerumMarket) lastVolumeData(tag string, dateRange serumztics.DateRange) (Float64, error) {
+	if s.serumhistAnalyzable == nil {
+		return Float64(0), fmt.Errorf("data unavailable for this specific query type")
+	}
+
+	volume, err := s.serumhistAnalyzable.TotalVolume(dateRange)
+	if err != nil {
+		return Float64(0), fmt.Errorf("unable to retrieved last %s market volume: %w", tag, err)
+	}
+
+	return Float64(volume), nil
 }
 
 func (s SerumMarket) DailyVolumeUSD() []DailyVolume {

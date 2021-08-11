@@ -6,17 +6,16 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/bigquery"
-
-	"github.com/dfuse-io/dfuse-solana/serumhist"
-	bqloader "github.com/dfuse-io/dfuse-solana/serumhist/bqloader"
-	"github.com/dfuse-io/dfuse-solana/serumhist/grpc"
-	kvloader "github.com/dfuse-io/dfuse-solana/serumhist/kvloader"
-	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
-	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
-	"github.com/dfuse-io/dmetrics"
-	"github.com/dfuse-io/dstore"
-	"github.com/dfuse-io/kvdb/store"
-	"github.com/dfuse-io/shutter"
+	"github.com/streamingfast/dmetrics"
+	"github.com/streamingfast/dstore"
+	"github.com/streamingfast/kvdb/store"
+	"github.com/streamingfast/sf-solana/serumhist"
+	"github.com/streamingfast/sf-solana/serumhist/grpc"
+	kvloader "github.com/streamingfast/sf-solana/serumhist/kvloader"
+	"github.com/streamingfast/sf-solana/serumhist/metrics"
+	"github.com/streamingfast/sf-solana/serumhist/reader"
+	bqloader "github.com/streamingfast/sf-solana/serumviz/bqloader"
+	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
 )
 
@@ -41,6 +40,9 @@ type Config struct {
 	BigQueryProject         string
 	BigQueryDataset         string
 	BigQueryScratchSpaceDir string
+
+	TokensFileURL string
+	MarketFileURL string
 }
 
 type App struct {
@@ -94,12 +96,12 @@ func (a *App) Run() error {
 			return fmt.Errorf("failed setting up blocks store: %w", err)
 		}
 
-		handler, err := a.getHandler(appCtx)
+		handler, checkpointResolver, err := a.getHandler(appCtx)
 		if err != nil {
 			return fmt.Errorf("unable to create serumhist handler: %w", err)
 		}
 
-		injector := serumhist.NewInjector(appCtx, handler, a.Config.BlockStreamAddr, blocksStore, a.Config.PreprocessorThreadCount, a.Config.MergeFileParallelDownload)
+		injector := serumhist.NewInjector(appCtx, handler, checkpointResolver, a.Config.BlockStreamAddr, blocksStore, a.Config.PreprocessorThreadCount, a.Config.MergeFileParallelDownload)
 		err = injector.SetupSource(a.Config.StartBlock, a.Config.IgnoreCheckpointOnLaunch)
 		if err != nil {
 			return fmt.Errorf("unable to setup serumhist injector source: %w", err)
@@ -110,7 +112,11 @@ func (a *App) Run() error {
 			injector.SetUnhealthy()
 			injector.Shutdown(err)
 		})
-		injector.OnTerminated(a.Shutdown)
+
+		injector.OnTerminated(func(err error) {
+			handler.Shutdown(err)
+			a.Shutdown(err)
+		})
 
 		injector.LaunchHealthz(a.Config.HTTPListenAddr)
 		go func() {
@@ -125,10 +131,9 @@ func (a *App) Run() error {
 	}
 
 	return nil
-
 }
 
-func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
+func (a *App) getHandler(ctx context.Context) (serumhist.Handler, serumhist.CheckpointResolver, error) {
 	if a.Config.EnableBigQueryInjector {
 		zlog.Info("setting up big query loader",
 			zap.String("bigquery_project_id", a.Config.BigQueryProject),
@@ -136,17 +141,30 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
 		)
 		bqClient, err := bigquery.NewClient(ctx, a.Config.BigQueryProject)
 		if err != nil {
-			return nil, fmt.Errorf("error creating bigquery client: %w", err)
+			return nil, nil, fmt.Errorf("error creating bigquery client: %w", err)
 		}
 
-		store, err := dstore.NewStore(a.Config.BigQueryStoreURL, "avro", "zsrd", false)
+		dataset := bqClient.Dataset(a.Config.BigQueryDataset)
+
+		// we do not want the avro files to be compress, or else bigquery would not be able to consume them!
+		store, err := dstore.NewStore(a.Config.BigQueryStoreURL, "avro", "", false)
 		if err != nil {
-			return nil, fmt.Errorf("error creating bigquery dstore: %w", err)
+			return nil, nil, fmt.Errorf("error creating bigquery dstore: %w", err)
 		}
 
-		loader := bqloader.New(ctx, a.Config.BigQueryScratchSpaceDir, bqClient, store, a.Config.BigQueryDataset)
-		loader.StartLoaders(ctx)
-		return loader, nil
+		loader := bqloader.New(ctx, a.Config.StartBlock, a.Config.BigQueryStoreURL, store, dataset, bqClient)
+
+		err = loader.Init(ctx, a.Config.BigQueryScratchSpaceDir)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error initializing event handlers: %w", err)
+		}
+
+		err = loader.PrimeTradeCache(ctx)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error loading priming trading account cache from bigquery: %w", err)
+		}
+
+		return loader, loader.GetCheckpoint, nil
 	}
 
 	zlog.Info("setting up big kvdb loader",
@@ -154,11 +172,12 @@ func (a *App) getHandler(ctx context.Context) (serumhist.Handler, error) {
 	)
 	kvdb, err := store.New(a.Config.KvdbDsn)
 	if err != nil {
-		return nil, fmt.Errorf("error creating kvdb store: %w", err)
+		return nil, nil, fmt.Errorf("error creating kvdb store: %w", err)
 	}
 	loader := kvloader.NewLoader(ctx, kvdb, a.Config.FlushSlotInterval)
 	loader.PrimeTradeCache(ctx)
-	return loader, nil
+
+	return loader, loader.GetCheckpoint, nil
 }
 
 func (c *Config) validate() error {

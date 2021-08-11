@@ -3,10 +3,10 @@ package serumhist
 import (
 	"fmt"
 
-	"github.com/dfuse-io/bstream"
-	"github.com/dfuse-io/bstream/forkable"
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
+	"github.com/streamingfast/bstream"
+	"github.com/streamingfast/bstream/forkable"
+	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
+	"github.com/streamingfast/sf-solana/serumhist/metrics"
 	"go.uber.org/zap"
 )
 

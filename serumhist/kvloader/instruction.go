@@ -3,7 +3,7 @@ package kvloader
 import (
 	"fmt"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist"
+	"github.com/streamingfast/sf-solana/serumhist"
 
 	"go.uber.org/zap"
 )

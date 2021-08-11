@@ -1,11 +1,11 @@
 package cli
 
 import (
-	_ "github.com/dfuse-io/dauth/authenticator/null" // register authenticator plugin
-	_ "github.com/dfuse-io/dauth/ratelimiter/null"   // register ratelimiter plugin
+	_ "github.com/streamingfast/dauth/authenticator/null" // register authenticator plugin
+	_ "github.com/streamingfast/dauth/ratelimiter/null"   // register ratelimiter plugin
 
-	"github.com/dfuse-io/dlauncher/launcher"
 	"github.com/spf13/cobra"
+	"github.com/streamingfast/dlauncher/launcher"
 )
 
 func init() {

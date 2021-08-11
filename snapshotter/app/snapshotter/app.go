@@ -1,8 +1,8 @@
 package snapshotter
 
 import (
-	"github.com/dfuse-io/dfuse-solana/snapshotter/snapshot"
-	"github.com/dfuse-io/shutter"
+	"github.com/streamingfast/sf-solana/snapshotter/snapshot"
+	"github.com/streamingfast/shutter"
 )
 
 type Config struct {

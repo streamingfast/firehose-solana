@@ -1,12 +1,12 @@
 package resolvers
 
 import (
-	"github.com/dfuse-io/logging"
+	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 )
 
 var zlog = zap.NewNop()
 
 func init() {
-	logging.Register("github.com/dfuse-io/dfuse-solana/dgraphql/resolvers", &zlog)
+	logging.Register("github.com/streamingfast/sf-solana/dgraphql/resolvers", &zlog)
 }

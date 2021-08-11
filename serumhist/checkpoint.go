@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dfuse-io/bstream"
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/bstream"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
 	"go.uber.org/zap"
 )
 
@@ -18,10 +18,10 @@ func (i *Injector) resolveCheckpoint(ctx context.Context, startBlockNum uint64, 
 		return checkpoint, nil
 	}
 
-	zlog.Info("retrieving serumhist checkpoint from kvdb")
+	zlog.Info("retrieving serumhist checkpoint from handler")
 	// Retrieved lastProcessedBlock must be in the shard's range, and that shouldn't
 	// change across invocations, or in the lifetime of the database.
-	checkpoint, err := i.handler.GetCheckpoint(ctx)
+	checkpoint, err := i.checkpointResolver(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("fetching checkpoint: %w", err)
 	}

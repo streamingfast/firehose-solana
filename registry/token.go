@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/solana-go/rpc"
 
-	"github.com/dfuse-io/solana-go/programs/token"
+	"github.com/streamingfast/solana-go/programs/token"
 
 	"go.uber.org/zap"
 
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 )
 
 type Token struct {
@@ -42,10 +42,10 @@ func (t *Token) Display(amount uint64) string {
 }
 
 type TokenMeta struct {
-	Logo    string
-	Name    string
-	Symbol  string
-	Website string
+	Logo    string `json:"logo"`
+	Name    string `json:"name"`
+	Symbol  string `json:"symbol"`
+	Website string `json:"website"`
 }
 
 type tokenJob struct {

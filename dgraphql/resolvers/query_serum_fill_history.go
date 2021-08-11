@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/solana-go"
 	gqerrs "github.com/graph-gophers/graphql-go/errors"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/solana-go"
 )
 
 type SerumFillHistoryRequest struct {
@@ -54,7 +54,7 @@ func (r *Root) QuerySerumFillHistory(ctx context.Context, in *SerumFillHistoryRe
 
 	edges := make([]*SerumFillEdge, len(fillsResponse.Fill))
 	for i, fill := range fillsResponse.Fill {
-		edges[i] = &SerumFillEdge{cursor: "", node: r.newSerumFill(fill, r.registryServer)}
+		edges[i] = &SerumFillEdge{cursor: "", node: r.newSerumFill(fill)}
 	}
 
 	return &SerumFillConnection{

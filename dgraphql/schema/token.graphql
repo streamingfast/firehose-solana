@@ -3,7 +3,7 @@
 """The Connection type for a Token. See the [GraphQL core concepts](https://docs.dfuse.io/guides/core-concepts/graphql/)"""
 type TokenConnection {
   "A list of edges to Token "
-  edges: [TokenEdge]!
+  edges: [TokenEdge!]!
 
   "Information to aid pagination"
   pageInfo: PageInfo!
@@ -20,13 +20,12 @@ type TokenEdge {
   node: Token!
 }
 
-
 type Token {
   address: String!
-  mintAuthority: String!
-  freezeAuthority: String!
-  supply: Uint64!
-  decimals: Int!
+  mintAuthority: String
+  freezeAuthority: String
+  supply: Uint64
+  decimals: Int
   verified: Boolean!
   meta: TokenMeta
 }

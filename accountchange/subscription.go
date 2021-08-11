@@ -3,7 +3,7 @@ package accountchange
 import (
 	"reflect"
 
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 )
 
 type Subscription struct {

@@ -3,8 +3,8 @@ package serumhist
 import (
 	"time"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/solana-go"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/solana-go"
 )
 
 type Ref struct {
@@ -18,33 +18,35 @@ type Ref struct {
 	Timestamp   time.Time
 }
 
-func (r *Ref) GetEventRef() *Ref {
-	return r
-}
-
 type NewOrder struct {
-	*Ref
+	Ref
 	Trader solana.PublicKey
 	Order  *pbserumhist.Order
 }
 
 type FillEvent struct {
-	*Ref
+	Ref
 	TradingAccount solana.PublicKey
 	Trader         solana.PublicKey
 	Fill           *pbserumhist.Fill
 }
 
 type OrderExecuted struct {
-	*Ref
+	Ref
 }
 
 type OrderClosed struct {
-	*Ref
+	Ref
 	InstrRef *pbserumhist.InstructionRef
 }
 
 type OrderCancelled struct {
-	*Ref
+	Ref
 	InstrRef *pbserumhist.InstructionRef
+}
+
+type TradingAccount struct {
+	Trader     solana.PublicKey
+	Account    solana.PublicKey
+	SlotNumber uint64
 }

@@ -15,8 +15,8 @@
 package cli
 
 import (
-	"github.com/dfuse-io/dlauncher/launcher"
-	"github.com/dfuse-io/logging"
+	"github.com/streamingfast/dlauncher/launcher"
+	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 )
 
@@ -24,5 +24,5 @@ var userLog = launcher.UserLog
 var zlog *zap.Logger
 
 func init() {
-	logging.Register("github.com/dfuse-io/dfuse-solana/cmd/dfusesol", &zlog)
+	logging.Register("github.com/streamingfast/sf-solana/cmd/dfusesol", &zlog)
 }

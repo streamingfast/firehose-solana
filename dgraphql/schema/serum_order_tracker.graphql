@@ -29,12 +29,14 @@ type SerumOrderState {
     """transitionName is the current transition of the transaction."""
     transitionName: ORDER_TRANSITION!
 
-    transition: OrderTransition
+    transition: OrderTransition!
 }
 
 union OrderTransition = OrderTransitionInit | OrderTransitionAccepted | OrderTransitionCancelled | OrderTransitionPartiallyFilled | OrderTransitionExecuted
 
 type OrderTransitionInit {
+    # FIXME Should the order field be required? Even in an init message, I don't see how we could "not" have the corresponding
+    #       order. Should be double-checked and then changed.
     """`order` is the SerumOrder details."""
     order: SerumOrder
 }
@@ -58,6 +60,8 @@ type OrderTransitionPartiallyFilled {
 }
 
 type OrderTransitionExecuted {
+    """`order` is the SerumOrder details."""
+    order: SerumOrder!
 }
 
 enum ORDER_TRANSITION {

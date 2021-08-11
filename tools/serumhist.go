@@ -6,19 +6,30 @@ import (
 	"fmt"
 	"strconv"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	serumhistreader "github.com/dfuse-io/dfuse-solana/serumhist/reader"
-	"github.com/dfuse-io/kvdb/store"
-	"github.com/dfuse-io/solana-go"
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/streamingfast/kvdb/store"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	serumhistkeyer "github.com/streamingfast/sf-solana/serumhist/keyer"
+	serumhistreader "github.com/streamingfast/sf-solana/serumhist/reader"
+	"github.com/streamingfast/solana-go"
 )
 
 var serumhistCmd = &cobra.Command{Use: "serumhist", Short: "Read from serum history"}
 
-// dfusesol tools serumhist fills market {}
+var marketsCmd = &cobra.Command{
+	Use:   "markets",
+	Short: "list markets",
+	RunE:  readMarketsE,
+}
+
+var tradersCmd = &cobra.Command{
+	Use:   "traders",
+	Short: "list traders",
+	RunE:  readTradersE,
+}
+
 var fillsCmd = &cobra.Command{
 	Use:   "fills",
 	Short: "Read fills",
@@ -66,6 +77,9 @@ var decodeKeyerCmd = &cobra.Command{
 func init() {
 	Cmd.AddCommand(serumhistCmd)
 	serumhistCmd.PersistentFlags().String("dsn", "badger:///dfuse-data/kvdb/kvdb_badger.db", "kvStore DSN")
+
+	serumhistCmd.AddCommand(marketsCmd)
+	serumhistCmd.AddCommand(tradersCmd)
 
 	serumhistCmd.AddCommand(fillsCmd)
 	fillsCmd.AddCommand(traderFillsCmd)
@@ -196,6 +210,51 @@ func readGetOrdersE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func readMarketsE(cmd *cobra.Command, args []string) (err error) {
+	kvdb, err := getKVDBAndMode()
+	if err != nil {
+		return err
+	}
+	start := []byte{serumhistkeyer.PrefixFill}
+	stop := []byte{serumhistkeyer.PrefixFill + 1}
+	fmt.Println("Markets:")
+	for {
+		iter := kvdb.Scan(cmd.Context(), start, stop, 0)
+		if iter.Next() {
+			market, _, _, _, _ := serumhistkeyer.DecodeFill(iter.Item().Key)
+			fmt.Println(market.String())
+			key := make([]byte, 1+32)
+			key[0] = serumhistkeyer.PrefixFill
+			copy(key[1:], market[:])
+			start = store.Key(key).PrefixNext()
+		} else {
+			return
+		}
+	}
+}
+func readTradersE(cmd *cobra.Command, args []string) (err error) {
+	kvdb, err := getKVDBAndMode()
+	if err != nil {
+		return err
+	}
+	start := []byte{serumhistkeyer.PrefixFillByTrader}
+	stop := []byte{serumhistkeyer.PrefixFillByTrader + 1}
+	fmt.Println("Traders:")
+	for {
+		iter := kvdb.Scan(cmd.Context(), start, stop, 0)
+		if iter.Next() {
+			trader, _, _, _, _, _ := serumhistkeyer.DecodeFillByTrader(iter.Item().Key)
+			fmt.Println(trader.String())
+			key := make([]byte, 1+32)
+			key[0] = serumhistkeyer.PrefixFillByTrader
+			copy(key[1:], trader[:])
+			start = store.Key(key).PrefixNext()
+		} else {
+			return
+		}
+	}
+}
+
 func readTraderFillsE(cmd *cobra.Command, args []string) (err error) {
 	kvdb, err := getKVDBAndMode()
 	if err != nil {
@@ -252,10 +311,10 @@ func readMarketFillsE(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("unable to create public key: %w", err)
 	}
 
-	fmt.Println("getting fills for market", market.String())
+	// fmt.Println("getting fills for market", market.String())
 	fills, _, err = reader.GetFillsByMarket(cmd.Context(), market, viper.GetInt("limit"))
 
-	cnt, err := json.MarshalIndent(fills, "", " ")
+	cnt, err := json.Marshal(fills)
 	if err != nil {
 		return fmt.Errorf("unable to marshall: %w", err)
 	}
