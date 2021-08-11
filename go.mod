@@ -10,13 +10,12 @@ require (
 	github.com/abourget/llerrgroup v0.2.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dfuse-io/binary v0.0.0-20210216024852-4ae6830a495d
-	github.com/dfuse-io/bstream v0.0.2-0.20210811032019-ae285ee33ca3
+	github.com/dfuse-io/bstream v0.0.2-0.20210811160908-fc6cb0861d48
 	github.com/dfuse-io/dmesh v0.0.0-20210224224128-9a9ef510dce1 // indirect
 	github.com/dfuse-io/dstore v0.1.1-0.20210507180120-88a95674809f // indirect
 	github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
 	github.com/dfuse-io/logging v0.0.0-20210518215502-2d920b2ad1f2
-	github.com/dfuse-io/pbgo v0.0.6-0.20210811031924-4e767d6fd138
 	github.com/dfuse-io/solana-go v0.2.1-0.20210218235942-214d7803f326
 	github.com/dustin/go-humanize v1.0.0
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
@@ -34,19 +33,20 @@ require (
 	github.com/streamingfast/dauth v0.0.0-20210809192433-4c758fd333ac
 	github.com/streamingfast/dbin v0.0.0-20210809205249-73d5eca35dc5
 	github.com/streamingfast/derr v0.0.0-20210810022442-32249850a4fb
-	github.com/streamingfast/dgraphql v0.0.2-0.20210811031623-869cea833595
-	github.com/streamingfast/dgrpc v0.0.0-20210810185305-905172f728e8 // indirect
+	github.com/streamingfast/dgraphql v0.0.2-0.20210811161358-f5917b1a4d0c
+	github.com/streamingfast/dgrpc v0.0.0-20210811160823-a39dfa7fff0d // indirect
 	github.com/streamingfast/dhammer v0.0.0-20210810184929-89abe4f2b612 // indirect
-	github.com/streamingfast/dlauncher v0.0.0-20210811025343-59aad50e19d6
+	github.com/streamingfast/dlauncher v0.0.0-20210811161440-94594c7afba7
 	github.com/streamingfast/dmesh v0.0.0-20210810205752-f210f374556e // indirect
 	github.com/streamingfast/dmetering v0.0.0-20210809193048-81d008c90843
 	github.com/streamingfast/dmetrics v0.0.0-20210810205551-6071d7bae2cd // indirect
 	github.com/streamingfast/dstore v0.1.1-0.20210810110932-928f221474e4 // indirect
 	github.com/streamingfast/dtracing v0.0.0-20210810040633-7c6259bea4a7 // indirect
-	github.com/streamingfast/firehose v0.1.1-0.20210810201729-f4f65f7bc597
-	github.com/streamingfast/merger v0.0.3-0.20210810201721-8308c7731ce1
+	github.com/streamingfast/firehose v0.1.1-0.20210811161507-6ef87dfb1994
+	github.com/streamingfast/merger v0.0.3-0.20210811161627-c8a7ecb1c83c
 	github.com/streamingfast/node-manager v0.0.2-0.20210810201828-5033a297edfa
-	github.com/streamingfast/relayer v0.0.2-0.20210810201213-52e46787d413
+	github.com/streamingfast/pbgo v0.0.6-0.20210811160400-7c146c2db8cc // indirect
+	github.com/streamingfast/relayer v0.0.2-0.20210811161650-ef273a836f29
 	github.com/streamingfast/shutter v1.5.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
