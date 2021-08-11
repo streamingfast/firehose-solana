@@ -12,7 +12,6 @@ require (
 	github.com/dfuse-io/dipp v1.0.1-0.20200407033930-5c17c531c3c4 // indirect
 	github.com/dfuse-io/dmesh v0.0.0-20210224224128-9a9ef510dce1 // indirect
 	github.com/dfuse-io/dstore v0.1.1-0.20210507180120-88a95674809f // indirect
-	github.com/dfuse-io/logging v0.0.0-20210518215502-2d920b2ad1f2
 	github.com/dustin/go-humanize v1.0.0
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
@@ -44,12 +43,13 @@ require (
 	github.com/streamingfast/firehose v0.1.1-0.20210811195158-d4b116b4b447
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 // indirect
 	github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3 // indirect
+	github.com/streamingfast/logging v0.0.0-20210811175431-f3b44b61606a // indirect
 	github.com/streamingfast/merger v0.0.3-0.20210811195536-1011c89f0a67
 	github.com/streamingfast/node-manager v0.0.2-0.20210811195853-d6b519927636
 	github.com/streamingfast/pbgo v0.0.6-0.20210811160400-7c146c2db8cc // indirect
 	github.com/streamingfast/relayer v0.0.2-0.20210811200014-6e0e8bc2814f
 	github.com/streamingfast/shutter v1.5.0 // indirect
-	github.com/streamingfast/solana-go v0.2.1-0.20210809213356-164c868ab52d // indirect
+	github.com/streamingfast/solana-go v0.2.1-0.20210811184520-ab50363bdc52 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/test-go/testify v1.1.4

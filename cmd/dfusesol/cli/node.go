@@ -19,7 +19,7 @@ import (
 	"github.com/dfuse-io/dfuse-solana/codec"
 	nodeManagerSol "github.com/dfuse-io/dfuse-solana/node-manager"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/dfuse-io/logging"
+	"github.com/streamingfast/logging"
 	"github.com/lorenzosaino/go-sysctl"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dfuse-io/logging"
+	"github.com/streamingfast/logging"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
