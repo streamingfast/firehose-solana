@@ -11,7 +11,7 @@ import (
 	"github.com/dfuse-io/bstream/firehose"
 	"github.com/dfuse-io/bstream/forkable"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dgrpc"
+	"github.com/streamingfast/dgrpc"
 	"github.com/streamingfast/dstore"
 	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"

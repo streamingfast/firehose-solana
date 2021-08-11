@@ -12,7 +12,7 @@ import (
 	"github.com/dfuse-io/dfuse-solana/serumhist/metrics"
 	"github.com/dfuse-io/dfuse-solana/serumhist/reader"
 	bqloader "github.com/dfuse-io/dfuse-solana/serumviz/bqloader"
-	"github.com/dfuse-io/dmetrics"
+	"github.com/streamingfast/dmetrics"
 	"github.com/streamingfast/dstore"
 	"github.com/dfuse-io/kvdb/store"
 	"github.com/streamingfast/shutter"

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dfuse-io/dgrpc"
+	"github.com/streamingfast/dgrpc"
 
 	"github.com/dfuse-io/solana-go"
 

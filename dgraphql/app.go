@@ -26,7 +26,7 @@ import (
 	solResolver "github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/dfuse-io/dgrpc"
+	"github.com/streamingfast/dgrpc"
 	"github.com/dfuse-io/solana-go/rpc"
 	drateLimiter "github.com/streamingfast/dauth/ratelimiter"
 	"github.com/streamingfast/dgraphql"
