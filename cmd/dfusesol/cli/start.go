@@ -20,15 +20,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/derr"
-	_ "github.com/dfuse-io/dfuse-solana/codec"
+	"github.com/streamingfast/dlauncher/launcher"
 	_ "github.com/streamingfast/kvdb/store/badger"
 	_ "github.com/streamingfast/kvdb/store/bigkv"
 	_ "github.com/streamingfast/kvdb/store/tikv"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/streamingfast/dlauncher/launcher"
+	_ "github.com/streamingfast/sf-solana/codec"
 	"go.uber.org/zap"
 )
 

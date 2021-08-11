@@ -10,9 +10,9 @@ import (
 	"github.com/streamingfast/bstream/blockstream"
 	"github.com/streamingfast/bstream/firehose"
 	"github.com/streamingfast/bstream/forkable"
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/streamingfast/dgrpc"
 	"github.com/streamingfast/dstore"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
 )

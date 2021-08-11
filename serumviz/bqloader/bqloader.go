@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/bigquery"
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/streamingfast/dstore"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/streamingfast/shutter"
 )
 

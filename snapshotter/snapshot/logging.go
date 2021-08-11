@@ -7,8 +7,8 @@ import (
 
 var zlog *zap.Logger
 
-var traceEnabled = logging.IsTraceEnabled("snapshotter", "github.com/dfuse-io/dfuse-solana/snapshotter/snapshot")
+var traceEnabled = logging.IsTraceEnabled("snapshotter", "github.com/streamingfast/sf-solana/snapshotter/snapshot")
 
 func init() {
-	logging.Register("github.com/dfuse-io/dfuse-solana/snapshotter/snapshot", &zlog)
+	logging.Register("github.com/streamingfast/sf-solana/snapshotter/snapshot", &zlog)
 }

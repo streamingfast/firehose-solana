@@ -3,12 +3,12 @@ package kvloader
 import (
 	"fmt"
 
-	"github.com/dfuse-io/dfuse-solana/serumhist"
+	"github.com/streamingfast/sf-solana/serumhist"
 
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/forkable"
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
+	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
 	"go.uber.org/zap"
 )
 

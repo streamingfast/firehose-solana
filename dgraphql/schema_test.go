@@ -17,8 +17,8 @@ package dgraphql
 import (
 	"testing"
 
-	"github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
 	"github.com/streamingfast/dgraphql"
+	"github.com/streamingfast/sf-solana/dgraphql/resolvers"
 	"github.com/stretchr/testify/require"
 )
 

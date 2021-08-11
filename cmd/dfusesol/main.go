@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/dfuse-io/dfuse-solana/cmd/dfusesol/cli"
+	"github.com/streamingfast/sf-solana/cmd/dfusesol/cli"
 )
 
 // Commit sha1 value, injected via go build `ldflags` at build time

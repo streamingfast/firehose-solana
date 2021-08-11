@@ -5,7 +5,7 @@ import (
 
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/forkable"
-	"github.com/dfuse-io/dfuse-solana/serumhist"
+	"github.com/streamingfast/sf-solana/serumhist"
 )
 
 func (bq *BQLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {

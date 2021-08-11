@@ -18,19 +18,19 @@ import (
 	"context"
 	"fmt"
 
-	serumanalytics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
+	serumanalytics "github.com/streamingfast/sf-solana/serumviz/analytics"
 	"gorm.io/driver/bigquery"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	solResolver "github.com/dfuse-io/dfuse-solana/dgraphql/resolvers"
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/streamingfast/dgrpc"
-	"github.com/streamingfast/solana-go/rpc"
 	drateLimiter "github.com/streamingfast/dauth/ratelimiter"
 	"github.com/streamingfast/dgraphql"
 	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
+	"github.com/streamingfast/dgrpc"
+	solResolver "github.com/streamingfast/sf-solana/dgraphql/resolvers"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/sf-solana/registry"
+	"github.com/streamingfast/solana-go/rpc"
 	"go.uber.org/zap"
 )
 

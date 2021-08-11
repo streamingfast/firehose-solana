@@ -1,11 +1,11 @@
 package cli
 
 import (
-	dgraphqlSol "github.com/dfuse-io/dfuse-solana/dgraphql"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
 	"github.com/streamingfast/dlauncher/launcher"
+	dgraphqlSol "github.com/streamingfast/sf-solana/dgraphql"
 )
 
 func init() {

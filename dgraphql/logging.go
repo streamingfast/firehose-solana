@@ -22,5 +22,5 @@ import (
 var zlog = zap.NewNop()
 
 func init() {
-	logging.Register("github.com/dfuse-io/dfuse-solana/dgraphql", &zlog)
+	logging.Register("github.com/streamingfast/sf-solana/dgraphql", &zlog)
 }

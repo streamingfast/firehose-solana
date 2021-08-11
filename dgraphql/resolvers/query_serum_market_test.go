@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dfuse-io/dfuse-solana/registry"
+	"github.com/streamingfast/sf-solana/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/dfuse-io/dfuse-solana/registry"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/streamingfast/dgraphql"
 	"github.com/streamingfast/dgraphql/types"
+	"github.com/streamingfast/sf-solana/registry"
 )
 
 type SerumMarketsRequest struct {

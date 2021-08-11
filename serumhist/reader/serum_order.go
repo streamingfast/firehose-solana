@@ -5,11 +5,11 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist"
-	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	"github.com/streamingfast/solana-go"
 	"github.com/golang/protobuf/proto"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/sf-solana/serumhist"
+	"github.com/streamingfast/sf-solana/serumhist/keyer"
+	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
 

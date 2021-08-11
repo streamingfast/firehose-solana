@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/dfuse-io/dfuse-solana/serumviz/schemas"
 	"github.com/linkedin/goavro/v2"
+	"github.com/streamingfast/sf-solana/serumviz/schemas"
 	"google.golang.org/api/googleapi"
 )
 

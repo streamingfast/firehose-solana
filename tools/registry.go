@@ -8,11 +8,11 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/dfuse-io/dfuse-solana/registry"
+	"github.com/spf13/cobra"
 	"github.com/streamingfast/dstore"
+	"github.com/streamingfast/sf-solana/registry"
 	"github.com/streamingfast/solana-go/programs/serum"
 	solrpc "github.com/streamingfast/solana-go/rpc"
-	"github.com/spf13/cobra"
 )
 
 var registryCmd = &cobra.Command{Use: "registry", Short: "Registry "}

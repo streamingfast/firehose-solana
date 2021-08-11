@@ -3,8 +3,8 @@ package resolvers
 import (
 	"fmt"
 
-	"github.com/dfuse-io/dfuse-solana/registry"
-	serumztics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
+	"github.com/streamingfast/sf-solana/registry"
+	serumztics "github.com/streamingfast/sf-solana/serumviz/analytics"
 )
 
 type SerumMarket struct {

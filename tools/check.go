@@ -9,13 +9,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/streamingfast/bstream"
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/streamingfast/dstore"
-	"github.com/streamingfast/jsonpb"
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/streamingfast/bstream"
+	"github.com/streamingfast/dstore"
+	"github.com/streamingfast/jsonpb"
+	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
 	"go.uber.org/zap"
 )
 

@@ -15,20 +15,20 @@ import (
 
 	"github.com/streamingfast/dstore"
 
-	"github.com/streamingfast/bstream"
-	"github.com/dfuse-io/dfuse-solana/codec"
-	nodeManagerSol "github.com/dfuse-io/dfuse-solana/node-manager"
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/streamingfast/logging"
 	"github.com/lorenzosaino/go-sysctl"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dlauncher/launcher"
+	"github.com/streamingfast/logging"
 	nodeManager "github.com/streamingfast/node-manager"
 	nodeManagerApp "github.com/streamingfast/node-manager/app/node_manager2"
 	"github.com/streamingfast/node-manager/metrics"
 	"github.com/streamingfast/node-manager/mindreader"
 	"github.com/streamingfast/node-manager/operator"
+	"github.com/streamingfast/sf-solana/codec"
+	nodeManagerSol "github.com/streamingfast/sf-solana/node-manager"
+	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -78,8 +78,8 @@ func RegisterSolanaNodeApp(kind string, extraFlagRegistration func(cmd *cobra.Co
 	appLogger := zap.NewNop()
 	nodeLogger := zap.NewNop()
 
-	logging.Register(fmt.Sprintf("github.com/dfuse-io/dfuse-solana/%s", app), &appLogger)
-	logging.Register(fmt.Sprintf("github.com/dfuse-io/dfuse-solana/%s/node", app), &nodeLogger)
+	logging.Register(fmt.Sprintf("github.com/streamingfast/sf-solana/%s", app), &appLogger)
+	logging.Register(fmt.Sprintf("github.com/streamingfast/sf-solana/%s/node", app), &nodeLogger)
 
 	launcher.RegisterApp(&launcher.AppDef{
 		ID:          app,
@@ -87,7 +87,7 @@ func RegisterSolanaNodeApp(kind string, extraFlagRegistration func(cmd *cobra.Co
 		Description: fmt.Sprintf("Solana %s node with built-in operational manager", kind),
 		MetricsID:   app,
 		Logger: launcher.NewLoggingDef(
-			fmt.Sprintf("github.com/dfuse-io/dfuse-solana/%s.*", app),
+			fmt.Sprintf("github.com/streamingfast/sf-solana/%s.*", app),
 			[]zapcore.Level{zap.WarnLevel, zap.WarnLevel, zap.InfoLevel, zap.DebugLevel},
 		),
 		RegisterFlags: func(cmd *cobra.Command) error {

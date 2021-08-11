@@ -9,15 +9,15 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/streamingfast/bstream/blockstream"
-	nodeManagerSol "github.com/dfuse-io/dfuse-solana/node-manager"
 	"github.com/streamingfast/dstore"
+	nodeManagerSol "github.com/streamingfast/sf-solana/node-manager"
 
-	"github.com/streamingfast/bstream"
-	"github.com/dfuse-io/dfuse-solana/codec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/streamingfast/bstream"
 	nodeManager "github.com/streamingfast/node-manager"
 	"github.com/streamingfast/node-manager/mindreader"
+	"github.com/streamingfast/sf-solana/codec"
 	"go.uber.org/zap"
 )
 

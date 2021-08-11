@@ -1,9 +1,9 @@
 package resolvers
 
 import (
-	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/streamingfast/solana-go"
 	gtype "github.com/streamingfast/dgraphql/types"
+	"github.com/streamingfast/sf-solana/registry"
+	"github.com/streamingfast/solana-go"
 )
 
 type Token struct {

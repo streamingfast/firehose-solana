@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"strconv"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	serumhistreader "github.com/dfuse-io/dfuse-solana/serumhist/reader"
-	"github.com/streamingfast/kvdb/store"
-	"github.com/streamingfast/solana-go"
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/streamingfast/kvdb/store"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	serumhistkeyer "github.com/streamingfast/sf-solana/serumhist/keyer"
+	serumhistreader "github.com/streamingfast/sf-solana/serumhist/reader"
+	"github.com/streamingfast/solana-go"
 )
 
 var serumhistCmd = &cobra.Command{Use: "serumhist", Short: "Read from serum history"}

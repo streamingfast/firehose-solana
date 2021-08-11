@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/streamingfast/solana-go"
-	"github.com/streamingfast/solana-go/programs/serum"
 	"github.com/graph-gophers/graphql-go"
 	gtype "github.com/streamingfast/dgraphql/types"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/sf-solana/registry"
+	"github.com/streamingfast/solana-go"
+	"github.com/streamingfast/solana-go/programs/serum"
 	"go.uber.org/zap"
 )
 

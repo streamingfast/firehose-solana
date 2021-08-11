@@ -22,7 +22,7 @@ import (
 	"path"
 	"testing"
 
-	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
+	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/test-go/testify/require"
 )

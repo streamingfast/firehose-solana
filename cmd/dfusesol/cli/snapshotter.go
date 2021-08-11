@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"github.com/dfuse-io/dfuse-solana/snapshotter/app/snapshotter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/dlauncher/launcher"
+	"github.com/streamingfast/sf-solana/snapshotter/app/snapshotter"
 )
 
 func init() {

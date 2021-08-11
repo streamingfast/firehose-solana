@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	"github.com/streamingfast/kvdb/store"
-	"github.com/streamingfast/solana-go"
 	"github.com/golang/protobuf/proto"
+	"github.com/streamingfast/kvdb/store"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	"github.com/streamingfast/sf-solana/serumhist/keyer"
+	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
 
