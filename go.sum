@@ -875,6 +875,8 @@ github.com/streamingfast/dgrpc v0.0.0-20200406214416-6271093e544c/go.mod h1:n7pQ
 github.com/streamingfast/dgrpc v0.0.0-20200406214416-6271093e544c/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
 github.com/streamingfast/dgrpc v0.0.0-20200406214416-6271093e544c/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
 github.com/streamingfast/dgrpc v0.0.0-20200406214416-6271093e544c/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
+github.com/streamingfast/dgrpc v0.0.0-20200406214416-6271093e544c/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
+github.com/streamingfast/dgrpc v0.0.0-20200417124327-c8f215bc4ce5/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
 github.com/streamingfast/dgrpc v0.0.0-20200417124327-c8f215bc4ce5/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
 github.com/streamingfast/dgrpc v0.0.0-20200417124327-c8f215bc4ce5/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
 github.com/streamingfast/dgrpc v0.0.0-20200417124327-c8f215bc4ce5/go.mod h1:n7pQV0mGBMBgJChGKp5gfRLkP2jSCkT+to7fPxKvQPA=
@@ -893,6 +895,8 @@ github.com/streamingfast/dgrpc v0.0.0-20201117184322-6724bb1e1b60/go.mod h1:DANT
 github.com/streamingfast/dgrpc v0.0.0-20201117184322-6724bb1e1b60/go.mod h1:DANTlPl++VJnjf/wFlLrFQ1GJBSNoieP5808WQJfl9o=
 github.com/streamingfast/dgrpc v0.0.0-20201117184322-6724bb1e1b60/go.mod h1:DANTlPl++VJnjf/wFlLrFQ1GJBSNoieP5808WQJfl9o=
 github.com/streamingfast/dgrpc v0.0.0-20201117184322-6724bb1e1b60/go.mod h1:DANTlPl++VJnjf/wFlLrFQ1GJBSNoieP5808WQJfl9o=
+github.com/streamingfast/dgrpc v0.0.0-20201117184322-6724bb1e1b60/go.mod h1:DANTlPl++VJnjf/wFlLrFQ1GJBSNoieP5808WQJfl9o=
+github.com/streamingfast/dgrpc v0.0.0-20201215171222-11bde2006cf9/go.mod h1:DANTlPl++VJnjf/wFlLrFQ1GJBSNoieP5808WQJfl9o=
 github.com/streamingfast/dgrpc v0.0.0-20201215171222-11bde2006cf9/go.mod h1:DANTlPl++VJnjf/wFlLrFQ1GJBSNoieP5808WQJfl9o=
 github.com/streamingfast/dgrpc v0.0.0-20201215171222-11bde2006cf9/go.mod h1:DANTlPl++VJnjf/wFlLrFQ1GJBSNoieP5808WQJfl9o=
 github.com/streamingfast/dgrpc v0.0.0-20201215171222-11bde2006cf9/go.mod h1:DANTlPl++VJnjf/wFlLrFQ1GJBSNoieP5808WQJfl9o=
@@ -912,10 +916,12 @@ github.com/streamingfast/dgrpc v0.0.0-20210128133958-db1ca95920e4/go.mod h1:SQUq
 github.com/streamingfast/dgrpc v0.0.0-20210128133958-db1ca95920e4/go.mod h1:SQUqYjDen2kzhbM+pvNceNtbevla8o7eNX8idtDJDHA=
 github.com/streamingfast/dgrpc v0.0.0-20210128133958-db1ca95920e4/go.mod h1:SQUqYjDen2kzhbM+pvNceNtbevla8o7eNX8idtDJDHA=
 github.com/streamingfast/dgrpc v0.0.0-20210128133958-db1ca95920e4/go.mod h1:SQUqYjDen2kzhbM+pvNceNtbevla8o7eNX8idtDJDHA=
+github.com/streamingfast/dgrpc v0.0.0-20210128133958-db1ca95920e4/go.mod h1:SQUqYjDen2kzhbM+pvNceNtbevla8o7eNX8idtDJDHA=
 github.com/streamingfast/dgrpc v0.0.0-20210424033943-10e04dd5b19c h1:WbdnyAayWMxOnUj90fSQJJWK1XVDFtef+0HF060lbn4=
 github.com/streamingfast/dgrpc v0.0.0-20210424033943-10e04dd5b19c/go.mod h1:SQUqYjDen2kzhbM+pvNceNtbevla8o7eNX8idtDJDHA=
 github.com/streamingfast/dgrpc v0.0.0-20210424033943-10e04dd5b19c/go.mod h1:SQUqYjDen2kzhbM+pvNceNtbevla8o7eNX8idtDJDHA=
 github.com/streamingfast/dgrpc v0.0.0-20210810041652-d033fee35ae0 h1:TOKZy/FGh5vXN7+8amTf0DabRvubKI58z+uobS2Mkqc=
+github.com/streamingfast/dgrpc v0.0.0-20210810041652-d033fee35ae0/go.mod h1:D+ID5BdUilbfULTuX1S6MruUJl/MTf8yrwd8dEXwK3Q=
 github.com/streamingfast/dgrpc v0.0.0-20210810041652-d033fee35ae0/go.mod h1:D+ID5BdUilbfULTuX1S6MruUJl/MTf8yrwd8dEXwK3Q=
 github.com/streamingfast/dgrpc v0.0.0-20210810041652-d033fee35ae0/go.mod h1:D+ID5BdUilbfULTuX1S6MruUJl/MTf8yrwd8dEXwK3Q=
 github.com/streamingfast/dgrpc v0.0.0-20210810041652-d033fee35ae0/go.mod h1:D+ID5BdUilbfULTuX1S6MruUJl/MTf8yrwd8dEXwK3Q=
