@@ -1,7 +1,7 @@
 package codec
 
 import (
-	"github.com/dfuse-io/bstream"
+	"github.com/streamingfast/bstream"
 )
 
 func init() {

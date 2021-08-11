@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 )
 
 const (

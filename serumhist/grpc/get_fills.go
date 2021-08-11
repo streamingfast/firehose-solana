@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
 

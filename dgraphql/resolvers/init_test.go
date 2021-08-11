@@ -4,7 +4,7 @@ import (
 	"time"
 
 	serumanalytics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 )
 
 var pubKey = solana.MustPublicKeyFromBase58

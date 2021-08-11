@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	bin "github.com/dfuse-io/binary"
-	"github.com/dfuse-io/bstream"
+	bin "github.com/streamingfast/binary"
+	"github.com/streamingfast/bstream"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
-	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/programs/serum"
+	"github.com/streamingfast/solana-go"
+	"github.com/streamingfast/solana-go/programs/serum"
 	"go.uber.org/zap"
 )
 

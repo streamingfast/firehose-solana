@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/dfuse-io/logging"
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
 

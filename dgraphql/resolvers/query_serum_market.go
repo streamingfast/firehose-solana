@@ -3,7 +3,7 @@ package resolvers
 import (
 	"time"
 
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 	gqerrs "github.com/graph-gophers/graphql-go/errors"
 )
 

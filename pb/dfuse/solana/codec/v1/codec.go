@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 
-	"github.com/dfuse-io/bstream"
+	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	"github.com/golang/protobuf/proto"
 )

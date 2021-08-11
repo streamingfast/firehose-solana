@@ -2,7 +2,7 @@ package resolvers
 
 import (
 	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 	gtype "github.com/streamingfast/dgraphql/types"
 )
 

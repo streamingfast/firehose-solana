@@ -9,7 +9,7 @@ import (
 
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 
-	"github.com/dfuse-io/bstream"
+	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

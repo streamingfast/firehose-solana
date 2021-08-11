@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/programs/serum"
-	"github.com/dfuse-io/solana-go/rpc/ws"
+	"github.com/streamingfast/solana-go"
+	"github.com/streamingfast/solana-go/programs/serum"
+	"github.com/streamingfast/solana-go/rpc/ws"
 	"go.uber.org/zap"
 )
 

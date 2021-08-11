@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dfuse-io/solana-go"
-	solrpc "github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/solana-go"
+	solrpc "github.com/streamingfast/solana-go/rpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

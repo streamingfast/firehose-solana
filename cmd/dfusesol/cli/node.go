@@ -11,11 +11,11 @@ import (
 
 	"github.com/streamingfast/dgrpc"
 
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 
 	"github.com/streamingfast/dstore"
 
-	"github.com/dfuse-io/bstream"
+	"github.com/streamingfast/bstream"
 	"github.com/dfuse-io/dfuse-solana/codec"
 	nodeManagerSol "github.com/dfuse-io/dfuse-solana/node-manager"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"

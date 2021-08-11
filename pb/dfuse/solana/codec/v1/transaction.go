@@ -3,7 +3,7 @@ package pbcodec
 import (
 	"fmt"
 
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 )
 
 func (t *Transaction) IsSigner(account string) bool {

@@ -27,7 +27,7 @@ import (
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/streamingfast/dgrpc"
-	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/solana-go/rpc"
 	drateLimiter "github.com/streamingfast/dauth/ratelimiter"
 	"github.com/streamingfast/dgraphql"
 	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"

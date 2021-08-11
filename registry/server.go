@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/solana-go/rpc"
 	"go.uber.org/zap"
 )
 

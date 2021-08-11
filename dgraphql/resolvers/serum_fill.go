@@ -6,8 +6,8 @@ import (
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
-	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/programs/serum"
+	"github.com/streamingfast/solana-go"
+	"github.com/streamingfast/solana-go/programs/serum"
 	"github.com/graph-gophers/graphql-go"
 	gtype "github.com/streamingfast/dgraphql/types"
 	"go.uber.org/zap"

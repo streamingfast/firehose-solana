@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/ShinyTrinkets/overseer"
-	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/solana-go/rpc"
 	nodeManager "github.com/streamingfast/node-manager"
 	logplugin "github.com/streamingfast/node-manager/log_plugin"
 	"github.com/streamingfast/node-manager/metrics"

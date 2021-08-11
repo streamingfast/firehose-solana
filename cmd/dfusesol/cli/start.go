@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dfuse-io/bstream"
+	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/derr"
 	_ "github.com/dfuse-io/dfuse-solana/codec"
 	_ "github.com/dfuse-io/kvdb/store/badger"

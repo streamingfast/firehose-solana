@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/abourget/llerrgroup"
-	"github.com/dfuse-io/bstream"
+	"github.com/streamingfast/bstream"
 	pbcodec "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/codec/v1"
 	"github.com/streamingfast/dstore"
 	"github.com/golang/protobuf/proto"

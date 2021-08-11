@@ -3,9 +3,9 @@ package accountchange
 import (
 	"fmt"
 
-	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/rpc"
-	"github.com/dfuse-io/solana-go/rpc/ws"
+	"github.com/streamingfast/solana-go"
+	"github.com/streamingfast/solana-go/rpc"
+	"github.com/streamingfast/solana-go/rpc/ws"
 )
 
 type Stream struct {

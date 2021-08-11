@@ -4,8 +4,8 @@ import (
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/registry"
 	serumztics "github.com/dfuse-io/dfuse-solana/serumviz/analytics"
-	"github.com/dfuse-io/solana-go"
-	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/solana-go"
+	"github.com/streamingfast/solana-go/rpc"
 	"github.com/streamingfast/dauth/ratelimiter"
 )
 

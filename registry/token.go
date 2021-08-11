@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/solana-go/rpc"
 
-	"github.com/dfuse-io/solana-go/programs/token"
+	"github.com/streamingfast/solana-go/programs/token"
 
 	"go.uber.org/zap"
 
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 )
 
 type Token struct {

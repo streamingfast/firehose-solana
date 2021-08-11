@@ -10,7 +10,7 @@ import (
 	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	serumhistreader "github.com/dfuse-io/dfuse-solana/serumhist/reader"
 	"github.com/dfuse-io/kvdb/store"
-	"github.com/dfuse-io/solana-go"
+	"github.com/streamingfast/solana-go"
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dfuse-io/bstream"
-	blockstreamv2 "github.com/dfuse-io/bstream/blockstream/v2"
+	"github.com/streamingfast/bstream"
+	blockstreamv2 "github.com/streamingfast/bstream/blockstream/v2"
 	"github.com/streamingfast/dmetrics"
 	"github.com/dfuse-io/logging"
 	pbbstream "github.com/streamingfast/pbgo/dfuse/bstream/v1"

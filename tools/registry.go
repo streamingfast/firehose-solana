@@ -10,8 +10,8 @@ import (
 
 	"github.com/dfuse-io/dfuse-solana/registry"
 	"github.com/streamingfast/dstore"
-	"github.com/dfuse-io/solana-go/programs/serum"
-	solrpc "github.com/dfuse-io/solana-go/rpc"
+	"github.com/streamingfast/solana-go/programs/serum"
+	solrpc "github.com/streamingfast/solana-go/rpc"
 	"github.com/spf13/cobra"
 )
 

@@ -8,11 +8,11 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/dfuse-io/bstream/blockstream"
+	"github.com/streamingfast/bstream/blockstream"
 	nodeManagerSol "github.com/dfuse-io/dfuse-solana/node-manager"
 	"github.com/streamingfast/dstore"
 
-	"github.com/dfuse-io/bstream"
+	"github.com/streamingfast/bstream"
 	"github.com/dfuse-io/dfuse-solana/codec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
