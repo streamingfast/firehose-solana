@@ -9,7 +9,7 @@ import (
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	"github.com/dfuse-io/jsonpb"
+	"github.com/streamingfast/jsonpb"
 	"github.com/dfuse-io/kvdb/store"
 	_ "github.com/dfuse-io/kvdb/store/badger"
 	_ "github.com/dfuse-io/kvdb/store/bigkv"

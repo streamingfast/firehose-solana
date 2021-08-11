@@ -258,8 +258,6 @@ github.com/dfuse-io/graphql-go v0.0.0-20201111130519-96db37f31807/go.mod h1:9CQH
 github.com/dfuse-io/graphql-go v0.0.0-20210204202750-0e485a040a3c h1:fdYejttWe9nYkytN1G5trc4mHeWcNpdGi0o26ZUb+cM=
 github.com/dfuse-io/graphql-go v0.0.0-20210204202750-0e485a040a3c/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/dfuse-io/jsonpb v0.0.0-20200406211248-c5cf83f0e0c0/go.mod h1:Qt4EPDfP8T2d/eN96nonFDEyJDMUD3oa/C8LQBX2OAs=
-github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2 h1:JtVhKOlyAwW08wFvMPMqZSygbG5Be+RMYNhRo9Fy92U=
-github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2/go.mod h1:FMug2qe6PdGRIn9e2N1ucA+Rg0FOJOgyf2F0gJJSiSw=
 github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e h1:n2ZdMTCstpa87I8DIHbFAxB1gwKK0vQzhnebHmP3KrU=
 github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e/go.mod h1:X3CqnReRyUXsj/0qhX98RiMisJOD1C3G58dW0h+4gX0=
 github.com/dfuse-io/logging v0.0.0-20200406213449-45fc25dc6a8d/go.mod h1:80YyilHcgoqrnoIeeJKgcsOw6Y/0/bQzDO/XzNIrIdM=
@@ -1047,6 +1045,9 @@ github.com/streamingfast/firehose v0.1.1-0.20210811161507-6ef87dfb1994 h1:D0Zt9t
 github.com/streamingfast/firehose v0.1.1-0.20210811161507-6ef87dfb1994/go.mod h1:ZOjFA7vp1JnGmdU6phspVImaF2clR/gLPyPrWTSBbq8=
 github.com/streamingfast/firehose v0.1.1-0.20210811195158-d4b116b4b447 h1:NyPvk6EvC8ubQbrha5WeoZd6xsPTv8W9RwR84jk199k=
 github.com/streamingfast/firehose v0.1.1-0.20210811195158-d4b116b4b447/go.mod h1:6eaJVhbrxfEf+LSfr1Bw7bTn5CHXn2Japqv8dQByYEM=
+github.com/streamingfast/jsonpb v0.0.0-20200406211248-c5cf83f0e0c0/go.mod h1:Qt4EPDfP8T2d/eN96nonFDEyJDMUD3oa/C8LQBX2OAs=
+github.com/streamingfast/jsonpb v0.0.0-20200602171045-28535c4016a2 h1:JtVhKOlyAwW08wFvMPMqZSygbG5Be+RMYNhRo9Fy92U=
+github.com/streamingfast/jsonpb v0.0.0-20200602171045-28535c4016a2/go.mod h1:FMug2qe6PdGRIn9e2N1ucA+Rg0FOJOgyf2F0gJJSiSw=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 h1:g8eEYbFSykyzIyuxNMmHEUGGUvJE0ivmqZagLDK42gw=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0/go.mod h1:cTNObq2Uofb330y05JbbZZ6RwE6QUXw5iVcHk1Fx3fk=
 github.com/streamingfast/kvdb v0.0.2-0.20210809203849-c1762028eb64/go.mod h1:Gfes7m4TgAejs+Vx4bZngTlMDAz0qXi8K8BgHf/yZpM=

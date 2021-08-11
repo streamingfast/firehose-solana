@@ -12,7 +12,6 @@ require (
 	github.com/dfuse-io/dipp v1.0.1-0.20200407033930-5c17c531c3c4 // indirect
 	github.com/dfuse-io/dmesh v0.0.0-20210224224128-9a9ef510dce1 // indirect
 	github.com/dfuse-io/dstore v0.1.1-0.20210507180120-88a95674809f // indirect
-	github.com/dfuse-io/jsonpb v0.0.0-20200602171045-28535c4016a2
 	github.com/dfuse-io/kvdb v0.0.2-0.20201208184359-118334a9186e
 	github.com/dfuse-io/logging v0.0.0-20210518215502-2d920b2ad1f2
 	github.com/dustin/go-humanize v1.0.0
@@ -44,6 +43,7 @@ require (
 	github.com/streamingfast/dstore v0.1.1-0.20210811180812-4db13e99cc22 // indirect
 	github.com/streamingfast/dtracing v0.0.0-20210811175635-d55665d3622a // indirect
 	github.com/streamingfast/firehose v0.1.1-0.20210811195158-d4b116b4b447
+	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 // indirect
 	github.com/streamingfast/merger v0.0.3-0.20210811195536-1011c89f0a67
 	github.com/streamingfast/node-manager v0.0.2-0.20210811195853-d6b519927636
 	github.com/streamingfast/pbgo v0.0.6-0.20210811160400-7c146c2db8cc // indirect
