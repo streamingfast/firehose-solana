@@ -9,9 +9,6 @@ require (
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/abourget/llerrgroup v0.2.0
 	github.com/davecgh/go-spew v1.1.1
-	github.com/dfuse-io/dipp v1.0.1-0.20200407033930-5c17c531c3c4 // indirect
-	github.com/dfuse-io/dmesh v0.0.0-20210224224128-9a9ef510dce1 // indirect
-	github.com/dfuse-io/dstore v0.1.1-0.20210507180120-88a95674809f // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
