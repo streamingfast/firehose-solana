@@ -14,7 +14,7 @@ import (
 	bqloader "github.com/dfuse-io/dfuse-solana/serumviz/bqloader"
 	"github.com/streamingfast/dmetrics"
 	"github.com/streamingfast/dstore"
-	"github.com/dfuse-io/kvdb/store"
+	"github.com/streamingfast/kvdb/store"
 	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
 )

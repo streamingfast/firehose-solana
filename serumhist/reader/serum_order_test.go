@@ -10,8 +10,8 @@ import (
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	kvdbstore "github.com/dfuse-io/kvdb/store"
-	_ "github.com/dfuse-io/kvdb/store/badger"
+	kvdbstore "github.com/streamingfast/kvdb/store"
+	_ "github.com/streamingfast/kvdb/store/badger"
 	"github.com/streamingfast/solana-go"
 	"github.com/streamingfast/solana-go/programs/serum"
 	"github.com/golang/protobuf/proto"

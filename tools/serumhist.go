@@ -9,7 +9,7 @@ import (
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	serumhistkeyer "github.com/dfuse-io/dfuse-solana/serumhist/keyer"
 	serumhistreader "github.com/dfuse-io/dfuse-solana/serumhist/reader"
-	"github.com/dfuse-io/kvdb/store"
+	"github.com/streamingfast/kvdb/store"
 	"github.com/streamingfast/solana-go"
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"

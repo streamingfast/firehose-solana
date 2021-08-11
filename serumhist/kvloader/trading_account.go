@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	"github.com/dfuse-io/kvdb/store"
+	"github.com/streamingfast/kvdb/store"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )

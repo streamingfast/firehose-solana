@@ -1,7 +1,7 @@
 package snapshot
 
 import (
-	_ "github.com/dfuse-io/kvdb/store/badger"
+	_ "github.com/streamingfast/kvdb/store/badger"
 	"github.com/dfuse-io/logging"
 )
 

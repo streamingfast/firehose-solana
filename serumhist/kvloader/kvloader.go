@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/dfuse-io/kvdb/store"
+	"github.com/streamingfast/kvdb/store"
 	"github.com/streamingfast/shutter"
 )
 

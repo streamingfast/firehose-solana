@@ -8,7 +8,7 @@ import (
 
 	pbserumhist "github.com/dfuse-io/dfuse-solana/pb/dfuse/solana/serumhist/v1"
 	"github.com/dfuse-io/dfuse-solana/serumhist/keyer"
-	"github.com/dfuse-io/kvdb/store"
+	"github.com/streamingfast/kvdb/store"
 )
 
 func (kv *KVLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {
