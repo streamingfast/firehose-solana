@@ -3,6 +3,7 @@
 .DS_Store
 *.log.json
 /dashboard/rice-box.go
+/deploy/sfsol
 /sf-data
 /sf.yaml
 /proj
