@@ -3,7 +3,7 @@
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 clean=
-dfusesol="$ROOT/../dfusesol"
+sfsol="$ROOT/../sfsol"
 
 main() {
   pushd "$ROOT" &> /dev/null
@@ -21,10 +21,10 @@ main() {
   set -e
 
   if [[ $clean == "true" ]]; then
-    rm -rf dfuse-data &> /dev/null || true
+    rm -rf sf-data &> /dev/null || true
   fi
 
-  exec $dfusesol -c $(basename $ROOT).yaml start "$@"
+  exec $sfsol -c $(basename $ROOT).yaml start "$@"
 }
 
 usage_error() {

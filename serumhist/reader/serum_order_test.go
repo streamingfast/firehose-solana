@@ -13,12 +13,12 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	kvdbstore "github.com/streamingfast/kvdb/store"
 	_ "github.com/streamingfast/kvdb/store/badger"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"github.com/streamingfast/sf-solana/serumhist/keyer"
 	"github.com/streamingfast/solana-go"
 	"github.com/streamingfast/solana-go/programs/serum"
-	"github.com/test-go/testify/assert"
-	"github.com/test-go/testify/require"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func testKVDBStore(t *testing.T) (kvdbstore.KVStore, func()) {

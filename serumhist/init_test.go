@@ -12,7 +12,7 @@ import (
 	"github.com/streamingfast/kvdb/store"
 	_ "github.com/streamingfast/kvdb/store/badger"
 	"github.com/streamingfast/logging"
-	"github.com/test-go/testify/require"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 

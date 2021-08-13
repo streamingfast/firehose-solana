@@ -15,7 +15,7 @@ import (
 	_ "github.com/streamingfast/kvdb/store/badger"
 	_ "github.com/streamingfast/kvdb/store/bigkv"
 	_ "github.com/streamingfast/kvdb/store/tikv"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	serumhistkeyer "github.com/streamingfast/sf-solana/serumhist/keyer"
 )
 
@@ -31,10 +31,10 @@ func init() {
 	kvCmd.AddCommand(kvScanCmd)
 	kvCmd.AddCommand(kvGetCmd)
 
-	defaultBadger := "badger://dfuse-data/kvdb/kvdb_badger.db"
+	defaultBadger := "badger://sf-data/kvdb/kvdb_badger.db"
 	cwd, err := os.Getwd()
 	if err == nil {
-		defaultBadger = "badger://" + cwd + "/dfuse-data/kvdb/kvdb_badger.db"
+		defaultBadger = "badger://" + cwd + "/sf-data/kvdb/kvdb_badger.db"
 	}
 
 	kvCmd.PersistentFlags().String("dsn", defaultBadger, "kvStore DSN")

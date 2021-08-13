@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/streamingfast/derr"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"google.golang.org/api/iterator"
 )
 

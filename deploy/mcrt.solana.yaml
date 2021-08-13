@@ -1,8 +1,8 @@
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
 metadata:
-  name: sol-dfuse-io
+  name: sol-sf-io
   namespace: sol-mainnet
 spec:
   domains:
-  - mainnet.sol.dfuse.io
+  - mainnet.sol.streamingfast.io

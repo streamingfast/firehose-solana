@@ -6,7 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gtype "github.com/streamingfast/dgraphql/types"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"github.com/streamingfast/sf-solana/registry"
 	"github.com/streamingfast/solana-go"
 	"github.com/streamingfast/solana-go/programs/serum"

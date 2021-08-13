@@ -29,7 +29,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
-	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
+	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"go.uber.org/zap"
 )
 

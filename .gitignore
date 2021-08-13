@@ -3,11 +3,10 @@
 .DS_Store
 *.log.json
 /dashboard/rice-box.go
-/dfuse-data
-/dfuse.yaml
-/ethq/app/ethq/rice-box.go
+/sf-data
+/sf.yaml
 /proj
-/dfusesol
+/sfsol
 .idea
 venv
 *.tfstate

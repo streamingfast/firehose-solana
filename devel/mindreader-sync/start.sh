@@ -2,7 +2,7 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-dfusesol="$ROOT/../dfusesol"
+sfsol="$ROOT/../sfsol"
 
 export RUST_LOG=solana=info,solana_metrics=error
 
@@ -28,10 +28,10 @@ main() {
   fi
 
   if [[ $clean == "true" ]]; then
-    rm -rf dfuse-data &> /dev/null || true
+    rm -rf sf-data &> /dev/null || true
   fi
 
-  exec $dfusesol -c $(basename $ROOT).yaml start mindreader-node,firehose --mindreader-node-network="$network" "$@"
+  exec $sfsol -c $(basename $ROOT).yaml start mindreader-node,firehose --mindreader-node-network="$network" "$@"
 }
 
 usage_error() {

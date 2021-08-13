@@ -6,7 +6,7 @@ import (
 
 	bin "github.com/streamingfast/binary"
 	"github.com/streamingfast/bstream"
-	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
+	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"github.com/streamingfast/solana-go"
 	"github.com/streamingfast/solana-go/programs/serum"
 	"go.uber.org/zap"

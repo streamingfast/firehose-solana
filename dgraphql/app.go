@@ -28,7 +28,7 @@ import (
 	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
 	"github.com/streamingfast/dgrpc"
 	solResolver "github.com/streamingfast/sf-solana/dgraphql/resolvers"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"github.com/streamingfast/sf-solana/registry"
 	"github.com/streamingfast/solana-go/rpc"
 	"go.uber.org/zap"

@@ -3,7 +3,7 @@ package analytics
 import (
 	"testing"
 
-	"github.com/test-go/testify/require"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/bigquery"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

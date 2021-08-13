@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/streamingfast/bstream"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"go.uber.org/zap"
 )
 

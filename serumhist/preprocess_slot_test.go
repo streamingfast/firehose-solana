@@ -5,7 +5,7 @@ import (
 
 	bin "github.com/streamingfast/binary"
 	"github.com/streamingfast/solana-go/programs/serum"
-	"github.com/test-go/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_extractOrderSeqNum(t *testing.T) {

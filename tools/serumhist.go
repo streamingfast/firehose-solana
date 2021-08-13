@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/kvdb/store"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	serumhistkeyer "github.com/streamingfast/sf-solana/serumhist/keyer"
 	serumhistreader "github.com/streamingfast/sf-solana/serumhist/reader"
 	"github.com/streamingfast/solana-go"
@@ -76,7 +76,7 @@ var decodeKeyerCmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(serumhistCmd)
-	serumhistCmd.PersistentFlags().String("dsn", "badger:///dfuse-data/kvdb/kvdb_badger.db", "kvStore DSN")
+	serumhistCmd.PersistentFlags().String("dsn", "badger:///sf-data/kvdb/kvdb_badger.db", "kvStore DSN")
 
 	serumhistCmd.AddCommand(marketsCmd)
 	serumhistCmd.AddCommand(tradersCmd)

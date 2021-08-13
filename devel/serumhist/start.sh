@@ -2,7 +2,7 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-dfusesol="$ROOT/../dfusesol"
+sfsol="$ROOT/../sfsol"
 
 main() {
   pushd "$ROOT" &> /dev/null
@@ -24,21 +24,21 @@ main() {
   [[ $1 = "--" ]] && shift
 
   if [[ $clean == "true" ]]; then
-    rm -rf dfuse-data &> /dev/null || true
+    rm -rf sf-data &> /dev/null || true
   fi
 
   if [[ $start_injection == "true" ]] || [[ $force_only_injection == "true" ]]; then
      if [[ $force_only_injection == "true" ]]; then
        echo "Running only serumhist injector"
-       exec $dfusesol -c injector.yaml start "$@"
+       exec $sfsol -c injector.yaml start "$@"
      else
        echo "Running serumhist injector for 15 seconds"
-       KILL_AFTER=${KILL_AFTER:-15} $dfusesol -c injector.yaml start "$@"
+       KILL_AFTER=${KILL_AFTER:-15} $sfsol -c injector.yaml start "$@"
      fi
   fi
   if [[ force_only_injection != "true" ]]; then
     echo "running serumhist server"
-    exec $dfusesol -c server.yaml start "$@"
+    exec $sfsol -c server.yaml start "$@"
   fi
 }
 
@@ -66,10 +66,10 @@ usage() {
   echo "    DEBUG=<app>    Turn debug logs for <app> (multiple separated by ','), accepts app name or regexp (.* for all)"
   echo "    TRACE=true     Enables traces"
   echo "Examples"
-  echo " Find Fill Keys             dfusesol tools kv prefix 01 --dsn=badger:///Users/julien/codebase/dfuse-io/dfuse-solana/devel/serumhist/dfuse-data/storage/serumhist"
-  echo " Decode a serumhist key     dfusesol tools serumhist keyer decode 01e77dd955f7b84e4736d066e97188f1919ba42d8b4b090752c1d236c3666cf634fffffffffc13258affffffffffffff99fffffffffffffffcffffffffffec00b3"
-  echo " Get An Order               dfusesol tools serumhist orders get GaeUpY7CT8rjoeVGjY1t3mJJDd1bdXxYWtrGSpsVFors  1310540  --dsn=badger:///Users/julien/codebase/dfuse-io/dfuse-solana/devel/serumhist/dfuse-data/storage/serumhist"
-  echo " Get Fill by market         dfusesol tools serumhist orders get GaeUpY7CT8rjoeVGjY1t3mJJDd1bdXxYWtrGSpsVFors --dsn=badger:///Users/julien/codebase/dfuse-io/dfuse-solana/devel/serumhist/dfuse-data/storage/serumhist"
+  echo " Find Fill Keys             sfsol tools kv prefix 01 --dsn=badger:///full/path"
+  echo " Decode a serumhist key     sfsol tools serumhist keyer decode 01e77dd955f7b84e4736d066e97188f1919ba42d8b4b090752c1d236c3666cf634fffffffffc13258affffffffffffff99fffffffffffffffcffffffffffec00b3"
+  echo " Get An Order               sfsol tools serumhist orders get GaeUpY7CT8rjoeVGjY1t3mJJDd1bdXxYWtrGSpsVFors  1310540  --dsn=badger:///full/path"
+  echo " Get Fill by market         sfsol tools serumhist orders get GaeUpY7CT8rjoeVGjY1t3mJJDd1bdXxYWtrGSpsVFors --dsn=badger:///full/path"
 }
 
 main "$@"

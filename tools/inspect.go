@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strconv"
 
-	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
+	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

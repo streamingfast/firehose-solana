@@ -2,7 +2,7 @@ package resolvers
 
 import (
 	"github.com/streamingfast/dauth/ratelimiter"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"github.com/streamingfast/sf-solana/registry"
 	serumztics "github.com/streamingfast/sf-solana/serumviz/analytics"
 	"github.com/streamingfast/solana-go"

@@ -6,7 +6,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/streamingfast/dstore"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"github.com/streamingfast/shutter"
 )
 

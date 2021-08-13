@@ -7,7 +7,7 @@ import (
 
 	"github.com/streamingfast/dgrpc"
 	pbhealth "github.com/streamingfast/pbgo/grpc/health/v1"
-	pbaccounthist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbaccounthist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"

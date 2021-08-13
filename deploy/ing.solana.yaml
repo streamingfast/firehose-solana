@@ -3,12 +3,12 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: gce
-    networking.gke.io/managed-certificates: sol-dfuse-io
+    networking.gke.io/managed-certificates: sol-sf-io
   name: default-ingress
   namespace: sol-mainnet
 spec:
   rules:
-  - host: mainnet.sol.dfuse.io
+  - host: mainnet.sol.streamingfast.io
     http:
       paths:
       - backend:

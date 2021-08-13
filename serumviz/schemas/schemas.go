@@ -48,7 +48,7 @@ func GetAvroSchemaV1(schemaName string) (string, error) {
 	}
 
 	result := &codec{
-		Namespace: "io.dfuse",
+		Namespace: "io.streamingfast",
 		Type:      "record",
 		Name:      toCamelCase(schemaName),
 		Fields:    make([]avroField, 0, len(bqSchema)),

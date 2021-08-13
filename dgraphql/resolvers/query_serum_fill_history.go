@@ -5,7 +5,7 @@ import (
 	"time"
 
 	gqerrs "github.com/graph-gophers/graphql-go/errors"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/dfuse/solana/serumhist/v1"
+	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"github.com/streamingfast/solana-go"
 )
 

@@ -15,7 +15,7 @@ import (
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	"github.com/streamingfast/jsonpb"
-	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
+	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"go.uber.org/zap"
 )
 

@@ -30,7 +30,7 @@ import (
 	"github.com/mr-tron/base58"
 
 	"github.com/golang/protobuf/proto"
-	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
+	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"go.uber.org/zap"
 )
 

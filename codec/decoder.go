@@ -6,7 +6,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/streamingfast/bstream"
 	pbbstream "github.com/streamingfast/pbgo/dfuse/bstream/v1"
-	pbcodec "github.com/streamingfast/sf-solana/pb/dfuse/solana/codec/v1"
+	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 )
 
 // FIXME: Solana protocol will be the value 3, might not work everywehre ... we will see!

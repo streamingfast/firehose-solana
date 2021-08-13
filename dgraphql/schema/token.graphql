@@ -1,6 +1,6 @@
 
 
-"""The Connection type for a Token. See the [GraphQL core concepts](https://docs.dfuse.io/guides/core-concepts/graphql/)"""
+"""The Connection type for a Token. See the [GraphQL core concepts](https://docs.streamingfast.io/guides/core-concepts/graphql/)"""
 type TokenConnection {
   "A list of edges to Token "
   edges: [TokenEdge!]!

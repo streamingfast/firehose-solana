@@ -3,7 +3,7 @@ package bqloader
 import (
 	"testing"
 
-	"github.com/test-go/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFileNameString(t *testing.T) {
