@@ -159,7 +159,7 @@ func TestReader_GetOrder(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expect, order)
+				protoEqual(t, test.expect, order)
 			}
 		})
 	}
@@ -201,4 +201,14 @@ func mustProtoTimestamp(in time.Time) *timestamp.Timestamp {
 		panic(fmt.Sprintf("invalid timestamp conversion %q: %s", in, err))
 	}
 	return out
+}
+
+func assertProtoEqual(t *testing.T, expected, actual proto.Message) {
+	t.Helper()
+
+	// We use a custom comparison function and than rely on a standard `assert.Equal` so we get some
+	// diffing information. Ideally, a better diff would be displayed, good enough for now.
+	if !proto.Equal(expected, actual) {
+		assert.Equal(t, expected, actual)
+	}
 }

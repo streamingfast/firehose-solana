@@ -1,3 +1,3 @@
-generate.sh - Wed Feb 24 14:19:41 EST 2021 - julien
-streamingfast/proto revision: 4bca1300d6e75a04724925ef2c9341dfe50c5263
-streamingfast/proto-solana revision: c908192cbafa088f8909d63a066552a89764fcee
+generate.sh - Mon Aug 16 15:20:09 EDT 2021 - maoueh
+streamingfast/proto revision: d32176fde69ef3a8868689b270b5ceef3de8678b
+streamingfast/proto-solana revision: 14d12fa103bb50ec8760831c4e6ddaced2f4ddb7
