@@ -159,7 +159,7 @@ func TestReader_GetOrder(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				protoEqual(t, test.expect, order)
+				assertProtoEqual(t, test.expect, order)
 			}
 		})
 	}

@@ -6,18 +6,15 @@ import (
 	"math"
 	"time"
 
-	"google.golang.org/grpc"
-
-	"github.com/streamingfast/bstream/blockstream"
-	"github.com/streamingfast/dstore"
-	nodeManagerSol "github.com/streamingfast/sf-solana/node-manager"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
+	"github.com/streamingfast/bstream/blockstream"
+	"github.com/streamingfast/dstore"
 	nodeManager "github.com/streamingfast/node-manager"
 	"github.com/streamingfast/node-manager/mindreader"
 	"github.com/streamingfast/sf-solana/codec"
+	nodeManagerSol "github.com/streamingfast/sf-solana/node-manager"
 	"go.uber.org/zap"
 )
 
@@ -45,6 +42,7 @@ func registerMindreaderNodeFlags(cmd *cobra.Command) error {
 }
 
 func getMindreaderLogPlugin(
+	blockStreamServer *blockstream.Server,
 	oneBlockStoreURL string,
 	blockDataStoreURL string,
 	mergedBlockStoreURL string,
@@ -61,13 +59,8 @@ func getMindreaderLogPlugin(
 	operatorShutdownFunc func(error),
 	metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager,
 	tracker *bstream.Tracker,
-	gs *grpc.Server,
 	appLogger *zap.Logger,
-
 ) (*mindreader.MindReaderPlugin, error) {
-	// It's important that this call goes prior running gRPC server since it's doing
-	// some service registration. If it's call later on, the overall application exits.
-	blockStreamServer := blockstream.NewServer(gs, blockstream.ServerOptionWithLogger(appLogger))
 
 	// blockmetaAddr := viper.GetString("common-blockmeta-addr")
 	tracker.AddGetter(bstream.NetworkLIBTarget, func(ctx context.Context) (bstream.BlockRef, error) {

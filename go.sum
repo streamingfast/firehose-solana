@@ -815,6 +815,10 @@ github.com/streamingfast/bstream v0.0.2-0.20210811160908-fc6cb0861d48 h1:sy1PxFO
 github.com/streamingfast/bstream v0.0.2-0.20210811160908-fc6cb0861d48/go.mod h1:IIJqLGYn2hYpLHFfZ63gAA5djd9Qt9QMRAhSqCByzG8=
 github.com/streamingfast/bstream v0.0.2-0.20210811181043-4c1920a7e3e3 h1:hZwUF3uoZW2xMKUkrGFaXJQ32UygMB7CRRY82Ei6vEk=
 github.com/streamingfast/bstream v0.0.2-0.20210811181043-4c1920a7e3e3/go.mod h1:0Ucl6SRmqAcXa0vYhSAnX8sscejfPhpwuW5Pgz9Ndp4=
+github.com/streamingfast/bstream v0.0.2-0.20210819231507-e5489dbe625f h1:e+XomSMStY4I55qN2Ma6+EbpXqdsSCIMGL0lzMqjE3g=
+github.com/streamingfast/bstream v0.0.2-0.20210819231507-e5489dbe625f/go.mod h1:RcG/aJ2i6laxXVvRotAcQ97WK4nPhEzStrcoj9usX5s=
+github.com/streamingfast/bstream v0.0.2-0.20210819232303-b30fbeee04ff h1:GMym3jk34ww9/Ee3JYICte3SVn8FXo8oKlYCsZKp1S8=
+github.com/streamingfast/bstream v0.0.2-0.20210819232303-b30fbeee04ff/go.mod h1:RcG/aJ2i6laxXVvRotAcQ97WK4nPhEzStrcoj9usX5s=
 github.com/streamingfast/dauth v0.0.0-20200529171443-21c0e2d262c2/go.mod h1:tab5biQg59hbrHjaXTjaLcsP3zblx6B0I0Keu03xB44=
 github.com/streamingfast/dauth v0.0.0-20200601190857-60bc6a4b4665 h1:A92uTFTkaDplzlDIBtDq+Hf7EgLUEt4bi9QQLCIiMTQ=
 github.com/streamingfast/dauth v0.0.0-20200601190857-60bc6a4b4665/go.mod h1:tab5biQg59hbrHjaXTjaLcsP3zblx6B0I0Keu03xB44=
@@ -1072,6 +1076,8 @@ github.com/streamingfast/pbgo v0.0.6-0.20210811031924-4e767d6fd138 h1:K4NwAVx10I
 github.com/streamingfast/pbgo v0.0.6-0.20210811031924-4e767d6fd138/go.mod h1:wbR0a49W0gWiysxiN44db1DHIgIH9FtTUz7w/0I4UVw=
 github.com/streamingfast/pbgo v0.0.6-0.20210811160400-7c146c2db8cc h1:8tTREe7R7ornjEwjeYpLfkk8AdCN+ZAxPuLp0KPL9WI=
 github.com/streamingfast/pbgo v0.0.6-0.20210811160400-7c146c2db8cc/go.mod h1:mSi3+mIAffPq/McZ3TqLSmDr8f1v3mi5RHE+zmBHJGk=
+github.com/streamingfast/pbgo v0.0.6-0.20210812023556-e996f9c4fb86 h1:zPDLwkGSdW41KqQsGJu4Q5Qs9c+C82JeqY4oULJY0ro=
+github.com/streamingfast/pbgo v0.0.6-0.20210812023556-e996f9c4fb86/go.mod h1:XKLPtwRtO9JRVfcymM8IIHiJTVIERR+O8uBbdOol3l0=
 github.com/streamingfast/relayer v0.0.2-0.20210202030730-e16ed570e7a9 h1:9NDk780yphFyL9YxfSE65D/QbwPhYP4hRF09cPEt2o0=
 github.com/streamingfast/relayer v0.0.2-0.20210202030730-e16ed570e7a9/go.mod h1:JGO5ezLG44L5B1j8g5oGH9E7RGWkFI5hPGNFcCLYqLQ=
 github.com/streamingfast/relayer v0.0.2-0.20210809195208-c686bf91e083 h1:qUAVTFadmJYrvSY3UXVaF74xCfYYdB969cVARQYCS7E=

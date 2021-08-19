@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
-	"github.com/streamingfast/dgrpc"
+	"github.com/streamingfast/bstream/blockstream"
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/dstore"
 	"github.com/streamingfast/logging"
@@ -22,12 +22,15 @@ import (
 	"github.com/streamingfast/node-manager/metrics"
 	"github.com/streamingfast/node-manager/mindreader"
 	"github.com/streamingfast/node-manager/operator"
+	pbbstream "github.com/streamingfast/pbgo/dfuse/bstream/v1"
+	pbheadinfo "github.com/streamingfast/pbgo/dfuse/headinfo/v1"
 	"github.com/streamingfast/sf-solana/codec"
 	nodeManagerSol "github.com/streamingfast/sf-solana/node-manager"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc"
 )
 
 var httpListenAddrByKind = map[string]string{
@@ -364,7 +367,10 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 		}
 
 		var mindreaderPlugin *mindreader.MindReaderPlugin
+		var registerServices func(server *grpc.Server) error
+
 		if kind == "mindreader" {
+			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
 			oneBlockStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
 			blockDataStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-block-data-store-url"))
 			mergeAndStoreDirectly := viper.GetBool(app + "-merge-and-store-directly")
@@ -378,8 +384,9 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			waitTimeForUploadOnShutdown := viper.GetDuration("mindreader-node-wait-upload-complete-on-shutdown")
 			oneBlockFileSuffix := viper.GetString("mindreader-node-oneblock-suffix")
 			tracker := runtime.Tracker.Clone()
-			gs := dgrpc.NewServer(dgrpc.WithLogger(appLogger))
+
 			mindreaderPlugin, err := getMindreaderLogPlugin(
+				blockStreamServer,
 				oneBlockStoreURL,
 				blockDataStoreURL,
 				mergedBlocksStoreURL,
@@ -396,11 +403,17 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 				chainOperator.Shutdown,
 				metricsAndReadinessManager,
 				tracker,
-				gs,
 				appLogger,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("new mindreader plugin: %w", err)
+			}
+
+			registerServices = func(server *grpc.Server) error {
+				pbheadinfo.RegisterHeadInfoServer(server, blockStreamServer)
+				pbbstream.RegisterBlockStreamServer(server, blockStreamServer)
+
+				return nil
 			}
 
 			superviser.RegisterLogPlugin(mindreaderPlugin)
@@ -414,6 +427,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			Operator:                   chainOperator,
 			MindreaderPlugin:           mindreaderPlugin,
 			MetricsAndReadinessManager: metricsAndReadinessManager,
+			RegisterGRPCService:        registerServices,
 		}, appLogger), nil
 	}
 }

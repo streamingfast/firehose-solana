@@ -19,7 +19,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.8.1
 	github.com/streamingfast/binary v0.0.0-20210811183519-94786c01e70d
-	github.com/streamingfast/bstream v0.0.2-0.20210811181043-4c1920a7e3e3
+	github.com/streamingfast/bstream v0.0.2-0.20210819232303-b30fbeee04ff
 	github.com/streamingfast/dauth v0.0.0-20210811181149-e8fd545948cc
 	github.com/streamingfast/dbin v0.0.0-20210809205249-73d5eca35dc5
 	github.com/streamingfast/derr v0.0.0-20210811180100-9138d738bcec
@@ -35,7 +35,7 @@ require (
 	github.com/streamingfast/logging v0.0.0-20210811175431-f3b44b61606a
 	github.com/streamingfast/merger v0.0.3-0.20210811195536-1011c89f0a67
 	github.com/streamingfast/node-manager v0.0.2-0.20210811195853-d6b519927636
-	github.com/streamingfast/pbgo v0.0.6-0.20210811160400-7c146c2db8cc
+	github.com/streamingfast/pbgo v0.0.6-0.20210812023556-e996f9c4fb86
 	github.com/streamingfast/relayer v0.0.2-0.20210811200014-6e0e8bc2814f
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.2.1-0.20210811184520-ab50363bdc52
