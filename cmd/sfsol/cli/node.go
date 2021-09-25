@@ -261,9 +261,8 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 					"--trusted-validator", "ba3zMkMp87HZg27Z7EDEkxE48zcKgJ59weFYtrKadY7",
 					"--trusted-validator", "ba5rfuZ37gxhrLcsgA5fzCg8BvSQcTERPqY14Qffa3J",
 					"--trusted-validator", "tEBPZWSAdpzQoVzWBFD2qVGmZ7vB3Mh1Jq4tGZBx5eA",
-					"--trusted-validator", "tBsrBq8vfFsUVhVURbc9riEdTCsD6XtZ5Zfx9ZLienq",
 
-					"--expected-shred-version", "50850",
+					"--expected-shred-version", "13490",
 					"--expected-genesis-hash", "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
 				)
 			} else if network == "testnet" {
