@@ -81,6 +81,30 @@ func Test_compression(t *testing.T)  {
 	slot := s.(*pbcodec.Slot)  // froch
 	accountChangesBundle := slot.Split(true)  //froch
 	log.Debug(accountChangesBundle)
+
+	for _, tx := range accountChangesBundle.Transactions {
+		for _, instrx := range tx.Instructions {
+			for _, chg := range instrx.Changes {
+
+				_prev := chg.PrevData
+				_new := chg.NewData
+				_diff := make([]uint8, len(_prev))
+
+				if len(_prev) != len(_new) {
+					panic("can't compare")
+				}
+
+				for i, _ := range _prev {
+					a := _prev[i]
+					b := _new[i]
+					c := a^b
+					_diff[i] = c
+				}
+
+				log.Debug(_diff)
+			}
+		}
+	}
 }
 
 
