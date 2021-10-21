@@ -16,6 +16,7 @@ package codec
 
 import (
 	"fmt"
+	"github.com/prometheus/common/log"
 	"io"
 	"io/ioutil"
 	"os"
@@ -63,6 +64,25 @@ func Test_readFromFile(t *testing.T) {
 	assert.Equal(t, 1, len(transaction.Instructions))
 
 }
+
+// froch
+func Test_compression(t *testing.T)  {
+	testPath := "testdata/syncer_20210211"
+	cleanup, testdir, err := copyTestDir(testPath, "syncer_20210211")
+	require.NoError(t, err)
+	defer func() {
+		cleanup()
+	}()
+
+	cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", testPath), testdir)
+	s, err := cr.Read()
+	require.NoError(t, err)
+
+	slot := s.(*pbcodec.Slot)  // froch
+	accountChangesBundle := slot.Split(true)  //froch
+	log.Debug(accountChangesBundle)
+}
+
 
 func Test_processBatchAggregation(t *testing.T) {
 	b := &bank{

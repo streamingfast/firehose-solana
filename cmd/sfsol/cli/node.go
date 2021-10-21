@@ -529,7 +529,7 @@ func setupNodeSysctl(logger *zap.Logger) error {
 }
 
 func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockDataArchiver, obj interface{}) (*bstream.Block, error) {
-	slot, ok := obj.(*pbcodec.Slot)
+	slot, ok := obj.(*pbcodec.Slot) // froch
 	zlog.Debug("transforming slot", zap.Uint64("slot_num", slot.Number))
 	if !ok {
 		return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
@@ -539,7 +539,7 @@ func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockData
 	slot.AccountChangesFileRef = archiver.Store.ObjectURL(fileName)
 	zlog.Debug("slot data file", zap.String("object_url", slot.AccountChangesFileRef))
 
-	accountChangesBundle := slot.Split(true)
+	accountChangesBundle := slot.Split(true)   // froch
 	go func() {
 		err := archiver.StoreBlockData(accountChangesBundle, fileName)
 		if err != nil {

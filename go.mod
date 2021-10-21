@@ -16,6 +16,7 @@ require (
 	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mr-tron/base58 v1.2.0
+	github.com/prometheus/common v0.26.0 // indirect
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.8.1
 	github.com/streamingfast/binary v0.0.0-20210811183519-94786c01e70d
@@ -43,7 +44,7 @@ require (
 	go.uber.org/zap v1.17.0
 	google.golang.org/api v0.53.0
 	google.golang.org/grpc v1.39.1
-	google.golang.org/protobuf v1.27.1 // indirect
+	google.golang.org/protobuf v1.27.1
 	gorm.io/driver/bigquery v1.0.16
 	gorm.io/gorm v1.20.13-0.20210223113524-940da051a756
 )
