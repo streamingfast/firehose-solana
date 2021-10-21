@@ -88,12 +88,9 @@ func Test_compression(t *testing.T)  {
 
 				_prev := chg.PrevData
 				_new := chg.NewData
+				assert.EqualValues(t, len(_prev), len(_new))
+
 				_diff := make([]uint8, len(_prev))
-
-				if len(_prev) != len(_new) {
-					panic("can't compare")
-				}
-
 				for i, _ := range _prev {
 					a := _prev[i]
 					b := _new[i]
