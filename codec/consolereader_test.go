@@ -98,6 +98,11 @@ func Test_compression(t *testing.T)  {
 					a := _prev[i]
 					b := _new[i]
 					c := a^b
+					if c != 0 {
+						assert.EqualValues(t, a, b^c)
+						assert.EqualValues(t, b, a^c)
+						assert.EqualValues(t, c, b^a)
+					}
 					_diff[i] = c
 				}
 
