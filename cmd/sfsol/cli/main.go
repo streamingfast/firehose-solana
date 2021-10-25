@@ -16,8 +16,11 @@ package cli
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
 	"sort"
 	"strings"
+	"time"
 
 	// Needs to be in this file which is the main entry of wrapper binary
 	_ "github.com/streamingfast/dauth/authenticator/null"   // auth null plugin
@@ -49,6 +52,7 @@ func Main() {
 	RootCmd.PersistentFlags().String("log-level-switcher-listen-addr", "localhost:1065", "If non-empty, the process will listen on this address for json-formatted requests to change different logger levels (see DEBUG.md for more info)")
 	RootCmd.PersistentFlags().String("metrics-listen-addr", MetricsListenAddr, "If non-empty, the process will listen on this address to server Prometheus metrics")
 	RootCmd.PersistentFlags().String("pprof-listen-addr", "localhost:6060", "If non-empty, the process will listen on this address for pprof analysis (see https://golang.org/pkg/net/http/pprof/)")
+	RootCmd.PersistentFlags().Duration("startup-delay", 0, "[DEV] Delay before launching actual application(s), useful to leave some time to perform maintenance operations, on persisten disks for example.")
 
 	derr.Check("registering application flags", launcher.RegisterFlags(StartCmd))
 
@@ -62,6 +66,12 @@ func Main() {
 	StartCmd.Example = startCmdExample
 
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		startupDelay := viper.GetDuration("global-startup-delay")
+		if startupDelay.Microseconds() > 0 {
+			zlog.Info("sleeping before starting application(s)", zap.Duration("delay", startupDelay))
+			time.Sleep(startupDelay)
+		}
+
 		return setupCmd(cmd)
 	}
 
