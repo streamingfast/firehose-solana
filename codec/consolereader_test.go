@@ -66,7 +66,7 @@ func Test_readFromFile(t *testing.T) {
 }
 
 // froch
-func Test_compression(t *testing.T)  {
+func Test_compression(t *testing.T) {
 	testPath := "testdata/syncer_20210211"
 	cleanup, testdir, err := copyTestDir(testPath, "syncer_20210211")
 	require.NoError(t, err)
@@ -78,37 +78,27 @@ func Test_compression(t *testing.T)  {
 	s, err := cr.Read()
 	require.NoError(t, err)
 
-	slot := s.(*pbcodec.Slot)  // froch
-	accountChangesBundle := slot.Split(true)  //froch
+	slot := s.(*pbcodec.Slot)
+	accountChangesBundle := slot.Split(true)
 	log.Debug(accountChangesBundle)
 
 	for _, tx := range accountChangesBundle.Transactions {
 		for _, instrx := range tx.Instructions {
 			for _, chg := range instrx.Changes {
 
-				_prev := chg.PrevData
-				_new := chg.NewData
-				assert.EqualValues(t, len(_prev), len(_new))
+				assert.EqualValues(t, len(chg.PrevData), len(chg.NewData))
+				assert.EqualValues(t, cap(chg.PrevData), cap(chg.NewData))
 
-				_diff := make([]uint8, len(_prev))
-				for i, _ := range _prev {
-					a := _prev[i]
-					b := _new[i]
-					c := a^b
-					if c != 0 {
-						assert.EqualValues(t, a, b^c)
-						assert.EqualValues(t, b, a^c)
-						assert.EqualValues(t, c, b^a)
-					}
-					_diff[i] = c
+				_diff := make([]uint8, len(chg.PrevData), cap(chg.NewData))
+				for i, _ := range chg.PrevData {
+					_diff[i] = chg.PrevData[i] ^ chg.NewData[i]
 				}
 
-				log.Debug(_diff)
+				log.Debug("1")
 			}
 		}
 	}
 }
-
 
 func Test_processBatchAggregation(t *testing.T) {
 	b := &bank{
