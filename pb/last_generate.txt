@@ -1,3 +1,3 @@
-generate.sh - Wed 27 Oct 2021 01:46:04 PM EDT - colin
+generate.sh - Wed 27 Oct 2021 04:44:19 PM EDT - colin
 streamingfast/proto revision: a2215dd82a69e1205b25aee016013e9feedce0bf
 streamingfast/proto-solana revision: ddc5de7683ca21f8f04228b704b819028733c085
