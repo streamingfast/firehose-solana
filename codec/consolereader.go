@@ -262,7 +262,7 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 }
 
 const (
-	BlockWorkChunkSize   = 15
+	BlockWorkChunkSize   = 14
 	BlockEndChunkSize    = 5
 	BlockFailedChunkSize = 3
 	BlockRootChunkSize   = 2
@@ -396,7 +396,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 		ctx.banks[uint64(blockNum)] = b
 	}
 
-	for _, trxID := range strings.Split(chunks[14], ";") {
+	for _, trxID := range strings.Split(chunks[13], ";") {
 		if trxID == "" || trxID == "T" {
 			continue
 		}
