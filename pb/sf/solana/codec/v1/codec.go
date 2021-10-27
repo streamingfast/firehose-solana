@@ -12,19 +12,19 @@ import (
 	"github.com/streamingfast/dstore"
 )
 
-func (s *Slot) ID() string {
-	return s.Id
+func (b *Block) ID() string {
+	return b.Id
 }
 
-func (s *Slot) Num() uint64 {
-	return s.Number
+func (b *Block) Num() uint64 {
+	return b.Number
 }
 
 // TODO: move to `codec/`...
-func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
+func (b *Block) Split(removeFromInstruction bool) *AccountChangesBundle {
 	bundle := &AccountChangesBundle{}
 
-	for _, trx := range s.Transactions {
+	for _, trx := range b.Transactions {
 		bundleTransaction := &AccountChangesPerTrxIndex{
 			TrxId: trx.Id,
 		}
@@ -43,26 +43,26 @@ func (s *Slot) Split(removeFromInstruction bool) *AccountChangesBundle {
 	return bundle
 }
 
-func (s *Slot) Join(ctx context.Context, notFoundFunc func(fileName string) bool) error {
-	bundle, err := s.Retrieve(ctx, notFoundFunc)
+func (b *Block) Join(ctx context.Context, notFoundFunc func(fileName string) bool) error {
+	bundle, err := b.Retrieve(ctx, notFoundFunc)
 	if err != nil {
 		return fmt.Errorf("error retrieving account changes: %w", err)
 	}
 
-	s.join(bundle)
+	b.join(bundle)
 	return nil
 }
 
-func (s *Slot) join(bundle *AccountChangesBundle) {
+func (b *Block) join(bundle *AccountChangesBundle) {
 	for ti, bundleTransaction := range bundle.Transactions {
 		for ii, bundleInstruction := range bundleTransaction.Instructions {
-			s.Transactions[ti].Instructions[ii].AccountChanges = bundleInstruction.Changes
+			b.Transactions[ti].Instructions[ii].AccountChanges = bundleInstruction.Changes
 		}
 	}
 }
 
-func (s *Slot) Retrieve(ctx context.Context, notFoundFunc func(fileName string) bool) (*AccountChangesBundle, error) {
-	store, filename, err := dstore.NewStoreFromURL(s.AccountChangesFileRef,
+func (b *Block) Retrieve(ctx context.Context, notFoundFunc func(fileName string) bool) (*AccountChangesBundle, error) {
+	store, filename, err := dstore.NewStoreFromURL(b.AccountChangesFileRef,
 		dstore.Compression("zstd"),
 	)
 	if err != nil {
@@ -105,20 +105,20 @@ func (s *Slot) Retrieve(ctx context.Context, notFoundFunc func(fileName string) 
 	return bundle, nil
 }
 
-func (m *Block) PreviousID() string {
-	return m.PreviousId
+func (b *Block) PreviousID() string {
+	return b.PreviousId
 }
 
-func (m *Block) Time() time.Time {
-	return time.Unix(int64(m.GenesisUnixTimestamp), 0)
+func (b *Block) Time() time.Time {
+	return time.Unix(int64(b.GenesisUnixTimestamp), 0)
 }
 
-func (s *Slot) LIBNum() uint64 {
-	return s.Block.RootNum
+func (b *Block) LIBNum() uint64 {
+	return b.RootNum
 }
 
-func (s *Slot) AsRef() bstream.BlockRef {
-	return bstream.NewBlockRef(s.ID(), s.Number)
+func (b *Block) AsRef() bstream.BlockRef {
+	return bstream.NewBlockRef(b.ID(), b.Number)
 }
 
 func (te *TransactionError) DecodedPayload() proto.Message {
@@ -137,7 +137,7 @@ func (ie *InstructionError) DecodedPayload() proto.Message {
 	return x.Message
 }
 
-func BlockToBuffer(block *Slot) ([]byte, error) {
+func BlockToBuffer(block *Block) ([]byte, error) {
 	buf, err := proto.Marshal(block)
 	if err != nil {
 		return nil, err
@@ -145,7 +145,7 @@ func BlockToBuffer(block *Slot) ([]byte, error) {
 	return buf, nil
 }
 
-func MustBlockToBuffer(block *Slot) []byte {
+func MustBlockToBuffer(block *Block) []byte {
 	buf, err := BlockToBuffer(block)
 	if err != nil {
 		panic(err)
