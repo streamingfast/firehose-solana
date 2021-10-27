@@ -39,26 +39,25 @@ func Test_readFromFile(t *testing.T) {
 	s, err := cr.Read()
 	require.NoError(t, err)
 
-	slot := s.(*pbcodec.Slot)
+	block := s.(*pbcodec.Block)
 
 	// TODO: add more testing
 
 	assert.Equal(t, &pbcodec.Block{
 		Id:                   "5R9Tn4bNx62TZmfBQzc3MPNyaaANLAuopvnadNrogF1X",
 		Number:               41,
-		Height:               41,
 		PreviousId:           "AtKUKgTCk5rAxAHEcjSEpm6K5maWDuXwHKz1rvJFFPrK",
 		PreviousBlockSlot:    40,
 		GenesisUnixTimestamp: 1607616485,
 		ClockUnixTimestamp:   1607616485,
 		RootNum:              9,
-	}, slot.Block)
-	assert.Equal(t, "5R9Tn4bNx62TZmfBQzc3MPNyaaANLAuopvnadNrogF1X", slot.Id)
-	assert.Equal(t, uint64(41), slot.Number)
-	assert.Equal(t, "AtKUKgTCk5rAxAHEcjSEpm6K5maWDuXwHKz1rvJFFPrK", slot.PreviousId)
-	assert.Equal(t, uint32(1), slot.Version)
-	assert.Equal(t, uint32(1), slot.TransactionCount)
-	transaction := slot.Transactions[0]
+	}, block)
+	assert.Equal(t, "5R9Tn4bNx62TZmfBQzc3MPNyaaANLAuopvnadNrogF1X", block.Id)
+	assert.Equal(t, uint64(41), block.Number)
+	assert.Equal(t, "AtKUKgTCk5rAxAHEcjSEpm6K5maWDuXwHKz1rvJFFPrK", block.PreviousId)
+	assert.Equal(t, uint32(1), block.Version)
+	assert.Equal(t, uint32(1), block.TransactionCount)
+	transaction := block.Transactions[0]
 	assert.Equal(t, "2PFKgG8Uq9yHWig6HEEGQUmP8XnpyBi2zeaLAFUKR9rus33QQ1ad1PPmcvGR1hpq77fQEPFmFu8qiMNjmQGbGH6E", transaction.Id)
 	assert.Equal(t, 1, len(transaction.Instructions))
 
@@ -67,11 +66,9 @@ func Test_readFromFile(t *testing.T) {
 func Test_processBatchAggregation(t *testing.T) {
 	b := &bank{
 		transactionIDs: []string{"11", "aa", "cc", "bb", "dd", "ee"},
-		slots: []*pbcodec.Slot{
-			{
-				Id:     "A",
-				Number: 1,
-			},
+		blk: &pbcodec.Block{
+			Id:     "A",
+			Number: 1,
 		},
 		batchAggregator: [][]*pbcodec.Transaction{
 			{
@@ -95,13 +92,13 @@ func Test_processBatchAggregation(t *testing.T) {
 	err := b.processBatchAggregation()
 	require.NoError(t, err)
 	assert.Equal(t, []*pbcodec.Transaction{
-		{Id: "11", SlotNum: 1, SlotHash: "A", Index: 0},
-		{Id: "aa", SlotNum: 1, SlotHash: "A", Index: 1},
-		{Id: "cc", SlotNum: 1, SlotHash: "A", Index: 2},
-		{Id: "bb", SlotNum: 1, SlotHash: "A", Index: 3},
-		{Id: "dd", SlotNum: 1, SlotHash: "A", Index: 4},
-		{Id: "ee", SlotNum: 1, SlotHash: "A", Index: 5},
-	}, b.slots[0].Transactions)
+		{Id: "11", Index: 0},
+		{Id: "aa", Index: 1},
+		{Id: "cc", Index: 2},
+		{Id: "bb", Index: 3},
+		{Id: "dd", Index: 4},
+		{Id: "ee", Index: 5},
+	}, b.blk.Transactions)
 }
 
 func Test_readBlockWork(t *testing.T) {
@@ -124,11 +121,9 @@ func Test_readBlockWork(t *testing.T) {
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						slots:           []*pbcodec.Slot{},
 						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
-							Height:            51936825,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 							PreviousBlockSlot: 55295939,
 						},
@@ -138,11 +133,9 @@ func Test_readBlockWork(t *testing.T) {
 					parentSlotNum:   55295939,
 					batchAggregator: [][]*pbcodec.Transaction{},
 					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					slots:           []*pbcodec.Slot{},
 					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
 						Number:            55295941,
-						Height:            51936825,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						PreviousBlockSlot: 55295939,
 					},
@@ -161,11 +154,9 @@ func Test_readBlockWork(t *testing.T) {
 						parentSlotNum:   55295939,
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						batchAggregator: [][]*pbcodec.Transaction{},
-						slots:           []*pbcodec.Slot{},
 						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
-							Height:            51936825,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 							PreviousBlockSlot: 55295939,
 						},
@@ -175,11 +166,9 @@ func Test_readBlockWork(t *testing.T) {
 					parentSlotNum:   55295939,
 					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 					batchAggregator: [][]*pbcodec.Transaction{},
-					slots:           []*pbcodec.Slot{},
 					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
 						Number:            55295941,
-						Height:            51936825,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						PreviousBlockSlot: 55295939,
 					},
@@ -197,7 +186,6 @@ func Test_readBlockWork(t *testing.T) {
 						transactionIDs:  []string{"aa"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
-							Height:            51936825,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 							PreviousBlockSlot: 55295939,
 						},
@@ -214,7 +202,6 @@ func Test_readBlockWork(t *testing.T) {
 						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
-							Height:            51936825,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 							PreviousBlockSlot: 55295939,
 						},
@@ -227,7 +214,6 @@ func Test_readBlockWork(t *testing.T) {
 					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
 						Number:            55295941,
-						Height:            51936825,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						PreviousBlockSlot: 55295939,
 					},
@@ -245,7 +231,6 @@ func Test_readBlockWork(t *testing.T) {
 						transactionIDs:  []string{"aa"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
-							Height:            51936825,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 							PreviousBlockSlot: 55295939,
 						},
@@ -262,7 +247,6 @@ func Test_readBlockWork(t *testing.T) {
 						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
 							Number:            55295941,
-							Height:            51936825,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 							PreviousBlockSlot: 55295939,
 						},
@@ -275,7 +259,6 @@ func Test_readBlockWork(t *testing.T) {
 					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
 						Number:            55295941,
-						Height:            51936825,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						PreviousBlockSlot: 55295939,
 					},
@@ -297,51 +280,6 @@ func Test_readBlockWork(t *testing.T) {
 	}
 }
 
-func Test_readSlotBound(t *testing.T) {
-	tests := []struct {
-		name        string
-		ctx         *parseCtx
-		line        string
-		expectSlot  *pbcodec.Slot
-		expectError bool
-	}{
-		{
-			name: "end slot",
-			ctx: &parseCtx{
-				activeBank: &bank{
-					previousSlotID: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					blk: &pbcodec.Block{
-						Number:            55295941,
-						Height:            51936825,
-						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						PreviousBlockSlot: 55295939,
-					},
-				},
-				slotBuffer: make(chan *pbcodec.Slot, 100),
-			},
-			line: "SLOT_BOUND 55295940 5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
-			expectSlot: &pbcodec.Slot{
-				Id:               "AptC9YKiG8PVhMMAM1Lx9c2bTDRNCXxgvXvrLovTRusM",
-				Number:           55295940,
-				PreviousId:       "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-				LastEntryHash:    "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
-				Version:          1,
-				TransactionCount: 0,
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := test.ctx.readSlotBound(test.line)
-			require.NoError(t, err)
-			assert.Equal(t, 1, len(test.ctx.activeBank.slots))
-			slot := test.ctx.activeBank.slots[0]
-			assert.Equal(t, test.expectSlot, slot)
-		})
-	}
-}
-
 func Test_readBlockEnd(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -355,10 +293,8 @@ func Test_readBlockEnd(t *testing.T) {
 			ctx: &parseCtx{
 				activeBank: &bank{
 					transactionIDs: []string{},
-					slots:          []*pbcodec.Slot{{Id: "a"}},
 					blk: &pbcodec.Block{
 						Number:            55295941,
-						Height:            51936825,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						PreviousBlockSlot: 55295939,
 					},
@@ -382,12 +318,12 @@ func Test_readBlockEnd(t *testing.T) {
 
 func Test_readBlockRoot(t *testing.T) {
 	tests := []struct {
-		name        string
-		ctx         *parseCtx
-		line        string
-		expectSlot  *pbcodec.Slot
-		expectCtx   *parseCtx
-		expectError bool
+		name          string
+		ctx           *parseCtx
+		line          string
+		expectedBlock *pbcodec.Block
+		expectCtx     *parseCtx
+		expectError   bool
 	}{
 		{
 			name: "block root",
@@ -398,35 +334,18 @@ func Test_readBlockRoot(t *testing.T) {
 					blk: &pbcodec.Block{
 						Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
 						Number:               55295941,
-						Height:               51936825,
+						Version:              1,
 						PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						PreviousBlockSlot:    55295939,
 						GenesisUnixTimestamp: 1606487316,
 						ClockUnixTimestamp:   1606487316,
-					},
-					slots: []*pbcodec.Slot{
-						{
-							Id:         "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
-							Number:     55295941,
-							PreviousId: "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
-							Version:    1,
-							Transactions: []*pbcodec.Transaction{
-								{Id: "a", Index: 0, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-								{Id: "b", Index: 1, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-								{Id: "c", Index: 2, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-								{Id: "d", Index: 3, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-							},
-							TransactionCount: 4,
-							Block: &pbcodec.Block{
-								Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
-								Number:               55295941,
-								Height:               51936825,
-								PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-								PreviousBlockSlot:    55295939,
-								GenesisUnixTimestamp: 1606487316,
-								ClockUnixTimestamp:   1606487316,
-							},
+						Transactions: []*pbcodec.Transaction{
+							{Id: "a", Index: 0},
+							{Id: "b", Index: 1},
+							{Id: "c", Index: 2},
+							{Id: "d", Index: 3},
 						},
+						TransactionCount: 4,
 					},
 				},
 				banks: map[uint64]*bank{
@@ -434,67 +353,43 @@ func Test_readBlockRoot(t *testing.T) {
 						parentSlotNum:  55295939,
 						previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
 						ended:          true,
-						slots: []*pbcodec.Slot{
-							{
-								Id:         "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
-								Number:     55295941,
-								PreviousId: "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
-								Version:    1,
-								Transactions: []*pbcodec.Transaction{
-									{Id: "a", Index: 0, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-									{Id: "b", Index: 1, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-									{Id: "c", Index: 2, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-									{Id: "d", Index: 3, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-								},
-								TransactionCount: 4,
-								Block: &pbcodec.Block{
-									Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
-									Number:               55295941,
-									Height:               51936825,
-									PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-									PreviousBlockSlot:    55295939,
-									GenesisUnixTimestamp: 1606487316,
-									ClockUnixTimestamp:   1606487316,
-								},
-							},
-						},
-
 						blk: &pbcodec.Block{
 							Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
 							Number:               55295941,
-							Height:               51936825,
+							Version:              1,
 							PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 							PreviousBlockSlot:    55295939,
 							GenesisUnixTimestamp: 1606487316,
 							ClockUnixTimestamp:   1606487316,
+							Transactions: []*pbcodec.Transaction{
+								{Id: "a", Index: 0},
+								{Id: "b", Index: 1},
+								{Id: "c", Index: 2},
+								{Id: "d", Index: 3},
+							},
+							TransactionCount: 4,
 						},
 					},
 				},
-				slotBuffer: make(chan *pbcodec.Slot, 100),
+				blockBuffer: make(chan *pbcodec.Block, 100),
 			},
 			line: "BANK_ROOT 55295921",
-			expectSlot: &pbcodec.Slot{
+			expectedBlock: &pbcodec.Block{
 				Id:         "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
 				Number:     55295941,
-				PreviousId: "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
+				PreviousId: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+				PreviousBlockSlot: 55295939,
+				GenesisUnixTimestamp: 1606487316,
+				ClockUnixTimestamp:   1606487316,
 				Version:    1,
+				RootNum: 55295921,
 				Transactions: []*pbcodec.Transaction{
-					{Id: "a", Index: 0, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-					{Id: "b", Index: 1, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-					{Id: "c", Index: 2, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
-					{Id: "d", Index: 3, SlotNum: 55295941, SlotHash: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"},
+					{Id: "a", Index: 0},
+					{Id: "b", Index: 1},
+					{Id: "c", Index: 2},
+					{Id: "d", Index: 3},
 				},
 				TransactionCount: 4,
-				Block: &pbcodec.Block{
-					Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
-					Number:               55295941,
-					Height:               51936825,
-					PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					PreviousBlockSlot:    55295939,
-					GenesisUnixTimestamp: 1606487316,
-					ClockUnixTimestamp:   1606487316,
-					RootNum:              55295921,
-				},
 			},
 			expectCtx: &parseCtx{
 				activeBank: nil,
@@ -507,9 +402,9 @@ func Test_readBlockRoot(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			err := test.ctx.readBlockRoot(test.line)
 			require.NoError(t, err)
-			require.Equal(t, 1, len(test.ctx.slotBuffer))
-			slot := <-test.ctx.slotBuffer
-			assert.Equal(t, test.expectSlot, slot)
+			require.Equal(t, 1, len(test.ctx.blockBuffer))
+			block := <-test.ctx.blockBuffer
+			assert.Equal(t, test.expectedBlock, block)
 		})
 	}
 }

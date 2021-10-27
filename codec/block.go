@@ -8,8 +8,8 @@ import (
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 )
 
-func BlockFromProto(slot *pbcodec.Slot) (*bstream.Block, error) {
-	blockTime := slot.Block.Time()
+func BlockFromProto(slot *pbcodec.Block) (*bstream.Block, error) {
+	blockTime := slot.Time()
 
 	content, err := proto.Marshal(slot)
 	if err != nil {

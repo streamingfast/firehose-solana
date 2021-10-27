@@ -16,8 +16,6 @@ package codec
 
 import (
 	"bufio"
-	"crypto/sha256"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,8 +24,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"github.com/mr-tron/base58"
 
 	"github.com/golang/protobuf/proto"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
@@ -68,22 +64,22 @@ type ConsoleReader struct {
 	batchFilesPath string
 }
 
-func (c *ConsoleReader) ProcessData(reader io.Reader) error {
-	scanner := c.buildScanner(reader)
+func (r *ConsoleReader) ProcessData(reader io.Reader) error {
+	scanner := r.buildScanner(reader)
 	for scanner.Scan() {
 		line := scanner.Text()
-		c.lines <- line
+		r.lines <- line
 	}
 
 	if scanner.Err() == nil {
-		close(c.lines)
+		close(r.lines)
 		return io.EOF
 	}
 
 	return scanner.Err()
 }
 
-func (c *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
+func (r *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
 	buf := make([]byte, 50*1024*1024)
 	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(buf, 50*1024*1024)
@@ -106,19 +102,19 @@ func NewConsoleReader(lines chan string, batchFilesPath string, opts ...ConsoleR
 	return l, nil
 }
 
-func (l *ConsoleReader) Done() <-chan interface{} {
-	return l.done
+func (r *ConsoleReader) Done() <-chan interface{} {
+	return r.done
 }
 
-func (l *ConsoleReader) Close() {
-	l.close()
+func (r *ConsoleReader) Close() {
+	r.close()
 }
 
 type parseCtx struct {
 	activeBank        *bank
 	banks             map[uint64]*bank
 	conversionOptions []conversionOption
-	slotBuffer        chan *pbcodec.Slot
+	blockBuffer       chan *pbcodec.Block
 	batchWG           sync.WaitGroup
 	batchFilesPath    string
 }
@@ -126,18 +122,25 @@ type parseCtx struct {
 func newParseCtx(batchFilesPath string) *parseCtx {
 	return &parseCtx{
 		banks:          map[uint64]*bank{},
-		slotBuffer:     make(chan *pbcodec.Slot, 10000),
+		blockBuffer:    make(chan *pbcodec.Block, 10000),
 		batchFilesPath: batchFilesPath,
 	}
 }
 
-func (l *ConsoleReader) Read() (out interface{}, err error) {
-	return l.next()
+func (r *ConsoleReader) Read() (out interface{}, err error) {
+	return r.next()
 }
 
-func (l *ConsoleReader) next() (out interface{}, err error) {
-	ctx := l.ctx
-	for line := range l.lines {
+func (r *ConsoleReader) next() (out interface{}, err error) {
+	ctx := r.ctx
+
+	select {
+	case s := <-ctx.blockBuffer:
+		return s, nil
+	default:
+	}
+
+	for line := range r.lines {
 		fmt.Println("processing lines")
 		if !strings.HasPrefix(line, "DMLOG ") {
 			continue
@@ -145,11 +148,11 @@ func (l *ConsoleReader) next() (out interface{}, err error) {
 
 		line = line[6:] // removes the DMLOG prefix
 		if err = parseLine(ctx, line); err != nil {
-			return nil, l.formatError(line, err)
+			return nil, r.formatError(line, err)
 		}
 
 		select {
-		case s := <-ctx.slotBuffer:
+		case s := <-ctx.blockBuffer:
 			return s, nil
 		default:
 		}
@@ -175,10 +178,6 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	// output when a group of batch of transaction have been executed and the protobuf has been written to a file on  disk
 	case strings.HasPrefix(line, "BATCH_FILE"):
 		err = ctx.readBatchFile(line)
-
-	// when processing a block you will have SLOT_BOUNDS (between SLOT_WORK & SLOT_END) for each SLOT in that BLOCK.
-	case strings.HasPrefix(line, "SLOT_BOUND"):
-		err = ctx.readSlotBound(line)
 
 	// When executing a transactions, we will group them in multiples batches and run them in parallel.
 	// We will create one file per batch (group of trxs), each batch is is running in its own thread.
@@ -208,7 +207,7 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	return
 }
 
-func (l *ConsoleReader) formatError(line string, err error) error {
+func (r *ConsoleReader) formatError(line string, err error) error {
 	chunks := strings.SplitN(line, " ", 2)
 	return fmt.Errorf("%s: %s (line %q)", chunks[0], err, line)
 }
@@ -276,21 +275,20 @@ type bank struct {
 	processTrxCount uint64
 	previousSlotID  string
 	transactionIDs  []string
-	slots           []*pbcodec.Slot
 	blk             *pbcodec.Block
 	ended           bool
 	batchAggregator [][]*pbcodec.Transaction
 }
 
-func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID string) *bank {
+func newBank(blockNum, parentSlotNumber uint64, previousSlotID string) *bank {
 	return &bank{
 		parentSlotNum:   parentSlotNumber,
 		previousSlotID:  previousSlotID,
-		slots:           []*pbcodec.Slot{},
+		transactionIDs:  []string{},
 		batchAggregator: [][]*pbcodec.Transaction{},
 		blk: &pbcodec.Block{
+			Version:           1,
 			Number:            blockNum,
-			Height:            blockHeight,
 			PreviousId:        previousSlotID,
 			PreviousBlockSlot: parentSlotNumber,
 		},
@@ -304,23 +302,16 @@ func (b *bank) processBatchAggregation() error {
 		indexMap[trxID] = idx
 	}
 
-	if len(b.slots) == 0 {
-		return fmt.Errorf("cannot aggregate transactions when there are no slots in this block")
-	}
-
-	lastSlot := b.slots[len(b.slots)-1]
-	lastSlot.Transactions = make([]*pbcodec.Transaction, len(b.transactionIDs))
-	lastSlot.TransactionCount = uint32(len(b.transactionIDs))
+	b.blk.Transactions = make([]*pbcodec.Transaction, len(b.transactionIDs))
+	b.blk.TransactionCount = uint32(len(b.transactionIDs))
 
 	var count int
 	for _, transactions := range b.batchAggregator {
 		for _, trx := range transactions {
 			trxIndex := indexMap[trx.Id]
 			trx.Index = uint64(trxIndex)
-			trx.SlotNum = lastSlot.Number
-			trx.SlotHash = lastSlot.Id
 			count++
-			lastSlot.Transactions[trxIndex] = trx
+			b.blk.Transactions[trxIndex] = trx
 		}
 	}
 
@@ -331,36 +322,6 @@ func (b *bank) processBatchAggregation() error {
 	}
 
 	return nil
-}
-
-func (b *bank) registerSlot(slotNum uint64, slotID string) {
-	s := b.createSlot(slotNum, slotID)
-	b.slots = append(b.slots, s)
-}
-
-func (b *bank) createSlot(slotNum uint64, chainSlotID string) *pbcodec.Slot {
-	slotID := chainSlotID
-
-	if slotNum != b.blk.Number {
-		blkNumBytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(blkNumBytes, b.blk.Number)
-
-		h := sha256.New()
-		h.Write([]byte(slotID))
-
-		slotID = base58.Encode(h.Sum(blkNumBytes))[:44]
-	}
-
-	s := &pbcodec.Slot{
-		Id:            slotID,
-		Number:        slotNum,
-		PreviousId:    b.previousSlotID,
-		LastEntryHash: chainSlotID,
-		Version:       1,
-	}
-
-	b.previousSlotID = slotID
-	return s
 }
 
 func (b *bank) getActiveTransaction(batchNum uint64, trxID string) (*pbcodec.Transaction, error) {
@@ -404,8 +365,8 @@ func (ctx *parseCtx) readInit(line string) (err error) {
 	return nil
 }
 
-// BLOCK_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 51936823 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0 T;trxid1;trxid2
-// BLOCK_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID BLOCK_HEIGHT NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT T;TRANSACTION_IDS_VECTOR_SPLIT_BY_;
+// BLOCK_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0 T;trxid1;trxid2
+// BLOCK_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT T;TRANSACTION_IDS_VECTOR_SPLIT_BY_;
 func (ctx *parseCtx) readBlockWork(line string) (err error) {
 	zlog.Debug("reading block work", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
@@ -413,16 +374,12 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 		return fmt.Errorf("expected %d fields got %d", BlockWorkChunkSize, len(chunks))
 	}
 
-	var blockNum, parentSlotNumber, blockHeight int
+	var blockNum, parentSlotNumber int
 	if blockNum, err = strconv.Atoi(chunks[2]); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
 
 	if parentSlotNumber, err = strconv.Atoi(chunks[1]); err != nil {
-		return fmt.Errorf("parent slot num to int: %w", err)
-	}
-
-	if blockHeight, err = strconv.Atoi(chunks[5]); err != nil {
 		return fmt.Errorf("parent slot num to int: %w", err)
 	}
 
@@ -435,7 +392,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 			zap.Int("parent_slot_number", parentSlotNumber),
 			zap.Int("slot_number", blockNum),
 		)
-		b = newBank(uint64(blockNum), uint64(parentSlotNumber), uint64(blockHeight), previousSlotID)
+		b = newBank(uint64(blockNum), uint64(parentSlotNumber), previousSlotID)
 		ctx.banks[uint64(blockNum)] = b
 	}
 
@@ -447,29 +404,6 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 	}
 
 	ctx.activeBank = b
-	return nil
-}
-
-// SLOT_BOUND 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz
-// SLOT_BOUND BLOCK_NUM SLOT_ID
-func (ctx *parseCtx) readSlotBound(line string) (err error) {
-	zlog.Debug("reading slot bound", zap.String("line", line))
-	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != SlotBoundChunkSize {
-		return fmt.Errorf("expected %d fields got %d", SlotBoundChunkSize, len(chunks))
-	}
-
-	var blockNum uint64
-	if blockNum, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
-		return fmt.Errorf("slot num to int: %w", err)
-	}
-
-	if ctx.activeBank == nil {
-		return fmt.Errorf("received slot bound while no active bank in context")
-	}
-
-	slotId := chunks[2]
-	ctx.activeBank.registerSlot(blockNum, slotId)
 	return nil
 }
 
@@ -548,20 +482,8 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 		}
 
 		bank.blk.RootNum = rootBlock
+		ctx.blockBuffer <- bank.blk
 
-		for _, slot := range bank.slots {
-			slot.Block = bank.blk
-			for i, t := range slot.Transactions {
-				t.Index = uint64(i)
-				t.SlotHash = slot.Id
-				t.SlotNum = slot.Number
-			}
-
-			if len(ctx.slotBuffer) == cap(ctx.slotBuffer) {
-				return fmt.Errorf("unable to put slot in buffer reached buffer capacity size %q", cap(ctx.slotBuffer))
-			}
-			ctx.slotBuffer <- slot
-		}
 		delete(ctx.banks, bankSlotNum)
 	}
 	zlog.Debug("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
