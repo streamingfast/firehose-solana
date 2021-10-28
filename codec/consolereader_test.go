@@ -43,22 +43,23 @@ func Test_readFromFile(t *testing.T) {
 
 	// TODO: add more testing
 
-	assert.Equal(t, &pbcodec.Block{
-		Id:                   "5R9Tn4bNx62TZmfBQzc3MPNyaaANLAuopvnadNrogF1X",
-		Number:               41,
-		PreviousId:           "AtKUKgTCk5rAxAHEcjSEpm6K5maWDuXwHKz1rvJFFPrK",
-		PreviousBlockSlot:    40,
-		GenesisUnixTimestamp: 1607616485,
-		ClockUnixTimestamp:   1607616485,
-		RootNum:              9,
-	}, block)
-	assert.Equal(t, "5R9Tn4bNx62TZmfBQzc3MPNyaaANLAuopvnadNrogF1X", block.Id)
-	assert.Equal(t, uint64(41), block.Number)
-	assert.Equal(t, "AtKUKgTCk5rAxAHEcjSEpm6K5maWDuXwHKz1rvJFFPrK", block.PreviousId)
+	//assert.Equal(t, &pbcodec.Block{
+	//	Version: 1,
+	//	Id:                   "FIXEDSLOTIDBECAUSEWEDONTNEEDITANDCODECHANGED",
+	//	Number:               4,
+	//	PreviousId:           "7Qjov8K99CSYu29eL7nrSzvmHSVvJfXCy4Vs91qQFQAt",
+	//	PreviousBlockSlot:    3,
+	//	GenesisUnixTimestamp: 1635424624,
+	//	ClockUnixTimestamp:   1635424623,
+	//	RootNum:              0,
+	//}, block)
+	assert.Equal(t, "FIXEDSLOTIDBECAUSEWEDONTNEEDITANDCODECHANGED", block.Id)
+	assert.Equal(t, uint64(4), block.Number)
+	assert.Equal(t, "7Qjov8K99CSYu29eL7nrSzvmHSVvJfXCy4Vs91qQFQAt", block.PreviousId)
 	assert.Equal(t, uint32(1), block.Version)
 	assert.Equal(t, uint32(1), block.TransactionCount)
 	transaction := block.Transactions[0]
-	assert.Equal(t, "2PFKgG8Uq9yHWig6HEEGQUmP8XnpyBi2zeaLAFUKR9rus33QQ1ad1PPmcvGR1hpq77fQEPFmFu8qiMNjmQGbGH6E", transaction.Id)
+	assert.Equal(t, "Bw7s377BrUxp4wnobjXrkrUMpxCvL6izKmBY32P8d6ycoqq1VQpUoE3Hsr7T5rupRuT4cXWL3Jm4rdV9NXZQnYK", transaction.Id)
 	assert.Equal(t, 1, len(transaction.Instructions))
 
 }
@@ -123,6 +124,7 @@ func Test_readBlockWork(t *testing.T) {
 						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
+							Version: 1,
 							Number:            55295941,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 							PreviousBlockSlot: 55295939,
@@ -135,6 +137,7 @@ func Test_readBlockWork(t *testing.T) {
 					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
+						Version: 1,
 						Number:            55295941,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						PreviousBlockSlot: 55295939,
@@ -156,6 +159,7 @@ func Test_readBlockWork(t *testing.T) {
 						batchAggregator: [][]*pbcodec.Transaction{},
 						transactionIDs:  []string{"aa", "bb"},
 						blk: &pbcodec.Block{
+							Version: 1,
 							Number:            55295941,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 							PreviousBlockSlot: 55295939,
@@ -168,6 +172,7 @@ func Test_readBlockWork(t *testing.T) {
 					batchAggregator: [][]*pbcodec.Transaction{},
 					transactionIDs:  []string{"aa", "bb"},
 					blk: &pbcodec.Block{
+						Version: 1,
 						Number:            55295941,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
 						PreviousBlockSlot: 55295939,
