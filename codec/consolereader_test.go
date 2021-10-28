@@ -48,18 +48,18 @@ func Test_readFromFile(t *testing.T) {
 	//	Id:                   "FIXEDSLOTIDBECAUSEWEDONTNEEDITANDCODECHANGED",
 	//	Number:               4,
 	//	PreviousId:           "7Qjov8K99CSYu29eL7nrSzvmHSVvJfXCy4Vs91qQFQAt",
-	//	PreviousBlockSlot:    3,
+	//	PreviousBlock:    3,
 	//	GenesisUnixTimestamp: 1635424624,
 	//	ClockUnixTimestamp:   1635424623,
 	//	RootNum:              0,
 	//}, block)
 	assert.Equal(t, "FIXEDSLOTIDBECAUSEWEDONTNEEDITANDCODECHANGED", block.Id)
 	assert.Equal(t, uint64(4), block.Number)
-	assert.Equal(t, "7Qjov8K99CSYu29eL7nrSzvmHSVvJfXCy4Vs91qQFQAt", block.PreviousId)
+	assert.Equal(t, "DJVP6Lyk3Ekm6RoD9JJJ3myTCzyEpUQLvGH5pMj4Pozb", block.PreviousId)
 	assert.Equal(t, uint32(1), block.Version)
 	assert.Equal(t, uint32(1), block.TransactionCount)
 	transaction := block.Transactions[0]
-	assert.Equal(t, "Bw7s377BrUxp4wnobjXrkrUMpxCvL6izKmBY32P8d6ycoqq1VQpUoE3Hsr7T5rupRuT4cXWL3Jm4rdV9NXZQnYK", transaction.Id)
+	assert.Equal(t, "4mVYoXoAxvDnPhu9rohHBHLXgkHdngguGiKp5KGSgWhsnCRotsLLSwz6vDJLJbJ66abufJ3gJVZRKG2Hy15obvkc", transaction.Id)
 	assert.Equal(t, 1, len(transaction.Instructions))
 
 }
@@ -127,7 +127,7 @@ func Test_readBlockWork(t *testing.T) {
 							Version: 1,
 							Number:            55295941,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-							PreviousBlockSlot: 55295939,
+							PreviousBlock: 55295939,
 						},
 					},
 				},
@@ -140,7 +140,7 @@ func Test_readBlockWork(t *testing.T) {
 						Version: 1,
 						Number:            55295941,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						PreviousBlockSlot: 55295939,
+						PreviousBlock: 55295939,
 					},
 				},
 			},
@@ -162,7 +162,7 @@ func Test_readBlockWork(t *testing.T) {
 							Version: 1,
 							Number:            55295941,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-							PreviousBlockSlot: 55295939,
+							PreviousBlock: 55295939,
 						},
 					},
 				},
@@ -175,7 +175,7 @@ func Test_readBlockWork(t *testing.T) {
 						Version: 1,
 						Number:            55295941,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						PreviousBlockSlot: 55295939,
+						PreviousBlock: 55295939,
 					},
 				},
 			},
@@ -192,7 +192,7 @@ func Test_readBlockWork(t *testing.T) {
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-							PreviousBlockSlot: 55295939,
+							PreviousBlock: 55295939,
 						},
 					},
 				},
@@ -208,7 +208,7 @@ func Test_readBlockWork(t *testing.T) {
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-							PreviousBlockSlot: 55295939,
+							PreviousBlock: 55295939,
 						},
 					},
 				},
@@ -220,7 +220,7 @@ func Test_readBlockWork(t *testing.T) {
 					blk: &pbcodec.Block{
 						Number:            55295941,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						PreviousBlockSlot: 55295939,
+						PreviousBlock: 55295939,
 					},
 				},
 			},
@@ -237,7 +237,7 @@ func Test_readBlockWork(t *testing.T) {
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-							PreviousBlockSlot: 55295939,
+							PreviousBlock: 55295939,
 						},
 					},
 				},
@@ -253,7 +253,7 @@ func Test_readBlockWork(t *testing.T) {
 						blk: &pbcodec.Block{
 							Number:            55295941,
 							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-							PreviousBlockSlot: 55295939,
+							PreviousBlock: 55295939,
 						},
 					},
 				},
@@ -265,7 +265,7 @@ func Test_readBlockWork(t *testing.T) {
 					blk: &pbcodec.Block{
 						Number:            55295941,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						PreviousBlockSlot: 55295939,
+						PreviousBlock: 55295939,
 					},
 				},
 			},
@@ -301,7 +301,7 @@ func Test_readBlockEnd(t *testing.T) {
 					blk: &pbcodec.Block{
 						Number:            55295941,
 						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						PreviousBlockSlot: 55295939,
+						PreviousBlock: 55295939,
 					},
 				},
 			},
@@ -341,7 +341,7 @@ func Test_readBlockRoot(t *testing.T) {
 						Number:               55295941,
 						Version:              1,
 						PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						PreviousBlockSlot:    55295939,
+						PreviousBlock:    55295939,
 						GenesisUnixTimestamp: 1606487316,
 						ClockUnixTimestamp:   1606487316,
 						Transactions: []*pbcodec.Transaction{
@@ -363,7 +363,7 @@ func Test_readBlockRoot(t *testing.T) {
 							Number:               55295941,
 							Version:              1,
 							PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-							PreviousBlockSlot:    55295939,
+							PreviousBlock:    55295939,
 							GenesisUnixTimestamp: 1606487316,
 							ClockUnixTimestamp:   1606487316,
 							Transactions: []*pbcodec.Transaction{
@@ -383,7 +383,7 @@ func Test_readBlockRoot(t *testing.T) {
 				Id:         "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
 				Number:     55295941,
 				PreviousId: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-				PreviousBlockSlot: 55295939,
+				PreviousBlock: 55295939,
 				GenesisUnixTimestamp: 1606487316,
 				ClockUnixTimestamp:   1606487316,
 				Version:    1,

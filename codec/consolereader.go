@@ -135,8 +135,8 @@ func (r *ConsoleReader) next() (out interface{}, err error) {
 	ctx := r.ctx
 
 	select {
-	case s := <-ctx.blockBuffer:
-		return s, nil
+	case b := <-ctx.blockBuffer:
+		return b, nil
 	default:
 	}
 
@@ -152,8 +152,8 @@ func (r *ConsoleReader) next() (out interface{}, err error) {
 		}
 
 		select {
-		case s := <-ctx.blockBuffer:
-			return s, nil
+		case b := <-ctx.blockBuffer:
+			return b, nil
 		default:
 		}
 	}
@@ -280,17 +280,17 @@ type bank struct {
 	batchAggregator [][]*pbcodec.Transaction
 }
 
-func newBank(blockNum, parentSlotNumber uint64, previousSlotID string) *bank {
+func newBank(blockNum, parentBlockNumber uint64, previousSlotID string) *bank {
 	return &bank{
-		parentSlotNum:   parentSlotNumber,
+		parentSlotNum:   parentBlockNumber,
 		previousSlotID:  previousSlotID,
 		transactionIDs:  []string{},
 		batchAggregator: [][]*pbcodec.Transaction{},
 		blk: &pbcodec.Block{
-			Version:           1,
-			Number:            blockNum,
-			PreviousId:        previousSlotID,
-			PreviousBlockSlot: parentSlotNumber,
+			Version:       1,
+			Number:        blockNum,
+			PreviousId:    previousSlotID,
+			PreviousBlock: parentBlockNumber,
 		},
 	}
 }
