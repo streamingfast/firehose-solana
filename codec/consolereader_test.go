@@ -55,11 +55,11 @@ func Test_readFromFile(t *testing.T) {
 	//}, block)
 	assert.Equal(t, "FIXEDSLOTIDBECAUSEWEDONTNEEDITANDCODECHANGED", block.Id)
 	assert.Equal(t, uint64(4), block.Number)
-	assert.Equal(t, "DJVP6Lyk3Ekm6RoD9JJJ3myTCzyEpUQLvGH5pMj4Pozb", block.PreviousId)
+	assert.Equal(t, "BHcRHKQLMjAB4DmADCMhPU7zYQGLSfCgEVTYumGq9G3K", block.PreviousId)
 	assert.Equal(t, uint32(1), block.Version)
 	assert.Equal(t, uint32(1), block.TransactionCount)
 	transaction := block.Transactions[0]
-	assert.Equal(t, "4mVYoXoAxvDnPhu9rohHBHLXgkHdngguGiKp5KGSgWhsnCRotsLLSwz6vDJLJbJ66abufJ3gJVZRKG2Hy15obvkc", transaction.Id)
+	assert.Equal(t, "2sz2Bp2ojLVYqu7yMSFZ1u5FiDxcHzrnYLKFrD5kvsDdnv2j6LXtxC728hUyMUXsJX2a8eumdHDMXde4MsyktJoQ", transaction.Id)
 	assert.Equal(t, 1, len(transaction.Instructions))
 
 }
