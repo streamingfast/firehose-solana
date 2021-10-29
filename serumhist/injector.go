@@ -12,6 +12,7 @@ import (
 	"github.com/streamingfast/bstream/forkable"
 	"github.com/streamingfast/dgrpc"
 	"github.com/streamingfast/dstore"
+	"github.com/streamingfast/sf-solana/codec"
 	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"github.com/streamingfast/shutter"
 	"go.uber.org/zap"
@@ -74,8 +75,8 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 	}
 
 	zlog.Info("serumhist resolved start block",
-		zap.Uint64("start_block_num", checkpoint.LastWrittenSlotNum),
-		zap.String("start_block_id", checkpoint.LastWrittenSlotId),
+		zap.Uint64("start_block_num", checkpoint.LastWrittenBlockNum),
+		codec.ZapBase58("start_block_id", checkpoint.LastWrittenBlockId),
 	)
 
 	options := []firehose.Option{
@@ -110,7 +111,7 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 
 	fhose := firehose.New(
 		fileSourceFactory,
-		int64(checkpoint.LastWrittenSlotNum),
+		int64(checkpoint.LastWrittenBlockNum),
 		i,
 		options...,
 	)

@@ -3,18 +3,18 @@ package kvloader
 import (
 	"fmt"
 
-	"github.com/streamingfast/sf-solana/serumhist"
-
+	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/forkable"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
+	"github.com/streamingfast/sf-solana/serumhist"
 	"go.uber.org/zap"
 )
 
 func (kv *KVLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 
-	slot := blk.ToNative().(*pbcodec.Slot)
+	block := blk.ToNative().(*pbcodec.Block)
 	forkObj := obj.(*forkable.ForkableObject)
 
 	// this flow will eventually change to process the list of
@@ -23,7 +23,7 @@ func (kv *KVLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	for _, ta := range serumSlot.TradingAccountCache {
 		err := kv.cache.setTradingAccount(kv.ctx, ta.TradingAccount, ta.Trader)
 		if err != nil {
-			return fmt.Errorf("unable to store trading account %d (%s): %w", slot.Number, slot.Id, err)
+			return fmt.Errorf("unable to store trading account %d (%s): %w", block.Number, base58.Encode(block.Id), err)
 		}
 	}
 
@@ -48,14 +48,14 @@ func (kv *KVLoader) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	}
 
 	if err := kv.writeCheckpoint(&pbserumhist.Checkpoint{
-		LastWrittenSlotNum: slot.Number,
-		LastWrittenSlotId:  slot.Id,
+		LastWrittenBlockNum: block.Number,
+		LastWrittenBlockId:  block.Id,
 	}); err != nil {
 		return fmt.Errorf("error while saving block checkpoint: %w", err)
 	}
 
-	t := slot.Block.Time()
-	if err := kv.flushIfNeeded(slot.Number, t); err != nil {
+	t := block.Time()
+	if err := kv.flushIfNeeded(block.Number, t); err != nil {
 		zlog.Error("flushIfNeeded", zap.Error(err))
 		return err
 	}

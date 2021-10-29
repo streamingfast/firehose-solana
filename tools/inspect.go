@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/mr-tron/base58"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 
 	"github.com/spf13/cobra"
@@ -115,7 +116,7 @@ func inspectRangeE(cmd *cobra.Command, args []string) error {
 		}
 
 		for {
-			block, err := readerFactory.Read()
+			blk, err := readerFactory.Read()
 			if err != nil {
 				if err == io.EOF {
 					break
@@ -123,46 +124,49 @@ func inspectRangeE(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("reading block: %w", err)
 			}
 
-			if block.Number < blockRange.Start {
+			if blk.Number < blockRange.Start {
 				continue
 			}
 
-			slot := block.ToNative().(*pbcodec.Slot)
+			block := blk.ToNative().(*pbcodec.Block)
 
 			isVirutal := false
-			if slot.Number != slot.Block.Number {
+			if block.Number != block.Number {
 				isVirutal = true
 			}
 
-			currentID := fmt.Sprintf("%s%s", slot.Id[:8], slot.Id[len(slot.Id)-8:])
-			previousID := fmt.Sprintf("%s%s", slot.PreviousId[:8], slot.PreviousId[len(slot.PreviousId)-8:])
+			blockIdBase58 := base58.Encode(block.Id)
+			previousBlockIdBase58 := base58.Encode(block.PreviousId)
+
+			currentID := fmt.Sprintf("%s%s", blockIdBase58[:8], blockIdBase58[len(blockIdBase58)-8:])
+			previousID := fmt.Sprintf("%s%s", previousBlockIdBase58[:8], previousBlockIdBase58[len(previousBlockIdBase58)-8:])
 			if !isVirutal {
 				fmt.Printf(
 					"  S%s [label=\"%s..%s\\n#%d t=%d\\nblk=%d lib=%d\"];\n  S%s -> S%s;\n",
 					currentID,
-					slot.Id[:8],
-					slot.Id[len(slot.Id)-8:],
-					slot.Number,
-					slot.TransactionCount,
-					slot.Block.Number,
-					slot.Block.RootNum,
+					blockIdBase58[:8],
+					blockIdBase58[len(blockIdBase58)-8:],
+					block.Number,
+					block.TransactionCount,
+					block.Number,
+					block.RootNum,
 					currentID,
 					previousID,
 				)
 				continue
 			}
 
-			if vslot, found := virtualSlots[slot.PreviousId]; found {
-				delete(virtualSlots, slot.PreviousId)
+			if vslot, found := virtualSlots[string(block.PreviousId)]; found {
+				delete(virtualSlots, string(block.PreviousId))
 				vslot.count++
-				vslot.endID = slot.Id
-				vslot.endNum = slot.Number
-				virtualSlots[slot.Id] = vslot
+				vslot.endID = blockIdBase58
+				vslot.endNum = block.Number
+				virtualSlots[string(block.Id)] = vslot
 			} else {
-				virtualSlots[slot.Id] = &virtualSlot{
-					starNum:    slot.Number,
-					previousID: slot.PreviousId,
-					endID:      slot.Id,
+				virtualSlots[string(block.Id)] = &virtualSlot{
+					starNum:    block.Number,
+					previousID: previousBlockIdBase58,
+					endID:      blockIdBase58,
 					count:      1,
 				}
 			}

@@ -15,6 +15,7 @@
 package codec
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -22,6 +23,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/mr-tron/base58"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -66,40 +68,33 @@ func Test_readFromFile(t *testing.T) {
 
 func Test_processBatchAggregation(t *testing.T) {
 	b := &bank{
-		transactionIDs: []string{"11", "aa", "cc", "bb", "dd", "ee"},
+		transactionIDs: trxIDs(t, "11", "aa", "cc", "bb", "dd", "ee"),
 		blk: &pbcodec.Block{
-			Id:     "A",
+			Id:     blockId(t, "A"),
 			Number: 1,
 		},
 		batchAggregator: [][]*pbcodec.Transaction{
 			{
-				{Id: "dd"},
+				{Id: trxID(t, "dd")},
 			},
 			{
-				{Id: "ee"},
+				{Id: trxID(t, "ee")},
 			},
 			{
-				{Id: "bb"},
+				{Id: trxID(t, "bb")},
 			},
 			{
-				{Id: "aa"},
-				{Id: "cc"},
+				{Id: trxID(t, "aa")},
+				{Id: trxID(t, "cc")},
 			},
 			{
-				{Id: "11"},
+				{Id: trxID(t, "11")},
 			},
 		},
 	}
 	err := b.processBatchAggregation()
 	require.NoError(t, err)
-	assert.Equal(t, []*pbcodec.Transaction{
-		{Id: "11", Index: 0},
-		{Id: "aa", Index: 1},
-		{Id: "cc", Index: 2},
-		{Id: "bb", Index: 3},
-		{Id: "dd", Index: 4},
-		{Id: "ee", Index: 5},
-	}, b.blk.Transactions)
+	assert.Equal(t, trxSlice(t, []string{"11", "aa", "cc", "bb", "dd", "ee"}), b.blk.Transactions)
 }
 
 func Test_readBlockWork(t *testing.T) {
@@ -121,12 +116,12 @@ func Test_readBlockWork(t *testing.T) {
 					55295941: {
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
-						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						transactionIDs:  []string{"aa", "bb"},
+						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+						transactionIDs:  trxIDs(t, "aa", "bb"),
 						blk: &pbcodec.Block{
-							Version: 1,
-							Number:            55295941,
-							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							Version:       1,
+							Number:        55295941,
+							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 							PreviousBlock: 55295939,
 						},
 					},
@@ -134,12 +129,12 @@ func Test_readBlockWork(t *testing.T) {
 				activeBank: &bank{
 					parentSlotNum:   55295939,
 					batchAggregator: [][]*pbcodec.Transaction{},
-					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					transactionIDs:  []string{"aa", "bb"},
+					previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+					transactionIDs:  trxIDs(t, "aa", "bb"),
 					blk: &pbcodec.Block{
-						Version: 1,
-						Number:            55295941,
-						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						Version:       1,
+						Number:        55295941,
+						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 						PreviousBlock: 55295939,
 					},
 				},
@@ -155,26 +150,26 @@ func Test_readBlockWork(t *testing.T) {
 				banks: map[uint64]*bank{
 					55295941: {
 						parentSlotNum:   55295939,
-						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 						batchAggregator: [][]*pbcodec.Transaction{},
-						transactionIDs:  []string{"aa", "bb"},
+						transactionIDs:  trxIDs(t, "aa", "bb"),
 						blk: &pbcodec.Block{
-							Version: 1,
-							Number:            55295941,
-							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							Version:       1,
+							Number:        55295941,
+							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 							PreviousBlock: 55295939,
 						},
 					},
 				},
 				activeBank: &bank{
 					parentSlotNum:   55295939,
-					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+					previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 					batchAggregator: [][]*pbcodec.Transaction{},
-					transactionIDs:  []string{"aa", "bb"},
+					transactionIDs:  trxIDs(t, "aa", "bb"),
 					blk: &pbcodec.Block{
-						Version: 1,
-						Number:            55295941,
-						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						Version:       1,
+						Number:        55295941,
+						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 						PreviousBlock: 55295939,
 					},
 				},
@@ -187,11 +182,11 @@ func Test_readBlockWork(t *testing.T) {
 					55295941: {
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
-						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						transactionIDs:  []string{"aa"},
+						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+						transactionIDs:  trxIDs(t, "aa"),
 						blk: &pbcodec.Block{
-							Number:            55295941,
-							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							Number:        55295941,
+							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 							PreviousBlock: 55295939,
 						},
 					},
@@ -203,11 +198,11 @@ func Test_readBlockWork(t *testing.T) {
 					55295941: {
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
-						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						transactionIDs:  []string{"aa", "bb"},
+						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+						transactionIDs:  trxIDs(t, "aa", "bb"),
 						blk: &pbcodec.Block{
-							Number:            55295941,
-							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							Number:        55295941,
+							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 							PreviousBlock: 55295939,
 						},
 					},
@@ -215,11 +210,11 @@ func Test_readBlockWork(t *testing.T) {
 				activeBank: &bank{
 					parentSlotNum:   55295939,
 					batchAggregator: [][]*pbcodec.Transaction{},
-					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					transactionIDs:  []string{"aa", "bb"},
+					previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+					transactionIDs:  trxIDs(t, "aa", "bb"),
 					blk: &pbcodec.Block{
-						Number:            55295941,
-						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						Number:        55295941,
+						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 						PreviousBlock: 55295939,
 					},
 				},
@@ -232,11 +227,11 @@ func Test_readBlockWork(t *testing.T) {
 					55295941: {
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
-						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						transactionIDs:  []string{"aa"},
+						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+						transactionIDs:  trxIDs(t, "aa"),
 						blk: &pbcodec.Block{
-							Number:            55295941,
-							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							Number:        55295941,
+							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 							PreviousBlock: 55295939,
 						},
 					},
@@ -248,11 +243,11 @@ func Test_readBlockWork(t *testing.T) {
 					55295941: {
 						parentSlotNum:   55295939,
 						batchAggregator: [][]*pbcodec.Transaction{},
-						previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						transactionIDs:  []string{"aa", "bb"},
+						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+						transactionIDs:  trxIDs(t, "aa", "bb"),
 						blk: &pbcodec.Block{
-							Number:            55295941,
-							PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+							Number:        55295941,
+							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 							PreviousBlock: 55295939,
 						},
 					},
@@ -260,11 +255,11 @@ func Test_readBlockWork(t *testing.T) {
 				activeBank: &bank{
 					parentSlotNum:   55295939,
 					batchAggregator: [][]*pbcodec.Transaction{},
-					previousSlotID:  "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-					transactionIDs:  []string{"aa", "bb"},
+					previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+					transactionIDs:  trxIDs(t, "aa", "bb"),
 					blk: &pbcodec.Block{
-						Number:            55295941,
-						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						Number:        55295941,
+						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 						PreviousBlock: 55295939,
 					},
 				},
@@ -297,10 +292,10 @@ func Test_readBlockEnd(t *testing.T) {
 			name: "end slot",
 			ctx: &parseCtx{
 				activeBank: &bank{
-					transactionIDs: []string{},
+					transactionIDs: nil,
 					blk: &pbcodec.Block{
-						Number:            55295941,
-						PreviousId:        "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
+						Number:        55295941,
+						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 						PreviousBlock: 55295939,
 					},
 				},
@@ -334,45 +329,35 @@ func Test_readBlockRoot(t *testing.T) {
 			name: "block root",
 			ctx: &parseCtx{
 				activeBank: &bank{
-					previousSlotID: "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae",
+					previousSlotID: blockId(t, "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae"),
 					ended:          true,
 					blk: &pbcodec.Block{
-						Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+						Id:                   blockId(t, "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"),
 						Number:               55295941,
 						Version:              1,
-						PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-						PreviousBlock:    55295939,
+						PreviousId:           blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+						PreviousBlock:        55295939,
 						GenesisUnixTimestamp: 1606487316,
 						ClockUnixTimestamp:   1606487316,
-						Transactions: []*pbcodec.Transaction{
-							{Id: "a", Index: 0},
-							{Id: "b", Index: 1},
-							{Id: "c", Index: 2},
-							{Id: "d", Index: 3},
-						},
-						TransactionCount: 4,
+						Transactions:         trxSlice(t, []string{"aa", "bb", "cc", "dd"}),
+						TransactionCount:     4,
 					},
 				},
 				banks: map[uint64]*bank{
 					55295941: {
 						parentSlotNum:  55295939,
-						previousSlotID: "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+						previousSlotID: blockId(t, "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"),
 						ended:          true,
 						blk: &pbcodec.Block{
-							Id:                   "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+							Id:                   blockId(t, "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"),
 							Number:               55295941,
 							Version:              1,
-							PreviousId:           "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-							PreviousBlock:    55295939,
+							PreviousId:           blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+							PreviousBlock:        55295939,
 							GenesisUnixTimestamp: 1606487316,
 							ClockUnixTimestamp:   1606487316,
-							Transactions: []*pbcodec.Transaction{
-								{Id: "a", Index: 0},
-								{Id: "b", Index: 1},
-								{Id: "c", Index: 2},
-								{Id: "d", Index: 3},
-							},
-							TransactionCount: 4,
+							Transactions:         trxSlice(t, []string{"aa", "bb", "cc", "dd"}),
+							TransactionCount:     4,
 						},
 					},
 				},
@@ -380,21 +365,16 @@ func Test_readBlockRoot(t *testing.T) {
 			},
 			line: "BANK_ROOT 55295921",
 			expectedBlock: &pbcodec.Block{
-				Id:         "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
-				Number:     55295941,
-				PreviousId: "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr",
-				PreviousBlock: 55295939,
+				Id:                   blockId(t, "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"),
+				Number:               55295941,
+				PreviousId:           blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
+				PreviousBlock:        55295939,
 				GenesisUnixTimestamp: 1606487316,
 				ClockUnixTimestamp:   1606487316,
-				Version:    1,
-				RootNum: 55295921,
-				Transactions: []*pbcodec.Transaction{
-					{Id: "a", Index: 0},
-					{Id: "b", Index: 1},
-					{Id: "c", Index: 2},
-					{Id: "d", Index: 3},
-				},
-				TransactionCount: 4,
+				Version:              1,
+				RootNum:              55295921,
+				Transactions:         trxSlice(t, []string{"aa", "bb", "cc", "dd"}),
+				TransactionCount:     4,
 			},
 			expectCtx: &parseCtx{
 				activeBank: nil,
@@ -414,9 +394,9 @@ func Test_readBlockRoot(t *testing.T) {
 	}
 }
 
-func trxSlice(trxIDs []string) (out []*pbcodec.Transaction) {
-	for _, trxID := range trxIDs {
-		out = append(out, &pbcodec.Transaction{Id: trxID})
+func trxSlice(t *testing.T, trxIDs []string) (out []*pbcodec.Transaction) {
+	for i, id := range trxIDs {
+		out = append(out, &pbcodec.Transaction{Id: trxID(t, id), Index: uint64(i)})
 	}
 	return
 }
@@ -499,4 +479,27 @@ func testReaderConsoleReader(t *testing.T, lines chan string, closer func(), bat
 	}
 
 	return l
+}
+
+func blockId(t *testing.T, input string) []byte {
+	out, err := base58.Decode(input)
+	require.NoError(t, err)
+
+	return out
+}
+
+func trxIDs(t *testing.T, inputs ...string) [][]byte {
+	out := make([][]byte, len(inputs))
+	for i, input := range inputs {
+		out[i] = trxID(t, input)
+	}
+
+	return out
+}
+
+func trxID(t *testing.T, input string) []byte {
+	bytes, err := hex.DecodeString(input)
+	require.NoError(t, err)
+
+	return bytes
 }

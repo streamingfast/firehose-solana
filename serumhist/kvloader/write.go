@@ -24,17 +24,17 @@ func (kv *KVLoader) writeNewOrder(e *serumhist.NewOrder) error {
 	}
 	kvs := []*store.KV{
 		{
-			Key:   keyer.EncodeOrderNew(e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+			Key:   keyer.EncodeOrderNew(e.Market, e.BlockNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
 			Value: cnt,
 		},
 		{
 			Key: keyer.EncodeOrderByMarket(e.Market, e.OrderSeqNum),
 		},
 		{
-			Key: keyer.EncodeOrderByTrader(e.Trader, e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+			Key: keyer.EncodeOrderByTrader(e.Trader, e.Market, e.BlockNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
 		},
 		{
-			Key: keyer.EncodeOrderByTraderMarket(e.Trader, e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+			Key: keyer.EncodeOrderByTraderMarket(e.Trader, e.Market, e.BlockNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
 		},
 	}
 
@@ -54,17 +54,17 @@ func (kv *KVLoader) writeFill(e *serumhist.FillEvent) error {
 	}
 	kvs := []*store.KV{
 		{
-			Key:   keyer.EncodeFill(e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+			Key:   keyer.EncodeFill(e.Market, e.BlockNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
 			Value: cnt,
 		},
 		{
-			Key: keyer.EncodeFillByTrader(e.Trader, e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+			Key: keyer.EncodeFillByTrader(e.Trader, e.Market, e.BlockNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
 		},
 		{
-			Key: keyer.EncodeFillByTraderMarket(e.Trader, e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+			Key: keyer.EncodeFillByTraderMarket(e.Trader, e.Market, e.BlockNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
 		},
 		{
-			Key: keyer.EncodeOrderFill(e.Market, e.SlotNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
+			Key: keyer.EncodeOrderFill(e.Market, e.BlockNumber, uint64(e.TrxIdx), uint64(e.InstIdx), e.OrderSeqNum),
 		},
 	}
 
@@ -79,7 +79,7 @@ func (kv *KVLoader) writeFill(e *serumhist.FillEvent) error {
 func (kv *KVLoader) writeOrderExecuted(event *serumhist.OrderExecuted) error {
 	ctx := kv.ctx
 	k := store.KV{
-		Key: keyer.EncodeOrderExecute(event.Market, event.SlotNumber, uint64(event.TrxIdx), uint64(event.InstIdx), event.OrderSeqNum),
+		Key: keyer.EncodeOrderExecute(event.Market, event.BlockNumber, uint64(event.TrxIdx), uint64(event.InstIdx), event.OrderSeqNum),
 	}
 
 	if err := kv.kvdb.Put(ctx, k.Key, k.Value); err != nil {
@@ -96,7 +96,7 @@ func (kv *KVLoader) writeOrderClosed(event *serumhist.OrderClosed) error {
 		return fmt.Errorf("unable to marshal to fill: %w", err)
 	}
 
-	key := keyer.EncodeOrderClose(event.Market, event.SlotNumber, uint64(event.TrxIdx), uint64(event.InstIdx), event.OrderSeqNum)
+	key := keyer.EncodeOrderClose(event.Market, event.BlockNumber, uint64(event.TrxIdx), uint64(event.InstIdx), event.OrderSeqNum)
 	value := val
 
 	if err := kv.kvdb.Put(ctx, key, value); err != nil {
@@ -112,7 +112,7 @@ func (kv *KVLoader) writeOrderCancelled(event *serumhist.OrderCancelled) error {
 		return fmt.Errorf("unable to marshal to fill: %w", err)
 	}
 
-	key := keyer.EncodeOrderCancel(event.Market, event.SlotNumber, uint64(event.TrxIdx), uint64(event.InstIdx), event.OrderSeqNum)
+	key := keyer.EncodeOrderCancel(event.Market, event.BlockNumber, uint64(event.TrxIdx), uint64(event.InstIdx), event.OrderSeqNum)
 	value := val
 
 	if err := kv.kvdb.Put(ctx, key, value); err != nil {

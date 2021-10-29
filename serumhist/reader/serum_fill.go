@@ -45,8 +45,8 @@ func (m *Reader) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, dec
 	var fillKeys [][]byte
 	for orderIterator.Next() {
 		if len(fillKeys) < limit {
-			_, market, slotNum, trxIdx, instIdx, orderSeqNum := decoder(orderIterator.Item().Key)
-			fillKeys = append(fillKeys, keyer.EncodeFill(market, slotNum, trxIdx, instIdx, orderSeqNum))
+			_, market, blockNum, trxIdx, instIdx, orderSeqNum := decoder(orderIterator.Item().Key)
+			fillKeys = append(fillKeys, keyer.EncodeFill(market, blockNum, trxIdx, instIdx, orderSeqNum))
 		} else {
 			hasMore = true
 		}
@@ -69,9 +69,9 @@ func (m *Reader) getFillsForPrefix(ctx context.Context, prefix keyer.Prefix, dec
 			return nil, false, fmt.Errorf("failed to unmarshal order: %w", err)
 		}
 
-		market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeFill(fillsIter.Item().Key)
-		f.Market = market.String()
-		f.SlotNum = slotNum
+		market, blockNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeFill(fillsIter.Item().Key)
+		f.Market = market[:]
+		f.BlockNum = blockNum
 		f.TrxIdx = uint32(trxIdx)
 		f.InstIdx = uint32(instIdx)
 		f.OrderSeqNum = orderSeqNum
@@ -100,9 +100,9 @@ func (m *Reader) getFillsForMarket(ctx context.Context, prefix keyer.Prefix, lim
 				return nil, false, fmt.Errorf("failed to unmarshal order: %w", err)
 			}
 
-			market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeFill(fillIterator.Item().Key)
-			f.Market = market.String()
-			f.SlotNum = slotNum
+			market, blockNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeFill(fillIterator.Item().Key)
+			f.Market = market[:]
+			f.BlockNum = blockNum
 			f.TrxIdx = uint32(trxIdx)
 			f.InstIdx = uint32(instIdx)
 			f.OrderSeqNum = orderSeqNum

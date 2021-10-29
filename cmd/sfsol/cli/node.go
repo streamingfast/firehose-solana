@@ -529,28 +529,28 @@ func setupNodeSysctl(logger *zap.Logger) error {
 }
 
 func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockDataArchiver, obj interface{}) (*bstream.Block, error) {
-	slot, ok := obj.(*pbcodec.Slot)
-	zlog.Debug("transforming slot", zap.Uint64("slot_num", slot.Number))
+	block, ok := obj.(*pbcodec.Block)
+	zlog.Debug("transforming block", zap.Uint64("slot_num", block.Number))
 	if !ok {
 		return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
 	}
 
-	fileName := blockDataFileName(slot, "")
-	slot.AccountChangesFileRef = archiver.Store.ObjectURL(fileName)
-	zlog.Debug("slot data file", zap.String("object_url", slot.AccountChangesFileRef))
+	fileName := blockDataFileName(block, "")
+	block.AccountChangesFileRef = archiver.Store.ObjectURL(fileName)
+	zlog.Debug("slot data file", zap.String("object_url", block.AccountChangesFileRef))
 
-	accountChangesBundle := slot.Split(true)
+	accountChangesBundle := block.Split(true)
 	go func() {
 		err := archiver.StoreBlockData(accountChangesBundle, fileName)
 		if err != nil {
 			//todo: This is very bad
 			panic(fmt.Errorf("storing block data: %w", err))
 		}
-		zlog.Debug("slot data store", zap.String("object_path", slot.AccountChangesFileRef))
+		zlog.Debug("slot data store", zap.String("object_path", block.AccountChangesFileRef))
 
 	}()
 
-	bstreamBlock, err := codec.BlockFromProto(slot)
+	bstreamBlock, err := codec.BlockFromProto(block)
 	if err != nil {
 		return nil, fmt.Errorf("block from proto: %w", err)
 	}
@@ -559,8 +559,8 @@ func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockData
 }
 
 //duplicated code from node manager
-func blockDataFileName(slot *pbcodec.Slot, suffix string) string {
-	t := slot.Block.Time()
+func blockDataFileName(slot *pbcodec.Block, suffix string) string {
+	t := slot.Time()
 	blockTimeString := fmt.Sprintf("%s.%01d", t.Format("20060102T150405"), t.Nanosecond()/100000000)
 
 	blockID := slot.ID()
@@ -568,7 +568,7 @@ func blockDataFileName(slot *pbcodec.Slot, suffix string) string {
 		blockID = blockID[len(blockID)-8:]
 	}
 
-	previousID := slot.Block.PreviousId
+	previousID := slot.PreviousID()
 	if len(previousID) > 8 {
 		previousID = previousID[len(previousID)-8:]
 	}

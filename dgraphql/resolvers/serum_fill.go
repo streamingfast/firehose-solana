@@ -5,7 +5,9 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/mr-tron/base58"
 	gtype "github.com/streamingfast/dgraphql/types"
+	"github.com/streamingfast/sf-solana/codec"
 	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
 	"github.com/streamingfast/sf-solana/registry"
 	"github.com/streamingfast/solana-go"
@@ -22,14 +24,10 @@ type SerumFill struct {
 
 func (r *Root) newSerumFill(f *pbserumhist.Fill) SerumFill {
 	zlog.Debug("creating a new serum fill",
-		zap.String("market_address", f.Market),
+		codec.ZapBase58("market_address", f.Market),
 	)
 	out := SerumFill{Fill: f}
-	marketAddr, err := solana.PublicKeyFromBase58(f.Market)
-	if err != nil {
-		zlog.Warn("unable to decode public key", zap.String("address", f.Market))
-		return out
-	}
+	marketAddr := solana.PublicKeyFromBytes(f.Market)
 
 	market := r.marketGetter(&marketAddr)
 	if market == nil {
@@ -61,16 +59,16 @@ func (r *Root) newSerumFill(f *pbserumhist.Fill) SerumFill {
 	return out
 }
 
-func (s SerumFill) SlotNum() gtype.Uint64          { return gtype.Uint64(s.Fill.SlotNum) }
+func (s SerumFill) BlockNum() gtype.Uint64         { return gtype.Uint64(s.Fill.BlockNum) }
 func (s SerumFill) TransactionIndex() gtype.Uint64 { return gtype.Uint64(s.Fill.TrxIdx) }
 func (s SerumFill) InstructionIndex() gtype.Uint64 { return gtype.Uint64(s.Fill.InstIdx) }
 func (s SerumFill) Timestamp() graphql.Time        { return toTime(s.Fill.Timestamp) }
 func (s SerumFill) OrderNum() gtype.Uint64         { return gtype.Uint64(s.Fill.OrderSeqNum) }
-func (s SerumFill) Trader() string                 { return s.Fill.Trader }
+func (s SerumFill) Trader() string                 { return base58.Encode(s.Fill.Trader) }
 
 func (s SerumFill) Market() SerumMarket {
 	return SerumMarket{
-		Address:    s.Fill.Market,
+		Address:    base58.Encode(s.Fill.Market),
 		market:     s.market,
 		baseToken:  s.basetoken,
 		quoteToken: s.quoteToken,

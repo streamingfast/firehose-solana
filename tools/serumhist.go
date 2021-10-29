@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/kvdb/store"
@@ -176,8 +177,8 @@ func readCheckpointE(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	fmt.Println("Checkpoint found:")
-	fmt.Println("LastWrittenSlotNum: ", out.LastWrittenSlotNum)
-	fmt.Println("LastWrittenSlotId: ", out.LastWrittenSlotId)
+	fmt.Println("Last Written Block Num: ", out.LastWrittenBlockNum)
+	fmt.Println("Last Written Block Id: ", base58.Encode(out.LastWrittenBlockId))
 	return nil
 }
 

@@ -19,7 +19,7 @@ func BlockFromProto(slot *pbcodec.Block) (*bstream.Block, error) {
 	return &bstream.Block{
 		Id:             slot.ID(),
 		Number:         slot.Num(),
-		PreviousId:     slot.PreviousId,
+		PreviousId:     slot.PreviousID(),
 		Timestamp:      blockTime,
 		LibNum:         slot.LIBNum(),
 		PayloadKind:    Protocol_SOL,

@@ -16,6 +16,7 @@ package codec
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,11 +27,14 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/mr-tron/base58"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
+	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
 
 var MaxTokenSize uint64
+var VoteProgramID = solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111")
 
 func init() {
 	MaxTokenSize = uint64(50 * 1024 * 1024)
@@ -247,7 +251,7 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 
 	for _, tx := range batch.Transactions {
 		for _, i := range tx.Instructions {
-			if i.ProgramId == "Vote111111111111111111111111111111111111111" {
+			if bytes.Equal(i.ProgramId, VoteProgramID[:]) {
 				i.AccountChanges = nil
 			}
 		}
@@ -273,19 +277,19 @@ const (
 type bank struct {
 	parentSlotNum   uint64
 	processTrxCount uint64
-	previousSlotID  string
-	transactionIDs  []string
+	previousSlotID  []byte
+	transactionIDs  [][]byte
 	blk             *pbcodec.Block
 	ended           bool
 	batchAggregator [][]*pbcodec.Transaction
 }
 
-func newBank(blockNum, parentBlockNumber uint64, previousSlotID string) *bank {
+func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte) *bank {
 	return &bank{
 		parentSlotNum:   parentBlockNumber,
 		previousSlotID:  previousSlotID,
-		transactionIDs:  []string{},
-		batchAggregator: [][]*pbcodec.Transaction{},
+		transactionIDs:  nil,
+		batchAggregator: nil,
 		blk: &pbcodec.Block{
 			Version:       1,
 			Number:        blockNum,
@@ -299,7 +303,7 @@ func newBank(blockNum, parentBlockNumber uint64, previousSlotID string) *bank {
 func (b *bank) processBatchAggregation() error {
 	indexMap := map[string]int{}
 	for idx, trxID := range b.transactionIDs {
-		indexMap[trxID] = idx
+		indexMap[string(trxID)] = idx
 	}
 
 	b.blk.Transactions = make([]*pbcodec.Transaction, len(b.transactionIDs))
@@ -308,14 +312,14 @@ func (b *bank) processBatchAggregation() error {
 	var count int
 	for _, transactions := range b.batchAggregator {
 		for _, trx := range transactions {
-			trxIndex := indexMap[trx.Id]
+			trxIndex := indexMap[string(trx.Id)]
 			trx.Index = uint64(trxIndex)
 			count++
 			b.blk.Transactions[trxIndex] = trx
 		}
 	}
 
-	b.batchAggregator = [][]*pbcodec.Transaction{}
+	b.batchAggregator = nil
 
 	if count != len(b.transactionIDs) {
 		return fmt.Errorf("transaction ids received on BLOCK_WORK did not match the number of transactions collection from batch executions, counted %d execution, expected %d from ids", count, len(b.transactionIDs))
@@ -324,14 +328,14 @@ func (b *bank) processBatchAggregation() error {
 	return nil
 }
 
-func (b *bank) getActiveTransaction(batchNum uint64, trxID string) (*pbcodec.Transaction, error) {
+func (b *bank) getActiveTransaction(batchNum uint64, trxID []byte) (*pbcodec.Transaction, error) {
 	length := len(b.batchAggregator[batchNum])
 	if length == 0 {
 		return nil, fmt.Errorf("unable to retrieve transaction trace on an empty batch")
 	}
 	trx := b.batchAggregator[batchNum][length-1]
-	if trx.Id != trxID {
-		return nil, fmt.Errorf("transaction trace ID doesn't match expected value: %s", trxID)
+	if !bytes.Equal(trx.Id, trxID) {
+		return nil, fmt.Errorf("transaction trace ID doesn't match expected value: %s", base58.Encode(trxID))
 	}
 
 	return trx, nil
@@ -383,7 +387,10 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 		return fmt.Errorf("parent slot num to int: %w", err)
 	}
 
-	previousSlotID := chunks[4]
+	previousSlotID, err := base58.Decode(chunks[4])
+	if err != nil {
+		return fmt.Errorf("previousSlotID to int: %w", err)
+	}
 
 	var b *bank
 	var found bool
@@ -396,10 +403,16 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 		ctx.banks[uint64(blockNum)] = b
 	}
 
-	for _, trxID := range strings.Split(chunks[13], ";") {
-		if trxID == "" || trxID == "T" {
+	for _, trxIDRaw := range strings.Split(chunks[13], ";") {
+		if trxIDRaw == "" || trxIDRaw == "T" {
 			continue
 		}
+
+		trxID, err := base58.Decode(trxIDRaw)
+		if err != nil {
+			return fmt.Errorf("transcation id's %q is invalid: %w", trxIDRaw, err)
+		}
+
 		b.transactionIDs = append(b.transactionIDs, trxID)
 	}
 
@@ -438,7 +451,11 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 		return fmt.Errorf("slot end's active bank does not match context's active bank")
 	}
 
-	slotID := chunks[2]
+	slotID, err := base58.Decode(chunks[2])
+	if err != nil {
+		return fmt.Errorf("slot id %q is invalid: %w", chunks[2], err)
+	}
+
 	ctx.activeBank.blk.Id = slotID
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp

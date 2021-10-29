@@ -1,3 +1,3 @@
-generate.sh - Thu 28 Oct 2021 01:35:34 PM EDT - colin
+generate.sh - Fri Oct 29 15:40:35 EDT 2021 - maoueh
 streamingfast/proto revision: a2215dd82a69e1205b25aee016013e9feedce0bf
-streamingfast/proto-solana revision: ddc5de7683ca21f8f04228b704b819028733c085
+streamingfast/proto-solana revision: 37b9a902d86c1c57db9e3d55c278796af39e2984

@@ -3,20 +3,20 @@ package kvloader
 import (
 	"fmt"
 
+	"github.com/streamingfast/sf-solana/codec"
 	"github.com/streamingfast/sf-solana/serumhist"
-
 	"go.uber.org/zap"
 )
 
-func (kv *KVLoader) processSerumNewOrders(events []*serumhist.NewOrder) interface{} {
+func (kv *KVLoader) processSerumNewOrders(events []*serumhist.NewOrder) error {
 	for _, event := range events {
 		zlog.Debug("serum new order",
 			zap.Stringer("side", event.Order.Side),
 			zap.Stringer("market", event.Market),
 			zap.Stringer("trader", event.Trader),
 			zap.Uint64("order_seq_num", event.OrderSeqNum),
-			zap.Uint64("slot_num", event.SlotNumber),
-			zap.String("trx_hash", event.TrxHash),
+			zap.Uint64("block_num", event.BlockNumber),
+			codec.ZapBase58("trx_id", event.TrxID),
 		)
 
 		if err := kv.writeNewOrder(event); err != nil {
@@ -37,18 +37,18 @@ func (kv *KVLoader) processSerumFills(events []*serumhist.FillEvent) error {
 		if trader == nil {
 			zlog.Warn("unable to find trader for trading account, skipping fill",
 				zap.Stringer("trading_account", event.TradingAccount),
-				zap.Uint64("slot_number", event.SlotNumber),
+				zap.Uint64("block_number", event.BlockNumber),
 				zap.Uint32("trx_id", event.TrxIdx),
 				zap.Uint32("inst_id", event.InstIdx),
 				zap.Stringer("market", event.Market),
-				zap.String("trx_hash", event.TrxHash),
+				codec.ZapBase58("trx_id", event.TrxID),
 			)
 			return nil
 		}
 
 		// we need to make sure we assign the trader before we proto encode, not all the keys contains the trader
 		event.Trader = *trader
-		event.Fill.Trader = trader.String()
+		event.Fill.Trader = trader[:]
 
 		zlog.Debug("serum new fill",
 			zap.Stringer("side", event.Fill.Side),
@@ -56,7 +56,7 @@ func (kv *KVLoader) processSerumFills(events []*serumhist.FillEvent) error {
 			zap.Stringer("trader", trader),
 			zap.Stringer("trading_Account", event.TradingAccount),
 			zap.Uint64("order_seq_num", event.OrderSeqNum),
-			zap.Uint64("slot_num", event.SlotNumber),
+			zap.Uint64("block_num", event.BlockNumber),
 		)
 
 		if err = kv.writeFill(event); err != nil {
@@ -72,7 +72,7 @@ func (kv *KVLoader) processSerumOrdersCancelled(events []*serumhist.OrderCancell
 		zlog.Debug("serum order cancelled",
 			zap.Stringer("market", event.Market),
 			zap.Uint64("order_seq_num", event.OrderSeqNum),
-			zap.Uint64("slot_num", event.SlotNumber),
+			zap.Uint64("block_num", event.BlockNumber),
 			zap.Uint32("trx_idx", event.TrxIdx),
 			zap.Uint32("inst_idx", event.InstIdx),
 		)
@@ -90,7 +90,7 @@ func (kv *KVLoader) processSerumOrdersClosed(events []*serumhist.OrderClosed) er
 		zlog.Debug("serum order closed",
 			zap.Stringer("market", event.Market),
 			zap.Uint64("order_seq_num", event.OrderSeqNum),
-			zap.Uint64("slot_num", event.SlotNumber),
+			zap.Uint64("block_num", event.BlockNumber),
 			zap.Uint32("trx_idx", event.TrxIdx),
 			zap.Uint32("inst_idx", event.InstIdx),
 		)
@@ -109,7 +109,7 @@ func (kv *KVLoader) processSerumOrdersExecuted(events []*serumhist.OrderExecuted
 		zlog.Debug("serum order executed",
 			zap.Stringer("market", event.Market),
 			zap.Uint64("order_seq_num", event.OrderSeqNum),
-			zap.Uint64("slot_num", event.SlotNumber),
+			zap.Uint64("block_num", event.BlockNumber),
 			zap.Uint32("trx_idx", event.TrxIdx),
 			zap.Uint32("inst_idx", event.InstIdx),
 		)

@@ -34,7 +34,7 @@ func (e *newOrderEncoder) Log() {
 	zlog.Debug("serum new order",
 		zap.Stringer("market", e.Market),
 		zap.Uint64("order_seq_num", e.OrderSeqNum),
-		zap.Uint64("slot_num", e.SlotNumber),
+		zap.Uint64("slot_num", e.BlockNumber),
 	)
 }
 
@@ -47,8 +47,8 @@ func (e *newOrderEncoder) Encode() map[string]interface{} {
 		"limit_price":  int64(e.Order.LimitPrice),
 		"max_quantity": int64(e.Order.MaxQuantity),
 		"type":         e.Order.Type.String(),
-		"slot_num":     int64(e.Ref.SlotNumber),
-		"slot_hash":    e.Order.SlotHash,
+		"block_num":    int64(e.Ref.BlockNumber),
+		"block_id":     e.Order.BlockId,
 		"trx_id":       e.Order.TrxId,
 		"trx_idx":      int64(e.Ref.TrxIdx),
 		"inst_idx":     int64(e.Ref.InstIdx),
@@ -67,7 +67,7 @@ func (e *orderFillEncoder) Log() {
 		zap.Stringer("market", e.Market),
 		zap.Stringer("trading_Account", e.TradingAccount),
 		zap.Uint64("order_seq_num", e.OrderSeqNum),
-		zap.Uint64("slot_num", e.SlotNumber),
+		zap.Uint64("block_num", e.BlockNumber),
 	)
 }
 
@@ -83,8 +83,8 @@ func (e *orderFillEncoder) Encode() map[string]interface{} {
 		"native_fee_or_rebate": int64(e.Fill.NativeFeeOrRebate),
 		"fee_tier":             e.Fill.FeeTier.String(),
 		"timestamp":            e.Fill.Timestamp.AsTime(),
-		"slot_num":             int64(e.Ref.SlotNumber),
-		"slot_hash":            e.Ref.SlotHash,
+		"block_num":            int64(e.Ref.BlockNumber),
+		"block_hash":           e.Ref.BlockID,
 		"trx_id":               e.Fill.TrxId,
 		"trx_idx":              int64(e.Ref.TrxIdx),
 		"inst_idx":             int64(e.Ref.InstIdx),

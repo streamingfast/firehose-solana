@@ -1,25 +1,26 @@
 package pbcodec
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/streamingfast/solana-go"
 )
 
-func (t *Transaction) IsSigner(account string) bool {
+func (t *Transaction) IsSigner(account []byte) bool {
 	for idx, acc := range t.AccountKeys {
-		if acc == account {
+		if bytes.Equal(acc, account) {
 			return idx < int(t.Header.NumRequiredSignatures)
 		}
 	}
 	return false
 }
 
-func (t *Transaction) IsWritable(account string) bool {
+func (t *Transaction) IsWritable(account []byte) bool {
 	index := 0
 	found := false
 	for idx, acc := range t.AccountKeys {
-		if acc == account {
+		if bytes.Equal(acc, account) {
 			found = true
 			index = idx
 		}
@@ -32,39 +33,36 @@ func (t *Transaction) IsWritable(account string) bool {
 		((index >= int(h.NumRequiredSignatures)) && (index < len(t.AccountKeys)-int(h.NumReadonlyUnsignedAccounts)))
 }
 
-func (t *Transaction) ResolveProgramIDIndex(programIDIndex uint8) (solana.PublicKey, error) {
+func (t *Transaction) ResolveProgramIDIndex(programIDIndex uint8) (out solana.PublicKey, err error) {
 	if int(programIDIndex) < len(t.AccountKeys) {
-		return solana.PublicKeyFromBase58(t.AccountKeys[programIDIndex])
+		return solana.PublicKeyFromBytes(t.AccountKeys[programIDIndex]), nil
 	}
-	return solana.PublicKey{}, fmt.Errorf("programID index not found %d", programIDIndex)
+
+	return out, fmt.Errorf("programID index not found %d", programIDIndex)
 }
 
 func (t *Transaction) AccountMetaList() (out []*solana.AccountMeta, err error) {
-	for _, acc := range t.AccountKeys {
-		account, err := solana.PublicKeyFromBase58(acc)
-		if err != nil {
-			return nil, fmt.Errorf("account meta list: account to pub key: %w", err)
-		}
-		out = append(out, &solana.AccountMeta{
-			PublicKey:  account,
+	out = make([]*solana.AccountMeta, len(t.AccountKeys))
+	for i, acc := range t.AccountKeys {
+		out[i] = &solana.AccountMeta{
+			PublicKey:  solana.PublicKeyFromBytes(acc),
 			IsSigner:   t.IsSigner(acc),
 			IsWritable: t.IsWritable(acc),
-		})
+		}
 	}
+
 	return out, nil
 }
 
-func (t *Transaction) InstructionAccountMetaList(i *Instruction) (out []*solana.AccountMeta, err error) {
-	for _, acc := range i.AccountKeys {
-		account, err := solana.PublicKeyFromBase58(acc)
-		if err != nil {
-			return nil, fmt.Errorf("account meta list: account to pub key: %w", err)
-		}
-		out = append(out, &solana.AccountMeta{
-			PublicKey:  account,
+func (t *Transaction) InstructionAccountMetaList(i *Instruction) (out []*solana.AccountMeta) {
+	out = make([]*solana.AccountMeta, len(i.AccountKeys))
+	for i, acc := range i.AccountKeys {
+		out[i] = &solana.AccountMeta{
+			PublicKey:  solana.PublicKeyFromBytes(acc),
 			IsSigner:   t.IsSigner(acc),
 			IsWritable: t.IsWritable(acc),
-		})
+		}
 	}
-	return out, nil
+
+	return out
 }

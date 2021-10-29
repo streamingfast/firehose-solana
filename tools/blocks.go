@@ -100,12 +100,12 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func readBlock(block *bstream.Block, outputDot bool) error {
-	payloadSize := len(block.PayloadBuffer)
-	slot := block.ToNative().(*pbcodec.Slot)
+func readBlock(blk *bstream.Block, outputDot bool) error {
+	payloadSize := len(blk.PayloadBuffer)
+	block := blk.ToNative().(*pbcodec.Block)
 	var accChangesBundle *pbcodec.AccountChangesBundle
 	if viper.GetBool("data") {
-		store, filename, err := dstore.NewStoreFromURL(slot.AccountChangesFileRef,
+		store, filename, err := dstore.NewStoreFromURL(block.AccountChangesFileRef,
 			dstore.Compression("zstd"),
 		)
 		if err != nil {
@@ -132,43 +132,43 @@ func readBlock(block *bstream.Block, outputDot bool) error {
 
 	if outputDot {
 		var virt string
-		if slot.Number != slot.Block.Number {
+		if block.Number != block.Number {
 			virt = " (V)"
 		}
 
-		currentID := fmt.Sprintf("%s%s", slot.Id[:8], slot.Id[len(slot.Id)-8:])
-		previousID := fmt.Sprintf("%s%s", slot.PreviousId[:8], slot.PreviousId[len(slot.PreviousId)-8:])
+		currentID := fmt.Sprintf("%s%s", block.Id[:8], block.Id[len(block.Id)-8:])
+		previousID := fmt.Sprintf("%s%s", block.PreviousId[:8], block.PreviousId[len(block.PreviousId)-8:])
 		fmt.Printf(
 			"  S%s [label=\"%s..%s\\n#%d%s t=%d lib=%d\"];\n  S%s -> S%s;\n",
 			currentID,
-			slot.Id[:8],
-			slot.Id[len(slot.Id)-8:],
-			slot.Number,
+			block.Id[:8],
+			block.Id[len(block.Id)-8:],
+			block.Number,
 			virt,
-			slot.TransactionCount,
-			slot.Block.RootNum,
+			block.TransactionCount,
+			block.RootNum,
 			currentID,
 			previousID,
 		)
 
 	} else {
 		fmt.Printf("Slot #%d (%s) (prev: %s...) (blk: %d) (LIB: %d) (%d bytes) (@: %s): %d transactions\n",
-			slot.Num(),
-			slot.ID(),
+			block.Num(),
+			block.ID(),
 
-			slot.PreviousId[0:6],
-			slot.Block.Number,
-			slot.Block.RootNum,
+			block.PreviousId[0:6],
+			block.Number,
+			block.RootNum,
 			payloadSize,
-			slot.Block.Time(),
-			len(slot.Transactions),
+			block.Time(),
+			len(block.Transactions),
 		)
 	}
 
-	if viper.GetBool("transactions") || viper.GetUint64("transactions-for-block") == slot.Number {
+	if viper.GetBool("transactions") || viper.GetUint64("transactions-for-block") == block.Number {
 		totalInstr := 0
 		fmt.Println("- Transactions: ")
-		for trxIdx, t := range slot.Transactions {
+		for trxIdx, t := range block.Transactions {
 			trxStr := fmt.Sprintf("    * ")
 			if t.Failed {
 				trxStr = fmt.Sprintf("%s ❌", trxStr)
