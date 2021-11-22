@@ -145,8 +145,10 @@ func (r *ConsoleReader) next() (out interface{}, err error) {
 	}
 
 	for line := range r.lines {
-		fmt.Println("processing lines")
+		//fmt.Println("processing lines")
 		if !strings.HasPrefix(line, "DMLOG ") {
+			zlog.Debug("node", zap.String("log", line))
+			fmt.Println("node:", line)
 			continue
 		}
 

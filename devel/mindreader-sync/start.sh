@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+ulimit -n 960480 960480
+
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 sfsol="$ROOT/../sfsol"
@@ -31,7 +33,7 @@ main() {
     rm -rf sf-data &> /dev/null || true
   fi
 
-  exec $sfsol -c $(basename $ROOT).yaml start mindreader-node,firehose --mindreader-node-network="$network" "$@"
+  exec $sfsol -c $(basename $ROOT).yaml start mindreader-node
 }
 
 usage_error() {
