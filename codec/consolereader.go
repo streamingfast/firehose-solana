@@ -75,6 +75,7 @@ func (r *ConsoleReader) ProcessData(reader io.Reader) error {
 		r.lines <- line
 	}
 
+	zlog.Info("done scanning lines")
 	if scanner.Err() == nil {
 		close(r.lines)
 		return io.EOF
@@ -422,6 +423,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 	return nil
 }
 
+// BLOCK_END 4 FIXEDSLOTIDBECAUSEWEDONTNEEDITANDCODECHANGED 1635424623 1635424624
 // BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316
 // BLOCK_END BLOCK_NUM LAST_ENTRY_HASH GENESIS_UNIX_TIMESTAMP CLOCK_UNIX_TIMESTAMP
 func (ctx *parseCtx) readBlockEnd(line string) (err error) {
@@ -453,12 +455,12 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 		return fmt.Errorf("slot end's active bank does not match context's active bank")
 	}
 
-	slotID, err := base58.Decode(chunks[2])
-	if err != nil {
-		return fmt.Errorf("slot id %q is invalid: %w", chunks[2], err)
-	}
+	//slotID, err := base58.Decode(chunks[2])
+	//if err != nil {
+	//	return fmt.Errorf("slot id %q is invalid: %w", chunks[2], err)
+	//}
 
-	ctx.activeBank.blk.Id = slotID
+	//ctx.activeBank.blk.Id = slotID
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
 	ctx.activeBank.ended = true
