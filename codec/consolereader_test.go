@@ -17,6 +17,7 @@ package codec
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io"
 	"io/ioutil"
 	"os"
@@ -42,6 +43,7 @@ func Test_readFromFile(t *testing.T) {
 	require.NoError(t, err)
 
 	block := s.(*pbcodec.Block)
+	spew.Dump(block)
 
 	// TODO: add more testing
 
@@ -63,6 +65,16 @@ func Test_readFromFile(t *testing.T) {
 	transaction := block.Transactions[0]
 	assert.Equal(t, "4ctVmqXREqTutvFETgjfsZdXW3Q2kzHbmA9jecfP9z1FGy19VjNQXVqqc9HquimieXYFFWrmEKxTrYcww8ZjySwd", base58.Encode(transaction.Id))
 	assert.Equal(t, 1, len(transaction.Instructions))
+
+	s, err = cr.Read()
+	require.NoError(t, err)
+	block = s.(*pbcodec.Block)
+	spew.Dump(block)
+
+	s, err = cr.Read()
+	require.NoError(t, err)
+	block = s.(*pbcodec.Block)
+	spew.Dump(block)
 
 }
 

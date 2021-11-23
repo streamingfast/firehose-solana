@@ -165,6 +165,12 @@ func (r *ConsoleReader) next() (out interface{}, err error) {
 		}
 	}
 
+	select {
+	case b := <-ctx.blockBuffer:
+		return b, nil
+	default:
+	}
+
 	zlog.Info("lines channel has been closed")
 	return nil, io.EOF
 }
@@ -206,7 +212,7 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 
 	// this occurs when the root of the active banks has been computed
 	case strings.HasPrefix(line, "BLOCK_ROOT"):
-		err = ctx.readBlockRoot(line)
+		//err = ctx.readBlockRoot(line)
 
 	default:
 		zlog.Warn("unknown log line", zap.String("line", line))
@@ -462,20 +468,24 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	ctx.activeBank.blk.Id = blockHash
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
-	ctx.activeBank.ended = true
+	//ctx.activeBank.ended = true
 
 	if err := ctx.activeBank.processBatchAggregation(); err != nil {
 		return fmt.Errorf("sorting: %w", err)
 	}
 
+	ctx.blockBuffer <- ctx.activeBank.blk
 	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	ctx.activeBank = nil
+
+	zlog.Debug("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
 
 	return nil
 }
 
 // BLOCK_ROOT 6482838121
 // Simply the root block number, when this block is done processing, and all of its votes are taken into account.
+//todo: Block Root not need any more
 func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 	zlog.Debug("reading block root", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
