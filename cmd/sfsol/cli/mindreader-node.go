@@ -85,7 +85,7 @@ func getMindreaderLogPlugin(
 	go blockDataArchiver.Start()
 
 	consoleReaderFactory := func(lines chan string) (mindreader.ConsolerReader, error) {
-		return codec.NewConsoleReader(lines, viper.GetString("node-mindreader-deepmind-batch-files-path"))
+		return codec.NewConsoleReader(lines, viper.GetString("mindreader-node-deepmind-batch-files-path"))
 	}
 
 	consoleReaderTransformer := func(obj interface{}) (*bstream.Block, error) {
