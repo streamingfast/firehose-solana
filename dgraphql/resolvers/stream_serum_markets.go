@@ -17,10 +17,7 @@ type SerumMarketSubscription struct {
 func (r *Root) SubscriptionMarket(ctx context.Context, args *SerumMarketSubscription) (<-chan *SerumOrderBook, error) {
 	zlog.Info("entering market subscription.")
 	marketPublicKey := solana.MustPublicKeyFromBase58(args.MarketAddress)
-	wsClient, err := ws.Dial(ctx, r.wsURL)
-	if err != nil {
-		return nil, fmt.Errorf("order book subscription: websocket dial: %w", err)
-	}
+	wsClient := ws.NewClient(r.wsURL, false)
 
 	accountInfo, err := r.rpcClient.GetAccountInfo(ctx, marketPublicKey)
 	if err != nil {
@@ -42,7 +39,7 @@ func (r *Root) SubscriptionMarket(ctx context.Context, args *SerumMarketSubscrip
 	}
 	go func() {
 		for {
-			result, err := sub.Recv()
+			result, err := sub.Recv(ctx)
 			if err != nil {
 				zlog.Error("sub.")
 				//return nil, fmt.Errorf("order book subscription: subscribe account info: %w", err)

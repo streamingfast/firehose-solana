@@ -25,9 +25,9 @@ import (
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/derr"
 	"github.com/streamingfast/dlauncher/launcher"
-	_ "github.com/streamingfast/kvdb/store/badger"
-	_ "github.com/streamingfast/kvdb/store/bigkv"
-	_ "github.com/streamingfast/kvdb/store/tikv"
+	//_ "github.com/streamingfast/kvdb/store/badger"
+	//_ "github.com/streamingfast/kvdb/store/bigkv"
+	//_ "github.com/streamingfast/kvdb/store/tikv"
 	_ "github.com/streamingfast/sf-solana/codec"
 	"go.uber.org/zap"
 )

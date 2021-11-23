@@ -1,6 +1,7 @@
 package accountchange
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/streamingfast/solana-go"
@@ -18,8 +19,7 @@ func NewStream(wsClient *ws.Client) Stream {
 	}
 }
 
-func (s *Stream) WatchAccount(account solana.PublicKey) (*Subscription, error) {
-
+func (s *Stream) WatchAccount(ctx context.Context, account solana.PublicKey) (*Subscription, error) {
 	//todo: Replace ws subscription by a mindreader backed account data stream.
 	wsSub, err := s.wsClient.AccountSubscribe(account, rpc.CommitmentRecent)
 	if err != nil {
@@ -29,7 +29,7 @@ func (s *Stream) WatchAccount(account solana.PublicKey) (*Subscription, error) {
 	//todo: move this in the mindreader backed account data stream.
 	sub := newSubscription(account, nil)
 	for {
-		wsRes, err := wsSub.Recv()
+		wsRes, err := wsSub.Recv(ctx)
 		if err != nil {
 			sub.err <- err
 		}

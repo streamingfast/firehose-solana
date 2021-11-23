@@ -56,15 +56,13 @@ func TestReader_GetOrder(t *testing.T) {
 			},
 			expect: &pbserumhist.Order{
 				Num:         6,
-				Market:      "H5uzEytiByuXt964KampmuNCurNDwkVVypkym75J2DQW",
-				Trader:      "5coBYaaDYd9xkMhDPDGcV2Batu51N987Um1jcrE122AY",
+				Market:      solana.MustPublicKeyFromBase58("H5uzEytiByuXt964KampmuNCurNDwkVVypkym75J2DQW").ToSlice(),
+				Trader:      solana.MustPublicKeyFromBase58("5coBYaaDYd9xkMhDPDGcV2Batu51N987Um1jcrE122AY").ToSlice(),
 				Side:        pbserumhist.Side_ASK,
 				LimitPrice:  1955,
 				MaxQuantity: 75300000,
 				Type:        pbserumhist.OrderType_LIMIT,
-				SlotNum:     10,
-				SlotHash:    "83Wa21PHcGdzHzVcAiitf4P2D9KjMgNPakTFvnexLuNp",
-				TrxId:       "4JuADAtnhxg9jUTSx2j7jRQ9vmQiLFTsGxQhQnydHriu1WNbpYhB4LmKn6fmZUL7JTArsSSha8n3zKYpHau4zd5z",
+				TrxId:       solana.MustPublicKeyFromBase58("4JuADAtnhxg9jUTSx2j7jRQ9vmQiLFTsGxQhQnydHriu1WNbpYhB4LmKn6fmZUL7JTArsSSha8n3zKYpHau4zd5z").ToSlice(),
 				TrxIdx:      2,
 				InstIdx:     2,
 			},
@@ -80,20 +78,18 @@ func TestReader_GetOrder(t *testing.T) {
 				},
 				{
 					Key:   keyer.EncodeOrderClose(solana.MustPublicKeyFromBase58("H5uzEytiByuXt964KampmuNCurNDwkVVypkym75J2DQW"), 12, 1, 3, 6),
-					Value: testInstructionRef(t, "7gLWGjUvfRnFZa7Z6uxze8JX2mxWC4Td29EiHSN16Ys8", "2FmL1EoKvxJjgUkNcMzNpbVMyxeCcFhEsXwNaT3V7eZfGt3d6aTxWkZBt5cr8oqhCyy5SVWmz9YyvuLaWjR4ptnU", timeNow),
+					Value: testInstructionRef(t, "2FmL1EoKvxJjgUkNcMzNpbVMyxeCcFhEsXwNaT3V7eZfGt3d6aTxWkZBt5cr8oqhCyy5SVWmz9YyvuLaWjR4ptnU", timeNow),
 				},
 			},
 			expect: &pbserumhist.Order{
 				Num:         6,
-				Market:      "H5uzEytiByuXt964KampmuNCurNDwkVVypkym75J2DQW",
-				Trader:      "5coBYaaDYd9xkMhDPDGcV2Batu51N987Um1jcrE122AY",
+				Market:      solana.MustPublicKeyFromBase58("H5uzEytiByuXt964KampmuNCurNDwkVVypkym75J2DQW").ToSlice(),
+				Trader:      solana.MustPublicKeyFromBase58("5coBYaaDYd9xkMhDPDGcV2Batu51N987Um1jcrE122AY").ToSlice(),
 				Side:        pbserumhist.Side_ASK,
 				LimitPrice:  1955,
 				MaxQuantity: 75300000,
 				Type:        pbserumhist.OrderType_LIMIT,
-				SlotNum:     10,
-				SlotHash:    "83Wa21PHcGdzHzVcAiitf4P2D9KjMgNPakTFvnexLuNp",
-				TrxId:       "4JuADAtnhxg9jUTSx2j7jRQ9vmQiLFTsGxQhQnydHriu1WNbpYhB4LmKn6fmZUL7JTArsSSha8n3zKYpHau4zd5z",
+				TrxId:       solana.MustSignatureFromString("4JuADAtnhxg9jUTSx2j7jRQ9vmQiLFTsGxQhQnydHriu1WNbpYhB4LmKn6fmZUL7JTArsSSha8n3zKYpHau4zd5z").ToSlice(),
 				TrxIdx:      2,
 				InstIdx:     2,
 			},
@@ -109,20 +105,18 @@ func TestReader_GetOrder(t *testing.T) {
 				},
 				{
 					Key:   keyer.EncodeOrderCancel(solana.MustPublicKeyFromBase58("H5uzEytiByuXt964KampmuNCurNDwkVVypkym75J2DQW"), 13, 2, 4, 6),
-					Value: testInstructionRef(t, "7gLWGjUvfRnFZa7Z6uxze8JX2mxWC4Td29EiHSN16Ys8", "2FmL1EoKvxJjgUkNcMzNpbVMyxeCcFhEsXwNaT3V7eZfGt3d6aTxWkZBt5cr8oqhCyy5SVWmz9YyvuLaWjR4ptnU", timeNow),
+					Value: testInstructionRef(t, "2FmL1EoKvxJjgUkNcMzNpbVMyxeCcFhEsXwNaT3V7eZfGt3d6aTxWkZBt5cr8oqhCyy5SVWmz9YyvuLaWjR4ptnU", timeNow),
 				},
 			},
 			expect: &pbserumhist.Order{
 				Num:         6,
-				Market:      "H5uzEytiByuXt964KampmuNCurNDwkVVypkym75J2DQW",
-				Trader:      "5coBYaaDYd9xkMhDPDGcV2Batu51N987Um1jcrE122AY",
+				Market:      solana.MustPublicKeyFromBase58("H5uzEytiByuXt964KampmuNCurNDwkVVypkym75J2DQW").ToSlice(),
+				Trader:      solana.MustPublicKeyFromBase58("5coBYaaDYd9xkMhDPDGcV2Batu51N987Um1jcrE122AY").ToSlice(),
 				Side:        pbserumhist.Side_ASK,
 				LimitPrice:  1955,
 				MaxQuantity: 75300000,
 				Type:        pbserumhist.OrderType_LIMIT,
-				SlotNum:     10,
-				SlotHash:    "83Wa21PHcGdzHzVcAiitf4P2D9KjMgNPakTFvnexLuNp",
-				TrxId:       "4JuADAtnhxg9jUTSx2j7jRQ9vmQiLFTsGxQhQnydHriu1WNbpYhB4LmKn6fmZUL7JTArsSSha8n3zKYpHau4zd5z",
+				TrxId:       solana.MustSignatureFromString("4JuADAtnhxg9jUTSx2j7jRQ9vmQiLFTsGxQhQnydHriu1WNbpYhB4LmKn6fmZUL7JTArsSSha8n3zKYpHau4zd5z").ToSlice(),
 				TrxIdx:      2,
 				InstIdx:     2,
 			},
@@ -169,25 +163,23 @@ func TestReader_GetOrder(t *testing.T) {
 func testNewOrderData(t *testing.T, orderNum uint64, trader solana.PublicKey) []byte {
 	o := &pbserumhist.Order{
 		Num:         orderNum,
-		Market:      "",
-		Trader:      trader.String(),
+		Market:      nil,
+		Trader:      trader.ToSlice(),
 		Side:        serum.SideAsk,
 		LimitPrice:  1955,
 		MaxQuantity: 75300000,
 		Type:        pbserumhist.OrderType_LIMIT,
 		Fills:       nil,
-		SlotHash:    "83Wa21PHcGdzHzVcAiitf4P2D9KjMgNPakTFvnexLuNp",
-		TrxId:       "4JuADAtnhxg9jUTSx2j7jRQ9vmQiLFTsGxQhQnydHriu1WNbpYhB4LmKn6fmZUL7JTArsSSha8n3zKYpHau4zd5z",
+		TrxId:       solana.MustSignatureFromString("4JuADAtnhxg9jUTSx2j7jRQ9vmQiLFTsGxQhQnydHriu1WNbpYhB4LmKn6fmZUL7JTArsSSha8n3zKYpHau4zd5z").ToSlice(),
 	}
 	cnt, err := proto.Marshal(o)
 	require.NoError(t, err)
 	return cnt
 }
 
-func testInstructionRef(t *testing.T, slotHash, trxHash string, timestamp time.Time) []byte {
+func testInstructionRef(t *testing.T, trxHash string, timestamp time.Time) []byte {
 	o := &pbserumhist.InstructionRef{
-		SlotHash:  slotHash,
-		TrxHash:   trxHash,
+		TrxId:     solana.MustSignatureFromString(trxHash).ToSlice(),
 		Timestamp: mustProtoTimestamp(timestamp),
 	}
 	cnt, err := proto.Marshal(o)
