@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//todo: error from read function are handle right by the node manager
+//todo: handle genesis
+//todo: Remove BLOCK_ROOT
+//todo: Account data change compression
+
 package codec
 
 import (
@@ -155,7 +160,7 @@ func (r *ConsoleReader) next() (out interface{}, err error) {
 
 		line = line[6:] // removes the DMLOG prefix
 		if err = parseLine(ctx, line); err != nil {
-			//todo: Error are not propagated correctly ...
+			panic(err)
 			return nil, r.formatError(line, err)
 		}
 
