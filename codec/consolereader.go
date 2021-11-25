@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//todo: error from read function are handle right by the node manager
-//todo: handle genesis
-//todo: Remove BLOCK_ROOT
+//todo: error from read function are handle right by the node manager.
+//todo: Fix node logs not outputting.
+//todo: Check why account data change file are so small.
+//todo: handle genesis.
+//todo: Remove BLOCK_ROOT DMLOG.
 //todo: Account data change compression
 
 package codec

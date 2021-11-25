@@ -60,13 +60,13 @@ func Test_readFromFile(t *testing.T) {
 	//	ClockUnixTimestamp:   1635424623,
 	//	RootNum:              0,
 	//}, block)
-	assert.Equal(t, "5XCVxTsM4u6i3AWz9duzzhWH7vwHukUeXrrbEskhQa9U", base58.Encode(block.Id))
+	assert.Equal(t, "7YoKiNZAbSCELzsN7qS2a87yggcjtA18o4nvgowekKPZ", base58.Encode(block.Id))
 	assert.Equal(t, uint64(1), block.Number)
 	assert.Equal(t, "D9i2oNmbRpC3crs3JHw1bWXeRaairC1Ko2QeTYgG2Fte", base58.Encode(block.PreviousId))
 	assert.Equal(t, uint32(1), block.Version)
-	assert.Equal(t, uint32(1), block.TransactionCount)
+	assert.Equal(t, uint32(2), block.TransactionCount)
 	transaction := block.Transactions[0]
-	assert.Equal(t, "4ctVmqXREqTutvFETgjfsZdXW3Q2kzHbmA9jecfP9z1FGy19VjNQXVqqc9HquimieXYFFWrmEKxTrYcww8ZjySwd", base58.Encode(transaction.Id))
+	assert.Equal(t, "37HanEJP41PE3C7rc7GUYXm67tKeum8XhiVHKX3Qr7svNAEDWb2W26asR5mAxBCBRFvKZkoTDL2Atkam6pn5BTAf", base58.Encode(transaction.Id))
 	assert.Equal(t, 1, len(transaction.Instructions))
 
 	s, err = cr.Read()

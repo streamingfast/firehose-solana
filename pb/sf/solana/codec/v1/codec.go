@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 )
@@ -122,21 +121,21 @@ func (b *Block) AsRef() bstream.BlockRef {
 	return bstream.NewBlockRef(b.ID(), b.Number)
 }
 
-func (te *TransactionError) DecodedPayload() proto.Message {
-	var x ptypes.DynamicAny
-	if err := ptypes.UnmarshalAny(te.Payload, &x); err != nil {
-		panic(fmt.Sprintf("unable to unmarshall transaction error payload: %s", err))
-	}
-	return x.Message
-}
-
-func (ie *InstructionError) DecodedPayload() proto.Message {
-	var x ptypes.DynamicAny
-	if err := ptypes.UnmarshalAny(ie.Payload, &x); err != nil {
-		panic(fmt.Sprintf("unable to unmarshall instruction error payload: %s", err))
-	}
-	return x.Message
-}
+//func (te *TransactionError) DecodedPayload() proto.Message {
+//	var x ptypes.DynamicAny
+//	if err := ptypes.UnmarshalAny(te.Payload, &x); err != nil {
+//		panic(fmt.Sprintf("unable to unmarshall transaction error payload: %s", err))
+//	}
+//	return x.Message
+//}
+//
+//func (ie *InstructionError) DecodedPayload() proto.Message {
+//	var x ptypes.DynamicAny
+//	if err := ptypes.UnmarshalAny(ie.Payload, &x); err != nil {
+//		panic(fmt.Sprintf("unable to unmarshall instruction error payload: %s", err))
+//	}
+//	return x.Message
+//}
 
 func BlockToBuffer(block *Block) ([]byte, error) {
 	buf, err := proto.Marshal(block)
