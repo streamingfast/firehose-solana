@@ -263,6 +263,7 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	batch := &pbcodec.Batch{}
 	err = proto.Unmarshal(data, batch)
 	if err != nil {
+		zlog.Warn("Proto patate", zap.Uint64("block_num", ctx.activeBank.blk.Number))
 		return fmt.Errorf("read batch: proto unmarshall: %w", err)
 	}
 
