@@ -269,7 +269,7 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 
 		//--------------------------------
 		//todo: remove
-		zlog.Warn("Proto patate", zap.Uint64("block_num", ctx.activeBank.blk.Number))
+		zlog.Warn("Proto patate", zap.Uint64("block_num", ctx.activeBank.blk.Number), zap.String("file_name", filename))
 		err = ioutil.WriteFile("/tmp/poc", data, 0644)
 		if err != nil {
 			log.Error("failed to backup crashing file ...")
