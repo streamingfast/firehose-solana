@@ -18,13 +18,15 @@
 //todo: handle genesis.
 //todo: Remove BLOCK_ROOT DMLOG.
 //todo: Account data change compression
-
+//todo: cleanup account data "transert/ram disk" folder on restart
+//todo: delete dmlog-163670-2 files after unmarshall it
 package codec
 
 import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/pingcap/log"
 	"io"
 	"io/ioutil"
 	"os"
@@ -240,6 +242,7 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	}
 
 	filename := chunks[1]
+	zlog.Debug("reading batch file", zap.String("file_name", filename))
 	filePath := filepath.Join(ctx.batchFilesPath, filename)
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -264,6 +267,10 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	err = proto.Unmarshal(data, batch)
 	if err != nil {
 		zlog.Warn("Proto patate", zap.Uint64("block_num", ctx.activeBank.blk.Number))
+		err = ioutil.WriteFile("/tmp/poc", data, 0644)
+		if err != nil {
+			log.Error("failed to backup crashing file ...")
+		}
 		return fmt.Errorf("read batch: proto unmarshall: %w", err)
 	}
 
