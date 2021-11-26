@@ -266,11 +266,16 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	batch := &pbcodec.Batch{}
 	err = proto.Unmarshal(data, batch)
 	if err != nil {
+
+		//--------------------------------
+		//todo: remove
 		zlog.Warn("Proto patate", zap.Uint64("block_num", ctx.activeBank.blk.Number))
 		err = ioutil.WriteFile("/tmp/poc", data, 0644)
 		if err != nil {
 			log.Error("failed to backup crashing file ...")
 		}
+		//--------------------------------
+
 		return fmt.Errorf("read batch: proto unmarshall: %w", err)
 	}
 

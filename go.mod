@@ -16,6 +16,7 @@ require (
 	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mr-tron/base58 v1.2.0
+	github.com/pingcap/log v0.0.0-20191012051959-b742a5d432e9
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.9.0
 	github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5
