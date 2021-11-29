@@ -13,7 +13,7 @@ func init() {
 	bstream.GetProtocolGenesisBlock = 0
 	bstream.GetBlockWriterHeaderLen = 10
 
-	bstream.GetBlockPayloadSetter = bstream.ATMCachedPayloadSetter
+	bstream.GetBlockPayloadSetter = bstream.MemoryBlockPayloadSetter
 	bstream.GetMemoizeMaxAge = 200 * 15 * time.Second
 
 }
