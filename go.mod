@@ -20,12 +20,12 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.9.0
 	github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5
-	github.com/streamingfast/bstream v0.0.2-0.20210819232303-b30fbeee04ff
+	github.com/streamingfast/bstream v0.0.2-0.20211029201027-268abefde7b4
 	github.com/streamingfast/dauth v0.0.0-20210811181149-e8fd545948cc
 	github.com/streamingfast/dbin v0.0.0-20210809205249-73d5eca35dc5
 	github.com/streamingfast/derr v0.0.0-20210811180100-9138d738bcec
 	github.com/streamingfast/dgraphql v0.0.2-0.20210811200910-e1966c29c473
-	github.com/streamingfast/dgrpc v0.0.0-20210811180351-8646818518b2
+	github.com/streamingfast/dgrpc v0.0.0-20210901144702-c57c3701768b
 	github.com/streamingfast/dlauncher v0.0.0-20210811194929-f06e488e63da
 	github.com/streamingfast/dmetering v0.0.0-20210811181351-eef120cfb817
 	github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447
@@ -34,7 +34,7 @@ require (
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
 	github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3
 	github.com/streamingfast/logging v0.0.0-20210908162127-bdc5856d5341
-	github.com/streamingfast/merger v0.0.3-0.20210811195536-1011c89f0a67
+	github.com/streamingfast/merger v0.0.3-0.20210913201227-b6049773cace
 	github.com/streamingfast/node-manager v0.0.2-0.20210820155058-c5162e259ac0
 	github.com/streamingfast/pbgo v0.0.6-0.20210812023556-e996f9c4fb86
 	github.com/streamingfast/relayer v0.0.2-0.20210811200014-6e0e8bc2814f

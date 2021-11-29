@@ -656,11 +656,16 @@ github.com/spf13/viper v1.6.2/go.mod h1:t3iDnF5Jlj76alVNuyFBk5oUMCvsrkbvZK0WQdfD
 github.com/spf13/viper v1.7.0/go.mod h1:8WkrPz2fc9jxqZNCJI/76HCieCp4Q8HaLFoCha5qpdg=
 github.com/spf13/viper v1.9.0 h1:yR6EXjTp0y0cLN8OZg1CRZmOBdI88UcGkhgyJhu6nZk=
 github.com/spf13/viper v1.9.0/go.mod h1:+i6ajR7OX2XaiBkrcZJFK21htRk7eDeLg7+O6bhUPP4=
+github.com/streamingfast/atm v0.0.0-20211005171144-f2f3bbfda2f6 h1:S5hTdE/oi9kMqkAvZlFX/+J8AyWLoxR8sYioQB/23iQ=
+github.com/streamingfast/atm v0.0.0-20211005171144-f2f3bbfda2f6/go.mod h1:iISPGAstbUsPgyC3auLLi7PYUTi9lHv5z0COam0OPOY=
 github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5 h1:xCVaIP9q+nqRxHrb1wCLs3AABUcCgLGK0IakN4CMQbk=
 github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5/go.mod h1:LEQhe6qUvAQSYBJu7MZvDU1kx4JrZzxru3Ga1rRCCuo=
 github.com/streamingfast/bstream v0.0.2-0.20210811181043-4c1920a7e3e3/go.mod h1:0Ucl6SRmqAcXa0vYhSAnX8sscejfPhpwuW5Pgz9Ndp4=
 github.com/streamingfast/bstream v0.0.2-0.20210819232303-b30fbeee04ff h1:GMym3jk34ww9/Ee3JYICte3SVn8FXo8oKlYCsZKp1S8=
 github.com/streamingfast/bstream v0.0.2-0.20210819232303-b30fbeee04ff/go.mod h1:RcG/aJ2i6laxXVvRotAcQ97WK4nPhEzStrcoj9usX5s=
+github.com/streamingfast/bstream v0.0.2-0.20210825183030-76aac82b2da2/go.mod h1:Qacs1U/42rt9u1IfLxugIxV+kWSEtvtYmYVu5tPsZ5g=
+github.com/streamingfast/bstream v0.0.2-0.20211029201027-268abefde7b4 h1:4eLJTsCroMZQlU9zSucJpRHzcZ5mMj+0FFBSZV1ahYc=
+github.com/streamingfast/bstream v0.0.2-0.20211029201027-268abefde7b4/go.mod h1:bbzeXx/Ow/6SKNjlOKScquCI6A3W3tR3TjKgDvxWJg8=
 github.com/streamingfast/dauth v0.0.0-20210811181149-e8fd545948cc h1:UHQWJm2df+kNauxV2Gk+0s438Cz051FOiXn4nLr2Pyg=
 github.com/streamingfast/dauth v0.0.0-20210811181149-e8fd545948cc/go.mod h1:wwjRBEA7vZZ5kfy3I4LB5NJhFJWN2gaYgpBEmOnDwD8=
 github.com/streamingfast/dbin v0.0.0-20210809205249-73d5eca35dc5 h1:m/3aIPNXCwZ9m/dfYdOs8ftrS7GJl82ipVr6K2aZiBs=
@@ -673,6 +678,8 @@ github.com/streamingfast/dgraphql v0.0.2-0.20210811200910-e1966c29c473/go.mod h1
 github.com/streamingfast/dgrpc v0.0.0-20210810185305-905172f728e8/go.mod h1:jBj49IB1Oa9ILev6cx9CfXl7Td83Mdyn2gJOA9F+vZA=
 github.com/streamingfast/dgrpc v0.0.0-20210811180351-8646818518b2 h1:2rzOnMX+lcd4SHTkxKOXyL7BVxVLCgjr0mTq9tVpras=
 github.com/streamingfast/dgrpc v0.0.0-20210811180351-8646818518b2/go.mod h1:WG3YAJ2JU1MSKbl+h+Fc887K4Rht2WEvuLa0eQ2bibE=
+github.com/streamingfast/dgrpc v0.0.0-20210901144702-c57c3701768b h1:FBORjhpkepdgRheKSEWdNch6I48+x4kQ45kmZkJ9pzg=
+github.com/streamingfast/dgrpc v0.0.0-20210901144702-c57c3701768b/go.mod h1:8TuRw3ksNsJDYItDUHnydt2IURGxB3s6ME4oSKS8rCs=
 github.com/streamingfast/dhammer v0.0.0-20210811180702-456c4cf0a840 h1:JFEen28d0yLGk5/PvbZipeiqjdjyK3SJbNm9uaVcVvU=
 github.com/streamingfast/dhammer v0.0.0-20210811180702-456c4cf0a840/go.mod h1:XULhFAiYMZG+Zjr+GfVuLhB/yUugoWp7I7z+Q6z5hM4=
 github.com/streamingfast/dipp v1.0.1-0.20210811200841-d2cca4e058e6 h1:8j9KSl3X+G4ABwbCR221rErFFoPKJhMq4lUICJtbRE0=
@@ -686,6 +693,7 @@ github.com/streamingfast/dmetering v0.0.0-20210811181351-eef120cfb817/go.mod h1:
 github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447 h1:oZwOVjxpWCqLUjgcPgVigVCHYR40JkmXfm1kuMcCOQk=
 github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447/go.mod h1:VLdQY/FwczmC/flqWkcsBbqXO4BhU4zQDSK7GMrpcjY=
 github.com/streamingfast/dstore v0.1.1-0.20210811180812-4db13e99cc22/go.mod h1:dVDGhFuGT4za66neiB76oi6jPxXH9Rjn3EMYSu+f/Oo=
+github.com/streamingfast/dstore v0.1.1-0.20211012134319-16e840827e38/go.mod h1:Jcr8TZ2XOAAFB7/7UeN6Zr8LM+Qv3cg36CsXpVDoAuU=
 github.com/streamingfast/dstore v0.1.1-0.20211028233549-6fa17808533b h1:2irHxLk3kYPFOLG8fIjTKKXAHI/NrROogoAZey6vFXY=
 github.com/streamingfast/dstore v0.1.1-0.20211028233549-6fa17808533b/go.mod h1:Jcr8TZ2XOAAFB7/7UeN6Zr8LM+Qv3cg36CsXpVDoAuU=
 github.com/streamingfast/dtracing v0.0.0-20210810035915-473055fed32a/go.mod h1:z8WI8Y2sVfFZQQewUC40hE3TgISt3K4n5RwKzXG65Pg=
@@ -704,6 +712,8 @@ github.com/streamingfast/logging v0.0.0-20210908162127-bdc5856d5341 h1:+9UISis7a
 github.com/streamingfast/logging v0.0.0-20210908162127-bdc5856d5341/go.mod h1:4GdqELhZOXj4xwc4IaBmzofzdErGynnaSzuzxy0ZIBo=
 github.com/streamingfast/merger v0.0.3-0.20210811195536-1011c89f0a67 h1:Hj4QnGLfBvyj5Lx0xxQ96WT0Ztv/N9ub38fdAOljUK8=
 github.com/streamingfast/merger v0.0.3-0.20210811195536-1011c89f0a67/go.mod h1:AdPD5JmY9Korm14urrQXWbiyq8ojT4Cc5/orgd7kmIE=
+github.com/streamingfast/merger v0.0.3-0.20210913201227-b6049773cace h1:zgA2yy+UE364GAOUhk4Gk++ZtCn2by3Qjc4GnzBaAPY=
+github.com/streamingfast/merger v0.0.3-0.20210913201227-b6049773cace/go.mod h1:pM7ZvW7RFMsqeW7i9vZloe0Q+hvmp6OKPggfxtkpYfc=
 github.com/streamingfast/node-manager v0.0.2-0.20210811195853-d6b519927636 h1:DaefsY53iHdrTpWwfJfMKeRieWXXev+tO0066TJeZWQ=
 github.com/streamingfast/node-manager v0.0.2-0.20210811195853-d6b519927636/go.mod h1:/m/ZKTv80vesuwqU2RTbwR6Lky4ylygdzYjaIN8cF0s=
 github.com/streamingfast/node-manager v0.0.2-0.20210820155058-c5162e259ac0 h1:StqPoI7lQ3/H5s/j7OtxsBMmYqkHClqzdxu7PJX9aFM=

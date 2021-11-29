@@ -20,6 +20,8 @@
 //todo: Account data change compression
 //todo: cleanup account data "transert/ram disk" folder on restart
 //todo: delete dmlog-163670-2 files after unmarshall it
+//todo: firehose should merge back data file into block
+
 package codec
 
 import (
