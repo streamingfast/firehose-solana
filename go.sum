@@ -704,6 +704,8 @@ github.com/streamingfast/logging v0.0.0-20210908162127-bdc5856d5341 h1:+9UISis7a
 github.com/streamingfast/logging v0.0.0-20210908162127-bdc5856d5341/go.mod h1:4GdqELhZOXj4xwc4IaBmzofzdErGynnaSzuzxy0ZIBo=
 github.com/streamingfast/merger v0.0.3-0.20210913201227-b6049773cace h1:zgA2yy+UE364GAOUhk4Gk++ZtCn2by3Qjc4GnzBaAPY=
 github.com/streamingfast/merger v0.0.3-0.20210913201227-b6049773cace/go.mod h1:pM7ZvW7RFMsqeW7i9vZloe0Q+hvmp6OKPggfxtkpYfc=
+github.com/streamingfast/merger v0.0.3-0.20211129184552-80c5afdea8bc h1:CrTt3wn21HQD/XhLE3pPOplMg97fi/7F+4iYUOY5UCU=
+github.com/streamingfast/merger v0.0.3-0.20211129184552-80c5afdea8bc/go.mod h1:eET28B5lppI1+Wv8oDRGGXpe9q2FS/Ma2w7Bkxxsq30=
 github.com/streamingfast/node-manager v0.0.2-0.20210820155058-c5162e259ac0 h1:StqPoI7lQ3/H5s/j7OtxsBMmYqkHClqzdxu7PJX9aFM=
 github.com/streamingfast/node-manager v0.0.2-0.20210820155058-c5162e259ac0/go.mod h1:qv/DnTHhFDke9nvw8Vv3+RuO2nt206NeqPU7QFiJS60=
 github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 h1:xlWSfi1BoPfsHtPb0VEHGUcAdBF208LUiFCwfaVPfLA=
