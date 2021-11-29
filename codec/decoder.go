@@ -22,7 +22,12 @@ func BlockDecoder(blk *bstream.Block) (interface{}, error) {
 	}
 
 	block := new(pbcodec.Block)
-	err := proto.Unmarshal(blk.Payload(), block)
+	payload, err := blk.Payload.Get()
+	if err != nil {
+		return nil, fmt.Errorf("getting payload: %s", err)
+	}
+
+	err = proto.Unmarshal(payload, block)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode payload: %s", err)
 	}

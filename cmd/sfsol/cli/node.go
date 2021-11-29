@@ -110,7 +110,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 
 		sfDataDir := runtime.AbsDataDir
 
-		dataDir := mustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir"))
+		dataDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir"))
 		configDir, err := filepath.Abs(viper.GetString(app + "-config-dir"))
 		if err != nil {
 			return nil, fmt.Errorf("invalid config directory %q: %w", viper.GetString(app+"-config-dir"), err)
@@ -308,7 +308,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 				Arguments:  arguments,
 				// BinaryPath:          "/bin/bash",
 				// Arguments:           []string{"-c", `cat /tmp/mama.txt /home/abourget/build/solana/validator/dmlog.log; sleep 3600`},
-				DataDirPath:         mustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir")),
+				DataDirPath:         MustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir")),
 				DebugDeepMind:       viper.GetBool(app + "-debug-deep-mind"),
 				LogToZap:            viper.GetBool(app + "-log-to-zap"),
 				HeadBlockUpdateFunc: metricsAndReadinessManager.UpdateHeadBlock,
@@ -339,8 +339,8 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 		if err != nil {
 			return nil, fmt.Errorf("unable to create chain operator: %w", err)
 		}
-		mergedBlocksStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url"))
-		snapshotStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-snapshots-store-url"))
+		mergedBlocksStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url"))
+		snapshotStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-snapshots-store-url"))
 		if snapshotStoreURL != "" {
 			localSnapshotDir := viper.GetString(app + "-local-snapshot-folder")
 			genesisURL := viper.GetString(app + "-genesis-url")
@@ -370,12 +370,12 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 
 		if kind == "mindreader" {
 			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
-			oneBlockStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
-			blockDataStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-block-data-store-url"))
+			oneBlockStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
+			blockDataStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-block-data-store-url"))
 			mergeAndStoreDirectly := viper.GetBool(app + "-merge-and-store-directly")
 			mergeThresholdBlockAge := viper.GetDuration(app + "-merge-threshold-block-age")
-			workingDir := mustReplaceDataDir(sfDataDir, viper.GetString(app+"-working-dir"))
-			blockDataWorkingDir := mustReplaceDataDir(sfDataDir, viper.GetString(app+"-block-data-working-dir"))
+			workingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-working-dir"))
+			blockDataWorkingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-block-data-working-dir"))
 			batchStartBlockNum := viper.GetUint64("mindreader-node-start-block-num")
 			batchStopBlockNum := viper.GetUint64("mindreader-node-stop-block-num")
 			blocksChanCapacity := viper.GetInt("mindreader-node-blocks-chan-capacity")
@@ -456,7 +456,7 @@ func getConfigFilePath(kind string, file string) (string, error) {
 }
 
 func getDataFilePath(runtime *launcher.Runtime, kind string, file string) (string, error) {
-	configValue := mustReplaceDataDir(runtime.AbsDataDir, viper.GetString(kind+"-node-data-dir"))
+	configValue := MustReplaceDataDir(runtime.AbsDataDir, viper.GetString(kind+"-node-data-dir"))
 	dataDir, err := filepath.Abs(configValue)
 	if err != nil {
 		return "", fmt.Errorf("invalid data directory %q: %w", configValue, err)

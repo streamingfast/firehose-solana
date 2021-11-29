@@ -16,7 +16,7 @@ func BlockFromProto(slot *pbcodec.Block) (*bstream.Block, error) {
 		return nil, fmt.Errorf("unable to marshal to binary form: %s", err)
 	}
 
-	return &bstream.Block{
+	block := &bstream.Block{
 		Id:             slot.ID(),
 		Number:         slot.Num(),
 		PreviousId:     slot.PreviousID(),
@@ -24,6 +24,6 @@ func BlockFromProto(slot *pbcodec.Block) (*bstream.Block, error) {
 		LibNum:         slot.LIBNum(),
 		PayloadKind:    Protocol_SOL,
 		PayloadVersion: int32(slot.Version),
-		PayloadBuffer:  content,
-	}, nil
+	}
+	return bstream.GetBlockPayloadSetter(block, content)
 }

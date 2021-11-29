@@ -101,7 +101,6 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 }
 
 func readBlock(blk *bstream.Block, outputDot bool) error {
-	payloadSize := len(blk.PayloadBuffer)
 	block := blk.ToNative().(*pbcodec.Block)
 	var accChangesBundle *pbcodec.AccountChangesBundle
 	if viper.GetBool("data") {
@@ -152,14 +151,13 @@ func readBlock(blk *bstream.Block, outputDot bool) error {
 		)
 
 	} else {
-		fmt.Printf("Slot #%d (%s) (prev: %s...) (blk: %d) (LIB: %d) (%d bytes) (@: %s): %d transactions\n",
+		fmt.Printf("Slot #%d (%s) (prev: %s...) (blk: %d) (LIB: %d)  (@: %s): %d transactions\n",
 			block.Num(),
 			block.ID(),
 
 			block.PreviousId[0:6],
 			block.Number,
 			block.RootNum,
-			payloadSize,
 			block.Time(),
 			len(block.Transactions),
 		)

@@ -34,7 +34,7 @@ func init() {
 					SourceSnapshotsFolder:      viper.GetString("snapshotter-source-prefix"),
 					DestinationBucket:          viper.GetString("snapshotter-destination-bucket"),
 					DestinationSnapshotsFolder: viper.GetString("snapshotter-destination-prefix"),
-					Workdir:                    mustReplaceDataDir(sfDataDir, viper.GetString("snapshotter-working-dir")),
+					Workdir:                    MustReplaceDataDir(sfDataDir, viper.GetString("snapshotter-working-dir")),
 				},
 			), nil
 		},

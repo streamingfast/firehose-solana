@@ -14,6 +14,11 @@ func init() {
 		cmd.Flags().String("common-network-id", NetworkID, "[COMMON] Solana network identifier known to us for pre-configured elements Used by: miner-node, mindreader-node")
 		cmd.Flags().String("common-sf-network-id", SFNetworkID, "[COMMON] StreamingFast network ID, used for some billing functions by dgraphql")
 
+		cmd.Flags().Bool("common-atm-cache-enabled", false, "[COMMON] enable ATM caching")
+		cmd.Flags().String("common-atm-cache-dir", ATMDirectory, "[COMMON] ATM cache file directory.")
+		cmd.Flags().Int("common-atm-max-recent-entry-bytes", 21474836480, "[COMMON] ATM cache max size in bytes of recent entry heap")
+		cmd.Flags().Int("common-atm-max-entry-by-age-bytes", 21474836480, "[COMMON] ATM cache max size in bytes of age entry heap")
+
 		// Common stores configuration flags
 		cmd.Flags().String("common-blocks-store-url", MergedBlocksStoreURL, "[COMMON] Store URL (with prefix) where to read/write. Used by: relayer, statedb, trxdb-loader, blockmeta, search-indexer, search-live, search-forkresolver, eosws, accounthist")
 		cmd.Flags().String("common-oneblock-store-url", OneBlockStoreURL, "[COMMON] Store URL (with prefix) to read/write one-block files. Used by: mindreader, merger")

@@ -37,7 +37,7 @@ require (
 	github.com/streamingfast/merger v0.0.3-0.20210913201227-b6049773cace
 	github.com/streamingfast/node-manager v0.0.2-0.20210820155058-c5162e259ac0
 	github.com/streamingfast/pbgo v0.0.6-0.20210812023556-e996f9c4fb86
-	github.com/streamingfast/relayer v0.0.2-0.20210811200014-6e0e8bc2814f
+	github.com/streamingfast/relayer v0.0.2-0.20211006134256-f3773fc7f46d
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.3.1-0.20211123130545-cec9725a7d7a
 	github.com/stretchr/testify v1.7.0

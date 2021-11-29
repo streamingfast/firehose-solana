@@ -2,6 +2,7 @@ package codec
 
 import (
 	"github.com/streamingfast/bstream"
+	"time"
 )
 
 func init() {
@@ -11,4 +12,8 @@ func init() {
 	bstream.GetProtocolFirstStreamableBlock = 0
 	bstream.GetProtocolGenesisBlock = 0
 	bstream.GetBlockWriterHeaderLen = 10
+
+	bstream.GetBlockPayloadSetter = bstream.ATMCachedPayloadSetter
+	bstream.GetMemoizeMaxAge = 200 * 15 * time.Second
+
 }

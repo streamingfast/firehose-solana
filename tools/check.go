@@ -344,14 +344,12 @@ func validateBlockSegment(
 			seenBlockCount++
 
 			if printIndividualSegmentStats {
-				payloadSize := len(block.PayloadBuffer)
 				block := block.ToNative().(*pbcodec.Block)
 
-				fmt.Printf("Block #%d (%s) (prev: %s) (%d bytes): %d transactions\n",
+				fmt.Printf("Block #%d (%s) (prev: %s) : %d transactions\n",
 					block.Num(),
 					block.ID(),
 					block.PreviousId,
-					payloadSize,
 					len(block.Transactions),
 				)
 			}
