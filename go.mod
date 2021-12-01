@@ -33,7 +33,7 @@ require (
 	github.com/streamingfast/firehose v0.1.1-0.20210811195158-d4b116b4b447
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
 	github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3
-	github.com/streamingfast/logging v0.0.0-20210908162127-bdc5856d5341
+	github.com/streamingfast/logging v0.0.0-20211201142855-8f6ea4c04c74
 	github.com/streamingfast/merger v0.0.3-0.20211129184552-80c5afdea8bc
 	github.com/streamingfast/node-manager v0.0.2-0.20211029201743-0b82ab7f9de4
 	github.com/streamingfast/pbgo v0.0.6-0.20210812023556-e996f9c4fb86
@@ -52,3 +52,7 @@ require (
 replace github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
 
 replace github.com/ShinyTrinkets/overseer => github.com/dfuse-io/overseer v0.2.1-0.20191024193921-39856397cf3f
+
+replace (
+	github.com/streamingfast/node-manager => /Users/cbillett/devel/sf/node-manager
+)

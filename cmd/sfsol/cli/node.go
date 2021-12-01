@@ -78,8 +78,8 @@ func RegisterSolanaNodeApp(kind string, extraFlagRegistration func(cmd *cobra.Co
 	appLogger := zap.NewNop()
 	nodeLogger := zap.NewNop()
 
-	logging.Register(fmt.Sprintf("github.com/streamingfast/sf-solana/%s", app), &appLogger)
-	logging.Register(fmt.Sprintf("github.com/streamingfast/sf-solana/%s/node", app), &nodeLogger)
+	logging.RegisterLogger(fmt.Sprintf("github.com/streamingfast/sf-solana/%s", app), appLogger)
+	logging.RegisterLogger(fmt.Sprintf("github.com/streamingfast/sf-solana/%s/node", app), nodeLogger)
 
 	launcher.RegisterApp(&launcher.AppDef{
 		ID:          app,
@@ -171,7 +171,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 		extraArguments := getExtraArguments(kind)
 
 		if kind == "peering" || kind == "mindreader" {
-			appLogger.Info("configuring node for syncing", zap.String("network", network))
+			(*appLogger).Info("configuring node for syncing", zap.String("network", network))
 
 			arguments = append(arguments, "--limit-ledger-size")
 			if kind == "peering" {
@@ -188,7 +188,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			//)
 
 			if network == "development" {
-				appLogger.Info("configuring node for development syncing")
+				(*appLogger).Info("configuring node for development syncing")
 				// FIXME: What a bummer, connection refused on cluster endpoint simply terminates the process!
 				//        It means that we will need to implement something in the manager to track those kind
 				//        of error and restart the manager manually!
@@ -280,7 +280,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 					"--expected-genesis-hash", "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
 				)
 			} else if network == "custom" {
-				appLogger.Info("configuring node for custom syncing, you are expected to provide the required arguments through the '" + app + "-extra-arguments' flag")
+				(*appLogger).Info("configuring node for custom syncing, you are expected to provide the required arguments through the '" + app + "-extra-arguments' flag")
 			} else {
 				return nil, fmt.Errorf(`unkown network %q, valid networks are "development", "mainnet-beta", "testnet", "devnet", "custom"`, network)
 			}
@@ -369,6 +369,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 		var registerServices func(server *grpc.Server) error
 
 		if kind == "mindreader" {
+			zlog.Info("preparing mindreader plugin")
 			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
 			oneBlockStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
 			blockDataStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-block-data-store-url"))
@@ -384,7 +385,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			oneBlockFileSuffix := viper.GetString("mindreader-node-oneblock-suffix")
 			tracker := runtime.Tracker.Clone()
 
-			mindreaderPlugin, err := getMindreaderLogPlugin(
+			mindreaderPlugin, err = getMindreaderLogPlugin(
 				blockStreamServer,
 				oneBlockStoreURL,
 				blockDataStoreURL,
@@ -417,7 +418,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 
 			superviser.RegisterLogPlugin(mindreaderPlugin)
 		}
-
+		zlog.Info("mindreaderPlugin", zap.Bool("nil", mindreaderPlugin == nil))
 		return nodeManagerApp.New(&nodeManagerApp.Config{
 			HTTPAddr:     viper.GetString(app + "-http-listen-addr"),
 			GRPCAddr:     viper.GetString(app + "-grpc-listen-addr"),
