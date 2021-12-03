@@ -18,7 +18,7 @@
 //todo: handle genesis.
 //todo: Remove BLOCK_ROOT DMLOG.
 //todo: Account data change compression
-//todo: cleanup account data "transert/ram disk" folder on restart
+//todo: cleanup account data "transfer/ram disk" folder on restart
 //todo: delete dmlog-163670-2 files after unmarshall it
 //todo: firehose should merge back data file into block
 
@@ -133,6 +133,7 @@ type parseCtx struct {
 	blockBuffer       chan *pbcodec.Block
 	batchWG           sync.WaitGroup
 	batchFilesPath    string
+	RootBlock         uint64
 }
 
 func newParseCtx(batchFilesPath string) *parseCtx {
@@ -221,7 +222,7 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 
 	// this occurs when the root of the active banks has been computed
 	case strings.HasPrefix(line, "BLOCK_ROOT"):
-		//err = ctx.readBlockRoot(line)
+		err = ctx.readBlockRoot(line)
 
 	default:
 		zlog.Warn("unknown log line", zap.String("line", line))
@@ -487,6 +488,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	}
 
 	ctx.activeBank.blk.Id = blockHash
+	ctx.activeBank.blk.RootNum = ctx.RootBlock
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
 	//ctx.activeBank.ended = true
@@ -519,25 +521,8 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 		return fmt.Errorf("root block num num to int: %w", err)
 	}
 
-	for bankSlotNum, bank := range ctx.banks {
-		if !bank.ended {
-			if bankSlotNum < rootBlock {
-				zlog.Info("purging un-ended banks", zap.Uint64("purge_bank_slot", bankSlotNum), zap.Uint64("root_block", rootBlock))
-				delete(ctx.banks, bankSlotNum)
-			}
-			continue
-		}
+	ctx.RootBlock = rootBlock
 
-		if rootBlock == bank.blk.Number {
-			return fmt.Errorf("invalid root for bank. Root block %d cannot equal bank block number %d", rootBlock, bank.blk.Number)
-		}
-
-		bank.blk.RootNum = rootBlock
-		ctx.blockBuffer <- bank.blk
-
-		delete(ctx.banks, bankSlotNum)
-	}
-	zlog.Debug("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
 	return nil
 }
 
