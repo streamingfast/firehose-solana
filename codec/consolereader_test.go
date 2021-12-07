@@ -32,8 +32,6 @@ import (
 
 func Test_readFromFile(t *testing.T) {
 
-	//todo: failed to handle genesis block if present ...
-
 	testPath := "testdata/syncer_20210211"
 	cleanup, testdir, err := copyTestDir(testPath, "syncer_20210211")
 	require.NoError(t, err)
@@ -46,28 +44,24 @@ func Test_readFromFile(t *testing.T) {
 	require.NoError(t, err)
 
 	block := s.(*pbcodec.Block)
-	spew.Dump(block)
 
-	// TODO: add more testing
+	assert.Equal(t, "D9i2oNmbRpC3crs3JHw1bWXeRaairC1Ko2QeTYgG2Fte", base58.Encode(block.Id))
+	assert.Equal(t, uint64(0), block.Number)
+	assert.Equal(t, "11111111111111111111111111111111", base58.Encode(block.PreviousId))
+	assert.Equal(t, uint32(1), block.Version)
+	assert.Equal(t, uint32(0), block.TransactionCount)
 
-	//assert.Equal(t, &pbcodec.Block{
-	//	Version: 1,
-	//	Id:                   "FIXEDSLOTIDBECAUSEWEDONTNEEDITANDCODECHANGED",
-	//	Number:               4,
-	//	PreviousId:           "7Qjov8K99CSYu29eL7nrSzvmHSVvJfXCy4Vs91qQFQAt",
-	//	PreviousBlock:    3,
-	//	GenesisUnixTimestamp: 1635424624,
-	//	ClockUnixTimestamp:   1635424623,
-	//	RootNum:              0,
-	//}, block)
-	assert.Equal(t, "7YoKiNZAbSCELzsN7qS2a87yggcjtA18o4nvgowekKPZ", base58.Encode(block.Id))
+	s, err = cr.Read()
+	require.NoError(t, err)
+	block = s.(*pbcodec.Block)
+
+	assert.Equal(t, "Vx8YMxgEeZFv4QqDo4rg4V6czrSkr4GKRtJTYoftcoY", base58.Encode(block.Id))
 	assert.Equal(t, uint64(1), block.Number)
 	assert.Equal(t, "D9i2oNmbRpC3crs3JHw1bWXeRaairC1Ko2QeTYgG2Fte", base58.Encode(block.PreviousId))
 	assert.Equal(t, uint32(1), block.Version)
-	assert.Equal(t, uint32(2), block.TransactionCount)
+	assert.Equal(t, uint32(1), block.TransactionCount)
 	transaction := block.Transactions[0]
-	assert.Equal(t, "37HanEJP41PE3C7rc7GUYXm67tKeum8XhiVHKX3Qr7svNAEDWb2W26asR5mAxBCBRFvKZkoTDL2Atkam6pn5BTAf", base58.Encode(transaction.Id))
-	assert.Equal(t, 1, len(transaction.Instructions))
+	assert.Equal(t, "5bMkxJJqcJYwSVAjZrm7Rrs19TwPz5HRviDa1Vr3tEnn4xcnhHLqAjhxcSdakNZWrJuC5vn3xgiFKereTr1ajL7", base58.Encode(transaction.Id))
 
 	s, err = cr.Read()
 	require.NoError(t, err)
