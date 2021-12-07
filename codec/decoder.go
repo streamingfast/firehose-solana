@@ -21,8 +21,13 @@ func BlockDecoder(blk *bstream.Block) (interface{}, error) {
 		return nil, fmt.Errorf("this decoder only knows about version 1, got %d", blk.Version())
 	}
 
-	block := new(pbcodec.Slot)
-	err := proto.Unmarshal(blk.Payload(), block)
+	block := new(pbcodec.Block)
+	payload, err := blk.Payload.Get()
+	if err != nil {
+		return nil, fmt.Errorf("getting payload: %s", err)
+	}
+
+	err = proto.Unmarshal(payload, block)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode payload: %s", err)
 	}

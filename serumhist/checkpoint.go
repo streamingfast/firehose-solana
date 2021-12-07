@@ -45,6 +45,6 @@ func newCheckpoint(startBlock uint64) *pbserumhist.Checkpoint {
 		startBlock = bstream.GetProtocolFirstStreamableBlock
 	}
 	return &pbserumhist.Checkpoint{
-		LastWrittenSlotNum: startBlock,
+		LastWrittenBlockNum: startBlock,
 	}
 }

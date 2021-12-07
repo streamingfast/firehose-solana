@@ -10,11 +10,11 @@ import (
 type Ref struct {
 	Market      solana.PublicKey
 	OrderSeqNum uint64
-	SlotNumber  uint64
-	TrxHash     string
+	BlockNumber uint64
+	TrxID       []byte
 	TrxIdx      uint32
 	InstIdx     uint32
-	SlotHash    string
+	BlockID     []byte
 	Timestamp   time.Time
 }
 

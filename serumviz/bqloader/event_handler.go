@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/linkedin/goavro/v2"
 	"github.com/streamingfast/derr"
 	"github.com/streamingfast/dstore"
 	"github.com/streamingfast/shutter"
-	"github.com/linkedin/goavro/v2"
 	"go.uber.org/zap"
 )
 
@@ -22,8 +22,6 @@ type EventHandler struct {
 	*shutter.Shutter
 
 	lock sync.Mutex
-
-	startBlockNum uint64
 
 	dataset    *bigquery.Dataset
 	store      dstore.Store
@@ -36,12 +34,12 @@ type EventHandler struct {
 	bufferFileName string
 	bufferedWriter *goavro.OCFWriter
 
-	startTime     time.Time
-	count         int
-	startSlotNum  uint64
-	startSlotId   string
-	latestSlotNum uint64
-	latestSlotId  string
+	startTime      time.Time
+	count          int
+	startBlockNum  uint64
+	startBlockId   []byte
+	latestBlockNum uint64
+	latestBlockId  []byte
 }
 
 func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, dataset *bigquery.Dataset, table Table, bqloader *BigQueryInjector, scratchSpaceDir string) *EventHandler {
@@ -70,19 +68,19 @@ func NewEventHandler(startBlockNum uint64, storeUrl string, store dstore.Store, 
 	return h
 }
 
-func (h *EventHandler) HandleEvent(event Encoder, slotNum uint64, slotId string) error {
+func (h *EventHandler) HandleEvent(event Encoder, blockNum uint64, blockId []byte) error {
 	event.Log()
 
-	if slotNum < h.startBlockNum {
+	if blockNum < h.startBlockNum {
 		return nil
 	}
 
 	h.count++
-	h.latestSlotNum = slotNum
-	h.latestSlotId = slotId
+	h.latestBlockNum = blockNum
+	h.latestBlockId = blockId
 
 	var err error
-	bw, err := h.getBufferedWriter(slotNum, slotId)
+	bw, err := h.getBufferedWriter(blockNum, blockId)
 	if err != nil {
 		return err
 	}
@@ -109,10 +107,10 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 	uploadFunc := func(ctx context.Context) error {
 		destPath := NewFileName(
 			string(h.table),
-			h.startSlotNum,
-			h.latestSlotNum,
-			h.startSlotId,
-			h.latestSlotId,
+			h.startBlockNum,
+			h.latestBlockNum,
+			h.startBlockId,
+			h.latestBlockId,
 		).String()
 
 		err := h.store.PushLocalFile(ctx, h.bufferFileName, destPath)
@@ -127,13 +125,13 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 		h.bqinjector.SubmitJob(uri, tableName, h.dataset, format, func(ctx context.Context) error {
 			//checkpoint save callback
 			jobStatusRow := ProcessFile{
-				Table:        tableName,
-				Filename:     uri,
-				StartSlotNum: int64(h.startSlotNum),
-				StartSlotID:  h.startSlotId,
-				EndSlotNum:   int64(h.latestSlotNum),
-				EndSlotID:    h.latestSlotId,
-				Time:         time.Now(),
+				Table:         tableName,
+				Filename:      uri,
+				StartBlockNum: int64(h.startBlockNum),
+				StartBlockID:  h.startBlockId,
+				EndBlockNum:   int64(h.latestBlockNum),
+				EndBlockID:    h.latestBlockId,
+				Time:          time.Now(),
 			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -166,7 +164,7 @@ func (h *EventHandler) Flush(ctx context.Context) error {
 	return nil
 }
 
-func (h *EventHandler) getBufferedWriter(slotNum uint64, slotId string) (*goavro.OCFWriter, error) {
+func (h *EventHandler) getBufferedWriter(blockNum uint64, blockId []byte) (*goavro.OCFWriter, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -179,8 +177,8 @@ func (h *EventHandler) getBufferedWriter(slotNum uint64, slotId string) (*goavro
 	}
 
 	h.startTime = time.Now()
-	h.startSlotNum = slotNum
-	h.startSlotId = slotId
+	h.startBlockNum = blockNum
+	h.startBlockId = blockId
 
 	err := os.MkdirAll(h.bufferFileDir, os.ModePerm)
 	if err != nil {

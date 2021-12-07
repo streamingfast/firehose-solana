@@ -39,7 +39,7 @@ func init() {
 			sfDataDir := runtime.AbsDataDir
 			return serumhistApp.New(&serumhistApp.Config{
 				BlockStreamAddr:           viper.GetString("common-blockstream-addr"),
-				BlocksStoreURL:            mustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url")),
+				BlocksStoreURL:            MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url")),
 				PreprocessorThreadCount:   viper.GetInt("serumhist-preprocessor-thread-count"),
 				MergeFileParallelDownload: viper.GetInt("serumhist-parallel-download-count"),
 				IgnoreCheckpointOnLaunch:  viper.GetBool("serumhist-ignore-checkpoint-on-launch"),
@@ -49,12 +49,12 @@ func init() {
 				EnableInjector:            viper.GetBool("serumhist-enable-injector-mode"),
 				GRPCListenAddr:            viper.GetString("serumhist-grpc-listen-addr"),
 				HTTPListenAddr:            viper.GetString("serumhist-http-listen-addr"),
-				KvdbDsn:                   mustReplaceDataDir(sfDataDir, viper.GetString("serumhist-dsn")),
+				KvdbDsn:                   MustReplaceDataDir(sfDataDir, viper.GetString("serumhist-dsn")),
 				EnableBigQueryInjector:    viper.GetBool("serumhist-enable-bigquery-injector-mode"),
 				BigQueryProject:           viper.GetString("serumhist-bigquery-project-id"),
 				BigQueryStoreURL:          viper.GetString("serumhist-bigquery-store-url"),
 				BigQueryDataset:           viper.GetString("serumhist-bigquery-dataset-id"),
-				BigQueryScratchSpaceDir:   mustReplaceDataDir(sfDataDir, viper.GetString("serumhist-bigquery-scratch-space-dir")),
+				BigQueryScratchSpaceDir:   MustReplaceDataDir(sfDataDir, viper.GetString("serumhist-bigquery-scratch-space-dir")),
 				TokensFileURL:             viper.GetString("serumhist-tokens-file-url"),
 				MarketFileURL:             viper.GetString("serumhist-markets-file-url"),
 			}), nil

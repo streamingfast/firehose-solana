@@ -176,7 +176,7 @@ func checkOneBlocksE(cmd *cobra.Command, args []string) error {
 	var expected uint32
 	var count int
 	var baseNum32 uint32
-	var prevSlotNum uint32
+	var prevBlockNum uint32
 	holeFound := false
 
 	blockRange, err := getBlockRangeFromFlag()
@@ -207,7 +207,7 @@ func checkOneBlocksE(cmd *cobra.Command, args []string) error {
 		baseNum, _ := strconv.ParseUint(match[1], 10, 32)
 		baseNum32 = uint32(baseNum)
 
-		zlog.Debug("received one blocks", zap.String("filename", filename), zap.Uint32("prev", prevSlotNum), zap.Uint64("base_num", baseNum), zap.Uint32("expected", expected), zap.Int64("diff", int64(baseNum32)-int64(expected)))
+		zlog.Debug("received one blocks", zap.String("filename", filename), zap.Uint32("prev", prevBlockNum), zap.Uint64("base_num", baseNum), zap.Uint32("expected", expected), zap.Int64("diff", int64(baseNum32)-int64(expected)))
 		if baseNum+uint64(1) < blockRange.Start {
 			zlog.Debug("base num lower then block range start, quitting")
 			return nil
@@ -224,11 +224,11 @@ func checkOneBlocksE(cmd *cobra.Command, args []string) error {
 
 			holeFound = true
 		}
-		if baseNum32 != prevSlotNum { //dont increment expected if when seeing duplicated slot
+		if baseNum32 != prevBlockNum { //dont increment expected if when seeing duplicated block
 			expected = baseNum32 + 1
 		}
 
-		prevSlotNum = baseNum32
+		prevBlockNum = baseNum32
 
 		if count%10000 == 0 {
 			fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, baseNum32)
@@ -344,15 +344,13 @@ func validateBlockSegment(
 			seenBlockCount++
 
 			if printIndividualSegmentStats {
-				payloadSize := len(block.PayloadBuffer)
-				slot := block.ToNative().(*pbcodec.Slot)
+				block := block.ToNative().(*pbcodec.Block)
 
-				fmt.Printf("Slot #%d (%s) (prev: %s) (%d bytes): %d transactions\n",
-					slot.Num(),
-					slot.ID(),
-					slot.PreviousId,
-					payloadSize,
-					len(slot.Transactions),
+				fmt.Printf("Block #%d (%s) (prev: %s) : %d transactions\n",
+					block.Num(),
+					block.ID(),
+					block.PreviousId,
+					len(block.Transactions),
 				)
 			}
 

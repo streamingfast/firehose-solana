@@ -78,8 +78,8 @@ func RegisterSolanaNodeApp(kind string, extraFlagRegistration func(cmd *cobra.Co
 	appLogger := zap.NewNop()
 	nodeLogger := zap.NewNop()
 
-	logging.Register(fmt.Sprintf("github.com/streamingfast/sf-solana/%s", app), &appLogger)
-	logging.Register(fmt.Sprintf("github.com/streamingfast/sf-solana/%s/node", app), &nodeLogger)
+	logging.RegisterLogger(fmt.Sprintf("github.com/streamingfast/sf-solana/%s", app), appLogger)
+	logging.RegisterLogger(fmt.Sprintf("github.com/streamingfast/sf-solana/%s/node", app), nodeLogger)
 
 	launcher.RegisterApp(&launcher.AppDef{
 		ID:          app,
@@ -110,7 +110,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 
 		sfDataDir := runtime.AbsDataDir
 
-		dataDir := mustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir"))
+		dataDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir"))
 		configDir, err := filepath.Abs(viper.GetString(app + "-config-dir"))
 		if err != nil {
 			return nil, fmt.Errorf("invalid config directory %q: %w", viper.GetString(app+"-config-dir"), err)
@@ -121,8 +121,8 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 
 		arguments := append([]string{
 			"--ledger", dataDir,
-			"--gossip-port", viper.GetString(app + "-gossip-port"),
-			"--dynamic-port-range", fmt.Sprintf("%s-%s", viper.GetString(app+"-p2p-port-start"), viper.GetString(app+"-p2p-port-end")),
+			//"--gossip-port", viper.GetString(app + "-gossip-port"),
+			//"--dynamic-port-range", fmt.Sprintf("%s-%s", viper.GetString(app+"-p2p-port-start"), viper.GetString(app+"-p2p-port-end")),
 			"--log", "-",
 			//"--no-snapshot-fetch",
 			//"--no-genesis-fetch",
@@ -171,7 +171,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 		extraArguments := getExtraArguments(kind)
 
 		if kind == "peering" || kind == "mindreader" {
-			appLogger.Info("configuring node for syncing", zap.String("network", network))
+			(*appLogger).Info("configuring node for syncing", zap.String("network", network))
 
 			arguments = append(arguments, "--limit-ledger-size")
 			if kind == "peering" {
@@ -188,7 +188,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			//)
 
 			if network == "development" {
-				appLogger.Info("configuring node for development syncing")
+				(*appLogger).Info("configuring node for development syncing")
 				// FIXME: What a bummer, connection refused on cluster endpoint simply terminates the process!
 				//        It means that we will need to implement something in the manager to track those kind
 				//        of error and restart the manager manually!
@@ -222,49 +222,48 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 					"--expected-shred-version", minerGenesisShred,
 				)
 			} else if network == "mainnet-beta" {
-				arguments = append(arguments,
-					"--entrypoint", "mainnet-beta.solana.com:8001",
-					//"--trusted-validator", "2xte5CBkCBEBLNviyAfvSaTkMy6tvg99Cy3XJj9EJJs2",
-					//"--trusted-validator", "3Ec6j5SkCj51PgH2fBUcXc4ptrwi6i5WpnCxZBak3cX3",
-					//"--trusted-validator", "3KNGMiXwhy2CAWVNpLoUt25sNngFnX1mZpaiEeVccBA6",
-					//"--trusted-validator", "3LboiLyZ3U1556ZBnNi9384C8Gz1LxFmzRnAojumnCJB",
-					//"--trusted-validator", "3RbsAuNknCTXuLyqmasnvYRpQg3MfWZ5N7WTi7ZGqdms",
-					//"--trusted-validator", "4TJZp9Ho82FrcRcBQes5oD52Y3QYeCxkpqWmjxmySQFY",
-					//"--trusted-validator", "5i6FL92EgjMmtFRogXeB7TaCYYAwd7kTQ9abKc1RTRMf",
-					//"--trusted-validator", "6GRLDLiAtx8ZjYgQgPo7UsYeJ9g1pLX5j3HK97tFmtXb",
-					//"--trusted-validator", "6cgsK8ph5tNUCiKG5WXLMZFX1CoL4jzuVouTPBwPC8fk",
-					//"--trusted-validator", "7Np41oeYqPefeNQEHSv1UDhYrehxin3NStELsSKCT4K2",
-					//"--trusted-validator", "7XSCAfoJ11zrQxonjbGZHLUL8tqpF7yhkxiieLds9mdH",
-					//"--trusted-validator", "8DM7JdDPShN4TFrWTwokvWmnCDqCy1D6VVLzSMDKri5V",
-					//"--trusted-validator", "8DXdM93UpEfqXezv1QTPhuA7Rci8MZujhsXQHoAsx5cN",
-					//"--trusted-validator", "9EBnt7k6Z4mRCiFMCN1kT8joN3SWHCuhQrW1a8M8mYPM",
-					//"--trusted-validator", "9hdNfC1DKGXxyqbNRSsStiPYoUREoRWZAEhmiqPw93yP",
-					//"--trusted-validator", "9rVx9wo6d3Akaq9YBw4sFuwc9oFGtzs8GsTfkHE7EH6t",
-					//"--trusted-validator", "AUa3iN7h4c3oSrtP5pmbRcXJv8QSo4HGHPqXT4WnHDnp",
-					//"--trusted-validator", "AaDBW2BYPC1cpCM6bYf5hN9MCNFz79fMHbK7VLXwrW5x",
-					//"--trusted-validator", "AqGAaaACTDNGrVNVoiyCGiMZe8pcM1YjGUcUdVwgUtud",
-					//"--trusted-validator", "BAbRkBYDhThcR8rn7wYtPYSxDnUCfRYx5dAjsuianuA6",
-					//"--trusted-validator", "Bb4BP3EvsPyBuqSAABx7KmYAp3mRqAZUYN1vChWsbjDc",
-					//"--trusted-validator", "CVAAQGA8GBzKi4kLdmpDuJnpkSik6PMWSvRk3RDds9K8",
-					//"--trusted-validator", "CakcnaRDHka2gXyfbEd2d3xsvkJkqsLw2akB3zsN1D2S",
-					//"--trusted-validator", "DE1bawNcRJB9rVm3buyMVfr8mBEoyyu73NBovf2oXJsJ",
-					//"--trusted-validator", "DE37cgN2bGR26a1yQPPY42CozC1wXwXnTXDyyURHRsm7",
-					//"--trusted-validator", "F3LudCbGqu4DMqjduLq5WE2g3USYcjmVK3WR8KeNBhWz",
-					//"--trusted-validator", "FVsjR8faKFZSisBatLNVo5bSH1jvHz3JvneVbyVTiV9K",
-					//"--trusted-validator", "GdnSyH3YtwcxFvQrVVJMm1JhTS4QVX7MFsX56uJLUfiZ",
-					//"--trusted-validator", "GosJ8GHbSUunTQPY5xEyjhY2Eg5a9qSuPhNC4Ctztr7y",
-					//"--trusted-validator", "HoMBSLMokd6BUVDT4iGw21Tnxvp2G49MApewzGJr4rfe",
-					//"--trusted-validator", "HzrEstnLfzsijhaD6z5frkSE2vWZEH5EUfn3bU9swo1f",
-					//"--trusted-validator", "HzvGtvXFzMeJwNYcUu5pw8yyRxF2tLEvDSSFsAEBcBK2",
-					//"--trusted-validator", "J4B32eD2PmwCZyre5SWQS1jCU4NkiGGYLNapg9f8Dkqo",
-					//"--trusted-validator", "ba2eZEU27TqR1MB9WUPJ2F7dcTrNsgdx38tBg53GexZ",
-					//"--trusted-validator", "ba3zMkMp87HZg27Z7EDEkxE48zcKgJ59weFYtrKadY7",
-					//"--trusted-validator", "ba5rfuZ37gxhrLcsgA5fzCg8BvSQcTERPqY14Qffa3J",
-					//"--trusted-validator", "tEBPZWSAdpzQoVzWBFD2qVGmZ7vB3Mh1Jq4tGZBx5eA",
+				arguments = append(arguments) //"--entrypoint", "mainnet-beta.solana.com:8001",
+				//"--trusted-validator", "2xte5CBkCBEBLNviyAfvSaTkMy6tvg99Cy3XJj9EJJs2",
+				//"--trusted-validator", "3Ec6j5SkCj51PgH2fBUcXc4ptrwi6i5WpnCxZBak3cX3",
+				//"--trusted-validator", "3KNGMiXwhy2CAWVNpLoUt25sNngFnX1mZpaiEeVccBA6",
+				//"--trusted-validator", "3LboiLyZ3U1556ZBnNi9384C8Gz1LxFmzRnAojumnCJB",
+				//"--trusted-validator", "3RbsAuNknCTXuLyqmasnvYRpQg3MfWZ5N7WTi7ZGqdms",
+				//"--trusted-validator", "4TJZp9Ho82FrcRcBQes5oD52Y3QYeCxkpqWmjxmySQFY",
+				//"--trusted-validator", "5i6FL92EgjMmtFRogXeB7TaCYYAwd7kTQ9abKc1RTRMf",
+				//"--trusted-validator", "6GRLDLiAtx8ZjYgQgPo7UsYeJ9g1pLX5j3HK97tFmtXb",
+				//"--trusted-validator", "6cgsK8ph5tNUCiKG5WXLMZFX1CoL4jzuVouTPBwPC8fk",
+				//"--trusted-validator", "7Np41oeYqPefeNQEHSv1UDhYrehxin3NStELsSKCT4K2",
+				//"--trusted-validator", "7XSCAfoJ11zrQxonjbGZHLUL8tqpF7yhkxiieLds9mdH",
+				//"--trusted-validator", "8DM7JdDPShN4TFrWTwokvWmnCDqCy1D6VVLzSMDKri5V",
+				//"--trusted-validator", "8DXdM93UpEfqXezv1QTPhuA7Rci8MZujhsXQHoAsx5cN",
+				//"--trusted-validator", "9EBnt7k6Z4mRCiFMCN1kT8joN3SWHCuhQrW1a8M8mYPM",
+				//"--trusted-validator", "9hdNfC1DKGXxyqbNRSsStiPYoUREoRWZAEhmiqPw93yP",
+				//"--trusted-validator", "9rVx9wo6d3Akaq9YBw4sFuwc9oFGtzs8GsTfkHE7EH6t",
+				//"--trusted-validator", "AUa3iN7h4c3oSrtP5pmbRcXJv8QSo4HGHPqXT4WnHDnp",
+				//"--trusted-validator", "AaDBW2BYPC1cpCM6bYf5hN9MCNFz79fMHbK7VLXwrW5x",
+				//"--trusted-validator", "AqGAaaACTDNGrVNVoiyCGiMZe8pcM1YjGUcUdVwgUtud",
+				//"--trusted-validator", "BAbRkBYDhThcR8rn7wYtPYSxDnUCfRYx5dAjsuianuA6",
+				//"--trusted-validator", "Bb4BP3EvsPyBuqSAABx7KmYAp3mRqAZUYN1vChWsbjDc",
+				//"--trusted-validator", "CVAAQGA8GBzKi4kLdmpDuJnpkSik6PMWSvRk3RDds9K8",
+				//"--trusted-validator", "CakcnaRDHka2gXyfbEd2d3xsvkJkqsLw2akB3zsN1D2S",
+				//"--trusted-validator", "DE1bawNcRJB9rVm3buyMVfr8mBEoyyu73NBovf2oXJsJ",
+				//"--trusted-validator", "DE37cgN2bGR26a1yQPPY42CozC1wXwXnTXDyyURHRsm7",
+				//"--trusted-validator", "F3LudCbGqu4DMqjduLq5WE2g3USYcjmVK3WR8KeNBhWz",
+				//"--trusted-validator", "FVsjR8faKFZSisBatLNVo5bSH1jvHz3JvneVbyVTiV9K",
+				//"--trusted-validator", "GdnSyH3YtwcxFvQrVVJMm1JhTS4QVX7MFsX56uJLUfiZ",
+				//"--trusted-validator", "GosJ8GHbSUunTQPY5xEyjhY2Eg5a9qSuPhNC4Ctztr7y",
+				//"--trusted-validator", "HoMBSLMokd6BUVDT4iGw21Tnxvp2G49MApewzGJr4rfe",
+				//"--trusted-validator", "HzrEstnLfzsijhaD6z5frkSE2vWZEH5EUfn3bU9swo1f",
+				//"--trusted-validator", "HzvGtvXFzMeJwNYcUu5pw8yyRxF2tLEvDSSFsAEBcBK2",
+				//"--trusted-validator", "J4B32eD2PmwCZyre5SWQS1jCU4NkiGGYLNapg9f8Dkqo",
+				//"--trusted-validator", "ba2eZEU27TqR1MB9WUPJ2F7dcTrNsgdx38tBg53GexZ",
+				//"--trusted-validator", "ba3zMkMp87HZg27Z7EDEkxE48zcKgJ59weFYtrKadY7",
+				//"--trusted-validator", "ba5rfuZ37gxhrLcsgA5fzCg8BvSQcTERPqY14Qffa3J",
+				//"--trusted-validator", "tEBPZWSAdpzQoVzWBFD2qVGmZ7vB3Mh1Jq4tGZBx5eA",
 
-					"--expected-shred-version", "13490",
-					"--expected-genesis-hash", "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
-				)
+				//"--expected-shred-version", "13490",
+				//"--expected-genesis-hash", "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+
 			} else if network == "testnet" {
 				arguments = append(arguments,
 					"--entrypoint", "entrypoint.testnet.solana.com:8001",
@@ -281,7 +280,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 					"--expected-genesis-hash", "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
 				)
 			} else if network == "custom" {
-				appLogger.Info("configuring node for custom syncing, you are expected to provide the required arguments through the '" + app + "-extra-arguments' flag")
+				(*appLogger).Info("configuring node for custom syncing, you are expected to provide the required arguments through the '" + app + "-extra-arguments' flag")
 			} else {
 				return nil, fmt.Errorf(`unkown network %q, valid networks are "development", "mainnet-beta", "testnet", "devnet", "custom"`, network)
 			}
@@ -309,7 +308,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 				Arguments:  arguments,
 				// BinaryPath:          "/bin/bash",
 				// Arguments:           []string{"-c", `cat /tmp/mama.txt /home/abourget/build/solana/validator/dmlog.log; sleep 3600`},
-				DataDirPath:         mustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir")),
+				DataDirPath:         MustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir")),
 				DebugDeepMind:       viper.GetBool(app + "-debug-deep-mind"),
 				LogToZap:            viper.GetBool(app + "-log-to-zap"),
 				HeadBlockUpdateFunc: metricsAndReadinessManager.UpdateHeadBlock,
@@ -340,8 +339,8 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 		if err != nil {
 			return nil, fmt.Errorf("unable to create chain operator: %w", err)
 		}
-		mergedBlocksStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url"))
-		snapshotStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-snapshots-store-url"))
+		mergedBlocksStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url"))
+		snapshotStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-snapshots-store-url"))
 		if snapshotStoreURL != "" {
 			localSnapshotDir := viper.GetString(app + "-local-snapshot-folder")
 			genesisURL := viper.GetString(app + "-genesis-url")
@@ -370,13 +369,14 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 		var registerServices func(server *grpc.Server) error
 
 		if kind == "mindreader" {
+			zlog.Info("preparing mindreader plugin")
 			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
-			oneBlockStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
-			blockDataStoreURL := mustReplaceDataDir(sfDataDir, viper.GetString("common-block-data-store-url"))
+			oneBlockStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
+			blockDataStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-block-data-store-url"))
 			mergeAndStoreDirectly := viper.GetBool(app + "-merge-and-store-directly")
 			mergeThresholdBlockAge := viper.GetDuration(app + "-merge-threshold-block-age")
-			workingDir := mustReplaceDataDir(sfDataDir, viper.GetString(app+"-working-dir"))
-			blockDataWorkingDir := mustReplaceDataDir(sfDataDir, viper.GetString(app+"-block-data-working-dir"))
+			workingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-working-dir"))
+			blockDataWorkingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-block-data-working-dir"))
 			batchStartBlockNum := viper.GetUint64("mindreader-node-start-block-num")
 			batchStopBlockNum := viper.GetUint64("mindreader-node-stop-block-num")
 			blocksChanCapacity := viper.GetInt("mindreader-node-blocks-chan-capacity")
@@ -385,7 +385,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			oneBlockFileSuffix := viper.GetString("mindreader-node-oneblock-suffix")
 			tracker := runtime.Tracker.Clone()
 
-			mindreaderPlugin, err := getMindreaderLogPlugin(
+			mindreaderPlugin, err = getMindreaderLogPlugin(
 				blockStreamServer,
 				oneBlockStoreURL,
 				blockDataStoreURL,
@@ -418,7 +418,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 
 			superviser.RegisterLogPlugin(mindreaderPlugin)
 		}
-
+		zlog.Info("mindreaderPlugin", zap.Bool("nil", mindreaderPlugin == nil))
 		return nodeManagerApp.New(&nodeManagerApp.Config{
 			HTTPAddr:     viper.GetString(app + "-http-listen-addr"),
 			GRPCAddr:     viper.GetString(app + "-grpc-listen-addr"),
@@ -457,7 +457,7 @@ func getConfigFilePath(kind string, file string) (string, error) {
 }
 
 func getDataFilePath(runtime *launcher.Runtime, kind string, file string) (string, error) {
-	configValue := mustReplaceDataDir(runtime.AbsDataDir, viper.GetString(kind+"-node-data-dir"))
+	configValue := MustReplaceDataDir(runtime.AbsDataDir, viper.GetString(kind+"-node-data-dir"))
 	dataDir, err := filepath.Abs(configValue)
 	if err != nil {
 		return "", fmt.Errorf("invalid data directory %q: %w", configValue, err)
@@ -529,28 +529,28 @@ func setupNodeSysctl(logger *zap.Logger) error {
 }
 
 func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockDataArchiver, obj interface{}) (*bstream.Block, error) {
-	slot, ok := obj.(*pbcodec.Slot)
-	zlog.Debug("transforming slot", zap.Uint64("slot_num", slot.Number))
+	block, ok := obj.(*pbcodec.Block)
+	zlog.Debug("transforming block", zap.Uint64("slot_num", block.Number))
 	if !ok {
 		return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
 	}
 
-	fileName := blockDataFileName(slot, "")
-	slot.AccountChangesFileRef = archiver.Store.ObjectURL(fileName)
-	zlog.Debug("slot data file", zap.String("object_url", slot.AccountChangesFileRef))
+	fileName := blockDataFileName(block, "")
+	block.AccountChangesFileRef = archiver.Store.ObjectURL(fileName)
+	zlog.Debug("slot data file", zap.String("object_url", block.AccountChangesFileRef))
 
-	accountChangesBundle := slot.Split(true)
+	accountChangesBundle := block.Split(true)
 	go func() {
 		err := archiver.StoreBlockData(accountChangesBundle, fileName)
 		if err != nil {
 			//todo: This is very bad
 			panic(fmt.Errorf("storing block data: %w", err))
 		}
-		zlog.Debug("slot data store", zap.String("object_path", slot.AccountChangesFileRef))
+		zlog.Debug("slot data store", zap.String("object_path", block.AccountChangesFileRef))
 
 	}()
 
-	bstreamBlock, err := codec.BlockFromProto(slot)
+	bstreamBlock, err := codec.BlockFromProto(block)
 	if err != nil {
 		return nil, fmt.Errorf("block from proto: %w", err)
 	}
@@ -559,8 +559,8 @@ func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockData
 }
 
 //duplicated code from node manager
-func blockDataFileName(slot *pbcodec.Slot, suffix string) string {
-	t := slot.Block.Time()
+func blockDataFileName(slot *pbcodec.Block, suffix string) string {
+	t := slot.Time()
 	blockTimeString := fmt.Sprintf("%s.%01d", t.Format("20060102T150405"), t.Nanosecond()/100000000)
 
 	blockID := slot.ID()
@@ -568,7 +568,7 @@ func blockDataFileName(slot *pbcodec.Slot, suffix string) string {
 		blockID = blockID[len(blockID)-8:]
 	}
 
-	previousID := slot.Block.PreviousId
+	previousID := slot.PreviousID()
 	if len(previousID) > 8 {
 		previousID = previousID[len(previousID)-8:]
 	}

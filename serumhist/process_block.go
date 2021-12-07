@@ -5,6 +5,7 @@ import (
 
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/forkable"
+	"github.com/streamingfast/sf-solana/codec"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"github.com/streamingfast/sf-solana/serumhist/metrics"
 	"go.uber.org/zap"
@@ -13,12 +14,12 @@ import (
 func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 	i.setHealthy()
 
-	slot := blk.ToNative().(*pbcodec.Slot)
+	block := blk.ToNative().(*pbcodec.Block)
 	forkObj := obj.(*forkable.ForkableObject)
 
 	if forkObj.Step == forkable.StepNew {
-		metrics.HeadBlockNumber.SetUint64(slot.Number)
-		metrics.HeadBlockTimeDrift.SetBlockTime(slot.Block.Time())
+		metrics.HeadBlockNumber.SetUint64(block.Number)
+		metrics.HeadBlockTimeDrift.SetBlockTime(block.Time())
 		return nil
 	}
 
@@ -28,12 +29,12 @@ func (i *Injector) ProcessBlock(blk *bstream.Block, obj interface{}) error {
 
 	i.slotMetrics.slotCount++
 
-	if slot.Number%logEveryXSlot == 0 {
+	if block.Number%logEveryXSlot == 0 {
 		opts := i.slotMetrics.dump()
 		opts = append(opts, []zap.Field{
-			zap.Uint64("slot_number", slot.Number),
-			zap.String("slot_id", slot.Id),
-			zap.String("previous_id", slot.PreviousId),
+			zap.Uint64("slot_number", block.Number),
+			codec.ZapBase58("slot_id", block.Id),
+			codec.ZapBase58("previous_id", block.PreviousId),
 		}...)
 
 		zlog.Info(fmt.Sprintf("processed %d slot", logEveryXSlot),

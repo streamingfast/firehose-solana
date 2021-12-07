@@ -20,10 +20,10 @@ type SerumFillEdge {
 }
 
 type SerumFill {
-  """The slot number in which the SerumFill occurred."""
-  slotNum: Uint64!
+  """The block number in which the SerumFill occurred."""
+  blockNum: Uint64!
 
-  """The transaction's index within the slot where the SerumFill occurred."""
+  """The transaction's index within the block where the SerumFill occurred."""
   transactionIndex: Uint64!
 
   """The instruction's index within the transaction where the SerumFill occurred."""

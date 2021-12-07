@@ -70,7 +70,7 @@ func init() {
 			}
 
 			for _, url := range firehoseBlocksStoreURLs {
-				url = mustReplaceDataDir(sfDataDir, url)
+				url = MustReplaceDataDir(sfDataDir, url)
 			}
 
 			shutdownSignalDelay := viper.GetDuration("common-system-shutdown-signal-delay")

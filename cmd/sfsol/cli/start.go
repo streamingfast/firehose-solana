@@ -25,9 +25,9 @@ import (
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/derr"
 	"github.com/streamingfast/dlauncher/launcher"
-	_ "github.com/streamingfast/kvdb/store/badger"
-	_ "github.com/streamingfast/kvdb/store/bigkv"
-	_ "github.com/streamingfast/kvdb/store/tikv"
+	//_ "github.com/streamingfast/kvdb/store/badger"
+	//_ "github.com/streamingfast/kvdb/store/bigkv"
+	//_ "github.com/streamingfast/kvdb/store/tikv"
 	_ "github.com/streamingfast/sf-solana/codec"
 	"go.uber.org/zap"
 )
@@ -106,6 +106,19 @@ func Start(dataDir string, args []string) (err error) {
 		AbsDataDir: dataDirAbs,
 		Tracker:    tracker,
 	}
+
+	atmCacheEnabled := viper.GetBool("common-atm-cache-enabled")
+	if atmCacheEnabled {
+		bstream.GetBlockPayloadSetter = bstream.ATMCachedPayloadSetter
+
+		cacheDir := MustReplaceDataDir(modules.AbsDataDir, viper.GetString("common-atm-cache-dir"))
+		storeUrl := MustReplaceDataDir(modules.AbsDataDir, viper.GetString("common-blocks-store-url"))
+		maxRecentEntryBytes := viper.GetInt("common-atm-max-recent-entry-bytes")
+		maxEntryByAgeBytes := viper.GetInt("common-atm-max-entry-by-age-bytes")
+		bstream.InitCache(storeUrl, cacheDir, maxRecentEntryBytes, maxEntryByAgeBytes)
+	}
+
+	bstream.GetProtocolFirstStreamableBlock = uint64(viper.GetInt("common-first-streamable-block"))
 
 	/*	err = bstream.ValidateRegistry()
 		if err != nil {

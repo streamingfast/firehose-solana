@@ -12,13 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//todo: error from read function are handle right by the node manager.
+//todo: Fix node logs not outputting.
+//todo: Check why account data change file are so small.
+//todo: handle genesis.
+//todo: Remove BLOCK_ROOT DMLOG.
+//todo: Account data change compression
+//todo: cleanup account data "transfer/ram disk" folder on restart
+//todo: delete dmlog-163670-2 files after unmarshall it
+//todo: firehose should merge back data file into block
+
 package codec
 
 import (
 	"bufio"
-	"crypto/sha256"
-	"encoding/binary"
+	"bytes"
 	"fmt"
+	"github.com/pingcap/log"
 	"io"
 	"io/ioutil"
 	"os"
@@ -27,14 +37,15 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mr-tron/base58"
-
 	"github.com/golang/protobuf/proto"
+	"github.com/mr-tron/base58"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
+	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 )
 
 var MaxTokenSize uint64
+var VoteProgramID = solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111")
 
 func init() {
 	MaxTokenSize = uint64(50 * 1024 * 1024)
@@ -68,22 +79,23 @@ type ConsoleReader struct {
 	batchFilesPath string
 }
 
-func (c *ConsoleReader) ProcessData(reader io.Reader) error {
-	scanner := c.buildScanner(reader)
+func (r *ConsoleReader) ProcessData(reader io.Reader) error {
+	scanner := r.buildScanner(reader)
 	for scanner.Scan() {
 		line := scanner.Text()
-		c.lines <- line
+		r.lines <- line
 	}
 
+	zlog.Info("done scanning lines")
 	if scanner.Err() == nil {
-		close(c.lines)
+		close(r.lines)
 		return io.EOF
 	}
 
 	return scanner.Err()
 }
 
-func (c *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
+func (r *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
 	buf := make([]byte, 50*1024*1024)
 	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(buf, 50*1024*1024)
@@ -106,53 +118,67 @@ func NewConsoleReader(lines chan string, batchFilesPath string, opts ...ConsoleR
 	return l, nil
 }
 
-func (l *ConsoleReader) Done() <-chan interface{} {
-	return l.done
+func (r *ConsoleReader) Done() <-chan interface{} {
+	return r.done
 }
 
-func (l *ConsoleReader) Close() {
-	l.close()
+func (r *ConsoleReader) Close() {
+	r.close()
 }
 
 type parseCtx struct {
 	activeBank        *bank
 	banks             map[uint64]*bank
 	conversionOptions []conversionOption
-	slotBuffer        chan *pbcodec.Slot
+	blockBuffer       chan *pbcodec.Block
 	batchWG           sync.WaitGroup
 	batchFilesPath    string
+	RootBlock         uint64
 }
 
 func newParseCtx(batchFilesPath string) *parseCtx {
 	return &parseCtx{
 		banks:          map[uint64]*bank{},
-		slotBuffer:     make(chan *pbcodec.Slot, 10000),
+		blockBuffer:    make(chan *pbcodec.Block, 10000),
 		batchFilesPath: batchFilesPath,
 	}
 }
 
-func (l *ConsoleReader) Read() (out interface{}, err error) {
-	return l.next()
+func (r *ConsoleReader) Read() (out interface{}, err error) {
+	return r.next()
 }
 
-func (l *ConsoleReader) next() (out interface{}, err error) {
-	ctx := l.ctx
-	for line := range l.lines {
-		fmt.Println("processing lines")
+func (r *ConsoleReader) next() (out interface{}, err error) {
+	ctx := r.ctx
+
+	select {
+	case b := <-ctx.blockBuffer:
+		return b, nil
+	default:
+	}
+
+	for line := range r.lines {
 		if !strings.HasPrefix(line, "DMLOG ") {
 			continue
 		}
 
 		line = line[6:] // removes the DMLOG prefix
 		if err = parseLine(ctx, line); err != nil {
-			return nil, l.formatError(line, err)
+			panic(err)
+			return nil, r.formatError(line, err)
 		}
 
 		select {
-		case s := <-ctx.slotBuffer:
-			return s, nil
+		case b := <-ctx.blockBuffer:
+			return b, nil
 		default:
 		}
+	}
+
+	select {
+	case b := <-ctx.blockBuffer:
+		return b, nil
+	default:
 	}
 
 	zlog.Info("lines channel has been closed")
@@ -175,10 +201,6 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	// output when a group of batch of transaction have been executed and the protobuf has been written to a file on  disk
 	case strings.HasPrefix(line, "BATCH_FILE"):
 		err = ctx.readBatchFile(line)
-
-	// when processing a block you will have SLOT_BOUNDS (between SLOT_WORK & SLOT_END) for each SLOT in that BLOCK.
-	case strings.HasPrefix(line, "SLOT_BOUND"):
-		err = ctx.readSlotBound(line)
 
 	// When executing a transactions, we will group them in multiples batches and run them in parallel.
 	// We will create one file per batch (group of trxs), each batch is is running in its own thread.
@@ -208,7 +230,7 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	return
 }
 
-func (l *ConsoleReader) formatError(line string, err error) error {
+func (r *ConsoleReader) formatError(line string, err error) error {
 	chunks := strings.SplitN(line, " ", 2)
 	return fmt.Errorf("%s: %s (line %q)", chunks[0], err, line)
 }
@@ -220,6 +242,7 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	}
 
 	filename := chunks[1]
+	zlog.Debug("reading batch file", zap.String("file_name", filename))
 	filePath := filepath.Join(ctx.batchFilesPath, filename)
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -243,12 +266,22 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	batch := &pbcodec.Batch{}
 	err = proto.Unmarshal(data, batch)
 	if err != nil {
+
+		//--------------------------------
+		//todo: remove
+		zlog.Warn("Proto patate", zap.Uint64("block_num", ctx.activeBank.blk.Number), zap.String("file_name", filename), zap.Int("data_length", len(data)))
+		err = ioutil.WriteFile("/tmp/poc", data, 0644)
+		if err != nil {
+			log.Error("failed to backup crashing file ...")
+		}
+		//--------------------------------
+
 		return fmt.Errorf("read batch: proto unmarshall: %w", err)
 	}
 
 	for _, tx := range batch.Transactions {
 		for _, i := range tx.Instructions {
-			if i.ProgramId == "Vote111111111111111111111111111111111111111" {
+			if bytes.Equal(i.ProgramId, VoteProgramID[:]) {
 				i.AccountChanges = nil
 			}
 		}
@@ -263,7 +296,7 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 }
 
 const (
-	BlockWorkChunkSize   = 15
+	BlockWorkChunkSize   = 14
 	BlockEndChunkSize    = 5
 	BlockFailedChunkSize = 3
 	BlockRootChunkSize   = 2
@@ -274,25 +307,24 @@ const (
 type bank struct {
 	parentSlotNum   uint64
 	processTrxCount uint64
-	previousSlotID  string
-	transactionIDs  []string
-	slots           []*pbcodec.Slot
+	previousSlotID  []byte
+	transactionIDs  [][]byte
 	blk             *pbcodec.Block
 	ended           bool
 	batchAggregator [][]*pbcodec.Transaction
 }
 
-func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID string) *bank {
+func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte) *bank {
 	return &bank{
-		parentSlotNum:   parentSlotNumber,
+		parentSlotNum:   parentBlockNumber,
 		previousSlotID:  previousSlotID,
-		slots:           []*pbcodec.Slot{},
-		batchAggregator: [][]*pbcodec.Transaction{},
+		transactionIDs:  nil,
+		batchAggregator: nil,
 		blk: &pbcodec.Block{
-			Number:            blockNum,
-			Height:            blockHeight,
-			PreviousId:        previousSlotID,
-			PreviousBlockSlot: parentSlotNumber,
+			Version:       1,
+			Number:        blockNum,
+			PreviousId:    previousSlotID,
+			PreviousBlock: parentBlockNumber,
 		},
 	}
 }
@@ -301,30 +333,23 @@ func newBank(blockNum, parentSlotNumber, blockHeight uint64, previousSlotID stri
 func (b *bank) processBatchAggregation() error {
 	indexMap := map[string]int{}
 	for idx, trxID := range b.transactionIDs {
-		indexMap[trxID] = idx
+		indexMap[string(trxID)] = idx
 	}
 
-	if len(b.slots) == 0 {
-		return fmt.Errorf("cannot aggregate transactions when there are no slots in this block")
-	}
-
-	lastSlot := b.slots[len(b.slots)-1]
-	lastSlot.Transactions = make([]*pbcodec.Transaction, len(b.transactionIDs))
-	lastSlot.TransactionCount = uint32(len(b.transactionIDs))
+	b.blk.Transactions = make([]*pbcodec.Transaction, len(b.transactionIDs))
+	b.blk.TransactionCount = uint32(len(b.transactionIDs))
 
 	var count int
 	for _, transactions := range b.batchAggregator {
 		for _, trx := range transactions {
-			trxIndex := indexMap[trx.Id]
+			trxIndex := indexMap[string(trx.Id)]
 			trx.Index = uint64(trxIndex)
-			trx.SlotNum = lastSlot.Number
-			trx.SlotHash = lastSlot.Id
 			count++
-			lastSlot.Transactions[trxIndex] = trx
+			b.blk.Transactions[trxIndex] = trx
 		}
 	}
 
-	b.batchAggregator = [][]*pbcodec.Transaction{}
+	b.batchAggregator = nil
 
 	if count != len(b.transactionIDs) {
 		return fmt.Errorf("transaction ids received on BLOCK_WORK did not match the number of transactions collection from batch executions, counted %d execution, expected %d from ids", count, len(b.transactionIDs))
@@ -333,44 +358,14 @@ func (b *bank) processBatchAggregation() error {
 	return nil
 }
 
-func (b *bank) registerSlot(slotNum uint64, slotID string) {
-	s := b.createSlot(slotNum, slotID)
-	b.slots = append(b.slots, s)
-}
-
-func (b *bank) createSlot(slotNum uint64, chainSlotID string) *pbcodec.Slot {
-	slotID := chainSlotID
-
-	if slotNum != b.blk.Number {
-		blkNumBytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(blkNumBytes, b.blk.Number)
-
-		h := sha256.New()
-		h.Write([]byte(slotID))
-
-		slotID = base58.Encode(h.Sum(blkNumBytes))[:44]
-	}
-
-	s := &pbcodec.Slot{
-		Id:            slotID,
-		Number:        slotNum,
-		PreviousId:    b.previousSlotID,
-		LastEntryHash: chainSlotID,
-		Version:       1,
-	}
-
-	b.previousSlotID = slotID
-	return s
-}
-
-func (b *bank) getActiveTransaction(batchNum uint64, trxID string) (*pbcodec.Transaction, error) {
+func (b *bank) getActiveTransaction(batchNum uint64, trxID []byte) (*pbcodec.Transaction, error) {
 	length := len(b.batchAggregator[batchNum])
 	if length == 0 {
 		return nil, fmt.Errorf("unable to retrieve transaction trace on an empty batch")
 	}
 	trx := b.batchAggregator[batchNum][length-1]
-	if trx.Id != trxID {
-		return nil, fmt.Errorf("transaction trace ID doesn't match expected value: %s", trxID)
+	if !bytes.Equal(trx.Id, trxID) {
+		return nil, fmt.Errorf("transaction trace ID doesn't match expected value: %s", base58.Encode(trxID))
 	}
 
 	return trx, nil
@@ -404,8 +399,9 @@ func (ctx *parseCtx) readInit(line string) (err error) {
 	return nil
 }
 
-// BLOCK_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 51936823 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0 T;trxid1;trxid2
-// BLOCK_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID BLOCK_HEIGHT NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT T;TRANSACTION_IDS_VECTOR_SPLIT_BY_;
+// BLOCK_WORK 10822740 10822740 full 4TbxQJpq7MT843rFzLwR3yLKcsRiLi7E5TQi3TD8LR5A 974 59s 89s 3 0 0 0 4TbxQJpq7MT843rFzLwR3yLKcsRiLi7E5TQi3TD8LR5A 0 T;668tfTrSGexUzimCftbizyuYqSeoEQPuE6QRmz6XCddtCxhBZm36Eaeid7EaDGCeMHXDenBHFKVRr7Djgzvk82hf;4xdihXZj7c9xTCTSS18PJZuSZ6GzzsxfZBqR2xiYU1XzSjx9wYxPoN4QQoqDUckSDVLVh5PzD7WUoxHfjnUqQ44r;5ZqiuFuyszM2G535noYpjHN9k6GQ2SuwVzAkQdXYx5uW9bFB5ujByaVTpKqDixbQmpxiRC4EuBBphKByKrYhFx9i;2gzbmbhUPSvV3H4EmG5E8MgKbiNRfcRoTVX7n7yqiB1Evhgpw5xHvk2KasRJ4hDfE3dhdzA2CPWcqLkyKmqxxH8d;5ZofEU5Hx5L7yTiRNAqgHo2e6R15BHvg1nXjnP9jyYJHL42BPw9ZwaAfmif4WwPxzQnix62JhXHABZYqLkeeNcr5;63zmRVeVt6ooveRpixkMphj2rMAMuZujMccSHwNe3iaJRDogtsZdpv5SFiaJnV8mkZzowHsGgLCunkcUnZ6KPPDE;2uxnJAJ8cxb3FcLXH92ezHfh6T2Row7QYtTF8Y5E2m4YpcUZDriYRnHixtDYdC8bvkf51zccRjCsv18RFdiVhUtL;5BwmHtuPcivoRK4bX91rmf9N7uNAnwu1WTki4zxezrb7NhLWPBywLRsAbp845TXZs2jPsjehWx7MGLPaFLK6mtta;37rnA3CEpdtJXR8YndYMAYVBwBw9UXAdRZQtd8Z3zzMwbNoofLLMetRTJUTLGWBGx6vhSw5WQyuesgzAaHdaRH5L;wJ6fDFUrQ1gDrpqpykBdswq7etvfaT7Y93ja9v3szuCAKsSDNqV8UCjk4zdhiqzqotqLUKwSqGPUnkXHUCbeWiX;MYvJEmKDyfbY6ZixpSAvXur3jJ3eA18K4U717CTWFVh45bs51r5myyUh1sbSNxRuEgLp8Z6iCzZggddtK8WCRDG;JWRSzMnHWFAUU8qbp2vMYvwEhv2dyxzEstXEAxFgC49WDr3kjD6MryvMzMnTyvyWrEzdwud2tnFewYrPAgAQNrk;2TvPWJ7RFiJUHYSEgHEMueDBd3Fj1gLpuFC5PF21wpo9uyyeuj3t57DUJsoAvSfP2PtynC6o8suppDhNc1D5KYH2;5zYKfMR8bLd9ZgFSLWDRiw2A69oEZtxYic6aeHkHSoJPi63YpyA9aWAqkozNyk8de3eEBtxPvAJjMMEqu9xThgwN;2SGyVco2nnr2Hz2uaV9bZYx1ckLHueKUDm1tcF7ssStvbcTaTbJjDrgEEzjudrS2Lcp1jpDAre82imUvkYYzdkKL;2PJHpZy2mnzFWGTf9QwiU8pciZVGjHun8jankMocY8DReFnMeLMLw6qX2JPWcDLc8fNrZMhiQQTMVaErdop2iPxX;3sngyaPw8GFM5Yhx76iEDt3bxNkn4Yn4vfzoxy8sr4mzbCZRtqtsybyrfPWFDjQCAmAwpv9ScLpZKrmBh5wNtgRL;3ecpQQUu3k236mbtKfUrBBVV6vaigzjBn8wYVhNkVSKRaYz9wErHoKMDk3LKzr3D6oh7TZxQx1FUGt8Ya7arGYCj;2k8d1bm1DWkWd9NWNkVUvRcccpWDmWm4pQLNyCoiSDPupMbUuYR7ddz9MCjF29GWnmpNYqPQKhDJkkXxfo2o4tsB;2LoPf3n8r2TBvxQUrQZNxqhAe5Dc2kV2fUXZd3dSxyX71zRg6GTQjzJmByLeWRDyZDwpoLJXhr6ZgEE66D3VFrBu;5eFxbm1trKtowgGTzoQzgmvKGWqTAviKgBeVoN8QYp88k56GfhvxzFtgdgrbvffvdkPTvgiW8DtU2ZQL7H2oc9Dv;2WXhithCc7pdnpZMEj5UFubkAzKFiT4PLHmtFLeEwDWJtyzXLs3dpQGvofWGLEsqQnWL4iJeeFmf9LXaMAd2dor8;5xaWH3WRMPEvC3Yhdghtyte8EgxBo8eD8tGKSNS4A8dsqydAB6cQBfiywvUZ1pjmyu6Ho6w8YLcoEvLb5v1wPUvk;4L3kzmzmJzd18x8H6x4AQWM2e8tnFDLUEaGupVzR55fspCbNASWoSVrHT3xPafXNfpgU7RqrztBNE9UMufB94ay1;PvR74QUmQk4MitsAEtutHjkf68E8dFYWq2nNcHyKisvCQKzJFdDFCMSriX2LtcfTVNtJB7c669UdU2FAi6s54m5;4hf8yVjf8yZ1ps31LEpwWcFUXoDb3aSpXkSnLRu7ZVg37w6s1kTM7mb1byJ1edsaNymGFkdoZYFfVxfGNuNThsGT;2iSUv5Rp6XzJCz7vDUtiULyv22wgjekYekKQtY6hcYuJ9c2eDV3jpUepJNQvoYZvg2xHSbcoWpdfx68KMcok9PRM;2GLZPb8scxqJSkHwC9nsaA1aZa968X7W5o9reZ5b8DYNiYgsUSXDwgxLARMYxrU3a6humpUiKK6X8wdHg5pMHP6v;GfbjFvP4Uvy2YVKpmaUaqa717CuieqXmyEbMP4TDW42oQQ3kpuEicCRrGVDhecuVqB7bZqXtZBLiTCti2gihDG2;a9yXmpJWnaSxJ3bR8NvhAc9yu1BTFYabgBAw723WoQhnCnPP1cPoMuvSXfW5ajvKAbz9PTVMdEfvJqGY1sz3TbD;7eXbdfsiEEEcX5EpwwExJiroHtumr7P53b1aVaEDQGzd2m33VNQJrYiWkdcKDYFKxd3zTykwACWFkdA8WzyNwnS;22o6WQSYmDaXRLoe8JdQyUhr4hv1FStoyiV1LDnRu4WaS1iVZduqiLaDZD8KS5T5Ccjd8wB4yP7NVkDAdASWtPi4;2XSazm3XNTfSH6Vtg3DGUvu3iTLa4zKpocLQ3MU4eydC2mN3qXh5gGM7xYcSYcfeDXSttMMa8bMPrjxEDBkGdUro;4K92S9ZJNvgAdkgwtuR8qUXSB9pLEozYGPPoiFJ1QVyXn7KCwp9usf5JrBRxh7BREZ8xgK8nDUFkb5ZMUHzv5xdG;5zXKFY9jW8VuzhS8RSLF7i9kusVAKZ9zrY5eEzhTpssUNHFpF5aCMnwFRgRpaEWp2TKwYFKBggvRYkQDyNuZ8tA1;4ySDmzYGCYProtCphszeuTK2PcjbVM9mZdYTjmUQ8sS3BN7VYECofDSv5sdmJdMFSmof34MdWimFxo1RJDBHZCpL;4rMZpXD6rfdMHKX79Z3LfKVZM23GS7QYNzYzHBxzL9qKGxfpX26Hp3mQBQNbtt3EKTbD7MAbKGM3qu6gowPdQHap;2Y7zNTwoGXQVTzkXNpwVR7LRGcpbfBDZHHqj5GEwBf8Q4zBTqHH25SoVGZJui18kkaYtLgwQXnuNTTXmXAkMdiUY;3pH69afRwXJF1kSMne7xbyoAmkibr3THLBavJaRUmMKwRWwvekPoLJLk5d2PuCJ2eW9ickfuCN2ytdrdnaPiMjkr;34M2hKQnZQgvzmak6rLNeHkGQbEp4WqbU9txhWcyMRqz6PBnuBTLjr1zJ4ee1uWLZAFmbhwb8mwcTNgdzs5JuHAN;57wbxKmjTa9DUiDHU77uwmEwXYDPG1nbDF14LM2q2bFXftV4LKTBSNGmFx5kacYjktkbNHFZwb2FQsDXxLd9jrZL;5rmSYiKYFoqYovrrgigtrhkkwz478yS2KTs9RePP8z2v9Jjek2JNcin2HdQAzt2RwAE6Ni2ATVdhCRHFod4zaE8C;22e8e3Gd9wzyGpK8oTe72jjHr5uN1eH6pgYa5ZkwEzA4dA1hVuBt6vYKb4MCQnVKYcSxyaJdWRTws1uWbZdnA1Kv;3TDJj3TNeBtmwCBmVZkAWnzMYCugEDgm9vAQhyz6aRM2HpeDqjCBUQ9VQN2qCuEZaMCg8FTjNpZ1JiNXvPJdUFTR;GKuJJUxGeSFA9xfhrJLkAaUgvGjxetsiLLCXaTTHpXutoKnHM15kA2h8B9YeyU7ZUw6pnFtAUTx6MtrdPAa1zpt;4psBf8sJMzAsPpKaDNfuaY1BRykSE7T9rArkQnHfq4cc8PTcJWpr3f2kzjgjzzZmmgjoKp9eYdcovzuyqjueCwLY;3idfGKuGvNsL4btjwZMxrQUs9guozqkWNW1Jfp1hQ49UJupudnQuC54SZLXr5ueBLEsQ4R5rLeLdo65TGM6Upqor;3s8UFvWwCTvVdp7JouFoximWTnVUKyZJRS7DWbDzANS4AsB3r1N8FHY4uYxHVj6q3RhTwTfDzaqmkbNDj2voJPXu;mojuR9vCpa8BTuVKw72tQzA2KSnkBtcLjBTSTwtpW4sAneDodAmBpDUodZHm7n19DKhCCyTxmX2SHTGMwZtrwYB;35VxMkqAe56EVpQXXvpK4BLnT6aAc3UH6Xx3jo4PVtoeZwveHXtQaV8KZkdtafpHVdvD9WBzX9Qs3TBwhxsAiSM9;uC9RuAqagQzb244bMej8sJYbmEkJP4Mqm1vaJBFsm1qGqmy2Ek3x8gmhaCyxZkwUKJsKSqpmghBUSwnfc5uocLR;2bzVNGBmAXDGMNUbeytzvAJY9EtxaxK8jDmssnev7EVuGk9LXuVh67uQV8rEcqL2ZfySCgPNQ76ULULWvYYheJSR;5z711SXSiP2RydvcGy9mvvDU6ceRJgecaEVbENC8PGeWuuTbGgDpXmJkMwDftnHttYJzpWgyxXsYpGyRGowmdcXt;4UWUzU3Cp3x5xCNWKLA3unMqcFvF2NnghzHu7CwnEEZVmgcThSQw4LjqDhjKx5WvBbks5VqNRq5E6ANwbMgrCard;Lve7sFokh224HDNEYZqf1TntagRA18JmdeNnF6uoNve1EnFTSHZ4DtWVo4sUjSXaaCFtCDU8QXu8jsdLuyXY1Sn;59aUNSMsLePvpxf7DwAJgUM7ZQ8UEp1FdVrxF8BicQFisQmH1x7zBTKReYtvAUyFmGUmfdqsP8631em5dk7H1bHZ;3Ns2fW5216CebGthy1TfNXeRYb3GwRVo3rdawe3nAxBx6rRxfKeBkv6iHDBJA64NcsbuqxgtdgGTqEyd85p9tcu1;5SWGqkYpJ3S9FbV3DKUt7faB1u6SutVYJZkZj68jCun4MVGEHhEH4J1wvLN1CF4tV6HzzgvGXFLP1S2mZCQbfTPw;2UckTkgm7JM4vimoRJasQpqfL6naNqcLGryaHxAFSfAtVug89uk7k5VYSjvCmh3MC9aWHRB2TKwkvzn82YYrxZ6a;4VSrUWuNJv9cTkAXiJnQQwSF7tpadPsLjx89wyGJnBU27rtxxKkakVDwUw6VuWTi6Ni4Vtz3SqAUGiWSjnQgE28y;38gbDWPHtNvQMm9VgpJoRDZpgHtQiYz8Po54cbuxj7eHHmPexasN6sfZ9eepieHmscVkGbbLgqjYC3iA99LQfTcs;2HXTPKGLqTxyYxxAvbHCMyuSA8XzNotMP4LAf9a1UabfkAohLGZG8GYNx5h8uh2Sv7oJNmtumsNRTXsERNzJxPG4;28xgBh1g2LPsnfassTEd2fEZHXrzRmvJhrT95eVXfx6QYu33KkgVt82nKQR3uWEyBfaZsUZsBPzPcpv5QspSobhB;4ZktRiC9eDRv7W9RduSL1tZRMyK6H1DG59a2n8Lgps6vfzM2hEsLLX8x28iqgAz4v8Bj3nC11CMxGJdFR1uY2hDS;5woi4YbMmgxyjTa4b2XsbHj9ByVAiuQ4y4rAAoTczhx2Wjti1FUUymD5GMaENGnpLYkyZZXmM98Bd3D7oYjmAAew;4Voct1cDCnwiKq5TLfrrTKFMHmdMmeujtGdufD9Kjyx3JwHrxd6u7u6toB5DbEysvisMX5GSpPD4vea5TcaQbmtm;39c23pbstSN1fwmkbD63iV3yLew18RDi2JQtaxbkcCynFYQKa1TsanuaEfCmwGf7iq9SugBpPoXabT6odBtZ6U1S;CrLowTHETYoWpLmnJAiyhSj2sbHjKfbY6xFkaR1YxGaUGmSwzMPGM9fZj8Qs7ypES1Q629NcHRbb1Hp8sR5CRxu;59htB9qCAKfiwPghH8YzpT31xAp2C81xiGD2tWFBGGnGccwH8JeTsbpJxDzBXhbjmYhPQp2Hx6SjE6iv4zREJjuT;3kMv1u77kvZMYKcbN2EMNd9zoQYFKMKrRm2FoupkaPFydRYt47g3CYZPyfyPDDXeWwxGZuSrdrqRqL8xUV5Fon3o;2WqUxH9ikrhidxGPjp7bpHcHknfFuYdTjEB4RR5uicicZ9ZJuhxV67vLNz2s1ZYspZ46JvdwLsPJxTEZhiXCfDMi;3PsKf9o6LE2TzNrGzZBbLtB3aVA8UpsJpLx8v1D4LcTVb3tQfaR2GWx2UFjYg4iunPYeK7qz3LYSFzxQ5eye6z45;2tWGEUB8YrPztJy41ekLmbYwxsgaKKcEYRUT2fWqFM6zJ129t9qyk6UNyECT5PJPgnJ4p1Ji65ceqhBjfj4z8e94;2J5GE1agjhnJ1sUaahDXTgA8V9omAF3bHr2sWBe6NLEg7CwECspG1SfCx1y9DfLDZXbAqCNPjBwauvMM2VPDM98n;4EiDavNDQY683YKnpDtfX3kvSnLHpVz7Fa913NcXNJy3LsoDd8CNHT44RiE1XWRfDqsDatru3uRp2meDfmtEfDCw;2ZUXGnJhDa9PVsWyNkDh4NzgTd2J4xewgwMEDgawXjfdo894ZEMdVFUih8HCCP7HB5P4qra2PwyZkdaoQo7f6A4m;2Lo9KGbEtahtSj3jLnzubUH831PFr68YqQjQyxQS5Mm5qmRu78qmEA4HjbGYGntpgydJp8QpjL4Entr2WXpL8Yqc;5LB3bKA9gBzu9SQEzPSo1WZRqZGbtonm5nsGuZuihnLigwKfR3S9bbrjStxpfCEHZZa6mdat5Lz2vbMzG952Y34h;Bp6PAntbMEaippQXFqeDzBq3RwWFYf1xmX56xti5g8DTGWGbhZqCADH2rGNQMFwEni3bkFGYiRUbuMEaUFPzPov;3mSKaXvj7YNuLiawdQZ2XNnCDqa5noMPju6m2Z2Thv171ad6omMprtsNBHAUFRn4ay5EMscWBfp3CRosys2UBHwq;4vPURw2Kd9g3rjuBTpv7t2T71d9HuLFxWwFCuUabwu8xu7GwQAv3UhWt1jVnHj4DPs19V9teve7rmMc8hHTTeFVP;2XbRwK5yV2wK1RDSafoxVUiyx1y1YCzGFSDr2ccixsUb8ds9RkUvx735PJHKgt5QMEyjacCYQz1UAvgrmpLa13PH;41yBCYD5n2CDtHpcMAzmefKfVNL3kBXRz1RLGUQmat2GzKVsjsDV7QtKeeUbzcdt68WhxVKLkbhKvavhfzeH9F7J;4Fs7WatksKuKLovvth4T5mirhCEpLwSLBuFABnQKBKhqfhU3jfZHhpuW1DW3Lsxa83wWPb76GipdS26XyV5RA2x5;avHQMQLAc2KUEQ2VYJfzHsk23zbHqjYLkcLM2EbmJpyBZkPsyRE6xfYzLnTJAEYJnB39AgU5fTvasxWH6VKy3mm;4TnP72QHzk5asFDq7n6K1sdUTnNseiqgypYoATBSGuLQaaFRHsRbEMJj9iHibPSRQMqGTjRsSDQAT7TN1cb1udSf;3pyxch7xmn4w89QCrqWPcb4gC5dciCmidSbNeymq5MfVRDebN1ctFLW1Uqd49us9Nz5MoYigFBq7bkdoTg4qD6bd;3C2ZtwF91WMQpR28e5ujVagePxUrz67NN5raAXBLY6mx8RYL7sitJRXR29S4PRWUP4gt4cqb2eWzax5PgMdmXdGh;X7ywH8mi7KRgpLszNgonoHWWTvUWgQbEp4nVu5AaFJqgrTJM9HtbmkL8VdWqi4QN6F1ogGfKK5QF3D5mZefff1z"
+// BLOCK_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0 T;trxid1;trxid2
+// BLOCK_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT T;TRANSACTION_IDS_VECTOR_SPLIT_BY_;
 func (ctx *parseCtx) readBlockWork(line string) (err error) {
 	zlog.Debug("reading block work", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
@@ -413,7 +409,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 		return fmt.Errorf("expected %d fields got %d", BlockWorkChunkSize, len(chunks))
 	}
 
-	var blockNum, parentSlotNumber, blockHeight int
+	var blockNum, parentSlotNumber int
 	if blockNum, err = strconv.Atoi(chunks[2]); err != nil {
 		return fmt.Errorf("slot num to int: %w", err)
 	}
@@ -422,11 +418,10 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 		return fmt.Errorf("parent slot num to int: %w", err)
 	}
 
-	if blockHeight, err = strconv.Atoi(chunks[5]); err != nil {
-		return fmt.Errorf("parent slot num to int: %w", err)
+	previousSlotID, err := base58.Decode(chunks[4])
+	if err != nil {
+		return fmt.Errorf("previousSlotID to int: %w", err)
 	}
-
-	previousSlotID := chunks[4]
 
 	var b *bank
 	var found bool
@@ -435,14 +430,20 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 			zap.Int("parent_slot_number", parentSlotNumber),
 			zap.Int("slot_number", blockNum),
 		)
-		b = newBank(uint64(blockNum), uint64(parentSlotNumber), uint64(blockHeight), previousSlotID)
+		b = newBank(uint64(blockNum), uint64(parentSlotNumber), previousSlotID)
 		ctx.banks[uint64(blockNum)] = b
 	}
 
-	for _, trxID := range strings.Split(chunks[14], ";") {
-		if trxID == "" || trxID == "T" {
+	for _, trxIDRaw := range strings.Split(chunks[13], ";") {
+		if trxIDRaw == "" || trxIDRaw == "T" {
 			continue
 		}
+
+		trxID, err := base58.Decode(trxIDRaw)
+		if err != nil {
+			return fmt.Errorf("transcation id's %q is invalid: %w", trxIDRaw, err)
+		}
+
 		b.transactionIDs = append(b.transactionIDs, trxID)
 	}
 
@@ -450,31 +451,8 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 	return nil
 }
 
-// SLOT_BOUND 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz
-// SLOT_BOUND BLOCK_NUM SLOT_ID
-func (ctx *parseCtx) readSlotBound(line string) (err error) {
-	zlog.Debug("reading slot bound", zap.String("line", line))
-	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != SlotBoundChunkSize {
-		return fmt.Errorf("expected %d fields got %d", SlotBoundChunkSize, len(chunks))
-	}
-
-	var blockNum uint64
-	if blockNum, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
-		return fmt.Errorf("slot num to int: %w", err)
-	}
-
-	if ctx.activeBank == nil {
-		return fmt.Errorf("received slot bound while no active bank in context")
-	}
-
-	slotId := chunks[2]
-	ctx.activeBank.registerSlot(blockNum, slotId)
-	return nil
-}
-
-// BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316
-// BLOCK_END BLOCK_NUM LAST_ENTRY_HASH GENESIS_UNIX_TIMESTAMP CLOCK_UNIX_TIMESTAMP
+// BLOCK_END 4 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1635424623 1635424624
+// BLOCK_END BLOCK_NUM BLOCK_HASH GENESIS_UNIX_TIMESTAMP CLOCK_UNIX_TIMESTAMP
 func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	zlog.Debug("reading block end", zap.String("line", line))
 
@@ -504,24 +482,33 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 		return fmt.Errorf("slot end's active bank does not match context's active bank")
 	}
 
-	slotID := chunks[2]
-	ctx.activeBank.blk.Id = slotID
+	blockHash, err := base58.Decode(chunks[2])
+	if err != nil {
+		return fmt.Errorf("slot id %q is invalid: %w", chunks[2], err)
+	}
+
+	ctx.activeBank.blk.Id = blockHash
+	ctx.activeBank.blk.RootNum = ctx.RootBlock
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
-	ctx.activeBank.ended = true
+	//ctx.activeBank.ended = true
 
 	if err := ctx.activeBank.processBatchAggregation(); err != nil {
 		return fmt.Errorf("sorting: %w", err)
 	}
 
+	ctx.blockBuffer <- ctx.activeBank.blk
 	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	ctx.activeBank = nil
+
+	zlog.Debug("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
 
 	return nil
 }
 
 // BLOCK_ROOT 6482838121
 // Simply the root block number, when this block is done processing, and all of its votes are taken into account.
+//todo: Block Root not need any more
 func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 	zlog.Debug("reading block root", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
@@ -534,37 +521,8 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 		return fmt.Errorf("root block num num to int: %w", err)
 	}
 
-	for bankSlotNum, bank := range ctx.banks {
-		if !bank.ended {
-			if bankSlotNum < rootBlock {
-				zlog.Info("purging un-ended banks", zap.Uint64("purge_bank_slot", bankSlotNum), zap.Uint64("root_block", rootBlock))
-				delete(ctx.banks, bankSlotNum)
-			}
-			continue
-		}
+	ctx.RootBlock = rootBlock
 
-		if rootBlock == bank.blk.Number {
-			return fmt.Errorf("invalid root for bank. Root block %d cannot equal bank block number %d", rootBlock, bank.blk.Number)
-		}
-
-		bank.blk.RootNum = rootBlock
-
-		for _, slot := range bank.slots {
-			slot.Block = bank.blk
-			for i, t := range slot.Transactions {
-				t.Index = uint64(i)
-				t.SlotHash = slot.Id
-				t.SlotNum = slot.Number
-			}
-
-			if len(ctx.slotBuffer) == cap(ctx.slotBuffer) {
-				return fmt.Errorf("unable to put slot in buffer reached buffer capacity size %q", cap(ctx.slotBuffer))
-			}
-			ctx.slotBuffer <- slot
-		}
-		delete(ctx.banks, bankSlotNum)
-	}
-	zlog.Debug("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
 	return nil
 }
 

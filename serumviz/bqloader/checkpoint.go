@@ -11,13 +11,13 @@ import (
 )
 
 type ProcessFile struct {
-	Table        string    `bigquery:"table"`
-	Filename     string    `bigquery:"file"`
-	StartSlotNum int64     `bigquery:"start_slot_num"`
-	StartSlotID  string    `bigquery:"start_slot_id"`
-	EndSlotNum   int64     `bigquery:"end_slot_num"`
-	EndSlotID    string    `bigquery:"end_slot_id"`
-	Time         time.Time `bigquery:"timestamp"`
+	Table         string    `bigquery:"table"`
+	Filename      string    `bigquery:"file"`
+	StartBlockNum int64     `bigquery:"start_block_num"`
+	StartBlockID  []byte    `bigquery:"start_block_id"`
+	EndBlockNum   int64     `bigquery:"end_block_num"`
+	EndBlockID    []byte    `bigquery:"end_block_id"`
+	Time          time.Time `bigquery:"timestamp"`
 }
 
 func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint, error) {
@@ -39,13 +39,13 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 			return nil, nil
 		}
 
-		validCheckpoint, err := bq.validateCheckpoint(ctx, table.String(), tableCheckpoint.LastWrittenSlotNum)
+		validCheckpoint, err := bq.validateCheckpoint(ctx, table.String(), tableCheckpoint.LastWrittenBlockNum)
 		if err != nil {
 			return nil, fmt.Errorf("could not validate checkpoint: %w", err)
 		}
 
 		if !validCheckpoint {
-			return nil, fmt.Errorf("invalid checkpoint for table %s: data in table exists above checkpoint slot_num %d. this data needs to be erased from the table", table, tableCheckpoint.LastWrittenSlotNum)
+			return nil, fmt.Errorf("invalid checkpoint for table %s: data in table exists above checkpoint slot_num %d. this data needs to be erased from the table", table, tableCheckpoint.LastWrittenBlockNum)
 		}
 
 		if earliestCheckpoint == nil {
@@ -53,7 +53,7 @@ func (bq *BQLoader) GetCheckpoint(ctx context.Context) (*pbserumhist.Checkpoint,
 			continue
 		}
 
-		if tableCheckpoint.LastWrittenSlotNum < earliestCheckpoint.LastWrittenSlotNum {
+		if tableCheckpoint.LastWrittenBlockNum < earliestCheckpoint.LastWrittenBlockNum {
 			earliestCheckpoint = tableCheckpoint
 		}
 	}
@@ -100,8 +100,8 @@ func (bq *BQLoader) readCheckpoint(ctx context.Context, forTable string) (*pbser
 			}
 
 			result = &pbserumhist.Checkpoint{
-				LastWrittenSlotNum: uint64(row.EndSlotNum),
-				LastWrittenSlotId:  row.EndSlotID,
+				LastWrittenBlockNum: uint64(row.EndBlockNum),
+				LastWrittenBlockId:  row.EndBlockID,
 			}
 		}
 	}

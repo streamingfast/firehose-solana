@@ -14,18 +14,12 @@ func (s *Server) GetFills(ctx context.Context, request *pbserumhist.GetFillsRequ
 	var trader *solana.PublicKey
 
 	if len(request.Trader) != 0 {
-		t, err := solana.PublicKeyFromBase58(request.Trader)
-		if err != nil {
-			return nil, fmt.Errorf("invalid trader address:%s : %w", request.Trader, err)
-		}
+		t := solana.PublicKeyFromBytes(request.Trader)
 		trader = &t
 	}
 
 	if len(request.Market) != 0 {
-		m, err := solana.PublicKeyFromBase58(request.Market)
-		if err != nil {
-			return nil, fmt.Errorf("invalid market address:%s : %w", request.Trader, err)
-		}
+		m := solana.PublicKeyFromBytes(request.Market)
 		market = &m
 	}
 

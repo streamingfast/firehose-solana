@@ -33,7 +33,7 @@ func (r *Root) QuerySerumFillHistory(ctx context.Context, in *SerumFillHistoryRe
 		if err != nil {
 			return nil, gqerrs.Errorf(`invalid "trader" argument %q: %s`, *in.Trader, err)
 		}
-		request.Trader = traderKey.String()
+		request.Trader = traderKey[:]
 	}
 
 	if in.Market != nil {
@@ -41,7 +41,7 @@ func (r *Root) QuerySerumFillHistory(ctx context.Context, in *SerumFillHistoryRe
 		if err != nil {
 			return nil, gqerrs.Errorf(`invalid "market" argument %q: %s`, *in.Market, err)
 		}
-		request.Market = marketKey.String()
+		request.Market = marketKey[:]
 	}
 
 	getCtx, cancel := context.WithTimeout(ctx, 30*time.Second)

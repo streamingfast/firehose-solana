@@ -25,7 +25,7 @@ type SerumSlot struct {
 	OrderClosedEvents    []*OrderClosed
 }
 
-func newSerumSlot() *SerumSlot {
+func newSerumBlock() *SerumSlot {
 	return &SerumSlot{
 		TradingAccountCache: nil,
 		OrderFilledEvents:   nil,
@@ -37,15 +37,23 @@ type serumTradingAccount struct {
 	TradingAccount solana.PublicKey
 }
 
-func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32, trxId, slotHash string, blkTime time.Time, instruction *serum.Instruction, accChanges []*pbcodec.AccountChange) error {
-
+func (s *SerumSlot) processInstruction(
+	slotNumber uint64,
+	trxIdx,
+	instIdx uint32,
+	trxId []byte,
+	blockHash []byte,
+	blkTime time.Time,
+	instruction *serum.Instruction,
+	accChanges []*pbcodec.AccountChange,
+) error {
 	eventRef := &Ref{
-		SlotNumber: slotNumber,
-		TrxHash:    trxId,
-		TrxIdx:     trxIdx,
-		InstIdx:    instIdx,
-		SlotHash:   slotHash,
-		Timestamp:  blkTime,
+		BlockNumber: slotNumber,
+		TrxID:       trxId,
+		TrxIdx:      trxIdx,
+		InstIdx:     instIdx,
+		BlockID:     blockHash,
+		Timestamp:   blkTime,
 	}
 
 	if traceEnabled {
@@ -121,8 +129,8 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 		s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
 			Ref: *eventRef,
 			InstrRef: &pbserumhist.InstructionRef{
-				TrxHash:   eventRef.TrxHash,
-				SlotHash:  eventRef.SlotHash,
+				TrxId:     eventRef.TrxID,
+				BlockId:   eventRef.BlockID,
 				Timestamp: mustProtoTimestamp(eventRef.Timestamp),
 			},
 		})
@@ -144,8 +152,8 @@ func (s *SerumSlot) processInstruction(slotNumber uint64, trxIdx, instIdx uint32
 		s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
 			Ref: *eventRef,
 			InstrRef: &pbserumhist.InstructionRef{
-				TrxHash:   eventRef.TrxHash,
-				SlotHash:  eventRef.SlotHash,
+				TrxId:     eventRef.TrxID,
+				BlockId:   eventRef.BlockID,
 				Timestamp: mustProtoTimestamp(eventRef.Timestamp),
 			},
 		})
@@ -186,8 +194,8 @@ func (s *SerumSlot) addOrderFill(eventRef *Ref, old, new *serum.EventQueue) {
 						Fill: &pbserumhist.Fill{
 							OrderId:           e.OrderID.HexString(false),
 							Side:              pbserumhist.Side(e.Side()),
-							SlotHash:          eventRef.SlotHash,
-							TrxId:             eventRef.TrxHash,
+							BlockId:           eventRef.BlockID,
+							TrxId:             eventRef.TrxID,
 							Maker:             false,
 							NativeQtyPaid:     e.NativeQtyPaid,
 							NativeQtyReceived: e.NativeQtyReleased,
@@ -230,14 +238,14 @@ func (s *SerumSlot) addNewOrderEvent(eventRef *Ref, old, new *serum.OpenOrders, 
 					Trader: new.Owner,
 					Order: &pbserumhist.Order{
 						//Num:         newOrder.SeqNum(),
-						Trader:      new.Owner.String(),
+						Trader:      new.Owner[:],
 						Side:        pbserumhist.Side(newOrder.Side),
 						LimitPrice:  limitPrice, // instruction
 						MaxQuantity: maxQuantity,
 						Type:        orderType,
 						Fills:       nil,
-						SlotHash:    eventRef.SlotHash,
-						TrxId:       eventRef.TrxHash,
+						BlockId:     eventRef.BlockID,
+						TrxId:       eventRef.TrxID,
 					},
 				})
 			}
@@ -270,8 +278,8 @@ func (s *SerumSlot) addClosedOrderEvent(eventRef *Ref, old, new *serum.OpenOrder
 				s.OrderClosedEvents = append(s.OrderClosedEvents, &OrderClosed{
 					Ref: *eventRef,
 					InstrRef: &pbserumhist.InstructionRef{
-						TrxHash:   eventRef.TrxHash,
-						SlotHash:  eventRef.SlotHash,
+						TrxId:     eventRef.TrxID,
+						BlockId:   eventRef.BlockID,
 						Timestamp: mustProtoTimestamp(eventRef.Timestamp),
 					},
 				})
@@ -291,8 +299,8 @@ func (s *SerumSlot) addCancelledOrderViaEventQueue(eventRef *Ref, old, new *seru
 					s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
 						Ref: *eventRef,
 						InstrRef: &pbserumhist.InstructionRef{
-							TrxHash:   eventRef.TrxHash,
-							SlotHash:  eventRef.SlotHash,
+							TrxId:     eventRef.TrxID,
+							BlockId:   eventRef.BlockID,
 							Timestamp: mustProtoTimestamp(eventRef.Timestamp),
 						},
 					})
@@ -313,8 +321,8 @@ func (s *SerumSlot) addCancelledOrderViaRequestQueue(eventRef *Ref, old, new *se
 					s.OrderCancelledEvents = append(s.OrderCancelledEvents, &OrderCancelled{
 						Ref: *eventRef,
 						InstrRef: &pbserumhist.InstructionRef{
-							TrxHash:   eventRef.TrxHash,
-							SlotHash:  eventRef.SlotHash,
+							TrxId:     eventRef.TrxID,
+							BlockId:   eventRef.BlockID,
 							Timestamp: mustProtoTimestamp(eventRef.Timestamp),
 						},
 					})

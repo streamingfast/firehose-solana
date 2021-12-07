@@ -85,15 +85,15 @@ func (bq *BQLoader) Init(ctx context.Context, scratchSpaceDir string) error {
 
 	var newOrderStartBlock, orderFillStartBlock, tradingAccountStartBlock = bq.startBlock, bq.startBlock, bq.startBlock // default to configured start block
 	if cp, ok := bq.checkpoints[tableOrders]; ok && cp != nil {
-		newOrderStartBlock = cp.LastWrittenSlotNum
+		newOrderStartBlock = cp.LastWrittenBlockNum
 	}
 
 	if cp, ok := bq.checkpoints[tableFills]; ok && cp != nil {
-		orderFillStartBlock = cp.LastWrittenSlotNum
+		orderFillStartBlock = cp.LastWrittenBlockNum
 	}
 
 	if cp, ok := bq.checkpoints[tableTraders]; ok && cp != nil {
-		tradingAccountStartBlock = cp.LastWrittenSlotNum
+		tradingAccountStartBlock = cp.LastWrittenBlockNum
 	}
 
 	bq.eventHandlers[tableOrders] = NewEventHandler(newOrderStartBlock, bq.storeUrl, bq.store, bq.dataset, tableOrders, bq.injector, scratchSpaceDir)

@@ -37,8 +37,8 @@ func (s *StatefulOrder) applyEvent(e interface{}) (*pbserumhist.OrderTransition,
 		s.state = pbserumhist.OrderTransition_STATE_APPROVED
 		out.Transition = pbserumhist.OrderTransition_TRANS_ACCEPTED
 		s.order = v.Order
-		s.order.Market = v.Ref.Market.String()
-		s.order.SlotNum = v.Ref.SlotNumber
+		s.order.Market = v.Ref.Market[:]
+		s.order.BlockNum = v.Ref.BlockNumber
 		s.order.TrxIdx = v.Ref.TrxIdx
 		s.order.InstIdx = v.Ref.InstIdx
 	case *serumhist.FillEvent:
@@ -46,8 +46,8 @@ func (s *StatefulOrder) applyEvent(e interface{}) (*pbserumhist.OrderTransition,
 		s.state = pbserumhist.OrderTransition_STATE_PARTIAL
 		out.Transition = pbserumhist.OrderTransition_TRANS_FILLED
 		fill := v.Fill
-		fill.Market = v.Ref.Market.String()
-		fill.SlotNum = v.Ref.SlotNumber
+		fill.Market = v.Ref.Market[:]
+		fill.BlockNum = v.Ref.BlockNumber
 		fill.TrxIdx = v.Ref.TrxIdx
 		fill.InstIdx = v.Ref.InstIdx
 		fill.OrderSeqNum = v.Ref.OrderSeqNum
@@ -64,7 +64,7 @@ func (s *StatefulOrder) applyEvent(e interface{}) (*pbserumhist.OrderTransition,
 		out.Transition = pbserumhist.OrderTransition_TRANS_CANCELLED
 
 		instrRef := v.InstrRef
-		instrRef.SlotNum = v.Ref.SlotNumber
+		instrRef.BlockNum = v.Ref.BlockNumber
 		instrRef.TrxIdx = v.Ref.TrxIdx
 		instrRef.InstIdx = v.Ref.InstIdx
 
@@ -76,7 +76,7 @@ func (s *StatefulOrder) applyEvent(e interface{}) (*pbserumhist.OrderTransition,
 			out.Transition = pbserumhist.OrderTransition_TRANS_CANCELLED
 
 			instrRef := v.InstrRef
-			instrRef.SlotNum = v.Ref.SlotNumber
+			instrRef.BlockNum = v.Ref.BlockNumber
 			instrRef.TrxIdx = v.Ref.TrxIdx
 			instrRef.InstIdx = v.Ref.InstIdx
 			s.cancelled = instrRef
@@ -111,11 +111,11 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 	for itr.Next() {
 		seenOrderKey = true
 		var e interface{}
-		eventByte, market, slotNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeOrder(itr.Item().Key)
+		eventByte, market, BlockNum, trxIdx, instIdx, orderSeqNum := keyer.DecodeOrder(itr.Item().Key)
 		zlog.Debug("found new order key prefix",
 			zap.String("event", hex.EncodeToString([]byte{eventByte})),
 			zap.Stringer("market", market),
-			zap.Uint64("slot_num", slotNum),
+			zap.Uint64("block_num", BlockNum),
 			zap.Uint64("trx_index", trxIdx),
 			zap.Uint64("inst_index", instIdx),
 			zap.Uint64("orde_seq_num", orderSeqNum),
@@ -133,7 +133,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
-					SlotNumber:  slotNum,
+					BlockNumber: BlockNum,
 					TrxIdx:      uint32(trxIdx),
 					InstIdx:     uint32(instIdx),
 				},
@@ -141,12 +141,12 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 			}
 		case keyer.OrderEventTypeFill:
 			fill := &pbserumhist.Fill{}
-			fillKey := keyer.EncodeFill(market, slotNum, trxIdx, instIdx, orderSeqNum)
+			fillKey := keyer.EncodeFill(market, BlockNum, trxIdx, instIdx, orderSeqNum)
 			v, err := m.store.Get(ctx, fillKey)
 			if err != nil {
 				zlog.Warn("unable to find fills for order",
 					zap.Stringer("market", market),
-					zap.Uint64("slot_num", slotNum),
+					zap.Uint64("block_num", BlockNum),
 					zap.Uint64("trx_idx", trxIdx),
 					zap.Uint64("inst_indx", instIdx),
 					zap.Uint64("order_seq_num", orderSeqNum),
@@ -161,7 +161,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
-					SlotNumber:  slotNum,
+					BlockNumber: BlockNum,
 					TrxIdx:      uint32(trxIdx),
 					InstIdx:     uint32(instIdx),
 				},
@@ -172,7 +172,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
-					SlotNumber:  slotNum,
+					BlockNumber: BlockNum,
 					TrxIdx:      uint32(trxIdx),
 					InstIdx:     uint32(instIdx),
 				},
@@ -187,7 +187,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
-					SlotNumber:  slotNum,
+					BlockNumber: BlockNum,
 					TrxIdx:      uint32(trxIdx),
 					InstIdx:     uint32(instIdx),
 				},
@@ -203,7 +203,7 @@ func (m *Reader) GetOrder(ctx context.Context, market solana.PublicKey, orderNum
 				Ref: serumhist.Ref{
 					Market:      market,
 					OrderSeqNum: orderSeqNum,
-					SlotNumber:  slotNum,
+					BlockNumber: BlockNum,
 					TrxIdx:      uint32(trxIdx),
 					InstIdx:     uint32(instIdx),
 				},
