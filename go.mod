@@ -53,6 +53,4 @@ replace github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-
 
 replace github.com/ShinyTrinkets/overseer => github.com/dfuse-io/overseer v0.2.1-0.20191024193921-39856397cf3f
 
-replace (
-	github.com/streamingfast/node-manager => /Users/cbillett/devel/sf/node-manager
-)
+replace github.com/streamingfast/bstream => /Users/julien/codebase/dfuse-io/bstream
