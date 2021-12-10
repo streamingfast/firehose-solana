@@ -1,10 +1,10 @@
 package transform
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/streamingfast/bstream"
-
 	"github.com/streamingfast/bstream/transform"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	pbtransforms "github.com/streamingfast/sf-solana/pb/sf/solana/transforms/v1"
@@ -23,19 +23,19 @@ var NewProgramFilterFactory = func(message proto.Message) (transform.Transform, 
 }
 
 type ProgramFilter struct {
-	filteredProgramId []string
+	filteredProgramId [][]byte
 }
 
-func (p *ProgramFilter) matches(programId string) bool {
+func (p *ProgramFilter) matches(programId []byte) bool {
 	for _, pid := range p.filteredProgramId {
-		if pid == programId {
+		if bytes.Equal(pid, programId) {
 			return true
 		}
 	}
 	return false
 }
 func (p *ProgramFilter) Transform(blk *bstream.Block, in transform.Input) (out transform.Output) {
-	slot := blk.ToNative().(*pbcodec.Slot)
+	slot := blk.ToNative().(*pbcodec.Block)
 	filteredTransactions := []*pbcodec.Transaction{}
 	for _, transaction := range slot.Transactions {
 		match := false

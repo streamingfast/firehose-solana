@@ -8,14 +8,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
-	blockstreamv2 "github.com/streamingfast/bstream/blockstream/v2"
 	dauthAuthenticator "github.com/streamingfast/dauth/authenticator"
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/dmetering"
 	"github.com/streamingfast/dmetrics"
 	firehoseApp "github.com/streamingfast/firehose/app/firehose"
 	"github.com/streamingfast/logging"
-	pbbstream "github.com/streamingfast/pbgo/dfuse/bstream/v1"
 	"go.uber.org/zap"
 )
 
@@ -92,8 +90,8 @@ func init() {
 				GRPCShutdownGracePeriod: grcpShutdownGracePeriod,
 				RealtimeTolerance:       viper.GetDuration("firehose-real-time-tolerance"),
 			}, &firehoseApp.Modules{
-				Authenticator:             authenticator,
-				BlockTrimmer:              blockstreamv2.BlockTrimmerFunc(trimBlock),
+				Authenticator: authenticator,
+				//BlockTrimmer:              blockstreamv2.BlockTrimmerFunc(trimBlock),
 				FilterPreprocessorFactory: filterPreprocessorFactory,
 				HeadTimeDriftMetric:       headTimeDriftmetric,
 				HeadBlockNumberMetric:     headBlockNumMetric,
@@ -105,20 +103,4 @@ func init() {
 
 func passthroughPreprocessBlock(blk *bstream.Block) (interface{}, error) {
 	return nil, nil
-}
-
-func trimBlock(blk interface{}, details pbbstream.BlockDetails) interface{} {
-	if details == pbbstream.BlockDetails_BLOCK_DETAILS_FULL {
-		return blk
-	}
-
-	// We need to create a new instance because this block could be in the live segment
-	// which is shared across all streams that requires live block. As such, we cannot modify
-	// them in-place, so we require to create a new instance.
-	//
-	// The copy is mostly shallow since we copy over pointers element but some part are deep
-	// copied like ActionTrace which requires trimming.
-
-	// FIXME: Trimming is unsupported right now
-	return blk
 }

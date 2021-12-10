@@ -164,7 +164,6 @@ func (r *ConsoleReader) next() (out interface{}, err error) {
 
 		line = line[6:] // removes the DMLOG prefix
 		if err = parseLine(ctx, line); err != nil {
-			panic(err)
 			return nil, r.formatError(line, err)
 		}
 

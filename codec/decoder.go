@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/streamingfast/bstream"
-	pbbstream "github.com/streamingfast/pbgo/dfuse/bstream/v1"
+	pbbstream "github.com/streamingfast/pbgo/sf/bstream/v1"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 )
 
