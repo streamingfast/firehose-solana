@@ -20,7 +20,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.9.0
 	github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5
-	github.com/streamingfast/bstream v0.0.2-0.20211210153845-a3cb593a5df1
+	github.com/streamingfast/bstream v0.0.2-0.20211216180025-10e0a0d879ad
 	github.com/streamingfast/dauth v0.0.0-20210811181149-e8fd545948cc
 	github.com/streamingfast/dbin v0.0.0-20210809205249-73d5eca35dc5
 	github.com/streamingfast/derr v0.0.0-20210811180100-9138d738bcec
@@ -54,3 +54,4 @@ replace github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-
 replace github.com/ShinyTrinkets/overseer => github.com/dfuse-io/overseer v0.2.1-0.20191024193921-39856397cf3f
 
 replace github.com/streamingfast/bstream => /Users/julien/codebase/sf/bstream
+replace github.com/sf/bstream => /Users/julien/codebase/sf/bstream

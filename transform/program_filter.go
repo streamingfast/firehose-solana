@@ -3,6 +3,7 @@ package transform
 import (
 	"bytes"
 	"fmt"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/transform"
@@ -11,14 +12,22 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var NewProgramFilterFactory = func(message proto.Message) (transform.Transform, error) {
-	obj, ok := message.(*pbtransforms.ProgramFilter)
-	if !ok {
-		return nil, fmt.Errorf("invalid proto message type expected 'ProgramFilter'")
+var ProgramFilterMessageName = proto.MessageName(&pbtransforms.ProgramFilter{})
+
+var NewProgramFilterFactory = func(message *anypb.Any) (transform.Transform, error) {
+	mname := message.MessageName()
+	if mname != ProgramFilterMessageName {
+		return nil, fmt.Errorf("expected type url %q, recevied %q ", ProgramFilterMessageName, message.TypeUrl)
+	}
+
+	filter := &pbtransforms.ProgramFilter{}
+	err := proto.Unmarshal(message.Value, filter)
+	if err != nil {
+		return nil, fmt.Errorf("unexpected unmarshall error: %w", err)
 	}
 
 	return &ProgramFilter{
-		filteredProgramId: obj.ProgramIds,
+		filteredProgramId: filter.ProgramIds,
 	}, nil
 }
 
@@ -34,10 +43,10 @@ func (p *ProgramFilter) matches(programId []byte) bool {
 	}
 	return false
 }
-func (p *ProgramFilter) Transform(blk *bstream.Block, in transform.Input) (out transform.Output) {
-	slot := blk.ToNative().(*pbcodec.Block)
+func (p *ProgramFilter) Transform(readOnlyBlk *bstream.Block, in transform.Input) (transform.Output, error) {
+	solBlock := readOnlyBlk.ToProtocol().(*pbcodec.Block)
 	filteredTransactions := []*pbcodec.Transaction{}
-	for _, transaction := range slot.Transactions {
+	for _, transaction := range solBlock.Transactions {
 		match := false
 		for _, instruction := range transaction.Instructions {
 			if p.matches(instruction.ProgramId) {
@@ -48,11 +57,7 @@ func (p *ProgramFilter) Transform(blk *bstream.Block, in transform.Input) (out t
 			filteredTransactions = append(filteredTransactions, transaction)
 		}
 	}
-	slot.Transactions = filteredTransactions
-	slot.TransactionCount = uint32(len(filteredTransactions))
-	return slot
-}
-
-func (p ProgramFilter) Doc() string {
-	return "program filter documenation"
+	solBlock.Transactions = filteredTransactions
+	solBlock.TransactionCount = uint32(len(filteredTransactions))
+	return solBlock, nil
 }

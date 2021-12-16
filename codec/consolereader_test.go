@@ -16,6 +16,7 @@ package codec
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"io"
