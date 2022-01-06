@@ -1,6 +1,6 @@
 module github.com/streamingfast/sf-solana
 
-go 1.14
+go 1.15
 
 require (
 	cloud.google.com/go/bigquery v1.10.0

@@ -22,13 +22,13 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/abourget/llerrgroup"
-
 	"github.com/davecgh/go-spew/spew"
-
 	"github.com/mr-tron/base58"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -311,11 +311,12 @@ func Test_readBlockWork(t *testing.T) {
 
 func Test_readBlockEnd(t *testing.T) {
 	tests := []struct {
-		name        string
-		ctx         *parseCtx
-		line        string
-		expectCtx   *parseCtx
-		expectError bool
+		name           string
+		ctx            *parseCtx
+		line           string
+		expectError    bool
+		expectBlockID  string
+		expectBlockNum uint64
 	}{
 		{
 			name: "end slot",
@@ -329,19 +330,32 @@ func Test_readBlockEnd(t *testing.T) {
 					},
 					errGroup: llerrgroup.New(10),
 				},
+				blockBuffer: make(chan *pbcodec.Block),
 			},
-			line: "BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",
-			expectCtx: &parseCtx{
-				activeBank: nil,
-			},
+			line:           "BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",
+			expectBlockID:  "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
+			expectBlockNum: 55295941,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			go func() {
+				select {
+				case <-time.After(time.Second):
+					{
+						t.Error("taken too long")
+						return
+					}
+				case block := <-test.ctx.blockBuffer:
+					{
+						assert.Equal(t, test.expectBlockNum, block.Number)
+						assert.Equal(t, test.expectBlockID, block.Id)
+					}
+				}
+			}()
 			err := test.ctx.readBlockEnd(test.line)
 			require.NoError(t, err)
-			assert.Equal(t, test.expectCtx, test.ctx)
 		})
 	}
 }
