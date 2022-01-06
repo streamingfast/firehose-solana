@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/mr-tron/base58/base58"
 	"io/ioutil"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func (b *Block) ID() string {
-	return hex.EncodeToString(b.Id)
+	return base58.Encode(b.Id)
 }
 
 func (b *Block) Num() uint64 {
