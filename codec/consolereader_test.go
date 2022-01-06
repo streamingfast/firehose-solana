@@ -330,7 +330,7 @@ func Test_readBlockEnd(t *testing.T) {
 					},
 					errGroup: llerrgroup.New(10),
 				},
-				blockBuffer: make(chan *pbcodec.Block),
+				blockBuffer: make(chan *pbcodec.Block, 1),
 			},
 			line:           "BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",
 			expectBlockID:  "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
@@ -340,22 +340,21 @@ func Test_readBlockEnd(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			go func() {
-				select {
-				case <-time.After(time.Second):
-					{
-						t.Error("taken too long")
-						return
-					}
-				case block := <-test.ctx.blockBuffer:
-					{
-						assert.Equal(t, test.expectBlockNum, block.Number)
-						assert.Equal(t, test.expectBlockID, block.Id)
-					}
-				}
-			}()
 			err := test.ctx.readBlockEnd(test.line)
 			require.NoError(t, err)
+			select {
+			case <-time.After(time.Second):
+				{
+					t.Error("taken too long")
+					return
+				}
+			case block := <-test.ctx.blockBuffer:
+				{
+					assert.Equal(t, test.expectBlockNum, block.Number)
+					assert.Equal(t, test.expectBlockID, block.Id)
+				}
+			}
+			fmt.Println("Done!")
 		})
 	}
 }
@@ -429,11 +428,20 @@ func Test_readBlockRoot(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			go func() {
+				select {
+				case <-time.After(time.Second):
+					{
+						t.Errorf("taken too long")
+					}
+				case block := <-test.ctx.blockBuffer:
+					assert.Equal(t, test.expectedBlock, block)
+
+				}
+			}()
 			err := test.ctx.readBlockRoot(test.line)
 			require.NoError(t, err)
 			require.Equal(t, 1, len(test.ctx.blockBuffer))
-			block := <-test.ctx.blockBuffer
-			assert.Equal(t, test.expectedBlock, block)
 		})
 	}
 }
