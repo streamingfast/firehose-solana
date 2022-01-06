@@ -94,7 +94,7 @@ func (i *Injector) SetupSource(startBlockNum uint64, ignoreCheckpointOnLaunch bo
 				blockstream.WithParallelPreproc(i.preprocessSlot, i.preprocessorThreadCount),
 			)
 		})
-		options = append(options, firehose.WithLiveSource(liveStreamFactory, false))
+		options = append(options, firehose.WithLiveSource(liveStreamFactory))
 	}
 
 	fileSourceFactory := bstream.SourceFromNumFactory(func(startBlockNum uint64, h bstream.Handler) bstream.Source {

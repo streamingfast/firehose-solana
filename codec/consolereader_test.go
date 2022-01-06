@@ -16,14 +16,16 @@ package codec
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/abourget/llerrgroup"
+
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/mr-tron/base58"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
@@ -325,6 +327,7 @@ func Test_readBlockEnd(t *testing.T) {
 						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 						PreviousBlock: 55295939,
 					},
+					errGroup: llerrgroup.New(10),
 				},
 			},
 			line: "BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",

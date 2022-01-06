@@ -28,7 +28,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/pingcap/log"
 	"io"
 	"io/ioutil"
 	"os"
@@ -37,8 +36,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/abourget/llerrgroup"
 	"github.com/golang/protobuf/proto"
 	"github.com/mr-tron/base58"
+	"github.com/pingcap/log"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
@@ -243,53 +244,7 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	filename := chunks[1]
 	zlog.Debug("reading batch file", zap.String("file_name", filename))
 	filePath := filepath.Join(ctx.batchFilesPath, filename)
-	file, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf(": %w", err)
-	}
-
-	defer func() {
-		if err := file.Close(); err != nil {
-			zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
-		}
-		if err := os.Remove(filePath); err != nil {
-			zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
-		}
-	}()
-
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		return fmt.Errorf("read batch: read all: %w", err)
-	}
-
-	batch := &pbcodec.Batch{}
-	err = proto.Unmarshal(data, batch)
-	if err != nil {
-
-		//--------------------------------
-		//todo: remove
-		zlog.Warn("Proto patate", zap.Uint64("block_num", ctx.activeBank.blk.Number), zap.String("file_name", filename), zap.Int("data_length", len(data)))
-		err = ioutil.WriteFile("/tmp/poc", data, 0644)
-		if err != nil {
-			log.Error("failed to backup crashing file ...")
-		}
-		//--------------------------------
-
-		return fmt.Errorf("read batch: proto unmarshall: %w", err)
-	}
-
-	for _, tx := range batch.Transactions {
-		for _, i := range tx.Instructions {
-			if bytes.Equal(i.ProgramId, VoteProgramID[:]) {
-				i.AccountChanges = nil
-			}
-		}
-	}
-
-	ctx.activeBank.batchAggregator = append(ctx.activeBank.batchAggregator, batch.Transactions)
-
-	// TODO: do the fixups, `depth` setting, addition of the `Slot` and other data
-	// that is not written by the batch writer.
+	ctx.activeBank.processBatchFile(filePath)
 
 	return nil
 }
@@ -311,6 +266,7 @@ type bank struct {
 	blk             *pbcodec.Block
 	ended           bool
 	batchAggregator [][]*pbcodec.Transaction
+	errGroup        *llerrgroup.Group
 }
 
 func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte) *bank {
@@ -325,7 +281,65 @@ func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte) *bank {
 			PreviousId:    previousSlotID,
 			PreviousBlock: parentBlockNumber,
 		},
+		errGroup: llerrgroup.New(10),
 	}
+}
+func (b *bank) processBatchFile(filePath string) {
+	if b.errGroup.Stop() {
+		return
+	}
+
+	b.errGroup.Go(func() error {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return fmt.Errorf(": %w", err)
+		}
+
+		defer func() {
+			if err := file.Close(); err != nil {
+				zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
+			}
+			if err := os.Remove(filePath); err != nil {
+				zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
+			}
+		}()
+
+		data, err := ioutil.ReadAll(file)
+		if err != nil {
+			return fmt.Errorf("read batch: read all: %w", err)
+		}
+
+		batch := &pbcodec.Batch{}
+		err = proto.Unmarshal(data, batch)
+		if err != nil {
+
+			//--------------------------------
+			//todo: remove
+			zlog.Warn("Proto patate", zap.Uint64("block_num", b.blk.Number), zap.String("file_path", filePath), zap.Int("data_length", len(data)))
+			err = ioutil.WriteFile("/tmp/poc", data, 0644)
+			if err != nil {
+				log.Error("failed to backup crashing file ...")
+			}
+			//--------------------------------
+
+			return fmt.Errorf("read batch: proto unmarshall: %w", err)
+		}
+
+		for _, tx := range batch.Transactions {
+			for _, i := range tx.Instructions {
+				if bytes.Equal(i.ProgramId, VoteProgramID[:]) {
+					i.AccountChanges = nil
+				}
+			}
+		}
+
+		b.batchAggregator = append(b.batchAggregator, batch.Transactions)
+
+		// TODO: do the fixups, `depth` setting, addition of the `Slot` and other data
+		// that is not written by the batch writer.
+
+		return nil
+	})
 }
 
 // the goal is to sort the batches based on the first transaction id of each batch
@@ -490,7 +504,10 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	ctx.activeBank.blk.RootNum = ctx.RootBlock
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
-	//ctx.activeBank.ended = true
+
+	if err := ctx.activeBank.errGroup.Wait(); err != nil { //wait for all the batch file processing to complete
+		return err
+	}
 
 	if err := ctx.activeBank.processBatchAggregation(); err != nil {
 		return fmt.Errorf("sorting: %w", err)
