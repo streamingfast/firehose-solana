@@ -3,9 +3,9 @@ package codec
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/streamingfast/bstream"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 func BlockFromProto(slot *pbcodec.Block) (*bstream.Block, error) {

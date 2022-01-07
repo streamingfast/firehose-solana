@@ -37,12 +37,12 @@ import (
 	"sync"
 
 	"github.com/abourget/llerrgroup"
-	"github.com/golang/protobuf/proto"
 	"github.com/mr-tron/base58"
 	"github.com/pingcap/log"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 var MaxTokenSize uint64

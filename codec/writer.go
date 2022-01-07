@@ -20,7 +20,7 @@ import (
 
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dbin"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 func BlockWriterFactory(writer io.Writer) (bstream.BlockWriter, error) {

@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/mr-tron/base58/base58"
 	"io/ioutil"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/mr-tron/base58/base58"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
+	"google.golang.org/protobuf/proto"
 )
 
 func (b *Block) ID() string {

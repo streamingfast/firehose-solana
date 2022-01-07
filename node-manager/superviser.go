@@ -21,11 +21,11 @@ import (
 	"strings"
 
 	"github.com/ShinyTrinkets/overseer"
-	"github.com/streamingfast/solana-go/rpc"
 	nodeManager "github.com/streamingfast/node-manager"
 	logplugin "github.com/streamingfast/node-manager/log_plugin"
 	"github.com/streamingfast/node-manager/metrics"
 	"github.com/streamingfast/node-manager/superviser"
+	"github.com/streamingfast/solana-go/rpc"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

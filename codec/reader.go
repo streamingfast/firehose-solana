@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dbin"
 	pbbstream "github.com/streamingfast/pbgo/sf/bstream/v1"
+	"google.golang.org/protobuf/proto"
 )
 
 func BlockReaderFactory(reader io.Reader) (bstream.BlockReader, error) {

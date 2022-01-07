@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	kvdbstore "github.com/streamingfast/kvdb/store"
@@ -19,6 +18,7 @@ import (
 	"github.com/streamingfast/solana-go/programs/serum"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 func testKVDBStore(t *testing.T) (kvdbstore.KVStore, func()) {
