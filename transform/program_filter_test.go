@@ -48,14 +48,14 @@ func TestProgramFilter_Transform(t *testing.T) {
 		},
 	}
 
-	v := &pbtransforms.ProgramFilter{}
-	transform.Register(v, NewProgramFilterFactory)
+	transformReg := transform.NewRegistry()
+	transformReg.Register(ProgramFilterFactory)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			transforms := []*anypb.Any{programFilterTransform(test.programIds, t)}
 
-			preprocFunc, err := transform.BuildFromTransforms(transforms)
+			preprocFunc, err := transformReg.BuildFromTransforms(transforms)
 			require.NoError(t, err)
 
 			blk := testBlock(t)

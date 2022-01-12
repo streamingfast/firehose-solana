@@ -3,32 +3,34 @@ package transform
 import (
 	"bytes"
 	"fmt"
-	"google.golang.org/protobuf/types/known/anypb"
-
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/transform"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	pbtransforms "github.com/streamingfast/sf-solana/pb/sf/solana/transforms/v1"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 var ProgramFilterMessageName = proto.MessageName(&pbtransforms.ProgramFilter{})
 
-var NewProgramFilterFactory = func(message *anypb.Any) (transform.Transform, error) {
-	mname := message.MessageName()
-	if mname != ProgramFilterMessageName {
-		return nil, fmt.Errorf("expected type url %q, recevied %q ", ProgramFilterMessageName, message.TypeUrl)
-	}
+var ProgramFilterFactory = &transform.Factory{
+	Obj: &pbtransforms.ProgramFilter{},
+	NewFunc: func(message *anypb.Any) (transform.Transform, error) {
+		mname := message.MessageName()
+		if mname != ProgramFilterMessageName {
+			return nil, fmt.Errorf("expected type url %q, recevied %q ", ProgramFilterMessageName, message.TypeUrl)
+		}
 
-	filter := &pbtransforms.ProgramFilter{}
-	err := proto.Unmarshal(message.Value, filter)
-	if err != nil {
-		return nil, fmt.Errorf("unexpected unmarshall error: %w", err)
-	}
+		filter := &pbtransforms.ProgramFilter{}
+		err := proto.Unmarshal(message.Value, filter)
+		if err != nil {
+			return nil, fmt.Errorf("unexpected unmarshall error: %w", err)
+		}
 
-	return &ProgramFilter{
-		filteredProgramId: filter.ProgramIds,
-	}, nil
+		return &ProgramFilter{
+			filteredProgramId: filter.ProgramIds,
+		}, nil
+	},
 }
 
 type ProgramFilter struct {
