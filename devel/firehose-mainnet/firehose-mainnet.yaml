@@ -1,0 +1,7 @@
+start:
+  args:
+    - firehose
+  flags:
+    firehose-blocks-store-urls: gs://dfuseio-global-blocks-us/sol-mainnet/v6
+    common-blockstream-addr: ""
+    firehose-grpc-listen-addr: :9000*
