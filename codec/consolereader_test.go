@@ -442,6 +442,18 @@ func Test_readBlockRoot(t *testing.T) {
 	}
 }
 
+func Test_processBatchFile(t *testing.T) {
+	bank := newBank(10, 9, nil)
+	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-1-0")
+
+	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-10-1")
+	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-105-2")
+	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-110-7")
+	bank.processBatchFile("/Users/cbillett/t/batches/dmlog-122-6")
+	err := bank.errGroup.Wait()
+	require.NoError(t, err)
+}
+
 func trxSlice(t *testing.T, trxIDs []string) (out []*pbcodec.Transaction) {
 	for i, id := range trxIDs {
 		out = append(out, &pbcodec.Transaction{Id: trxID(t, id), Index: uint64(i)})

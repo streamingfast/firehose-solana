@@ -266,6 +266,7 @@ type bank struct {
 	ended           bool
 	batchAggregator [][]*pbcodec.Transaction
 	errGroup        *llerrgroup.Group
+	lock            sync.Mutex
 }
 
 func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte) *bank {
@@ -284,6 +285,10 @@ func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte) *bank {
 	}
 }
 func (b *bank) processBatchFile(filePath string) {
+	b.processBatchFileWithDelete(filePath, true)
+}
+
+func (b *bank) processBatchFileWithDelete(filePath string, delete bool) {
 	if b.errGroup.Stop() {
 		return
 	}
@@ -311,7 +316,7 @@ func (b *bank) processBatchFile(filePath string) {
 		batch := &pbcodec.Batch{}
 		err = proto.Unmarshal(data, batch)
 		if err != nil {
-			return fmt.Errorf("read batch: failed pbcodec bactc unmarshall blk %d, filepath %s, data length %d: %w", b.blk.Number, filePath, len(data), err)
+			return fmt.Errorf("read batch: failed pbcodec batch unmarshall blk %d, filepath %s, data length %d: %w", b.blk.Number, filePath, len(data), err)
 		}
 
 		for _, tx := range batch.Transactions {
@@ -322,8 +327,9 @@ func (b *bank) processBatchFile(filePath string) {
 			}
 		}
 
+		b.lock.Lock()
 		b.batchAggregator = append(b.batchAggregator, batch.Transactions)
-
+		b.lock.Unlock()
 		// TODO: do the fixups, `depth` setting, addition of the `Slot` and other data
 		// that is not written by the batch writer.
 
