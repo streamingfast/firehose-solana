@@ -38,7 +38,6 @@ import (
 
 	"github.com/abourget/llerrgroup"
 	"github.com/mr-tron/base58"
-	"github.com/pingcap/log"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
@@ -312,17 +311,7 @@ func (b *bank) processBatchFile(filePath string) {
 		batch := &pbcodec.Batch{}
 		err = proto.Unmarshal(data, batch)
 		if err != nil {
-
-			//--------------------------------
-			//todo: remove
-			zlog.Warn("Proto patate", zap.Uint64("block_num", b.blk.Number), zap.String("file_path", filePath), zap.Int("data_length", len(data)))
-			err = ioutil.WriteFile("/tmp/poc", data, 0644)
-			if err != nil {
-				log.Error("failed to backup crashing file ...")
-			}
-			//--------------------------------
-
-			return fmt.Errorf("read batch: proto unmarshall: %w", err)
+			return fmt.Errorf("read batch: failed pbcodec bactc unmarshall blk %d, filepath %s, data length %d: %w", b.blk.Number, filePath, len(data), err)
 		}
 
 		for _, tx := range batch.Transactions {
