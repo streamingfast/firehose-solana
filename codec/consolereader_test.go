@@ -443,6 +443,7 @@ func Test_readBlockRoot(t *testing.T) {
 }
 
 func Test_processBatchFile(t *testing.T) {
+	t.Skip()
 	bank := newBank(10, 9, nil)
 	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-1-0")
 
