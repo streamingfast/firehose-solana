@@ -2,7 +2,6 @@ package pbcodec
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"time"
@@ -107,7 +106,7 @@ func (b *Block) Retrieve(ctx context.Context, notFoundFunc func(fileName string)
 }
 
 func (b *Block) PreviousID() string {
-	return hex.EncodeToString(b.PreviousId)
+	return base58.Encode(b.PreviousId)
 }
 
 func (b *Block) Time() time.Time {
