@@ -795,6 +795,8 @@ github.com/streamingfast/bstream v0.0.2-0.20220110200944-b8fdce6e0f12 h1:YO1HGcR
 github.com/streamingfast/bstream v0.0.2-0.20220110200944-b8fdce6e0f12/go.mod h1:SyI0vRStRzRKrzYbuT/MrFvMv4K3VkUkClKl2eKS4cc=
 github.com/streamingfast/bstream v0.0.2-0.20220113004316-0255c8f89fe3 h1:3234rd97+BBrTFRHjXebVtOe00fpepyelnnvRk+JRQk=
 github.com/streamingfast/bstream v0.0.2-0.20220113004316-0255c8f89fe3/go.mod h1:SyI0vRStRzRKrzYbuT/MrFvMv4K3VkUkClKl2eKS4cc=
+github.com/streamingfast/bstream v0.0.2-0.20220113132902-e4dc9ed53d86 h1:CrPPFWNG6qhSfFZQaarrTI1wDtLi8vBxndHC9BS7MTU=
+github.com/streamingfast/bstream v0.0.2-0.20220113132902-e4dc9ed53d86/go.mod h1:SyI0vRStRzRKrzYbuT/MrFvMv4K3VkUkClKl2eKS4cc=
 github.com/streamingfast/dauth v0.0.0-20210811181149-e8fd545948cc/go.mod h1:wwjRBEA7vZZ5kfy3I4LB5NJhFJWN2gaYgpBEmOnDwD8=
 github.com/streamingfast/dauth v0.0.0-20210812020920-1c83ba29add1 h1:jZrytO3UXSEQEG1pTHDEfnLkc5JK5KEY7urxhV7bvSw=
 github.com/streamingfast/dauth v0.0.0-20210812020920-1c83ba29add1/go.mod h1:FIYpVqt+ICVuNBoOH3ZIicIctpVoCq3393+RpfXsPEM=
@@ -852,6 +854,8 @@ github.com/streamingfast/merger v0.0.3-0.20220113003254-fecd89b507e0 h1:am/vk1jR
 github.com/streamingfast/merger v0.0.3-0.20220113003254-fecd89b507e0/go.mod h1:+8goe/YZI3MmXOu3oiSmHhHFqwYIZvOio5ak/rt+sGg=
 github.com/streamingfast/merger v0.0.3-0.20220113004537-3be3ba622e05 h1:ItlFEe9DJ/jZvuZ2uoWBv1I/uVGyk0nQ4z0PXGTLODo=
 github.com/streamingfast/merger v0.0.3-0.20220113004537-3be3ba622e05/go.mod h1:/+5y1V8qhS86Juu/WxpDvGMiG/9DgFvkUdcm5QpDxPE=
+github.com/streamingfast/merger v0.0.3-0.20220113135336-d5724fee25de h1:IxT1bszHe5vDXSsNxx3mKIVqVh5xXK3k8RtPnn1aFQg=
+github.com/streamingfast/merger v0.0.3-0.20220113135336-d5724fee25de/go.mod h1:KqKqy/tiH4k6CuRWORhW1Rq4mlmTPTz4KFHZyZHo43g=
 github.com/streamingfast/node-manager v0.0.2-0.20211029201743-0b82ab7f9de4 h1:LieKH18VsLsZh62MpU1du5w7ZZ72+UHtDq9kTSjCPv8=
 github.com/streamingfast/node-manager v0.0.2-0.20211029201743-0b82ab7f9de4/go.mod h1:h1UUzSlmRCTRrKakqzoshn0XkkFmJX/uVXGR1bofAuE=
 github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 h1:xlWSfi1BoPfsHtPb0VEHGUcAdBF208LUiFCwfaVPfLA=
