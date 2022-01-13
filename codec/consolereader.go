@@ -281,7 +281,7 @@ func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte) *bank {
 			PreviousId:    previousSlotID,
 			PreviousBlock: parentBlockNumber,
 		},
-		errGroup: llerrgroup.New(10),
+		errGroup: llerrgroup.New(50),
 	}
 }
 func (b *bank) processBatchFile(filePath string) {
