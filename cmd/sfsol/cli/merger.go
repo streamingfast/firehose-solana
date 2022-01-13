@@ -52,12 +52,12 @@ func init() {
 			return mergerApp.New(&mergerApp.Config{
 				StorageMergedBlocksFilesPath:   MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url")),
 				StorageOneBlockFilesPath:       MustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url")),
-				TimeBetweenStoreLookups:        viper.GetDuration("merger-time-between-store-lookups"),
 				GRPCListenAddr:                 viper.GetString("merger-grpc-listen-addr"),
 				WritersLeewayDuration:          viper.GetDuration("merger-writers-leeway"),
+				TimeBetweenStoreLookups:        viper.GetDuration("merger-time-between-store-lookups"),
 				StateFile:                      MustReplaceDataDir(sfDataDir, viper.GetString("merger-state-file")),
-				MaxOneBlockOperationsBatchSize: viper.GetInt("merger-max-one-block-operations-batch-size"),
 				OneBlockDeletionThreads:        viper.GetInt("merger-one-block-deletion-threads"),
+				MaxOneBlockOperationsBatchSize: viper.GetInt("merger-max-one-block-operations-batch-size"),
 				NextExclusiveHighestBlockLimit: viper.GetUint64("merger-next-exclusive-highest-block-limit"),
 			}), nil
 		},
