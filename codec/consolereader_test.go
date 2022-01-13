@@ -31,6 +31,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Test_processBatchFile(t *testing.T) {
+	t.Skip("skip batch file dmlog")
+	bank := newBank(10, 9, nil)
+	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-1-0")
+
+	bank.processBatchFileWithDelete("/tmp/solana-test/dmlog-383-1", false)
+	err := bank.errGroup.Wait()
+	require.NoError(t, err)
+}
+
 func Test_readFromFile(t *testing.T) {
 
 	testPath := "testdata/syncer_20210211"
@@ -440,19 +450,6 @@ func Test_readBlockRoot(t *testing.T) {
 			//require.Equal(t, 1, len(test.ctx.blockBuffer))
 		})
 	}
-}
-
-func Test_processBatchFile(t *testing.T) {
-	t.Skip()
-	bank := newBank(10, 9, nil)
-	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-1-0")
-
-	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-10-1")
-	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-105-2")
-	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-110-7")
-	bank.processBatchFile("/Users/cbillett/t/batches/dmlog-122-6")
-	err := bank.errGroup.Wait()
-	require.NoError(t, err)
 }
 
 func trxSlice(t *testing.T, trxIDs []string) (out []*pbcodec.Transaction) {

@@ -288,7 +288,7 @@ func (b *bank) processBatchFile(filePath string) {
 	b.processBatchFileWithDelete(filePath, true)
 }
 
-func (b *bank) processBatchFileWithDelete(filePath string, delete bool) {
+func (b *bank) processBatchFileWithDelete(filePath string, WithDelete bool) {
 	if b.errGroup.Stop() {
 		return
 	}
@@ -303,8 +303,10 @@ func (b *bank) processBatchFileWithDelete(filePath string, delete bool) {
 			if err := file.Close(); err != nil {
 				zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
 			}
-			if err := os.Remove(filePath); err != nil {
-				zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
+			if WithDelete {
+				if err := os.Remove(filePath); err != nil {
+					zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
+				}
 			}
 		}()
 
