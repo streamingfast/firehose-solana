@@ -337,6 +337,7 @@ func Test_readBlockEnd(t *testing.T) {
 					errGroup: llerrgroup.New(10),
 				},
 				blockBuffer: make(chan *pbcodec.Block, 1),
+				stats:       newParsingStats(55295941),
 			},
 			line:           "BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",
 			expectBlockID:  "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
@@ -411,6 +412,7 @@ func Test_readBlockRoot(t *testing.T) {
 					},
 				},
 				blockBuffer: make(chan *pbcodec.Block, 100),
+				stats:       newParsingStats(55295941),
 			},
 			line: "BANK_ROOT 55295921",
 			expectedBlock: &pbcodec.Block{
