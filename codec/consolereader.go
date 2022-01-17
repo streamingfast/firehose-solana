@@ -35,6 +35,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/abourget/llerrgroup"
 	"github.com/mr-tron/base58"
@@ -126,6 +127,38 @@ func (r *ConsoleReader) Close() {
 	r.close()
 }
 
+type parsingStats struct {
+	startAt  time.Time
+	blockNum uint64
+	data     map[string]int
+}
+
+func newParsingStats(block uint64) *parsingStats {
+	return &parsingStats{
+		startAt:  time.Now(),
+		blockNum: block,
+		data:     map[string]int{},
+	}
+}
+
+func (s *parsingStats) log() {
+	zlog.Info("mindreader block stats",
+		zap.Uint64("block_num", s.blockNum),
+		zap.Int64("duration", int64(time.Since(s.startAt))),
+		zap.Reflect("stats", s.data),
+	)
+}
+
+func (s *parsingStats) inc(key string) {
+	if s == nil {
+		return
+	}
+	k := strings.ToLower(key)
+	value := s.data[k]
+	value++
+	s.data[k] = value
+}
+
 type parseCtx struct {
 	activeBank        *bank
 	banks             map[uint64]*bank
@@ -134,6 +167,8 @@ type parseCtx struct {
 	batchWG           sync.WaitGroup
 	batchFilesPath    string
 	RootBlock         uint64
+
+	stats *parsingStats
 }
 
 func newParseCtx(batchFilesPath string) *parseCtx {
@@ -189,16 +224,19 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	switch {
 	// defines the current version of deepmind; should fail is the value is unexpected
 	case strings.HasPrefix(line, "INIT"):
+		ctx.stats.inc("INIT")
 		err = ctx.readInit(line)
 
 	// this occurs at the beginning execution of a given block (bank) (this is a 'range' of slot say from 10 to 13,
 	// it can also just be one slot), this can be PARTIAL or FULL work of said block. A given block may have multiple
 	// SLOT_WORK partial but only one SLOT_WORK full.
 	case strings.HasPrefix(line, "BLOCK_WORK"):
+		ctx.stats.inc("BLOCK_WORK")
 		err = ctx.readBlockWork(line)
 
 	// output when a group of batch of transaction have been executed and the protobuf has been written to a file on  disk
 	case strings.HasPrefix(line, "BATCH_FILE"):
+		ctx.stats.inc("BATCH_FILE")
 		err = ctx.readBatchFile(line)
 
 	// When executing a transactions, we will group them in multiples batches and run them in parallel.
@@ -209,18 +247,22 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	// - Within in given batch, transactions are executed linearly, so partial sort is already done.
 	// - Batches are sorted based on their first transaction's id (hash), sorted alphanumerically
 	case strings.HasPrefix(line, "BATCHES_END"):
+		ctx.stats.inc("BATCHES_END")
 		err = ctx.readBatchesEnd()
 
 	// this occurs when a given block is full (frozen),
 	case strings.HasPrefix(line, "BLOCK_END"):
+		ctx.stats.inc("BLOCK_END")
 		err = ctx.readBlockEnd(line)
 
 	// this occurs when there is a failure in executing a given block
 	case strings.HasPrefix(line, "BLOCK_FAILED"):
+		ctx.stats.inc("BLOCK_FAILED")
 		err = ctx.readBlockFailed(line)
 
 	// this occurs when the root of the active banks has been computed
 	case strings.HasPrefix(line, "BLOCK_ROOT"):
+		ctx.stats.inc("BLOCK_ROOT")
 		err = ctx.readBlockRoot(line)
 
 	default:
@@ -458,6 +500,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 	}
 
 	ctx.activeBank = b
+	ctx.stats = newParsingStats(uint64(blockNum))
 	return nil
 }
 
@@ -513,6 +556,8 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	ctx.blockBuffer <- ctx.activeBank.blk
 	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	ctx.activeBank = nil
+
+	ctx.stats.log()
 
 	zlog.Debug("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
 
