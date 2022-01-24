@@ -13,6 +13,7 @@ func init() {
 		// Network config
 		cmd.Flags().String("common-network-id", NetworkID, "[COMMON] Solana network identifier known to us for pre-configured elements Used by: miner-node, mindreader-node")
 		cmd.Flags().String("common-sf-network-id", SFNetworkID, "[COMMON] StreamingFast network ID, used for some billing functions by dgraphql")
+		cmd.Flags().Uint64("common-protocol-first-streamable-block", 0, "[COMMON] first chain streamable block. Not genesis")
 
 		cmd.Flags().Bool("common-atm-cache-enabled", false, "[COMMON] enable ATM caching")
 		cmd.Flags().String("common-atm-cache-dir", ATMDirectory, "[COMMON] ATM cache file directory.")

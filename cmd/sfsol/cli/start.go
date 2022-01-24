@@ -107,6 +107,8 @@ func Start(dataDir string, args []string) (err error) {
 		Tracker:    tracker,
 	}
 
+	bstream.GetProtocolFirstStreamableBlock = viper.GetUint64("common-protocol-first-streamable-block")
+
 	atmCacheEnabled := viper.GetBool("common-atm-cache-enabled")
 	if atmCacheEnabled {
 		bstream.GetBlockPayloadSetter = bstream.ATMCachedPayloadSetter
@@ -117,8 +119,6 @@ func Start(dataDir string, args []string) (err error) {
 		maxEntryByAgeBytes := viper.GetInt("common-atm-max-entry-by-age-bytes")
 		bstream.InitCache(storeUrl, cacheDir, maxRecentEntryBytes, maxEntryByAgeBytes)
 	}
-
-	bstream.GetProtocolFirstStreamableBlock = uint64(viper.GetInt("common-first-streamable-block"))
 
 	/*	err = bstream.ValidateRegistry()
 		if err != nil {
