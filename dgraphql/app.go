@@ -15,21 +15,11 @@
 package dgraphql
 
 import (
-	"context"
 	"fmt"
-
-	serumanalytics "github.com/streamingfast/sf-solana/serumviz/analytics"
-	"gorm.io/driver/bigquery"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-
 	drateLimiter "github.com/streamingfast/dauth/ratelimiter"
 	"github.com/streamingfast/dgraphql"
 	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
-	"github.com/streamingfast/dgrpc"
 	solResolver "github.com/streamingfast/sf-solana/dgraphql/resolvers"
-	pbserumhist "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1"
-	"github.com/streamingfast/sf-solana/registry"
 	"github.com/streamingfast/solana-go/rpc"
 	"go.uber.org/zap"
 )
@@ -66,35 +56,13 @@ func (f *SchemaFactory) Schemas() (*dgraphql.Schemas, error) {
 		return nil, fmt.Errorf("unable to initialize rate limiter: %w", err)
 	}
 
-	zlog.Info("creating serum history client")
-	serumHistoryConn, err := dgrpc.NewInternalClient(f.config.SerumHistoryAddr)
-	if err != nil {
-		return nil, fmt.Errorf("cannot dial to grpc trxstatetracker server: %w", err)
-	}
-	serumHistoryClient := pbserumhist.NewSerumHistoryClient(serumHistoryConn)
-
 	rpcClient := rpc.NewClient(f.config.RPCEndpointAddr)
-	tokenRegistry := registry.NewServer(rpcClient, f.config.TokensFileURL, f.config.MarketFileURL, f.config.RPCWSEndpointAddr)
-
-	if err := tokenRegistry.Launch(context.Background()); err != nil {
-		return nil, fmt.Errorf("unable to load token registry: %w", err)
-	}
-
-	db, err := gorm.Open(bigquery.Open(f.config.SerumhistAnalyticsDSN), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create serumhist analytics databse connection: %w", err)
-	}
 
 	zlog.Info("configuring resolver and parsing schemas")
 	resolver, err := solResolver.NewRoot(
 		rpcClient,
 		f.config.RPCWSEndpointAddr,
-		tokenRegistry,
-		serumanalytics.NewStore(db),
 		rateLimiter,
-		serumHistoryClient,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create root resolver: %w", err)
