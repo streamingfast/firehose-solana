@@ -556,6 +556,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	ctx.blockBuffer <- ctx.activeBank.blk
 	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	ctx.activeBank = nil
+	delete(ctx.banks, blockNum)
 
 	ctx.stats.log()
 
