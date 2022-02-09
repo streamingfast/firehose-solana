@@ -41,6 +41,22 @@ func Test_processBatchFile(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func Test_JustRun(t *testing.T) {
+	t.Skip()
+	testPath := "testdata/syncer_20210211"
+	cleanup, testdir, err := copyTestDir(testPath, "syncer_20210211")
+	require.NoError(t, err)
+	defer func() {
+		cleanup()
+	}()
+
+	cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", testPath), testdir)
+	for {
+		_, err = cr.Read()
+		require.NoError(t, err)
+	}
+}
+
 func Test_readFromFile(t *testing.T) {
 
 	testPath := "testdata/syncer_20210211"
@@ -56,7 +72,7 @@ func Test_readFromFile(t *testing.T) {
 
 	block := s.(*pbcodec.Block)
 
-	assert.Equal(t, "D9i2oNmbRpC3crs3JHw1bWXeRaairC1Ko2QeTYgG2Fte", base58.Encode(block.Id))
+	assert.Equal(t, "JEHPnjb2tV9ELHF8hK8GMU8RgDfWG1dsKmciBrX83RCQ", base58.Encode(block.Id))
 	assert.Equal(t, uint64(0), block.Number)
 	assert.Equal(t, "11111111111111111111111111111111", base58.Encode(block.PreviousId))
 	assert.Equal(t, uint32(1), block.Version)
@@ -66,13 +82,13 @@ func Test_readFromFile(t *testing.T) {
 	require.NoError(t, err)
 	block = s.(*pbcodec.Block)
 
-	assert.Equal(t, "A2Jr2hbQ2Remb8ELKWJ8a7sJxNKQtGyJwCYRgboVJPVs", base58.Encode(block.Id))
+	assert.Equal(t, "EQPhxULMTyjDQWKrbtYm1Mb4zw4VsdK3FLZH8V1uoiLX", base58.Encode(block.Id))
 	assert.Equal(t, uint64(1), block.Number)
-	assert.Equal(t, "D9i2oNmbRpC3crs3JHw1bWXeRaairC1Ko2QeTYgG2Fte", base58.Encode(block.PreviousId))
+	assert.Equal(t, "JEHPnjb2tV9ELHF8hK8GMU8RgDfWG1dsKmciBrX83RCQ", base58.Encode(block.PreviousId))
 	assert.Equal(t, uint32(1), block.Version)
 	assert.Equal(t, uint32(1), block.TransactionCount)
 	transaction := block.Transactions[0]
-	assert.Equal(t, "2NTEX6FhmyupoUEG7BierCdpHj9GkCirx3x6SuqQXHBPEEYfVBCqr8orsAUgT1HMxM5Za8QSkr3oMF7SVWbmRYpC", base58.Encode(transaction.Id))
+	assert.Equal(t, "4ieqXnsxZuieyUZnyhBfDuwqrYXt48pFaR3M2aoJfARxipSWaVe9FoLBaoLYewF3UvuvMP8bMysvqAPgHiRyBLEP", base58.Encode(transaction.Id))
 
 	for {
 		s, err = cr.Read()
