@@ -42,7 +42,7 @@ func Test_processBatchFile(t *testing.T) {
 }
 
 func Test_JustRun(t *testing.T) {
-	t.Skip()
+	//t.Skip()
 	testPath := "testdata/syncer_20210211"
 	cleanup, testdir, err := copyTestDir(testPath, "syncer_20210211")
 	require.NoError(t, err)
