@@ -365,6 +365,7 @@ func (b *bank) processBatchFileWithDelete(filePath string, WithDelete bool) {
 
 		for _, tx := range batch.Transactions {
 			for _, i := range tx.Instructions {
+				zlog.Debug("instruction info", zap.Int("log_count", len(i.Logs)))
 				if bytes.Equal(i.ProgramId, VoteProgramID[:]) {
 					i.AccountChanges = nil
 				}
