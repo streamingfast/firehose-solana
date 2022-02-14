@@ -3,10 +3,12 @@ package transform
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/transform"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	pbtransforms "github.com/streamingfast/sf-solana/pb/sf/solana/transforms/v1"
+	"github.com/streamingfast/solana-go"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -27,8 +29,18 @@ var ProgramFilterFactory = &transform.Factory{
 			return nil, fmt.Errorf("unexpected unmarshall error: %w", err)
 		}
 
+		filtered := make([][]byte, len(filter.ProgramIds))
+		for i, programID := range filter.ProgramIds {
+			publicKey, err := solana.PublicKeyFromBase58(programID)
+			if err != nil {
+				return nil, fmt.Errorf("filter program ID %q is not a valid Solana public key: %w", programID, err)
+			}
+
+			filtered[i] = publicKey[:]
+		}
+
 		return &ProgramFilter{
-			filteredProgramId: filter.ProgramIds,
+			filteredProgramId: filtered,
 		}, nil
 	},
 }

@@ -1,6 +1,8 @@
 package transform
 
 import (
+	"testing"
+
 	"github.com/streamingfast/bstream/transform"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	pbtransforms "github.com/streamingfast/sf-solana/pb/sf/solana/transforms/v1"
@@ -8,13 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/anypb"
-	"testing"
 )
 
 func programFilterTransform(programIds []solana.PublicKey, t *testing.T) *anypb.Any {
-	transform := &pbtransforms.ProgramFilter{ProgramIds: [][]byte{}}
+	transform := &pbtransforms.ProgramFilter{ProgramIds: []string{}}
 	for _, pid := range programIds {
-		transform.ProgramIds = append(transform.GetProgramIds(), pid.ToSlice())
+		transform.ProgramIds = append(transform.ProgramIds, pid.String())
 	}
 	a, err := anypb.New(transform)
 	require.NoError(t, err)

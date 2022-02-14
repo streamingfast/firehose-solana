@@ -53,6 +53,10 @@ func Test_JustRun(t *testing.T) {
 	cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", testPath), testdir)
 	for {
 		_, err = cr.Read()
+		if err == io.EOF {
+			return
+		}
+
 		require.NoError(t, err)
 	}
 }
