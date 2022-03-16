@@ -89,6 +89,8 @@ func init() {
 				WorkingDir:                   MustReplaceDataDir(sfDataDir, viper.GetString("mindreader-node-working-dir")),
 				WaitUploadCompleteOnShutdown: viper.GetDuration("mindreader-node-wait-upload-complete-on-shutdown"),
 				OneblockSuffix:               viper.GetString("mindreader-node-oneblock-suffix"),
+				LogToZap:                     viper.GetBool("mindreader-node-log-to-zap"),
+				DebugDeepMind:                viper.GetBool("mindreader-node-debug-deep-mind"),
 			}, &nodeMindreaderStdinApp.Modules{
 				ConsoleReaderFactory:       consoleReaderFactory,
 				ConsoleReaderTransformer:   consoleReaderBlockTransformer,

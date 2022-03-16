@@ -22,16 +22,17 @@ require (
 	github.com/streamingfast/derr v0.0.0-20220301163149-de09cb18fc70
 	github.com/streamingfast/dgraphql v0.0.2-0.20220307143518-466192441cfe
 	github.com/streamingfast/dgrpc v0.0.0-20220301153539-536adf71b594
+	github.com/streamingfast/dhammer v0.0.0-20210811180702-456c4cf0a840 // indirect
 	github.com/streamingfast/dlauncher v0.0.0-20211210162313-cf4aa5fc4878
 	github.com/streamingfast/dmetering v0.0.0-20220301165106-a642bb6a21bd
 	github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447
-	github.com/streamingfast/dstore v0.1.1-0.20220304164644-696f9c5fc231
+	github.com/streamingfast/dstore v0.1.1-0.20220315134935-980696943a79
 	github.com/streamingfast/firehose v0.1.1-0.20220311191632-347bfad300b0
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
 	github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3
 	github.com/streamingfast/logging v0.0.0-20220304214715-bc750a74b424
 	github.com/streamingfast/merger v0.0.3-0.20220307182136-ea57e6c34740
-	github.com/streamingfast/node-manager v0.0.2-0.20211029201743-0b82ab7f9de4
+	github.com/streamingfast/node-manager v0.0.2-0.20220316182757-107704401a3f
 	github.com/streamingfast/pbgo v0.0.6-0.20220304191603-f73822f471ff
 	github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde
 	github.com/streamingfast/shutter v1.5.0

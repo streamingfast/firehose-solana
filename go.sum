@@ -713,6 +713,8 @@ github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447/go.mod h1:V
 github.com/streamingfast/dstore v0.1.1-0.20211012134319-16e840827e38/go.mod h1:Jcr8TZ2XOAAFB7/7UeN6Zr8LM+Qv3cg36CsXpVDoAuU=
 github.com/streamingfast/dstore v0.1.1-0.20220304164644-696f9c5fc231 h1:i977bgPOzaKZJT/JeZgA+EfSFlSXhXxOdvBKZazv8AA=
 github.com/streamingfast/dstore v0.1.1-0.20220304164644-696f9c5fc231/go.mod h1:aii8QXJg+2b5CXw+Y1SkTf5QJkJOu8ujq6+rw8J1OK0=
+github.com/streamingfast/dstore v0.1.1-0.20220315134935-980696943a79 h1:I3yWa4W/q0Jl5MhEbrrK5i2jSuMOF5UP68kflks56x4=
+github.com/streamingfast/dstore v0.1.1-0.20220315134935-980696943a79/go.mod h1:SHSEIPowGeE1TfNNmGeAUUnlO3dwevmX5kFOSazU60M=
 github.com/streamingfast/dtracing v0.0.0-20210810035915-473055fed32a/go.mod h1:z8WI8Y2sVfFZQQewUC40hE3TgISt3K4n5RwKzXG65Pg=
 github.com/streamingfast/dtracing v0.0.0-20210811175635-d55665d3622a/go.mod h1:bqiYZaX6L/MoXNfFQeAdau6g9HLA3yKHkX8KzStt58Q=
 github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839 h1:K6mJPvh1jAL+/gBS7Bh9jyzWaTib6N47m06gZOTUPwQ=
@@ -738,6 +740,8 @@ github.com/streamingfast/merger v0.0.3-0.20220307182136-ea57e6c34740 h1:9mRX1Uta
 github.com/streamingfast/merger v0.0.3-0.20220307182136-ea57e6c34740/go.mod h1:S8+TtO6v8tm3MI3pTI6w3vIlHk8SnlnWGGfR7VYvWaI=
 github.com/streamingfast/node-manager v0.0.2-0.20211029201743-0b82ab7f9de4 h1:LieKH18VsLsZh62MpU1du5w7ZZ72+UHtDq9kTSjCPv8=
 github.com/streamingfast/node-manager v0.0.2-0.20211029201743-0b82ab7f9de4/go.mod h1:h1UUzSlmRCTRrKakqzoshn0XkkFmJX/uVXGR1bofAuE=
+github.com/streamingfast/node-manager v0.0.2-0.20220316182757-107704401a3f h1:U95wUw/gHXQEjy6i2va0ruO4QVv2vdFBUoQ9axFCFU8=
+github.com/streamingfast/node-manager v0.0.2-0.20220316182757-107704401a3f/go.mod h1:6NthUcvG2kv4lZ9QgOepxkUjBuaiEfGo8Im1oUn0RQU=
 github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 h1:xlWSfi1BoPfsHtPb0VEHGUcAdBF208LUiFCwfaVPfLA=
 github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308/go.mod h1:K1p8Bj/wG34KJvYzPUqtzpndffmpkrVY11u2hkyxCWQ=
 github.com/streamingfast/pbgo v0.0.6-0.20210811160400-7c146c2db8cc/go.mod h1:mSi3+mIAffPq/McZ3TqLSmDr8f1v3mi5RHE+zmBHJGk=
