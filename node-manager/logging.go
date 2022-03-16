@@ -2,16 +2,10 @@ package nodemanager
 
 import (
 	"github.com/streamingfast/logging"
-	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-var traceEnabled = logging.IsTraceEnabled("serumhist", "github.com/streamingfast/sf-solana/nodemanager")
-var zlog *zap.Logger
-
-func init() {
-	logging.RegisterLogger("github.com/streamingfast/sf-solana/nodemanager", zlog)
-}
+var zlog, tracer = logging.PackageLogger("nodemanager", "github.com/streamingfast/sf-solana/nodemanager")
 
 type stringArray []string
 

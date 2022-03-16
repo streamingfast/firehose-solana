@@ -24,7 +24,7 @@ main() {
     rm -rf sf-data &> /dev/null || true
   fi
 
-  exec $sfsol -c $(basename $ROOT).yaml start "$@"
+  exec DEBUG=".*" $sfsol -c $(basename $ROOT).yaml start "$@"
 }
 
 usage_error() {

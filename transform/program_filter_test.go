@@ -56,7 +56,7 @@ func TestProgramFilter_Transform(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			transforms := []*anypb.Any{programFilterTransform(test.programIds, t)}
 
-			preprocFunc, err := transformReg.BuildFromTransforms(transforms)
+			preprocFunc, _, _, err := transformReg.BuildFromTransforms(transforms)
 			require.NoError(t, err)
 
 			blk := testBlock(t)

@@ -133,7 +133,7 @@ func (s *BlockDataArchiver) uploadFiles() error {
 		return fmt.Errorf("unable to find files to upload: %w", err)
 	}
 
-	if traceEnabled {
+	if tracer.Enabled() {
 		zlog.Debug("found file to upload", zap.Int("file_count", len(filesToUpload)))
 	}
 

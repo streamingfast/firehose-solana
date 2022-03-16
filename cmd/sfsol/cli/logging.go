@@ -17,12 +17,7 @@ package cli
 import (
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/logging"
-	"go.uber.org/zap"
 )
 
 var userLog = launcher.UserLog
-var zlog *zap.Logger
-
-func init() {
-	logging.RegisterLogger("github.com/streamingfast/sf-solana/cmd/sfsol", zlog)
-}
+var zlog, tracer = logging.PackageLogger("sfsol", "github.com/streamingfast/sf-solana/cmd/sfsol")

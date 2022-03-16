@@ -20,12 +20,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var traceEnabled = logging.IsTraceEnabled("codec", "github.com/streamingfast/sf-solana/codec")
-var zlog *zap.Logger = zap.NewNop()
-
-func init() {
-	logging.RegisterLogger("github.com/streamingfast/sf-solana/codec", zlog)
-}
+var zlog, tracer = logging.PackageLogger("codec", "github.com/streamingfast/sf-solana/codec")
 
 type zapBase58 []byte
 

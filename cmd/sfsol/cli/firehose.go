@@ -23,7 +23,7 @@ var headTimeDriftmetric = metricset.NewHeadTimeDrift("firehose")
 
 func init() {
 	appLogger := zap.NewNop()
-	logging.RegisterLogger("github.com/streamingfast/sf-solana/firehose", appLogger)
+	appLogger, _ = logging.PackageLogger("firehose", "github.com/streamingfast/sf-solana/firehose")
 
 	launcher.RegisterApp(&launcher.AppDef{
 		ID:          "firehose",
@@ -76,13 +76,7 @@ func init() {
 			if shutdownSignalDelay.Seconds() > 5 {
 				grcpShutdownGracePeriod = shutdownSignalDelay - (5 * time.Second)
 			}
-
-			passthroughPreprocessor := bstream.PreprocessFunc(passthroughPreprocessBlock)
-			filterPreprocessorFactory := func(includeExpr, excludeExpr string) (bstream.PreprocessFunc, error) {
-				// FIXME: Filtering handling would be added here, check StreamingFast on Ethereum or EOSIO to see how it's done
-				return passthroughPreprocessor, nil
-			}
-
+			
 			return firehoseApp.New(appLogger, &firehoseApp.Config{
 				BlockStoreURLs:          firehoseBlocksStoreURLs,
 				BlockStreamAddr:         blockstreamAddr,
@@ -90,12 +84,10 @@ func init() {
 				GRPCShutdownGracePeriod: grcpShutdownGracePeriod,
 				RealtimeTolerance:       viper.GetDuration("firehose-real-time-tolerance"),
 			}, &firehoseApp.Modules{
-				Authenticator: authenticator,
-				//BlockTrimmer:              blockstreamv2.BlockTrimmerFunc(trimBlock),
-				FilterPreprocessorFactory: filterPreprocessorFactory,
-				HeadTimeDriftMetric:       headTimeDriftmetric,
-				HeadBlockNumberMetric:     headBlockNumMetric,
-				Tracker:                   tracker,
+				Authenticator:         authenticator,
+				HeadTimeDriftMetric:   headTimeDriftmetric,
+				HeadBlockNumberMetric: headBlockNumMetric,
+				Tracker:               tracker,
 			}), nil
 		},
 	})

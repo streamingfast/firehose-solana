@@ -33,8 +33,7 @@ import (
 )
 
 func init() {
-	appLogger := zap.NewNop()
-	logging.RegisterLogger("github.com/streamingfast/sf-ethereum/mindreader-node-stdin", appLogger)
+	appLogger, _ := logging.PackageLogger("mindreader-node-stdin", "github.com/streamingfast/sf-ethereum/mindreader-node-stdin")
 
 	launcher.RegisterApp(&launcher.AppDef{
 		ID:          "mindreader-node-stdin",

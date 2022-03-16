@@ -75,11 +75,9 @@ func RegisterSolanaNodeApp(kind string, extraFlagRegistration func(cmd *cobra.Co
 	}
 
 	app := fmt.Sprintf("%s-node", kind)
-	appLogger := zap.NewNop()
-	nodeLogger := zap.NewNop()
 
-	logging.RegisterLogger(fmt.Sprintf("github.com/streamingfast/sf-solana/%s", app), appLogger)
-	logging.RegisterLogger(fmt.Sprintf("github.com/streamingfast/sf-solana/%s/node", app), nodeLogger)
+	appLogger, _ := logging.PackageLogger(app, fmt.Sprintf("github.com/streamingfast/sf-solana/%s", app))
+	nodeLogger, _ := logging.PackageLogger("node", fmt.Sprintf("github.com/streamingfast/sf-solana/%s/node", app))
 
 	launcher.RegisterApp(&launcher.AppDef{
 		ID:          app,

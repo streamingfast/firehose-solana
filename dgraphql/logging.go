@@ -16,11 +16,6 @@ package dgraphql
 
 import (
 	"github.com/streamingfast/logging"
-	"go.uber.org/zap"
 )
 
-var zlog = zap.NewNop()
-
-func init() {
-	logging.RegisterLogger("github.com/streamingfast/sf-solana/dgraphql", zlog)
-}
+var zlog, _ = logging.PackageLogger("dgraphql", "github.com/streamingfast/sf-solana/dgraphql")
