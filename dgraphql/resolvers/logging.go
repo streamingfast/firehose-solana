@@ -8,5 +8,5 @@ import (
 var zlog = zap.NewNop()
 
 func init() {
-	logging.Register("github.com/streamingfast/sf-solana/dgraphql/resolvers", &zlog)
+	logging.RegisterLogger("github.com/streamingfast/sf-solana/dgraphql/resolvers", zlog)
 }

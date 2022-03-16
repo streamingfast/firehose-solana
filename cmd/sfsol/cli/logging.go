@@ -24,5 +24,5 @@ var userLog = launcher.UserLog
 var zlog *zap.Logger
 
 func init() {
-	logging.Register("github.com/streamingfast/sf-solana/cmd/sfsol", &zlog)
+	logging.RegisterLogger("github.com/streamingfast/sf-solana/cmd/sfsol", zlog)
 }

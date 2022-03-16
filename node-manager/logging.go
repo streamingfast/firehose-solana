@@ -10,7 +10,7 @@ var traceEnabled = logging.IsTraceEnabled("serumhist", "github.com/streamingfast
 var zlog *zap.Logger
 
 func init() {
-	logging.Register("github.com/streamingfast/sf-solana/nodemanager", &zlog)
+	logging.RegisterLogger("github.com/streamingfast/sf-solana/nodemanager", zlog)
 }
 
 type stringArray []string

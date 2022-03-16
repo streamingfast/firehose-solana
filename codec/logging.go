@@ -24,7 +24,7 @@ var traceEnabled = logging.IsTraceEnabled("codec", "github.com/streamingfast/sf-
 var zlog *zap.Logger = zap.NewNop()
 
 func init() {
-	logging.Register("github.com/streamingfast/sf-solana/codec", &zlog)
+	logging.RegisterLogger("github.com/streamingfast/sf-solana/codec", zlog)
 }
 
 type zapBase58 []byte

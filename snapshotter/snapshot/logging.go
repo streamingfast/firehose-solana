@@ -10,5 +10,5 @@ var zlog *zap.Logger
 var traceEnabled = logging.IsTraceEnabled("snapshotter", "github.com/streamingfast/sf-solana/snapshotter/snapshot")
 
 func init() {
-	logging.Register("github.com/streamingfast/sf-solana/snapshotter/snapshot", &zlog)
+	logging.RegisterLogger("github.com/streamingfast/sf-solana/snapshotter/snapshot", zlog)
 }

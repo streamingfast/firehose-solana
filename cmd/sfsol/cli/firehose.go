@@ -23,7 +23,7 @@ var headTimeDriftmetric = metricset.NewHeadTimeDrift("firehose")
 
 func init() {
 	appLogger := zap.NewNop()
-	logging.Register("github.com/streamingfast/sf-solana/firehose", &appLogger)
+	logging.RegisterLogger("github.com/streamingfast/sf-solana/firehose", appLogger)
 
 	launcher.RegisterApp(&launcher.AppDef{
 		ID:          "firehose",
