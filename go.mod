@@ -22,7 +22,6 @@ require (
 	github.com/streamingfast/derr v0.0.0-20220301163149-de09cb18fc70
 	github.com/streamingfast/dgraphql v0.0.2-0.20220307143518-466192441cfe
 	github.com/streamingfast/dgrpc v0.0.0-20220301153539-536adf71b594
-	github.com/streamingfast/dhammer v0.0.0-20210811180702-456c4cf0a840 // indirect
 	github.com/streamingfast/dlauncher v0.0.0-20211210162313-cf4aa5fc4878
 	github.com/streamingfast/dmetering v0.0.0-20220301165106-a642bb6a21bd
 	github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447

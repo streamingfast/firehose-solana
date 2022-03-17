@@ -206,9 +206,9 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	// Order of conditions is based (approximately) on those that will appear more often
 	switch {
 	// defines the current version of deepmind; should fail is the value is unexpected
-	case strings.HasPrefix(line, "INIT"):
-		ctx.stats.inc("INIT")
-		err = ctx.readInit(line)
+	//case strings.HasPrefix(line, "INIT"):
+	//	ctx.stats.inc("INIT")
+	//	err = ctx.readInit(line)
 
 	// this occurs at the beginning execution of a given block (bank) (this is a 'range' of slot say from 10 to 13,
 	// it can also just be one slot), this can be PARTIAL or FULL work of said block. A given block may have multiple
