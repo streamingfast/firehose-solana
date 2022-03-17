@@ -32,7 +32,7 @@ require (
 	github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3
 	github.com/streamingfast/logging v0.0.0-20220304214715-bc750a74b424
 	github.com/streamingfast/merger v0.0.3-0.20220307182136-ea57e6c34740
-	github.com/streamingfast/node-manager v0.0.2-0.20220316182757-107704401a3f
+	github.com/streamingfast/node-manager v0.0.2-0.20220317133651-fba5b8519681
 	github.com/streamingfast/pbgo v0.0.6-0.20220304191603-f73822f471ff
 	github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde
 	github.com/streamingfast/shutter v1.5.0

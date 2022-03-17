@@ -80,22 +80,6 @@ type ConsoleReader struct {
 	batchFilesPath string
 }
 
-func (r *ConsoleReader) ProcessData(reader io.Reader) error {
-	scanner := r.buildScanner(reader)
-	for scanner.Scan() {
-		line := scanner.Text()
-		r.lines <- line
-	}
-
-	zlog.Info("done scanning lines")
-	if scanner.Err() == nil {
-		close(r.lines)
-		return io.EOF
-	}
-
-	return scanner.Err()
-}
-
 func (r *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
 	buf := make([]byte, 50*1024*1024)
 	scanner := bufio.NewScanner(reader)
@@ -185,7 +169,6 @@ func (r *ConsoleReader) Read() (out interface{}, err error) {
 
 func (r *ConsoleReader) next() (out interface{}, err error) {
 	ctx := r.ctx
-
 	select {
 	case b := <-ctx.blockBuffer:
 		return b, nil
@@ -268,7 +251,7 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	default:
 		zlog.Warn("unknown log line", zap.String("line", line))
 	}
-	return
+	return err
 }
 
 func (r *ConsoleReader) formatError(line string, err error) error {

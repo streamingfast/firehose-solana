@@ -50,6 +50,8 @@ func init() {
 			mergeArchiveStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url"))
 
 			consoleReaderFactory := func(lines chan string) (mindreader.ConsolerReader, error) {
+				batchFilePath := viper.GetString("mindreader-node-deepmind-batch-files-path")
+				zlog.Debug("setting up console reader", zap.String("batch_file_path", batchFilePath))
 				r, err := codec.NewConsoleReader(lines, viper.GetString("mindreader-node-deepmind-batch-files-path"))
 				if err != nil {
 					return nil, fmt.Errorf("initiating console reader: %w", err)

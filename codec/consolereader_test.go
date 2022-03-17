@@ -544,7 +544,7 @@ func testFileConsoleReader(t *testing.T, dmlogFile, batchFilesPath string) *Cons
 
 	cr := testReaderConsoleReader(t, make(chan string, 10000), func() { fl.Close() }, batchFilesPath)
 
-	go cr.ProcessData(fl)
+	go processData(cr, fl)
 
 	return cr
 }
@@ -582,4 +582,20 @@ func trxID(t *testing.T, input string) []byte {
 	require.NoError(t, err)
 
 	return bytes
+}
+
+func processData(r *ConsoleReader, reader io.Reader) error {
+	scanner := r.buildScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		r.lines <- line
+	}
+
+	zlog.Info("done scanning lines")
+	if scanner.Err() == nil {
+		close(r.lines)
+		return io.EOF
+	}
+
+	return scanner.Err()
 }
