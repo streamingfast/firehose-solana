@@ -93,6 +93,10 @@ func shortestPath(array []*Snapshot) (out []*Snapshot) {
 	var curBestCandidate *Snapshot
 	var lastValidSnapshot *Snapshot
 	for _, snapshot := range array {
+
+		if (snapshot != nil) && (curBestCandidate != nil) && (snapshot.StartSlot > curBestCandidate.EndSlot) {
+			curBestCandidate = snapshot
+		}
 		
 		if snapshot.StartSlot == 0 {
 			continue
