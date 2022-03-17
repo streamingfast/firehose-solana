@@ -744,6 +744,8 @@ github.com/streamingfast/node-manager v0.0.2-0.20220316182757-107704401a3f h1:U9
 github.com/streamingfast/node-manager v0.0.2-0.20220316182757-107704401a3f/go.mod h1:6NthUcvG2kv4lZ9QgOepxkUjBuaiEfGo8Im1oUn0RQU=
 github.com/streamingfast/node-manager v0.0.2-0.20220317133651-fba5b8519681 h1:axAK104GcC6iwvDTN0JD9KV3DTN19Gv6mO1/ouaKQNs=
 github.com/streamingfast/node-manager v0.0.2-0.20220317133651-fba5b8519681/go.mod h1:6NthUcvG2kv4lZ9QgOepxkUjBuaiEfGo8Im1oUn0RQU=
+github.com/streamingfast/node-manager v0.0.2-0.20220317200300-f1fa4f67d659 h1:Mdh3hb1TnJWhJ1ED1uPW3uh0X6ER+mjwKbRGyrJLSI0=
+github.com/streamingfast/node-manager v0.0.2-0.20220317200300-f1fa4f67d659/go.mod h1:6NthUcvG2kv4lZ9QgOepxkUjBuaiEfGo8Im1oUn0RQU=
 github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 h1:xlWSfi1BoPfsHtPb0VEHGUcAdBF208LUiFCwfaVPfLA=
 github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308/go.mod h1:K1p8Bj/wG34KJvYzPUqtzpndffmpkrVY11u2hkyxCWQ=
 github.com/streamingfast/pbgo v0.0.6-0.20210811160400-7c146c2db8cc/go.mod h1:mSi3+mIAffPq/McZ3TqLSmDr8f1v3mi5RHE+zmBHJGk=
