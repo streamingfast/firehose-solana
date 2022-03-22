@@ -313,7 +313,7 @@ func (b *bank) processBatchFile(filePath string) {
 	b.processBatchFileWithDelete(filePath, true)
 }
 
-func (b *bank) processBatchFileWithDelete(filePath string, WithDelete bool) {
+func (b *bank) processBatchFileWithDelete(filePath string, withDelete bool) {
 	if b.errGroup.Stop() {
 		return
 	}
@@ -328,7 +328,7 @@ func (b *bank) processBatchFileWithDelete(filePath string, WithDelete bool) {
 			if err := file.Close(); err != nil {
 				zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
 			}
-			if WithDelete {
+			if withDelete {
 				if err := os.Remove(filePath); err != nil {
 					zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
 				}
@@ -343,7 +343,7 @@ func (b *bank) processBatchFileWithDelete(filePath string, WithDelete bool) {
 		batch := &pbcodec.Batch{}
 		err = proto.Unmarshal(data, batch)
 		if err != nil {
-			return fmt.Errorf("read batch: failed pbcodec batch unmarshall blk %d, filepath %s, data length %d: %w", b.blk.Number, filePath, len(data), err)
+			return fmt.Errorf("read batch: failed pbcodec batch unmarshal blk %d, filepath %s, data length %d: %w", b.blk.Number, filePath, len(data), err)
 		}
 
 		for _, tx := range batch.Transactions {
