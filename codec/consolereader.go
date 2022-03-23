@@ -12,16 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//todo: error from read function are handle right by the node manager.
-//todo: Fix node logs not outputting.
-//todo: Check why account data change file are so small.
-//todo: handle genesis.
-//todo: Remove BLOCK_ROOT DMLOG.
-//todo: Account data change compression
-//todo: cleanup account data "transfer/ram disk" folder on restart
-//todo: delete dmlog-163670-2 files after unmarshall it
-//todo: firehose should merge back data file into block
-
 package codec
 
 import (
@@ -552,7 +542,6 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 
 // BLOCK_ROOT 6482838121
 // Simply the root block number, when this block is done processing, and all of its votes are taken into account.
-//todo: Block Root not need any more
 func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 	zlog.Debug("reading block root", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
