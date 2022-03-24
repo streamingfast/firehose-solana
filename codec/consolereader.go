@@ -17,6 +17,7 @@ package codec
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -36,7 +37,6 @@ import (
 )
 
 var MaxTokenSize uint64
-var VoteProgramID = solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111")
 
 func init() {
 	MaxTokenSize = uint64(50 * 1024 * 1024)
@@ -51,12 +51,13 @@ func init() {
 	}
 }
 
-var supportedVersions = []string{"1", "1"}
+type ConsoleReaderOption = func(reader *ConsoleReader) *ConsoleReader
 
-type conversionOption interface{}
-
-type ConsoleReaderOption interface {
-	apply(reader *ConsoleReader)
+func IgnoreAccountChangesForProgramID(pid solana.PublicKey) ConsoleReaderOption {
+	return func(r *ConsoleReader) *ConsoleReader {
+		r.ignoredAccountChangesProgramIds = append(r.ignoredAccountChangesProgramIds, pid)
+		return r
+	}
 }
 
 // ConsoleReader is what reads the `nodeos` output directly. It builds
@@ -64,6 +65,8 @@ type ConsoleReaderOption interface {
 type ConsoleReader struct {
 	lines chan string
 	close func()
+
+	ignoredAccountChangesProgramIds []solana.PublicKey
 
 	done           chan interface{}
 	ctx            *parseCtx
@@ -82,14 +85,14 @@ func NewConsoleReader(lines chan string, batchFilesPath string, opts ...ConsoleR
 	l := &ConsoleReader{
 		lines: lines,
 		close: func() {},
-		ctx:   newParseCtx(batchFilesPath),
 		done:  make(chan interface{}),
 	}
 
 	for _, opt := range opts {
-		opt.apply(l)
+		l = opt(l)
 	}
 
+	l.ctx = newParseCtx(batchFilesPath, l.ignoredAccountChangesProgramIds)
 	return l, nil
 }
 
@@ -134,22 +137,22 @@ func (s *parsingStats) inc(key string) {
 }
 
 type parseCtx struct {
-	activeBank        *bank
-	banks             map[uint64]*bank
-	conversionOptions []conversionOption
-	blockBuffer       chan *pbcodec.Block
-	batchWG           sync.WaitGroup
-	batchFilesPath    string
-	RootBlock         uint64
+	activeBank     *bank
+	banks          map[uint64]*bank
+	blockBuffer    chan *pbcodec.Block
+	batchFilesPath string
+	rootBlock      uint64
 
-	stats *parsingStats
+	stats         *parsingStats
+	blacklistPids []solana.PublicKey
 }
 
-func newParseCtx(batchFilesPath string) *parseCtx {
+func newParseCtx(batchFilesPath string, blacklistPids []solana.PublicKey) *parseCtx {
 	return &parseCtx{
 		banks:          map[uint64]*bank{},
 		blockBuffer:    make(chan *pbcodec.Block, 10000),
 		batchFilesPath: batchFilesPath,
+		blacklistPids:  blacklistPids,
 	}
 }
 
@@ -282,9 +285,10 @@ type bank struct {
 	batchAggregator [][]*pbcodec.Transaction
 	errGroup        *llerrgroup.Group
 	lock            sync.Mutex
+	blacklistPids   []solana.PublicKey
 }
 
-func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte) *bank {
+func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte, blacklistPids []solana.PublicKey) *bank {
 	return &bank{
 		parentSlotNum:   parentBlockNumber,
 		previousSlotID:  previousSlotID,
@@ -296,7 +300,8 @@ func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte) *bank {
 			PreviousId:    previousSlotID,
 			PreviousBlock: parentBlockNumber,
 		},
-		errGroup: llerrgroup.New(200),
+		errGroup:      llerrgroup.New(200),
+		blacklistPids: blacklistPids,
 	}
 }
 func (b *bank) processBatchFile(filePath string) {
@@ -337,11 +342,13 @@ func (b *bank) processBatchFileWithDelete(filePath string, withDelete bool) {
 		}
 
 		for _, tx := range batch.Transactions {
-			zlog.Debug("transaction info", zap.String("program_id", base58.Encode(tx.Id)), zap.Int("log_count", len(tx.LogMessages)))
-			for _, i := range tx.Instructions {
-				zlog.Debug("instruction info", zap.String("program_id", base58.Encode(i.ProgramId)), zap.Int("log_count", len(i.Logs)))
-				if bytes.Equal(i.ProgramId, VoteProgramID[:]) {
-					i.AccountChanges = nil
+			zlog.Debug("transaction info", zap.String("program_id", base58.Encode(tx.Id)), zap.Int("instruction_count", len(tx.Instructions)))
+			for idx, i := range tx.Instructions {
+				zlog.Debug("instruction info", zap.String("program_id", base58.Encode(i.ProgramId)), zap.Int("instruction_index", idx), zap.Int("log_count", len(i.Logs)))
+				for _, pid := range b.blacklistPids {
+					if bytes.Equal(i.ProgramId, pid[:]) {
+						i.AccountChanges = nil
+					}
 				}
 			}
 		}
@@ -349,8 +356,6 @@ func (b *bank) processBatchFileWithDelete(filePath string, withDelete bool) {
 		b.lock.Lock()
 		b.batchAggregator = append(b.batchAggregator, batch.Transactions)
 		b.lock.Unlock()
-		// TODO: do the fixups, `depth` setting, addition of the `Slot` and other data
-		// that is not written by the batch writer.
 
 		return nil
 	})
@@ -376,6 +381,20 @@ func (b *bank) processBatchAggregation() error {
 		}
 	}
 
+	lastTotalOrdinal := uint64(0)
+	for idx, trx := range b.blk.Transactions {
+		_ = idx
+		if base58.Encode(trx.Id) == "3551ShgdtaCR4LXjPhwSZKLEN2UBAYj4sFcRjNfSWjD5g7Bu5Jga91aKWWeZaFk7iiEdvCJHbqHsUKLrsJB28MxS" {
+			cnt, _ := json.Marshal(trx)
+			fmt.Println(string(cnt))
+		}
+		lastTotalOrdinal = setTrxTotalOrdinal(lastTotalOrdinal, trx)
+		if base58.Encode(trx.Id) == "3551ShgdtaCR4LXjPhwSZKLEN2UBAYj4sFcRjNfSWjD5g7Bu5Jga91aKWWeZaFk7iiEdvCJHbqHsUKLrsJB28MxS" {
+			cnt, _ := json.Marshal(trx)
+			fmt.Println(string(cnt))
+		}
+	}
+
 	b.batchAggregator = nil
 
 	if count != len(b.transactionIDs) {
@@ -383,6 +402,33 @@ func (b *bank) processBatchAggregation() error {
 	}
 
 	return nil
+}
+
+func max(a, b uint64) uint64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func setTrxTotalOrdinal(lastTotalOrdinal uint64, transaction *pbcodec.Transaction) uint64 {
+	maxOrdinal := uint64(0)
+	transaction.BeginOrdinal += lastTotalOrdinal
+	maxOrdinal = max(maxOrdinal, transaction.BeginOrdinal)
+
+	for _, inst := range transaction.Instructions {
+		inst.BeginOrdinal += lastTotalOrdinal
+		maxOrdinal = max(maxOrdinal, inst.BeginOrdinal)
+		inst.EndOrdinal += lastTotalOrdinal
+		maxOrdinal = max(maxOrdinal, inst.EndOrdinal)
+		for _, log := range inst.Logs {
+			log.Ordinal += lastTotalOrdinal
+			maxOrdinal = max(maxOrdinal, log.Ordinal)
+		}
+
+	}
+	transaction.EndOrdinal = maxOrdinal + 1
+	return transaction.EndOrdinal
 }
 
 func (b *bank) getActiveTransaction(batchNum uint64, trxID []byte) (*pbcodec.Transaction, error) {
@@ -457,7 +503,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 			zap.Int("parent_slot_number", parentSlotNumber),
 			zap.Int("slot_number", blockNum),
 		)
-		b = newBank(uint64(blockNum), uint64(parentSlotNumber), previousSlotID)
+		b = newBank(uint64(blockNum), uint64(parentSlotNumber), previousSlotID, ctx.blacklistPids)
 		ctx.banks[uint64(blockNum)] = b
 	}
 
@@ -516,7 +562,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	}
 
 	ctx.activeBank.blk.Id = blockHash
-	ctx.activeBank.blk.RootNum = ctx.RootBlock
+	ctx.activeBank.blk.RootNum = ctx.rootBlock
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
 
@@ -554,7 +600,7 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 		return fmt.Errorf("root block num num to int: %w", err)
 	}
 
-	ctx.RootBlock = rootBlock
+	ctx.rootBlock = rootBlock
 
 	return nil
 }

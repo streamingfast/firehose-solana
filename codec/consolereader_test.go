@@ -15,6 +15,7 @@
 package codec
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -33,23 +34,29 @@ import (
 
 func Test_processBatchFile(t *testing.T) {
 	t.Skip("skip batch file dmlog")
-	bank := newBank(10, 9, nil)
-	//bank.processBatchFile("/Users/cbillett/t/batches/dmlog-1-0")
+	bank := newBank(10, 9, nil, nil)
 
 	bank.processBatchFileWithDelete("/tmp/solana-test/dmlog-383-1", false)
 	err := bank.errGroup.Wait()
 	require.NoError(t, err)
 }
 
+func TestBlockReaderFactory(t *testing.T) {
+	sDec, _ := base64.StdEncoding.DecodeString("Gghgn2J4L5pSIBGaBio9hXZ7equ1RRSaIzFuVeHMEhHuTe79sGVz1ycYPf9mvfrD2c0Wd6zsB09acCm+SimqCQ==")
+
+	fmt.Println(string(base58.Encode(sDec)))
+}
+
 func Test_JustRun(t *testing.T) {
 	//t.Skip()
-	testPath := "testdata/syncer_20210211"
-	cleanup, testdir, err := copyTestDir(testPath, "syncer_20210211")
+	testPath := "testdata/117503050"
+	cleanup, testdir, err := copyTestDir(testPath, "117503050")
 	require.NoError(t, err)
 	defer func() {
 		cleanup()
 	}()
 
+	fmt.Println(testPath)
 	cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", testPath), testdir)
 	for {
 		_, err = cr.Read()
@@ -555,7 +562,7 @@ func testReaderConsoleReader(t *testing.T, lines chan string, closer func(), bat
 	l := &ConsoleReader{
 		lines: lines,
 		close: closer,
-		ctx:   newParseCtx(batchFilesPath),
+		ctx:   newParseCtx(batchFilesPath, nil),
 	}
 
 	return l

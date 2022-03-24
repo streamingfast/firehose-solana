@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"github.com/streamingfast/solana-go"
 	"math"
 	"time"
 
@@ -85,7 +86,11 @@ func getMindreaderLogPlugin(
 	go blockDataArchiver.Start()
 
 	consoleReaderFactory := func(lines chan string) (mindreader.ConsolerReader, error) {
-		return codec.NewConsoleReader(lines, viper.GetString("mindreader-node-deepmind-batch-files-path"))
+		return codec.NewConsoleReader(
+			lines,
+			viper.GetString("mindreader-node-deepmind-batch-files-path"),
+			codec.IgnoreAccountChangesForProgramID(solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111")),
+		)
 	}
 
 	consoleReaderTransformer := func(obj interface{}) (*bstream.Block, error) {

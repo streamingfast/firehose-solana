@@ -26,7 +26,7 @@ func init() {
 func pathSnapshotRunE(cmd *cobra.Command, args []string) error {
 	f, err := os.Open(args[0])
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to open file %q: %w", args[0], err)
 	}
 	defer f.Close()
 
@@ -40,13 +40,13 @@ func pathSnapshotRunE(cmd *cobra.Command, args []string) error {
 			if err == io.EOF {
 				break
 			}
-			return err
+			return fmt.Errorf("unable to read line: %w", err)
 		}
 
 		snapshotObj := &Snapshot{}
 		err = json.Unmarshal(line, snapshotObj)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable unmarshal open object: %w", err)
 		}
 		snapshots = append(snapshots, snapshotObj)
 	}
@@ -67,6 +67,9 @@ func pathSnapshotRunE(cmd *cobra.Command, args []string) error {
 	csvwriter.Write([]string{"slot", "bucket", "has bounds", "slot count", "start slot", "end slot", "version", "rocksdb path", "rocksdb compression", "snapshot path"})
 	defer csvwriter.Flush()
 
+	var lastSnapshot *Snapshot
+	versions := map[string]bool{}
+	holeCount := 0
 	for _, snapshot := range out {
 		err = csvwriter.Write([]string{
 			fmt.Sprintf("%d", snapshot.Slot),
@@ -83,8 +86,28 @@ func pathSnapshotRunE(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to write to csv: %w", err)
 		}
+
+		isContiguous := true
+		overlap := 0
+		if lastSnapshot != nil {
+			if snapshot.StartSlot > lastSnapshot.EndSlot {
+				isContiguous = false
+				holeCount++
+			}
+			overlap = (int(lastSnapshot.EndSlot) - int(snapshot.StartSlot))
+		}
+		prefix := "✅"
+		if !isContiguous {
+			prefix = "🆘"
+		}
+		fmt.Printf("%s Snapshot %d - %d (%s | %d count | %d overlap)\n", prefix, snapshot.StartSlot, snapshot.EndSlot, snapshot.Version, snapshot.SlotCount, overlap)
+		lastSnapshot = snapshot
+		versions[snapshot.Version] = true
 	}
 
+	fmt.Printf("Snapshot Count: %d\n", len(out))
+	fmt.Printf("Hole Count: %d\n", holeCount)
+	fmt.Printf("Unique Version Count: %d\n", len(versions))
 	return nil
 }
 
@@ -93,11 +116,6 @@ func shortestPath(array []*Snapshot) (out []*Snapshot) {
 	var curBestCandidate *Snapshot
 	var lastValidSnapshot *Snapshot
 	for _, snapshot := range array {
-
-		if (snapshot != nil) && (curBestCandidate != nil) && (snapshot.StartSlot > curBestCandidate.EndSlot) {
-			curBestCandidate = snapshot
-		}
-		
 		if snapshot.StartSlot == 0 {
 			continue
 		}
@@ -108,10 +126,19 @@ func shortestPath(array []*Snapshot) (out []*Snapshot) {
 			continue
 		}
 
-		if snapshot.StartSlot > lastValidSnapshot.EndSlot && (curBestCandidate != nil) {
-			lastValidSnapshot = curBestCandidate
-			out = append(out, lastValidSnapshot)
-			curBestCandidate = nil
+		if snapshot.StartSlot > lastValidSnapshot.EndSlot {
+			if curBestCandidate != nil {
+				lastValidSnapshot = curBestCandidate
+				out = append(out, lastValidSnapshot)
+				curBestCandidate = nil
+			} else {
+				lastValidSnapshot = snapshot
+				out = append(out, lastValidSnapshot)
+				curBestCandidate = nil
+			}
+			//if (snapshot != nil) && (curBestCandidate != nil) && (snapshot.StartSlot > curBestCandidate.EndSlot) {
+			//	curBestCandidate = snapshot
+			//}
 		}
 
 		if snapshot.StartSlot < lastValidSnapshot.EndSlot {

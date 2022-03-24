@@ -190,7 +190,7 @@ func readBlock(blk *bstream.Block, outputDot bool) error {
 			totalInstr += len(t.Instructions)
 			if viper.GetBool("instructions") {
 				for instrx, inst := range t.Instructions {
-					instStr := fmt.Sprintf("      * Inst [%d]: program_id %s", inst.Ordinal, inst.ProgramId)
+					instStr := fmt.Sprintf("      * Inst [%d]: program_id %s", inst.Index, inst.ProgramId)
 					if accChangesBundle != nil {
 						if instrx < len(accChangesBundle.Transactions[trxIdx].Instructions) {
 							instStr = fmt.Sprintf("%s ✅ account change", trxStr)
