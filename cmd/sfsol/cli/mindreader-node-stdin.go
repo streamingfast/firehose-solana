@@ -82,16 +82,14 @@ func init() {
 			tracker := runtime.Tracker.Clone()
 			tracker.AddGetter(bstream.NetworkLIBTarget, bstream.NetworkLIBBlockRefGetter(blockmetaAddr))
 			return nodeMindreaderStdinApp.New(&nodeMindreaderStdinApp.Config{
-				GRPCAddr:                   viper.GetString("mindreader-node-grpc-listen-addr"),
-				ArchiveStoreURL:            archiveStoreURL,
-				MergeArchiveStoreURL:       mergeArchiveStoreURL,
-				BatchMode:                  viper.GetBool("mindreader-node-merge-and-store-directly"),
-				MergeThresholdBlockAge:     viper.GetDuration("mindreader-node-merge-threshold-block-age"),
-				MindReadBlocksChanCapacity: viper.GetInt("mindreader-node-blocks-chan-capacity"),
-				StartBlockNum:              viper.GetUint64("mindreader-node-start-block-num"),
-				StopBlockNum:               viper.GetUint64("mindreader-node-stop-block-num"),
-				// Not used must kill
-				//DiscardAfterStopBlock:        viper.GetBool("mindreader-geth-node-discard-after-stop-num"),
+				GRPCAddr:                     viper.GetString("mindreader-node-grpc-listen-addr"),
+				ArchiveStoreURL:              archiveStoreURL,
+				MergeArchiveStoreURL:         mergeArchiveStoreURL,
+				BatchMode:                    viper.GetBool("mindreader-node-merge-and-store-directly"),
+				MergeThresholdBlockAge:       viper.GetDuration("mindreader-node-merge-threshold-block-age"),
+				MindReadBlocksChanCapacity:   viper.GetInt("mindreader-node-blocks-chan-capacity"),
+				StartBlockNum:                viper.GetUint64("mindreader-node-start-block-num"),
+				StopBlockNum:                 viper.GetUint64("mindreader-node-stop-block-num"),
 				FailOnNonContinuousBlocks:    viper.GetBool("mindreader-node-fail-on-non-contiguous-block"),
 				WorkingDir:                   MustReplaceDataDir(sfDataDir, viper.GetString("mindreader-node-working-dir")),
 				WaitUploadCompleteOnShutdown: viper.GetDuration("mindreader-node-wait-upload-complete-on-shutdown"),

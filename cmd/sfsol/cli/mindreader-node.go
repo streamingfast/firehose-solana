@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"github.com/streamingfast/solana-go"
 	"math"
 	"time"
@@ -39,29 +40,11 @@ func registerMindreaderNodeFlags(cmd *cobra.Command) error {
 	cmd.Flags().Bool("mindreader-node-merge-and-store-directly", false, "[BATCH] When enabled, do not write oneblock files, sidestep the merger and write the merged 100-blocks logs directly to --common-blocks-store-url")
 	cmd.Flags().Uint("mindreader-node-start-block-num", 0, "[BATCH] Blocks that were produced with smaller block number then the given block num are skipped")
 	cmd.Flags().Uint("mindreader-node-stop-block-num", 0, "[BATCH] Shutdown when we the following 'stop-block-num' has been reached, inclusively.")
+	cmd.Flags().Bool("mindreader-node-split-account-changes-enabled", false, "When flag enabled, a oneblock file is split into 2, one for account changes and the other for the block details")
 	return nil
 }
 
-func getMindreaderLogPlugin(
-	blockStreamServer *blockstream.Server,
-	oneBlockStoreURL string,
-	blockDataStoreURL string,
-	mergedBlockStoreURL string,
-	mergeAndStoreDirectly bool,
-	mergeThresholdBlockAge time.Duration,
-	workingDir string,
-	blockDataWorkingDir string,
-	batchStartBlockNum uint64,
-	batchStopBlockNum uint64,
-	blocksChanCapacity int,
-	failOnNonContiguousBlock bool,
-	waitTimeForUploadOnShutdown time.Duration,
-	oneBlockFileSuffix string,
-	operatorShutdownFunc func(error),
-	metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager,
-	tracker *bstream.Tracker,
-	appLogger *zap.Logger,
-) (*mindreader.MindReaderPlugin, error) {
+func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStoreURL string, blockDataStoreURL string, mergedBlockStoreURL string, mergeAndStoreDirectly bool, mergeThresholdBlockAge time.Duration, workingDir string, blockDataWorkingDir string, batchStartBlockNum uint64, batchStopBlockNum uint64, blocksChanCapacity int, failOnNonContiguousBlock bool, waitTimeForUploadOnShutdown time.Duration, oneBlockFileSuffix string, operatorShutdownFunc func(error), metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager, tracker *bstream.Tracker, appLogger *zap.Logger, enablAccountChangeSplit bool) (*mindreader.MindReaderPlugin, error) {
 
 	// blockmetaAddr := viper.GetString("common-blockmeta-addr")
 	tracker.AddGetter(bstream.NetworkLIBTarget, func(ctx context.Context) (bstream.BlockRef, error) {
@@ -93,8 +76,18 @@ func getMindreaderLogPlugin(
 		)
 	}
 
-	consoleReaderTransformer := func(obj interface{}) (*bstream.Block, error) {
-		return consoleReaderBlockTransformerWithArchive(blockDataArchiver, obj)
+	consoleReaderBlockTransformer := func(obj interface{}) (*bstream.Block, error) {
+		blk, ok := obj.(*pbcodec.Block)
+		if !ok {
+			return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
+		}
+
+		return codec.BlockFromProto(blk)
+	}
+	if enablAccountChangeSplit {
+		consoleReaderBlockTransformer = func(obj interface{}) (*bstream.Block, error) {
+			return consoleReaderBlockTransformerWithArchive(blockDataArchiver, obj)
+		}
 	}
 
 	return mindreader.NewMindReaderPlugin(
@@ -104,7 +97,7 @@ func getMindreaderLogPlugin(
 		mergeThresholdBlockAge,
 		workingDir,
 		consoleReaderFactory,
-		consoleReaderTransformer,
+		consoleReaderBlockTransformer,
 		tracker,
 		batchStartBlockNum,
 		batchStopBlockNum,

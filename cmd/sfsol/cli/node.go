@@ -381,6 +381,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			failOnNonContiguousBlock := viper.GetBool("mindreader-node-fail-on-non-contiguous-block")
 			waitTimeForUploadOnShutdown := viper.GetDuration("mindreader-node-wait-upload-complete-on-shutdown")
 			oneBlockFileSuffix := viper.GetString("mindreader-node-oneblock-suffix")
+			enablAccountChangeSplit := viper.GetBool("mindreader-node-split-account-changes-enabled")
 			tracker := runtime.Tracker.Clone()
 
 			mindreaderPlugin, err = getMindreaderLogPlugin(
@@ -402,6 +403,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 				metricsAndReadinessManager,
 				tracker,
 				appLogger,
+				enablAccountChangeSplit,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("new mindreader plugin: %w", err)
