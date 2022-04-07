@@ -34,9 +34,11 @@ import (
 
 func Test_processBatchFile(t *testing.T) {
 	t.Skip("skip batch file dmlog")
-	bank := newBank(10, 9, nil, nil)
+	bank := newBank(10, 9, nil, &options{
+		deleteBatchFiles: false,
+	})
 
-	bank.processBatchFileWithDelete("/tmp/solana-test/dmlog-383-1", false)
+	bank.processBatchFile("/tmp/solana-test/dmlog-383-1")
 	err := bank.errGroup.Wait()
 	require.NoError(t, err)
 }

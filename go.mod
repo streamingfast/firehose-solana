@@ -7,13 +7,15 @@ require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
 	github.com/abourget/llerrgroup v0.2.0
-	github.com/dfuse-io/derr v0.0.0-20200417132224-d333cfd0e9a0 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.5.2
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
+	github.com/lithammer/dedent v1.1.0
 	github.com/lorenzosaino/go-sysctl v0.1.1
+	github.com/manifoldco/promptui v0.3.2
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mr-tron/base58 v1.2.0
+	github.com/nicksnyder/go-i18n v1.10.1 // indirect
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
 	github.com/streamingfast/bstream v0.0.2-0.20220312192323-e6b8e55c4e99
@@ -37,10 +39,13 @@ require (
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220214195023-eec1e20a751b
 	github.com/stretchr/testify v1.7.0
+	github.com/test-go/testify v1.1.4
 	go.uber.org/zap v1.21.0
+	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	google.golang.org/api v0.70.0
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
+	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20191105091915-95d230a53780 // indirect
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c

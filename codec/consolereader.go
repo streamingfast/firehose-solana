@@ -55,7 +55,14 @@ type ConsoleReaderOption = func(reader *ConsoleReader) *ConsoleReader
 
 func IgnoreAccountChangesForProgramID(pid solana.PublicKey) ConsoleReaderOption {
 	return func(r *ConsoleReader) *ConsoleReader {
-		r.ignoredAccountChangesProgramIds = append(r.ignoredAccountChangesProgramIds, pid)
+		r.options.blacklistProgramIDs = append(r.options.blacklistProgramIDs, pid)
+		return r
+	}
+}
+
+func KeepBatchFiles() ConsoleReaderOption {
+	return func(r *ConsoleReader) *ConsoleReader {
+		r.options.deleteBatchFiles = false
 		return r
 	}
 }
@@ -66,11 +73,26 @@ type ConsoleReader struct {
 	lines chan string
 	close func()
 
-	ignoredAccountChangesProgramIds []solana.PublicKey
+	options *options
 
 	done           chan interface{}
 	ctx            *parseCtx
 	batchFilesPath string
+}
+
+func (c *ConsoleReader) ProcessData(reader io.Reader) error {
+	scanner := c.buildScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		c.lines <- line
+	}
+
+	if scanner.Err() == nil {
+		close(c.lines)
+		return io.EOF
+	}
+
+	return scanner.Err()
 }
 
 func (r *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
@@ -86,13 +108,17 @@ func NewConsoleReader(lines chan string, batchFilesPath string, opts ...ConsoleR
 		lines: lines,
 		close: func() {},
 		done:  make(chan interface{}),
+		options: &options{
+			blacklistProgramIDs: []solana.PublicKey{},
+			deleteBatchFiles:    true,
+		},
 	}
 
 	for _, opt := range opts {
 		l = opt(l)
 	}
 
-	l.ctx = newParseCtx(batchFilesPath, l.ignoredAccountChangesProgramIds)
+	l.ctx = newParseCtx(batchFilesPath, l.options)
 	return l, nil
 }
 
@@ -143,16 +169,16 @@ type parseCtx struct {
 	batchFilesPath string
 	rootBlock      uint64
 
-	stats         *parsingStats
-	blacklistPids []solana.PublicKey
+	stats *parsingStats
+	opts  *options
 }
 
-func newParseCtx(batchFilesPath string, blacklistPids []solana.PublicKey) *parseCtx {
+func newParseCtx(batchFilesPath string, opts *options) *parseCtx {
 	return &parseCtx{
 		banks:          map[uint64]*bank{},
 		blockBuffer:    make(chan *pbcodec.Block, 10000),
 		batchFilesPath: batchFilesPath,
-		blacklistPids:  blacklistPids,
+		opts:           opts,
 	}
 }
 
@@ -275,6 +301,11 @@ const (
 	SlotBoundChunkSize   = 3
 )
 
+type options struct {
+	blacklistProgramIDs []solana.PublicKey
+	deleteBatchFiles    bool
+}
+
 type bank struct {
 	parentSlotNum   uint64
 	processTrxCount uint64
@@ -285,10 +316,10 @@ type bank struct {
 	batchAggregator [][]*pbcodec.Transaction
 	errGroup        *llerrgroup.Group
 	lock            sync.Mutex
-	blacklistPids   []solana.PublicKey
+	opts            *options
 }
 
-func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte, blacklistPids []solana.PublicKey) *bank {
+func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte, opts *options) *bank {
 	return &bank{
 		parentSlotNum:   parentBlockNumber,
 		previousSlotID:  previousSlotID,
@@ -300,15 +331,12 @@ func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte, blacklis
 			PreviousId:    previousSlotID,
 			PreviousBlock: parentBlockNumber,
 		},
-		errGroup:      llerrgroup.New(200),
-		blacklistPids: blacklistPids,
+		errGroup: llerrgroup.New(200),
+		opts:     opts,
 	}
 }
-func (b *bank) processBatchFile(filePath string) {
-	b.processBatchFileWithDelete(filePath, true)
-}
 
-func (b *bank) processBatchFileWithDelete(filePath string, withDelete bool) {
+func (b *bank) processBatchFile(filePath string) {
 	if b.errGroup.Stop() {
 		return
 	}
@@ -323,7 +351,7 @@ func (b *bank) processBatchFileWithDelete(filePath string, withDelete bool) {
 			if err := file.Close(); err != nil {
 				zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
 			}
-			if withDelete {
+			if b.opts.deleteBatchFiles {
 				if err := os.Remove(filePath); err != nil {
 					zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
 				}
@@ -345,7 +373,7 @@ func (b *bank) processBatchFileWithDelete(filePath string, withDelete bool) {
 			zlog.Debug("transaction info", zap.String("program_id", base58.Encode(tx.Id)), zap.Int("instruction_count", len(tx.Instructions)))
 			for idx, i := range tx.Instructions {
 				zlog.Debug("instruction info", zap.String("program_id", base58.Encode(i.ProgramId)), zap.Int("instruction_index", idx), zap.Int("log_count", len(i.Logs)))
-				for _, pid := range b.blacklistPids {
+				for _, pid := range b.opts.blacklistProgramIDs {
 					if bytes.Equal(i.ProgramId, pid[:]) {
 						i.AccountChanges = nil
 					}
@@ -503,7 +531,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 			zap.Int("parent_slot_number", parentSlotNumber),
 			zap.Int("slot_number", blockNum),
 		)
-		b = newBank(uint64(blockNum), uint64(parentSlotNumber), previousSlotID, ctx.blacklistPids)
+		b = newBank(uint64(blockNum), uint64(parentSlotNumber), previousSlotID, ctx.opts)
 		ctx.banks[uint64(blockNum)] = b
 	}
 
