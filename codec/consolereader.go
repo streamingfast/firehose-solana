@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/streamingfast/bstream"
 	"io"
 	"io/ioutil"
 	"os"
@@ -165,7 +166,7 @@ func (s *parsingStats) inc(key string) {
 type parseCtx struct {
 	activeBank     *bank
 	banks          map[uint64]*bank
-	blockBuffer    chan *pbcodec.Block
+	blockBuffer    chan *bstream.Block
 	batchFilesPath string
 	rootBlock      uint64
 
@@ -176,17 +177,17 @@ type parseCtx struct {
 func newParseCtx(batchFilesPath string, opts *options) *parseCtx {
 	return &parseCtx{
 		banks:          map[uint64]*bank{},
-		blockBuffer:    make(chan *pbcodec.Block, 10000),
+		blockBuffer:    make(chan *bstream.Block, 10000),
 		batchFilesPath: batchFilesPath,
 		opts:           opts,
 	}
 }
 
-func (r *ConsoleReader) Read() (out interface{}, err error) {
+func (r *ConsoleReader) ReadBlock() (out *bstream.Block, err error) {
 	return r.next()
 }
 
-func (r *ConsoleReader) next() (out interface{}, err error) {
+func (r *ConsoleReader) next() (out *bstream.Block, err error) {
 	ctx := r.ctx
 	select {
 	case b := <-ctx.blockBuffer:
@@ -590,7 +591,6 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 	}
 
 	ctx.activeBank.blk.Id = blockHash
-	ctx.activeBank.blk.RootNum = ctx.rootBlock
 	ctx.activeBank.blk.GenesisUnixTimestamp = genesisTimestamp
 	ctx.activeBank.blk.ClockUnixTimestamp = clockTimestamp
 
@@ -602,7 +602,13 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 		return fmt.Errorf("sorting: %w", err)
 	}
 
-	ctx.blockBuffer <- ctx.activeBank.blk
+	bstreamBlk, err := BlockFromProto(ctx.activeBank.blk)
+	if err != nil {
+		return fmt.Errorf("unable to convert solana proto block to bstream block: %w", err)
+	}
+	bstreamBlk.LibNum = ctx.rootBlock
+	ctx.blockBuffer <- bstreamBlk
+
 	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	ctx.activeBank = nil
 	delete(ctx.banks, blockNum)

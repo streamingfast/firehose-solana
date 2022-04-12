@@ -113,10 +113,6 @@ func (b *Block) Time() time.Time {
 	return time.Unix(int64(b.GenesisUnixTimestamp), 0)
 }
 
-func (b *Block) LIBNum() uint64 {
-	return b.RootNum
-}
-
 func (b *Block) AsRef() bstream.BlockRef {
 	return bstream.NewBlockRef(b.ID(), b.Number)
 }

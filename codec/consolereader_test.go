@@ -15,9 +15,9 @@
 package codec
 
 import (
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/streamingfast/bstream"
 	"io"
 	"io/ioutil"
 	"os"
@@ -43,35 +43,36 @@ func Test_processBatchFile(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestBlockReaderFactory(t *testing.T) {
-	sDec, _ := base64.StdEncoding.DecodeString("Gghgn2J4L5pSIBGaBio9hXZ7equ1RRSaIzFuVeHMEhHuTe79sGVz1ycYPf9mvfrD2c0Wd6zsB09acCm+SimqCQ==")
-
-	fmt.Println(string(base58.Encode(sDec)))
-}
-
 func Test_JustRun(t *testing.T) {
-	//t.Skip()
-	testPath := "testdata/117503050"
-	cleanup, testdir, err := copyTestDir(testPath, "117503050")
-	require.NoError(t, err)
-	defer func() {
-		cleanup()
-	}()
+	tests := []struct {
+		name string
+		path string
+	}{}
 
-	fmt.Println(testPath)
-	cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", testPath), testdir)
-	for {
-		_, err = cr.Read()
-		if err == io.EOF {
-			return
-		}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cleanup, testdir, err := copyTestDir(test.path, "117503050")
+			require.NoError(t, err)
+			defer func() {
+				cleanup()
+			}()
 
-		require.NoError(t, err)
+			fmt.Println(test.path)
+			cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", test.path), testdir)
+			for {
+				_, err = cr.ReadBlock()
+				if err == io.EOF {
+					return
+				}
+
+				require.NoError(t, err)
+			}
+		})
 	}
 }
 
 func Test_readFromFile(t *testing.T) {
-
+	t.Skip("test is not present")
 	testPath := "testdata/syncer_20210211"
 	cleanup, testdir, err := copyTestDir(testPath, "syncer_20210211")
 	require.NoError(t, err)
@@ -80,10 +81,12 @@ func Test_readFromFile(t *testing.T) {
 	}()
 
 	cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", testPath), testdir)
-	s, err := cr.Read()
+	out, err := cr.ReadBlock()
 	require.NoError(t, err)
 
-	block := s.(*pbcodec.Block)
+	blk, err := BlockDecoder(out)
+	require.NoError(t, err)
+	block := blk.(*pbcodec.Block)
 
 	assert.Equal(t, "JEHPnjb2tV9ELHF8hK8GMU8RgDfWG1dsKmciBrX83RCQ", base58.Encode(block.Id))
 	assert.Equal(t, uint64(0), block.Number)
@@ -91,9 +94,12 @@ func Test_readFromFile(t *testing.T) {
 	assert.Equal(t, uint32(1), block.Version)
 	assert.Equal(t, uint32(0), block.TransactionCount)
 
-	s, err = cr.Read()
+	out, err = cr.ReadBlock()
 	require.NoError(t, err)
-	block = s.(*pbcodec.Block)
+
+	blk, err = BlockDecoder(out)
+	require.NoError(t, err)
+	block = blk.(*pbcodec.Block)
 
 	assert.Equal(t, "EQPhxULMTyjDQWKrbtYm1Mb4zw4VsdK3FLZH8V1uoiLX", base58.Encode(block.Id))
 	assert.Equal(t, uint64(1), block.Number)
@@ -104,9 +110,13 @@ func Test_readFromFile(t *testing.T) {
 	assert.Equal(t, "4ieqXnsxZuieyUZnyhBfDuwqrYXt48pFaR3M2aoJfARxipSWaVe9FoLBaoLYewF3UvuvMP8bMysvqAPgHiRyBLEP", base58.Encode(transaction.Id))
 
 	for {
-		s, err = cr.Read()
+		out, err = cr.ReadBlock()
 		require.NoError(t, err)
-		block = s.(*pbcodec.Block)
+
+		blk, err = BlockDecoder(out)
+		require.NoError(t, err)
+		block = blk.(*pbcodec.Block)
+
 		if block.Number == 7 {
 			break
 		}
@@ -141,7 +151,16 @@ func Test_processBatchAggregation(t *testing.T) {
 	}
 	err := b.processBatchAggregation()
 	require.NoError(t, err)
-	assert.Equal(t, trxSlice(t, []string{"11", "aa", "cc", "bb", "dd", "ee"}), b.blk.Transactions)
+
+	expectOut := []*pbcodec.Transaction{
+		{Id: trxID(t, "11"), Index: uint64(0), BeginOrdinal: 0, EndOrdinal: 1},
+		{Id: trxID(t, "aa"), Index: uint64(1), BeginOrdinal: 1, EndOrdinal: 2},
+		{Id: trxID(t, "cc"), Index: uint64(2), BeginOrdinal: 2, EndOrdinal: 3},
+		{Id: trxID(t, "bb"), Index: uint64(3), BeginOrdinal: 3, EndOrdinal: 4},
+		{Id: trxID(t, "dd"), Index: uint64(4), BeginOrdinal: 4, EndOrdinal: 5},
+		{Id: trxID(t, "ee"), Index: uint64(5), BeginOrdinal: 5, EndOrdinal: 6},
+	}
+	assert.Equal(t, expectOut, b.blk.Transactions)
 }
 
 func MustHexDecode(s string) (out []byte) {
@@ -365,7 +384,7 @@ func Test_readBlockEnd(t *testing.T) {
 					},
 					errGroup: llerrgroup.New(10),
 				},
-				blockBuffer: make(chan *pbcodec.Block, 1),
+				blockBuffer: make(chan *bstream.Block, 1),
 				stats:       newParsingStats(55295941),
 			},
 			line:           "BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",
@@ -440,7 +459,7 @@ func Test_readBlockRoot(t *testing.T) {
 						},
 					},
 				},
-				blockBuffer: make(chan *pbcodec.Block, 100),
+				blockBuffer: make(chan *bstream.Block, 100),
 				stats:       newParsingStats(55295941),
 			},
 			line: "BANK_ROOT 55295921",
@@ -452,7 +471,6 @@ func Test_readBlockRoot(t *testing.T) {
 				GenesisUnixTimestamp: 1606487316,
 				ClockUnixTimestamp:   1606487316,
 				Version:              1,
-				RootNum:              55295921,
 				Transactions:         trxSlice(t, []string{"aa", "bb", "cc", "dd"}),
 				TransactionCount:     4,
 			},

@@ -47,7 +47,7 @@ var generateCmd = &cobra.Command{
 			zap.String("file", dmlogInputFilePath),
 		)
 
-		fmt.Printf("Writing oracle blocks to disk...")
+		fmt.Printf("Writing blocks to disk %q...", jsonFilePath)
 		if err := writeBlocks(jsonFilePath, blocks); err != nil {
 			return fmt.Errorf("failed to write blocks: %w", err)
 		}
@@ -57,7 +57,7 @@ var generateCmd = &cobra.Command{
 }
 
 var compareCmd = &cobra.Command{
-	Use:   "compare {blocks_a.json} {blocks_b.json}",
+	Use:   "compare {reference_blocks.json} {blocks_b.json}",
 	Short: "Compares 2 blocks file",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -121,22 +121,6 @@ var compareCmd = &cobra.Command{
 		fmt.Println()
 		fmt.Printf("    %s\n", command)
 		fmt.Println("")
-
-		//acceptDiff, wasAnswered := AskConfirmation(`Do you want to accept %q as the new %q right now`, blockAFilePath, blockBFilePath)
-		//if wasAnswered && acceptDiff {
-		//	copyFile(actualJSONFile, oracleJSONFile)
-		//	copyFile(actualDmlogFile, oracleDmlogFile)
-		//
-		//	fmt.Printf("The file %q (and its '.dmlog' sibling) is now the new active oracle data\n", actualJSONFile)
-		//	return nil
-		//}
-
-		//fmt.Printf("You can make actual file %q the new oracle file manually by doing:\n", actualJSONFile)
-		//fmt.Println("")
-		//fmt.Printf("    cp %s %s\n", actualJSONFile, oracleJSONFile)
-		//fmt.Println("")
-
-		//return errors.New("failed")
 		return nil
 	},
 }
@@ -160,16 +144,7 @@ func readDMLogs(filePath, batchFilesPath string) ([]*pbcodec.Block, error) {
 	var lastBlockRead *pbcodec.Block
 
 	for {
-		el, err := reader.Read()
-		if el != nil && el.(*pbcodec.Block) != nil {
-			block, ok := el.(*pbcodec.Block)
-			if !ok {
-				return nil, fmt.Errorf("Read block is not a 'pbcodec.Block' but should have been")
-			}
-			lastBlockRead = block
-			blocks = append(blocks, lastBlockRead)
-		}
-
+		el, err := reader.ReadBlock()
 		if err == io.EOF {
 			break
 		}
@@ -181,6 +156,13 @@ func readDMLogs(filePath, batchFilesPath string) ([]*pbcodec.Block, error) {
 				return nil, fmt.Errorf("unable to read block from file %q, last block read was %s", filePath, lastBlockRead.AsRef())
 			}
 		}
+
+		block, err := codec.BlockDecoder(el)
+		if err != nil {
+			return nil, fmt.Errorf("unable to to transform bstream.Block into solana pb block: %w", err)
+		}
+		lastBlockRead = block.(*pbcodec.Block)
+		blocks = append(blocks, lastBlockRead)
 	}
 
 	return blocks, nil

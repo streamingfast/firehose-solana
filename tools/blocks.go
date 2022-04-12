@@ -101,7 +101,7 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 }
 
 func readBlock(blk *bstream.Block, outputDot bool) error {
-	block := blk.ToNative().(*pbcodec.Block)
+	block := blk.ToProtocol().(*pbcodec.Block)
 	var accChangesBundle *pbcodec.AccountChangesBundle
 	if viper.GetBool("data") {
 		store, filename, err := dstore.NewStoreFromURL(block.AccountChangesFileRef,
@@ -145,7 +145,7 @@ func readBlock(blk *bstream.Block, outputDot bool) error {
 			block.Number,
 			virt,
 			block.TransactionCount,
-			block.RootNum,
+			blk.LibNum,
 			currentID,
 			previousID,
 		)
@@ -157,7 +157,7 @@ func readBlock(blk *bstream.Block, outputDot bool) error {
 
 			block.PreviousId[0:6],
 			block.Number,
-			block.RootNum,
+			blk.LibNum,
 			block.Time(),
 			len(block.Transactions),
 		)

@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"github.com/streamingfast/solana-go"
 	"math"
 	"time"
@@ -76,16 +75,11 @@ func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStore
 		)
 	}
 
-	consoleReaderBlockTransformer := func(obj interface{}) (*bstream.Block, error) {
-		blk, ok := obj.(*pbcodec.Block)
-		if !ok {
-			return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
-		}
-
-		return codec.BlockFromProto(blk)
+	consoleReaderBlockTransformer := func(obj *bstream.Block) (*bstream.Block, error) {
+		return obj, nil
 	}
 	if enablAccountChangeSplit {
-		consoleReaderBlockTransformer = func(obj interface{}) (*bstream.Block, error) {
+		consoleReaderBlockTransformer = func(obj *bstream.Block) (*bstream.Block, error) {
 			return consoleReaderBlockTransformerWithArchive(blockDataArchiver, obj)
 		}
 	}

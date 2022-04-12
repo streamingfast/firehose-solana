@@ -128,7 +128,7 @@ func inspectRangeE(cmd *cobra.Command, args []string) error {
 				continue
 			}
 
-			block := blk.ToNative().(*pbcodec.Block)
+			block := blk.ToProtocol().(*pbcodec.Block)
 
 			isVirutal := false
 			if block.Number != block.Number {
@@ -149,7 +149,7 @@ func inspectRangeE(cmd *cobra.Command, args []string) error {
 					block.Number,
 					block.TransactionCount,
 					block.Number,
-					block.RootNum,
+					blk.LibNum,
 					currentID,
 					previousID,
 				)

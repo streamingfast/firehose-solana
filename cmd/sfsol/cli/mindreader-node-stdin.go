@@ -28,7 +28,6 @@ import (
 	"github.com/streamingfast/node-manager/metrics"
 	"github.com/streamingfast/node-manager/mindreader"
 	"github.com/streamingfast/sf-solana/codec"
-	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -64,13 +63,8 @@ func init() {
 				return r, nil
 			}
 
-			consoleReaderBlockTransformer := func(obj interface{}) (*bstream.Block, error) {
-				blk, ok := obj.(*pbcodec.Block)
-				if !ok {
-					return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
-				}
-
-				return codec.BlockFromProto(blk)
+			consoleReaderBlockTransformer := func(obj *bstream.Block) (*bstream.Block, error) {
+				return obj, nil
 			}
 
 			metricID := "mindreader-node-stdin"

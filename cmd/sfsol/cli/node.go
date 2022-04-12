@@ -528,7 +528,12 @@ func setupNodeSysctl(logger *zap.Logger) error {
 	return nil
 }
 
-func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockDataArchiver, obj interface{}) (*bstream.Block, error) {
+func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockDataArchiver, blk *bstream.Block) (*bstream.Block, error) {
+	obj, err := codec.BlockDecoder(blk)
+	if err != nil {
+		return nil, fmt.Errorf("unable to decode bstream Block into Solana proto block: %w", err)
+	}
+
 	block, ok := obj.(*pbcodec.Block)
 	zlog.Debug("transforming block", zap.Uint64("slot_num", block.Number))
 	if !ok {
