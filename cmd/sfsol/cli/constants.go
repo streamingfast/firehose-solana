@@ -11,7 +11,7 @@ const (
 	OneBlockStoreURL       string = "file://{sf-data-dir}/storage/one-blocks"
 	BlockDataStoreURL      string = "file://{sf-data-dir}/storage/data-blocks"
 	SnapshotsURL           string = "file://{sf-data-dir}/storage/snapshots"
-	ATMDirectory           string = "{sf-data-dir}/atm"
+	BlocksCacheDirectory   string = "{sf-data-dir}/blocks-cache"
 	DmeshDSN               string = "local://"
 	DmeshServiceVersion    string = "v1"
 	NetworkID              string = "development"

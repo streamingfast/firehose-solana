@@ -12,13 +12,13 @@ require (
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
 	github.com/lithammer/dedent v1.1.0
 	github.com/lorenzosaino/go-sysctl v0.1.1
-	github.com/manifoldco/promptui v0.3.2
+	github.com/manifoldco/promptui v0.8.0
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mr-tron/base58 v1.2.0
-	github.com/nicksnyder/go-i18n v1.10.1 // indirect
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
 	github.com/streamingfast/bstream v0.0.2-0.20220312192323-e6b8e55c4e99
+	github.com/streamingfast/cli v0.0.4-0.20220113202443-f7bcefa38f7e
 	github.com/streamingfast/dauth v0.0.0-20210812020920-1c83ba29add1
 	github.com/streamingfast/dbin v0.0.0-20210809205249-73d5eca35dc5
 	github.com/streamingfast/derr v0.0.0-20220301163149-de09cb18fc70
@@ -45,7 +45,6 @@ require (
 	google.golang.org/api v0.70.0
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
-	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20191105091915-95d230a53780 // indirect
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
