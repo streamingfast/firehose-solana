@@ -8,12 +8,11 @@ import (
 	"github.com/streamingfast/jsonpb"
 	"github.com/streamingfast/sf-solana/codec"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
-	"github.com/stretchr/testify/assert"
+	sftools "github.com/streamingfast/sf-tools"
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 )
 
 var Cmd = &cobra.Command{Use: "battlefield", Short: "Battlefield binary"}
@@ -64,63 +63,13 @@ var compareCmd = &cobra.Command{
 		blockAFilePath := args[0]
 		blockBFilePath := args[1]
 
-		zlog.Info("comparing block files",
-			zap.String("block_a_file_path", blockAFilePath),
-			zap.String("block_b_file_path", blockBFilePath),
-		)
-		blockA, err := ioutil.ReadFile(blockAFilePath)
+		matched, err := sftools.CompareBlockFiles(blockAFilePath, blockBFilePath, zlog)
 		if err != nil {
-			return fmt.Errorf("unable to read block file %q: %w", blockAFilePath, err)
+			return fmt.Errorf("failed to compare blocks")
 		}
-
-		blockB, err := ioutil.ReadFile(blockBFilePath)
-		if err != nil {
-			return fmt.Errorf("unable to read block file %q: %w", blockBFilePath, err)
+		if !matched {
+			os.Exit(1)
 		}
-
-		var blockAJSONInterface, blockBJSONInterface interface{}
-
-		if err = json.Unmarshal(blockA, &blockAJSONInterface); err != nil {
-			return fmt.Errorf("unable to unmarshal block %q: %w", blockAFilePath, err)
-		}
-
-		if err = json.Unmarshal(blockB, &blockBJSONInterface); err != nil {
-			return fmt.Errorf("unable to unmarshal block %q: %w", blockBFilePath, err)
-		}
-
-		if assert.ObjectsAreEqualValues(blockAJSONInterface, blockBJSONInterface) {
-			fmt.Println("Files are equal, all good")
-			return nil
-		}
-
-		useBash := true
-		command := fmt.Sprintf("diff -C 5 \"%s\" \"%s\" | less", blockAFilePath, blockBFilePath)
-		if os.Getenv("DIFF_EDITOR") != "" {
-			command = fmt.Sprintf("%s \"%s\" \"%s\"", os.Getenv("DIFF_EDITOR"), blockAFilePath, blockBFilePath)
-		}
-
-		showDiff, wasAnswered := AskConfirmation(`File %q and %q differs, do you want to see the difference now`, blockAFilePath, blockBFilePath)
-		if wasAnswered && showDiff {
-			diffCmd := exec.Command(command)
-			if useBash {
-				diffCmd = exec.Command("bash", "-c", command)
-			}
-
-			diffCmd.Stdout = os.Stdout
-			diffCmd.Stderr = os.Stderr
-
-			if err := diffCmd.Run(); err != nil {
-				return fmt.Errorf("diff command failed to run properly")
-			}
-
-			fmt.Println("You can run the following command to see it manually later:")
-		} else {
-			fmt.Println("Not showing diff between files, run the following command to see it manually:")
-		}
-
-		fmt.Println()
-		fmt.Printf("    %s\n", command)
-		fmt.Println("")
 		return nil
 	},
 }
@@ -151,10 +100,11 @@ func readDMLogs(filePath, batchFilesPath string) ([]*pbcodec.Block, error) {
 
 		if err != nil {
 			if lastBlockRead == nil {
-				return nil, fmt.Errorf("unable to read first block from file %q", filePath)
+				return nil, fmt.Errorf("unable to read first block from file %q: %w", filePath, err)
 			} else {
-				return nil, fmt.Errorf("unable to read block from file %q, last block read was %s", filePath, lastBlockRead.AsRef())
+				return nil, fmt.Errorf("	unable to read block from file %q, last block read was %s: %w", filePath, lastBlockRead.AsRef(), err)
 			}
+
 		}
 
 		block, err := codec.BlockDecoder(el)

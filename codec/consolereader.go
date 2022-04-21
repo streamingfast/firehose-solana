@@ -17,13 +17,13 @@ package codec
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/streamingfast/bstream"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -163,7 +163,20 @@ func (s *parsingStats) inc(key string) {
 	s.data[k] = value
 }
 
+type version struct {
+	major   uint64
+	minor   uint64
+	patch   uint64
+	commit  string
+	feature string
+}
+
+func (v *version) version() string {
+	return fmt.Sprintf("%d.%d.%d", v.major, v.minor, v.patch)
+}
+
 type parseCtx struct {
+	v              *version
 	activeBank     *bank
 	banks          map[uint64]*bank
 	blockBuffer    chan *bstream.Block
@@ -225,10 +238,9 @@ func (r *ConsoleReader) next() (out *bstream.Block, err error) {
 func parseLine(ctx *parseCtx, line string) (err error) {
 	// Order of conditions is based (approximately) on those that will appear more often
 	switch {
-	// defines the current version of deepmind; should fail is the value is unexpected
-	//case strings.HasPrefix(line, "INIT"):
-	//	ctx.stats.inc("INIT")
-	//	err = ctx.readInit(line)
+	case strings.HasPrefix(line, "INIT"):
+		ctx.stats.inc("INIT")
+		err = ctx.readInit(line)
 
 	// this occurs at the beginning execution of a given block (bank) (this is a 'range' of slot say from 10 to 13,
 	// it can also just be one slot), this can be PARTIAL or FULL work of said block. A given block may have multiple
@@ -343,31 +355,10 @@ func (b *bank) processBatchFile(filePath string) {
 	}
 
 	b.errGroup.Go(func() error {
-		file, err := os.Open(filePath)
-		if err != nil {
-			return fmt.Errorf(": %w", err)
-		}
 
-		defer func() {
-			if err := file.Close(); err != nil {
-				zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
-			}
-			if b.opts.deleteBatchFiles {
-				if err := os.Remove(filePath); err != nil {
-					zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
-				}
-			}
-		}()
-
-		data, err := ioutil.ReadAll(file)
+		batch, err := ReadBatchFile(filePath, b.opts.deleteBatchFiles)
 		if err != nil {
-			return fmt.Errorf("read batch: read all: %w", err)
-		}
-
-		batch := &pbcodec.Batch{}
-		err = proto.Unmarshal(data, batch)
-		if err != nil {
-			return fmt.Errorf("read batch: failed pbcodec batch unmarshal blk %d, filepath %s, data length %d: %w", b.blk.Number, filePath, len(data), err)
+			return fmt.Errorf("unable to read batch file %q: %w", filePath, err)
 		}
 
 		for _, tx := range batch.Transactions {
@@ -410,25 +401,16 @@ func (b *bank) processBatchAggregation() error {
 		}
 	}
 
-	lastTotalOrdinal := uint64(0)
-	for idx, trx := range b.blk.Transactions {
-		_ = idx
-		if base58.Encode(trx.Id) == "3551ShgdtaCR4LXjPhwSZKLEN2UBAYj4sFcRjNfSWjD5g7Bu5Jga91aKWWeZaFk7iiEdvCJHbqHsUKLrsJB28MxS" {
-			cnt, _ := json.Marshal(trx)
-			fmt.Println(string(cnt))
-		}
-		lastTotalOrdinal = setTrxTotalOrdinal(lastTotalOrdinal, trx)
-		if base58.Encode(trx.Id) == "3551ShgdtaCR4LXjPhwSZKLEN2UBAYj4sFcRjNfSWjD5g7Bu5Jga91aKWWeZaFk7iiEdvCJHbqHsUKLrsJB28MxS" {
-			cnt, _ := json.Marshal(trx)
-			fmt.Println(string(cnt))
-		}
-	}
-
-	b.batchAggregator = nil
-
 	if count != len(b.transactionIDs) {
 		return fmt.Errorf("transaction ids received on BLOCK_WORK did not match the number of transactions collection from batch executions, counted %d execution, expected %d from ids", count, len(b.transactionIDs))
 	}
+
+	lastTotalOrdinal := uint64(0)
+	for _, trx := range b.blk.Transactions {
+		lastTotalOrdinal = setTrxTotalOrdinal(lastTotalOrdinal, trx)
+	}
+
+	b.batchAggregator = nil
 
 	return nil
 }
@@ -482,22 +464,34 @@ func (ctx *parseCtx) readBatchesEnd() (err error) {
 	return nil
 }
 
+var validVersion = regexp.MustCompile(`^INIT VERSION (\d+)\.?(\d+)\.?(\*|\d+)? \(src:([a-z0-9]+); feat:([a-z0-9A-Z]+)\)$`)
+
+//DMLOG INIT VERSION 1.829.23 (src:9f47ac9c; feat:378846963) DM 1
 func (ctx *parseCtx) readInit(line string) (err error) {
 	zlog.Debug("reading init", zap.String("line", line))
-	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != InitChunkSize {
-		return fmt.Errorf("expected %d fields got %d", InitChunkSize, len(chunks))
-	}
 
-	var version uint64
-	if version, err = strconv.ParseUint(chunks[2], 10, 64); err != nil {
-		return fmt.Errorf("version to int: %w", err)
+	matches := validVersion.FindStringSubmatch(line)
+	if len(matches) != 6 {
+		return fmt.Errorf("expected 6 matches ")
 	}
-
-	if version != 2 {
-		return fmt.Errorf("unsupported DMLOG version %d, expected version 2", version)
+	ctx.v = &version{
+		commit:  matches[4],
+		feature: matches[5],
 	}
-
+	if ctx.v.major, err = strconv.ParseUint(matches[1], 10, 64); err != nil {
+		return fmt.Errorf("unable to parse major %q: %w", matches[1], err)
+	}
+	if ctx.v.minor, err = strconv.ParseUint(matches[2], 10, 64); err != nil {
+		return fmt.Errorf("unable to parse minor %q: %w", matches[2], err)
+	}
+	if ctx.v.patch, err = strconv.ParseUint(matches[3], 10, 64); err != nil {
+		return fmt.Errorf("unable to parse patch %q: %w", matches[3], err)
+	}
+	zlog.Info("processing deepmind logs",
+		zap.String("verion", ctx.v.version()),
+		zap.String("feature", ctx.v.feature),
+		zap.String("commit", ctx.v.commit),
+	)
 	return nil
 }
 
@@ -661,4 +655,35 @@ func (ctx *parseCtx) readBlockFailed(line string) (err error) {
 	}
 
 	return fmt.Errorf("slot %d failed: %s", blockNum, chunks[2])
+}
+
+func ReadBatchFile(filePath string, deleteFile bool) (*pbcodec.Batch, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
+		}
+		if deleteFile {
+			if err := os.Remove(filePath); err != nil {
+				zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
+			}
+		}
+	}()
+
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read file: %w", err)
+	}
+
+	batch := &pbcodec.Batch{}
+	err = proto.Unmarshal(data, batch)
+	if err != nil {
+		return nil, fmt.Errorf("unbale to proto unmarshal batch with data length %d: %w", len(data), err)
+	}
+	return batch, nil
+
 }

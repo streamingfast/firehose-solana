@@ -163,14 +163,6 @@ func Test_processBatchAggregation(t *testing.T) {
 	assert.Equal(t, expectOut, b.blk.Transactions)
 }
 
-func MustHexDecode(s string) (out []byte) {
-	out, err := hex.DecodeString(s)
-	if err != nil {
-		panic(err)
-	}
-	return
-}
-
 func Test_readBlockWork(t *testing.T) {
 	parseCtx := &parseCtx{
 		banks: map[uint64]*bank{},
@@ -363,6 +355,43 @@ func Test_readBlockWork(t *testing.T) {
 //	}
 //}
 
+func Test_readInit(t *testing.T) {
+	tests := []struct {
+		name          string
+		line          string
+		expectError   bool
+		expectVersion *version
+	}{
+		{
+			name: "golden path",
+			line: "INIT VERSION 1.829.23 (src:9f47ac9c; feat:378846963)",
+			expectVersion: &version{
+				major:   1,
+				minor:   829,
+				patch:   23,
+				commit:  "9f47ac9c",
+				feature: "378846963",
+			},
+		},
+		{
+			name:        "golden path",
+			line:        "INIT 1.829.23 (src:9f47ac9c; feat:378846963)",
+			expectError: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := &parseCtx{}
+			err := ctx.readInit(test.line)
+			if test.expectError {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expectVersion, ctx.v)
+			}
+		})
+	}
+}
 func Test_readBlockEnd(t *testing.T) {
 	tests := []struct {
 		name           string

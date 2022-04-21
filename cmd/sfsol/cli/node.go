@@ -114,14 +114,16 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			return nil, fmt.Errorf("invalid config directory %q: %w", viper.GetString(app+"-config-dir"), err)
 		}
 
+		///sf-data/node-manager/<node workingdir>
+
 		headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(app)
 		headBlockNumber := metrics.NewHeadBlockNumber(app)
 
 		arguments := append([]string{
-			"--ledger", dataDir,
+			//"--ledger", dataDir,
 			//"--gossip-port", viper.GetString(app + "-gossip-port"),
 			//"--dynamic-port-range", fmt.Sprintf("%s-%s", viper.GetString(app+"-p2p-port-start"), viper.GetString(app+"-p2p-port-end")),
-			"--log", "-",
+			//"--log", "-",
 			//"--no-snapshot-fetch",
 			//"--no-genesis-fetch",
 		})
