@@ -38,10 +38,11 @@ var ProgramFilterFactory = &transform.Factory{
 
 			filtered[i] = publicKey[:]
 		}
-
-		return &ProgramFilter{
-			filteredProgramId: filtered,
-		}, nil
+		return nil, fmt.Errorf("unsupported")
+		//
+		//return &ProgramFilter{
+		//	filteredProgramId: filtered,
+		//}, nil
 	},
 }
 

@@ -50,7 +50,7 @@ func TestProgramFilter_Transform(t *testing.T) {
 	}
 
 	transformReg := transform.NewRegistry()
-	transformReg.Register(ProgramFilterFactory)
+	//transformReg.Register(ProgramFilterFactory)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
