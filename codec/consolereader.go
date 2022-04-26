@@ -56,7 +56,13 @@ type ConsoleReaderOption = func(reader *ConsoleReader) *ConsoleReader
 
 func IgnoreAccountChangesForProgramID(pid solana.PublicKey) ConsoleReaderOption {
 	return func(r *ConsoleReader) *ConsoleReader {
-		r.options.blacklistProgramIDs = append(r.options.blacklistProgramIDs, pid)
+		r.options.blacklistProgramIDs[pid.String()] = true
+		return r
+	}
+}
+func IgnoreAllAccountChanges() ConsoleReaderOption {
+	return func(r *ConsoleReader) *ConsoleReader {
+		r.options.ignoreAccountChanges = true
 		return r
 	}
 }
@@ -66,6 +72,26 @@ func KeepBatchFiles() ConsoleReaderOption {
 		r.options.deleteBatchFiles = false
 		return r
 	}
+}
+
+func NewConsoleReader(lines chan string, batchFilesPath string, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
+	l := &ConsoleReader{
+		lines: lines,
+		close: func() {},
+		done:  make(chan interface{}),
+		options: &options{
+			blacklistProgramIDs:  map[string]bool{},
+			ignoreAccountChanges: false,
+			deleteBatchFiles:     true,
+		},
+	}
+
+	for _, opt := range opts {
+		l = opt(l)
+	}
+
+	l.ctx = newParseCtx(batchFilesPath, l.options)
+	return l, nil
 }
 
 // ConsoleReader is what reads the `nodeos` output directly. It builds
@@ -102,25 +128,6 @@ func (r *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
 	scanner.Buffer(buf, 50*1024*1024)
 
 	return scanner
-}
-
-func NewConsoleReader(lines chan string, batchFilesPath string, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
-	l := &ConsoleReader{
-		lines: lines,
-		close: func() {},
-		done:  make(chan interface{}),
-		options: &options{
-			blacklistProgramIDs: []solana.PublicKey{},
-			deleteBatchFiles:    true,
-		},
-	}
-
-	for _, opt := range opts {
-		l = opt(l)
-	}
-
-	l.ctx = newParseCtx(batchFilesPath, l.options)
-	return l, nil
 }
 
 func (r *ConsoleReader) Done() <-chan interface{} {
@@ -315,8 +322,9 @@ const (
 )
 
 type options struct {
-	blacklistProgramIDs []solana.PublicKey
-	deleteBatchFiles    bool
+	blacklistProgramIDs  map[string]bool
+	ignoreAccountChanges bool
+	deleteBatchFiles     bool
 }
 
 type bank struct {
@@ -365,10 +373,16 @@ func (b *bank) processBatchFile(filePath string) {
 			zlog.Debug("transaction info", zap.String("program_id", base58.Encode(tx.Id)), zap.Int("instruction_count", len(tx.Instructions)))
 			for idx, i := range tx.Instructions {
 				zlog.Debug("instruction info", zap.String("program_id", base58.Encode(i.ProgramId)), zap.Int("instruction_index", idx), zap.Int("log_count", len(i.Logs)))
-				for _, pid := range b.opts.blacklistProgramIDs {
-					if bytes.Equal(i.ProgramId, pid[:]) {
-						i.AccountChanges = nil
+				removeAccountChange := false
+				if b.opts.ignoreAccountChanges {
+					removeAccountChange = true
+				} else {
+					if _, found := b.opts.blacklistProgramIDs[solana.PublicKeyFromBytes(i.ProgramId).String()]; found {
+						removeAccountChange = true
 					}
+				}
+				if removeAccountChange {
+					i.AccountChanges = nil
 				}
 			}
 		}

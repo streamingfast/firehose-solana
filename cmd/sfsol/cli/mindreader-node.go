@@ -39,11 +39,11 @@ func registerMindreaderNodeFlags(cmd *cobra.Command) error {
 	cmd.Flags().Bool("mindreader-node-merge-and-store-directly", false, "[BATCH] When enabled, do not write oneblock files, sidestep the merger and write the merged 100-blocks logs directly to --common-blocks-store-url")
 	cmd.Flags().Uint("mindreader-node-start-block-num", 0, "[BATCH] Blocks that were produced with smaller block number then the given block num are skipped")
 	cmd.Flags().Uint("mindreader-node-stop-block-num", 0, "[BATCH] Shutdown when we the following 'stop-block-num' has been reached, inclusively.")
-	cmd.Flags().Bool("mindreader-node-split-account-changes-enabled", false, "When flag enabled, a oneblock file is split into 2, one for account changes and the other for the block details")
+	cmd.Flags().Bool("mindreader-node-purge-account-data", false, "When flag enabled, the mindreader will purge the account changes from the blocks before storing it")
 	return nil
 }
 
-func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStoreURL string, blockDataStoreURL string, mergedBlockStoreURL string, mergeAndStoreDirectly bool, mergeThresholdBlockAge time.Duration, workingDir string, blockDataWorkingDir string, batchStartBlockNum uint64, batchStopBlockNum uint64, blocksChanCapacity int, failOnNonContiguousBlock bool, waitTimeForUploadOnShutdown time.Duration, oneBlockFileSuffix string, operatorShutdownFunc func(error), metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager, tracker *bstream.Tracker, appLogger *zap.Logger, enablAccountChangeSplit bool) (*mindreader.MindReaderPlugin, error) {
+func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStoreURL string, blockDataStoreURL string, mergedBlockStoreURL string, mergeAndStoreDirectly bool, mergeThresholdBlockAge time.Duration, workingDir string, blockDataWorkingDir string, batchStartBlockNum uint64, batchStopBlockNum uint64, blocksChanCapacity int, failOnNonContiguousBlock bool, waitTimeForUploadOnShutdown time.Duration, oneBlockFileSuffix string, operatorShutdownFunc func(error), metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager, tracker *bstream.Tracker, appLogger *zap.Logger, purgeAccountChanges bool) (*mindreader.MindReaderPlugin, error) {
 
 	// blockmetaAddr := viper.GetString("common-blockmeta-addr")
 	tracker.AddGetter(bstream.NetworkLIBTarget, func(ctx context.Context) (bstream.BlockRef, error) {
@@ -75,14 +75,14 @@ func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStore
 		)
 	}
 
-	consoleReaderBlockTransformer := func(obj *bstream.Block) (*bstream.Block, error) {
-		return obj, nil
-	}
-	if enablAccountChangeSplit {
-		consoleReaderBlockTransformer = func(obj *bstream.Block) (*bstream.Block, error) {
-			return consoleReaderBlockTransformerWithArchive(blockDataArchiver, obj)
-		}
-	}
+	//consoleReaderBlockTransformer := func(obj *bstream.Block) (*bstream.Block, error) {
+	//	return obj, nil
+	//}
+	//if enablAccountChangeSplit {
+	//	consoleReaderBlockTransformer = func(obj *bstream.Block) (*bstream.Block, error) {
+	//		return consoleReaderBlockTransformerWithArchive(blockDataArchiver, obj)
+	//	}
+	//}
 
 	return mindreader.NewMindReaderPlugin(
 		oneBlockStoreURL,
@@ -91,7 +91,6 @@ func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStore
 		mergeThresholdBlockAge,
 		workingDir,
 		consoleReaderFactory,
-		consoleReaderBlockTransformer,
 		tracker,
 		batchStartBlockNum,
 		batchStopBlockNum,

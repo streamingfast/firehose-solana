@@ -63,10 +63,6 @@ func init() {
 				return r, nil
 			}
 
-			consoleReaderBlockTransformer := func(obj *bstream.Block) (*bstream.Block, error) {
-				return obj, nil
-			}
-
 			metricID := "mindreader-node-stdin"
 			headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(metricID)
 			headBlockNumber := metrics.NewHeadBlockNumber(metricID)
@@ -92,7 +88,6 @@ func init() {
 				DebugDeepMind:                viper.GetBool("mindreader-node-debug-deep-mind"),
 			}, &nodeMindreaderStdinApp.Modules{
 				ConsoleReaderFactory:       consoleReaderFactory,
-				ConsoleReaderTransformer:   consoleReaderBlockTransformer,
 				MetricsAndReadinessManager: metricsAndReadinessManager,
 				Tracker:                    tracker,
 			}, appLogger), nil
