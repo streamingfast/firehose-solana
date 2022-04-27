@@ -728,6 +728,8 @@ github.com/streamingfast/dgrpc v0.0.0-20210901144702-c57c3701768b/go.mod h1:8TuR
 github.com/streamingfast/dgrpc v0.0.0-20211210152421-f8cec68e0383/go.mod h1:zPc2YhRXQQj8pvtTjeWOkDt4nfbzejZDupP7FZTByMg=
 github.com/streamingfast/dgrpc v0.0.0-20220301153539-536adf71b594 h1:/TrU0xalSNFsX6mZVRBqyCAMrNtVPgF4jy8ymfHn0mY=
 github.com/streamingfast/dgrpc v0.0.0-20220301153539-536adf71b594/go.mod h1:HFjyAk8wkkb92dLBq1lxArfaWvDHb9Y53+fg7O5WTiU=
+github.com/streamingfast/dhammer v0.0.0-20220301172711-8ed5599dbab1 h1:aGIe8dENSOj1tcWfjyL7PS0g/LYalrkRWjAr/uO6WYI=
+github.com/streamingfast/dhammer v0.0.0-20220301172711-8ed5599dbab1/go.mod h1:mYYgb16eA6NAaLrsbOYxIiuTDnuYQWAaYUccSE+E0yk=
 github.com/streamingfast/dipp v1.0.1-0.20210811200841-d2cca4e058e6 h1:8j9KSl3X+G4ABwbCR221rErFFoPKJhMq4lUICJtbRE0=
 github.com/streamingfast/dipp v1.0.1-0.20210811200841-d2cca4e058e6/go.mod h1:9ihwWT1EcYrcjohKEWD415EgDgVAbgWKrcERDoVhkGk=
 github.com/streamingfast/dlauncher v0.0.0-20211210162313-cf4aa5fc4878 h1:6uG3PWOo/tTYGOVMuN4r+YOeABcIRv5TnTOQ9U0lHEc=
@@ -765,6 +767,8 @@ github.com/streamingfast/merger v0.0.3-0.20220412144000-3ad818763ec5 h1:CdgNjnCq
 github.com/streamingfast/merger v0.0.3-0.20220412144000-3ad818763ec5/go.mod h1:S8+TtO6v8tm3MI3pTI6w3vIlHk8SnlnWGGfR7VYvWaI=
 github.com/streamingfast/merger v0.0.3-0.20220413123550-ce6dd50e2ac0 h1:jU0YME4VL3enP0RuFnTEpoZbmeduVn8tbOENHmGZw/U=
 github.com/streamingfast/merger v0.0.3-0.20220413123550-ce6dd50e2ac0/go.mod h1:S8+TtO6v8tm3MI3pTI6w3vIlHk8SnlnWGGfR7VYvWaI=
+github.com/streamingfast/merger v0.0.3-0.20220427133815-fb04cd671db1 h1:Pyw5q5mRvelCY/KTK7sS20v5czRJm2Adp4+926hPMmM=
+github.com/streamingfast/merger v0.0.3-0.20220427133815-fb04cd671db1/go.mod h1:hmSlm5RBySzsk0Xjv/UpB74bHwKUK+x8GjGMnBX3NUg=
 github.com/streamingfast/node-manager v0.0.2-0.20220412154458-7cacfb2b8560 h1:rjyj3JK2PV27fkhQY00yVcaN70vzjAzJ75LIVpzMLTU=
 github.com/streamingfast/node-manager v0.0.2-0.20220412154458-7cacfb2b8560/go.mod h1:EZULV3bL4jP6dymx99P2qBPJF46X5+lAPTFIwU9QkoA=
 github.com/streamingfast/node-manager v0.0.2-0.20220422154052-6a6439016eaf h1:SqQ4hN07LEX7h0xMRZ3lyK/6iJvdyg6b+txsZoD7fzM=
@@ -882,6 +886,7 @@ go.uber.org/zap v1.10.0/go.mod h1:vwi/ZaCAaUcBkycHslxD9B2zi4UTXhF60s6SWpuDF0Q=
 go.uber.org/zap v1.12.0/go.mod h1:zwrFLgMcdUuIBviXEYEH1YKNaOBnKXsx2IPda5bBwHM=
 go.uber.org/zap v1.14.0/go.mod h1:zwrFLgMcdUuIBviXEYEH1YKNaOBnKXsx2IPda5bBwHM=
 go.uber.org/zap v1.14.1/go.mod h1:Mb2vm2krFEG5DV0W9qcHBYFtp/Wku1cvYaqPsS/WYfc=
+go.uber.org/zap v1.15.0/go.mod h1:Mb2vm2krFEG5DV0W9qcHBYFtp/Wku1cvYaqPsS/WYfc=
 go.uber.org/zap v1.16.0/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
 go.uber.org/zap v1.17.0/go.mod h1:MXVU+bhUf/A7Xi2HNOnopQOrmycQ5Ih87HtOu4q5SSo=
 go.uber.org/zap v1.19.1/go.mod h1:j3DNczoxDZroyBnOT1L/Q79cfUMGZxlv/9dzN7SM1rI=
