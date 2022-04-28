@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/streamingfast/dstore"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
@@ -14,6 +16,7 @@ import (
 	"github.com/streamingfast/dmetrics"
 	firehoseApp "github.com/streamingfast/firehose/app/firehose"
 	"github.com/streamingfast/logging"
+	substreamsService "github.com/streamingfast/substreams/service"
 	"go.uber.org/zap"
 )
 
@@ -35,6 +38,10 @@ func init() {
 			cmd.Flags().String("firehose-grpc-listen-addr", FirehoseGRPCServingAddr, "Address on which the firehose will listen")
 			cmd.Flags().StringSlice("firehose-blocks-store-urls", nil, "If non-empty, overrides common-blocks-store-url with a list of blocks stores")
 			cmd.Flags().Duration("firehose-real-time-tolerance", 1*time.Minute, "firehose will became alive if now - block time is smaller then tolerance")
+			cmd.Flags().Bool("substreams-enabled", false, "Whether to enable substreams")
+			cmd.Flags().Bool("substreams-partial-mode-enabled", false, "Whether to enable partial stores generation support on this instance (usually for internal deployments only)")
+			cmd.Flags().String("substreams-state-store-url", "./localdata", "where substreams state data are stored")
+			cmd.Flags().Uint64("substreams-stores-save-interval", uint64(10000), "Interval in blocks at which to save store snapshots")
 			return nil
 		},
 
@@ -76,7 +83,30 @@ func init() {
 			if shutdownSignalDelay.Seconds() > 5 {
 				grcpShutdownGracePeriod = shutdownSignalDelay - (5 * time.Second)
 			}
-			
+
+			var registerServiceExt firehoseApp.RegisterServiceExtensionFunc
+			if viper.GetBool("substreams-enabled") {
+				stateStore, err := dstore.NewStore(viper.GetString("substreams-state-store-url"), "", "", false)
+				if err != nil {
+					return nil, fmt.Errorf("setting up state store for data: %w", err)
+				}
+
+				opts := []substreamsService.Option{
+					substreamsService.WithStoresSaveInterval(viper.GetUint64("substreams-stores-save-interval")),
+				}
+
+				if viper.GetBool("substreams-partial-mode-enabled") {
+					opts = append(opts, substreamsService.WithPartialMode())
+				}
+				sss := substreamsService.New(
+					stateStore,
+					"sf.solana.type.v1.Block",
+					opts...,
+				)
+
+				registerServiceExt = sss.Register
+			}
+
 			return firehoseApp.New(appLogger, &firehoseApp.Config{
 				BlockStoreURLs:          firehoseBlocksStoreURLs,
 				BlockStreamAddr:         blockstreamAddr,
@@ -84,15 +114,12 @@ func init() {
 				GRPCShutdownGracePeriod: grcpShutdownGracePeriod,
 				RealtimeTolerance:       viper.GetDuration("firehose-real-time-tolerance"),
 			}, &firehoseApp.Modules{
-				Authenticator:         authenticator,
-				HeadTimeDriftMetric:   headTimeDriftmetric,
-				HeadBlockNumberMetric: headBlockNumMetric,
-				Tracker:               tracker,
+				Authenticator:            authenticator,
+				HeadTimeDriftMetric:      headTimeDriftmetric,
+				HeadBlockNumberMetric:    headBlockNumMetric,
+				Tracker:                  tracker,
+				RegisterServiceExtension: registerServiceExt,
 			}), nil
 		},
 	})
-}
-
-func passthroughPreprocessBlock(blk *bstream.Block) (interface{}, error) {
-	return nil, nil
 }
