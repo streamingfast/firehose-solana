@@ -1,11 +1,9 @@
 package tools
 
 import (
-	"context"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -13,7 +11,6 @@ import (
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
-	"google.golang.org/protobuf/proto"
 )
 
 var printCmd = &cobra.Command{
@@ -36,7 +33,7 @@ func init() {
 	printCmd.PersistentFlags().Uint64("transactions-for-block", 0, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
-	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v3", "block store")
+	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1", "block store")
 }
 
 func printOneBlockE(cmd *cobra.Command, args []string) error {
@@ -102,32 +99,9 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 
 func readBlock(blk *bstream.Block, outputDot bool) error {
 	block := blk.ToProtocol().(*pbcodec.Block)
-	var accChangesBundle *pbcodec.AccountChangesBundle
-	if viper.GetBool("data") {
-		store, filename, err := dstore.NewStoreFromURL(block.AccountChangesFileRef,
-			dstore.Compression("zstd"),
-		)
-		if err != nil {
-			return fmt.Errorf("unable to create block data store from url: %s: %w", filename, err)
-		}
-
-		reader, err := store.OpenObject(context.Background(), filename)
-		if err != nil {
-			return fmt.Errorf("unable to open block data: %s : %w", filename, err)
-		}
-		defer reader.Close()
-
-		data, err := ioutil.ReadAll(reader)
-		if err != nil {
-			return fmt.Errorf("unable to read all: %s : %w", filename, err)
-		}
-
-		accChangesBundle = &pbcodec.AccountChangesBundle{}
-		err = proto.Unmarshal(data, accChangesBundle)
-		if err != nil {
-			return fmt.Errorf("unable to proto unmarshal account changed: %s : %w", filename, err)
-		}
-	}
+	blockId := block.ID()
+	blockPreviousId := block.PreviousID()
+	hasAccountData := hasAccountData(block)
 
 	if outputDot {
 		var virt string
@@ -140,8 +114,8 @@ func readBlock(blk *bstream.Block, outputDot bool) error {
 		fmt.Printf(
 			"  S%s [label=\"%s..%s\\n#%d%s t=%d lib=%d\"];\n  S%s -> S%s;\n",
 			currentID,
-			block.Id[:8],
-			block.Id[len(block.Id)-8:],
+			blockId[:8],
+			blockId[len(blockId)-8:],
 			block.Number,
 			virt,
 			block.TransactionCount,
@@ -151,21 +125,22 @@ func readBlock(blk *bstream.Block, outputDot bool) error {
 		)
 
 	} else {
-		fmt.Printf("Slot #%d (%s) (prev: %s...) (blk: %d) (LIB: %d)  (@: %s): %d transactions\n",
+		fmt.Printf("Slot #%d (%s) (prev: %s...) (blk: %d) (LIB: %d)  (@: %s): %d transactions, has account data : %t\n",
 			block.Num(),
-			block.ID(),
-
-			block.PreviousId[0:6],
+			blockId,
+			blockPreviousId[0:6],
 			block.Number,
 			blk.LibNum,
 			block.Time(),
 			len(block.Transactions),
+			hasAccountData,
 		)
 	}
 
 	if viper.GetBool("transactions") || viper.GetUint64("transactions-for-block") == block.Number {
 		totalInstr := 0
 		fmt.Println("- Transactions: ")
+
 		for trxIdx, t := range block.Transactions {
 			trxStr := fmt.Sprintf("    * ")
 			if t.Failed {
@@ -173,31 +148,16 @@ func readBlock(blk *bstream.Block, outputDot bool) error {
 			} else {
 				trxStr = fmt.Sprintf("%s ✅", trxStr)
 			}
-			trxStr = fmt.Sprintf("%s Trx [%d] %s: %d instructions", trxStr, trxIdx, t.Id, len(t.Instructions))
-			if accChangesBundle != nil {
-				if trxIdx < len(accChangesBundle.Transactions) {
-					trxStr = fmt.Sprintf("%s ✅ acc change", trxStr)
-				} else {
-					trxStr = fmt.Sprintf("%s ❌ invalid account change index mismatch (%d,%d)", trxStr, trxIdx, len(accChangesBundle.Transactions))
-				}
-			}
-			trxStr = fmt.Sprintf("%s ", trxStr)
-			fmt.Println(trxStr)
+
+			fmt.Println(fmt.Sprintf("%s Trx [%d] %s: %d instructions ", trxStr, trxIdx, t.Id, len(t.Instructions)))
 			accs, _ := t.AccountMetaList()
 			for _, acc := range accs {
 				fmt.Println("account: ", acc)
 			}
 			totalInstr += len(t.Instructions)
 			if viper.GetBool("instructions") {
-				for instrx, inst := range t.Instructions {
+				for _, inst := range t.Instructions {
 					instStr := fmt.Sprintf("      * Inst [%d]: program_id %s", inst.Index, inst.ProgramId)
-					if accChangesBundle != nil {
-						if instrx < len(accChangesBundle.Transactions[trxIdx].Instructions) {
-							instStr = fmt.Sprintf("%s ✅ account change", trxStr)
-						} else {
-							instStr = fmt.Sprintf("%s ❌ invalid account change index mismatch (%d,%d)", trxStr, instrx, len(accChangesBundle.Transactions[trxIdx].Instructions))
-						}
-					}
 					instStr = fmt.Sprintf("%s ", instStr)
 					fmt.Println(instStr)
 					fmt.Println(hex.EncodeToString(inst.Data))
@@ -209,4 +169,16 @@ func readBlock(blk *bstream.Block, outputDot bool) error {
 		fmt.Println()
 	}
 	return nil
+}
+
+func hasAccountData(block *pbcodec.Block) bool {
+	for _, t := range block.Transactions {
+		for _, inst := range t.Instructions {
+			if len(inst.AccountChanges) > 0 {
+				return true
+			}
+
+		}
+	}
+	return false
 }

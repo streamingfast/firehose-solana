@@ -808,6 +808,8 @@ github.com/streamingfast/shutter v1.5.0 h1:NpzDYzj0HVpSiDJVO/FFSL6QIK/YKOxY0gJAt
 github.com/streamingfast/shutter v1.5.0/go.mod h1:B/T6efqdeMGbGwjzPS1ToXzYZI4kDzI5/u4I+7qbjY8=
 github.com/streamingfast/solana-go v0.5.1-0.20220214195023-eec1e20a751b h1:B0UI+drLHN+iTntBTdsgQnwpAi9iEeZuzdP42dwg5tY=
 github.com/streamingfast/solana-go v0.5.1-0.20220214195023-eec1e20a751b/go.mod h1:r1qfCuHvdzhx4rbugULnhrtccF5wG6u6aB+ze5FxZVI=
+github.com/streamingfast/solana-go v0.5.1-0.20220429121906-4ddadc72342d h1:Hs1VPRjFB+/KcYGNdXozziCs3/vCvHmRckrdqeiSlBc=
+github.com/streamingfast/solana-go v0.5.1-0.20220429121906-4ddadc72342d/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
 github.com/streamingfast/substreams v0.0.5-beta h1:ADJvu/9+LxPCPXWV5g7IgVrZz74iKLAQLpRFcflmFs8=
 github.com/streamingfast/substreams v0.0.5-beta/go.mod h1:crAY0bavR3/w/+8Eb9zmLzJaVp6sD7OD5v4mDeTAJM4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

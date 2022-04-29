@@ -15,7 +15,6 @@
 package nodemanager
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -114,7 +113,8 @@ func (s *Superviser) ServerID() (string, error) {
 }
 
 func (s *Superviser) LastSeenBlockNum() uint64 {
-	r, err := s.client.GetSlot(context.Background(), rpc.CommitmentRecent)
+	com := rpc.CommitmentRecent
+	r, err := s.client.GetSlot(&com)
 	if err != nil {
 		s.logger.Error("Failed to get last seen slot from rpc client. returning 0", zap.Error(err))
 	}

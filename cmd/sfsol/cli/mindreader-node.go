@@ -3,9 +3,10 @@ package cli
 import (
 	"context"
 	"fmt"
-	"github.com/streamingfast/solana-go"
 	"math"
 	"time"
+
+	"github.com/streamingfast/solana-go"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -45,12 +46,10 @@ func registerMindreaderNodeFlags(cmd *cobra.Command) error {
 
 func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStoreURL string, blockDataStoreURL string, mergedBlockStoreURL string, mergeAndStoreDirectly bool, mergeThresholdBlockAge time.Duration, workingDir string, blockDataWorkingDir string, batchStartBlockNum uint64, batchStopBlockNum uint64, blocksChanCapacity int, failOnNonContiguousBlock bool, waitTimeForUploadOnShutdown time.Duration, oneBlockFileSuffix string, operatorShutdownFunc func(error), metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager, tracker *bstream.Tracker, appLogger *zap.Logger, purgeAccountChanges bool) (*mindreader.MindReaderPlugin, error) {
 
-	// blockmetaAddr := viper.GetString("common-blockmeta-addr")
 	tracker.AddGetter(bstream.NetworkLIBTarget, func(ctx context.Context) (bstream.BlockRef, error) {
 		// FIXME: Need to re-enable the tracker through blockmeta later on (see commented code below), might need to tweak some stuff to make mindreader work...
 		return bstream.BlockRefEmpty, nil
 	})
-	// tracker.AddGetter(bstream.NetworkLIBTarget, bstream.NetworkLIBBlockRefGetter(blockmetaAddr))
 
 	blockDataStore, err := dstore.NewDBinStore(blockDataStoreURL)
 	if err != nil {
@@ -68,21 +67,16 @@ func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStore
 	go blockDataArchiver.Start()
 
 	consoleReaderFactory := func(lines chan string) (mindreader.ConsolerReader, error) {
-		return codec.NewConsoleReader(
-			lines,
-			viper.GetString("mindreader-node-deepmind-batch-files-path"),
+		opts := []codec.ConsoleReaderOption{
 			codec.IgnoreAccountChangesForProgramID(solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111")),
-		)
-	}
+		}
+		if purgeAccountChanges {
+			opts = append(opts, codec.IgnoreAllAccountChanges())
+		}
+		codec.IgnoreAllAccountChanges()
 
-	//consoleReaderBlockTransformer := func(obj *bstream.Block) (*bstream.Block, error) {
-	//	return obj, nil
-	//}
-	//if enablAccountChangeSplit {
-	//	consoleReaderBlockTransformer = func(obj *bstream.Block) (*bstream.Block, error) {
-	//		return consoleReaderBlockTransformerWithArchive(blockDataArchiver, obj)
-	//	}
-	//}
+		return codec.NewConsoleReader(lines, viper.GetString("mindreader-node-deepmind-batch-files-path"), opts...)
+	}
 
 	return mindreader.NewMindReaderPlugin(
 		oneBlockStoreURL,
