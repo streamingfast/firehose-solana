@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+
 	"github.com/abourget/llerrgroup"
 	"github.com/golang/protobuf/proto"
 	"github.com/streamingfast/bstream"
@@ -57,7 +59,7 @@ func NewBlockDataArchiver(
 	}
 }
 
-func (s *BlockDataArchiver) StoreBlockData(bundle *pbcodec.AccountChangesBundle, fileName string) error {
+func (s *BlockDataArchiver) StoreBlockData(bundle *pbsol.AccountChangesBundle, fileName string) error {
 
 	// Store the actual file using multiple folders instead of a single one.
 	// We assume 10 digits block number at start of file name. We take the first 7

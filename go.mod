@@ -37,12 +37,13 @@ require (
 	github.com/streamingfast/node-manager v0.0.2-0.20220422154052-6a6439016eaf
 	github.com/streamingfast/pbgo v0.0.6-0.20220428192744-f80aee7d4688
 	github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde
-	github.com/streamingfast/sf-solana/types v0.0.0-00010101000000-000000000000
+	github.com/streamingfast/sf-solana/types v0.0.0-20220502224820-e3da3adb4220
 	github.com/streamingfast/sf-tools v0.0.0-20220413151949-d66905428220
 	github.com/streamingfast/shutter v1.5.0
-	github.com/streamingfast/solana-go v0.5.1
+	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
 	github.com/streamingfast/substreams v0.0.5-beta
 	github.com/stretchr/testify v1.7.1-0.20210427113832-6241f9ab9942
+	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
