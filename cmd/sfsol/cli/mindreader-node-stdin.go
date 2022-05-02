@@ -16,6 +16,8 @@ package cli
 
 import (
 	"fmt"
+
+	"github.com/streamingfast/sf-solana/node-manager/codec"
 	"github.com/streamingfast/solana-go"
 
 	"github.com/spf13/cobra"
@@ -27,7 +29,6 @@ import (
 	nodeMindreaderStdinApp "github.com/streamingfast/node-manager/app/node_mindreader_stdin"
 	"github.com/streamingfast/node-manager/metrics"
 	"github.com/streamingfast/node-manager/mindreader"
-	"github.com/streamingfast/sf-solana/codec"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

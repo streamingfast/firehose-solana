@@ -6,11 +6,12 @@ import (
 	"io"
 	"strconv"
 
+	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
-	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 )
 
 var printCmd = &cobra.Command{
@@ -97,7 +98,7 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 }
 
 func readBlock(blk *bstream.Block, outputDot bool) error {
-	block := blk.ToProtocol().(*pbcodec.Block)
+	block := blk.ToProtocol().(*pbsol.Block)
 	blockId := block.ID()
 	blockPreviousId := block.PreviousID()
 	hasAccountData := hasAccountData(block)
@@ -170,7 +171,7 @@ func readBlock(blk *bstream.Block, outputDot bool) error {
 	return nil
 }
 
-func hasAccountData(block *pbcodec.Block) bool {
+func hasAccountData(block *pbsol.Block) bool {
 	for _, t := range block.Transactions {
 		for _, inst := range t.Instructions {
 			if len(inst.AccountChanges) > 0 {

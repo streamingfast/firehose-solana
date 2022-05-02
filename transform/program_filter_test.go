@@ -3,9 +3,10 @@ package transform
 import (
 	"testing"
 
+	pbtransforms "github.com/streamingfast/sf-solana/types/pb/sf/solana/transforms/v1"
+	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+
 	"github.com/streamingfast/bstream/transform"
-	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
-	pbtransforms "github.com/streamingfast/sf-solana/pb/sf/solana/transforms/v1"
 	"github.com/streamingfast/solana-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -67,7 +68,7 @@ func TestProgramFilter_Transform(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				pbcodecBlock := output.(*pbcodec.Block)
+				pbcodecBlock := output.(*pbsol.Block)
 				assert.Equal(t, test.expectTrxLenght, len(pbcodecBlock.Transactions))
 			}
 		})

@@ -4,15 +4,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/streamingfast/jsonpb"
-	"github.com/streamingfast/sf-solana/codec"
-	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
-	sftools "github.com/streamingfast/sf-tools"
-	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
 	"os"
+
+	codec2 "github.com/streamingfast/sf-solana/node-manager/codec"
+
+	"github.com/spf13/cobra"
+	"github.com/streamingfast/jsonpb"
+	"github.com/streamingfast/sf-solana/types"
+	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	sftools "github.com/streamingfast/sf-tools"
+	"go.uber.org/zap"
 )
 
 var Cmd = &cobra.Command{Use: "battlefield", Short: "Battlefield binary"}
@@ -74,8 +77,8 @@ var compareCmd = &cobra.Command{
 	},
 }
 
-func readDMLogs(filePath, batchFilesPath string) ([]*pbcodec.Block, error) {
-	blocks := []*pbcodec.Block{}
+func readDMLogs(filePath, batchFilesPath string) ([]*pbsol.Block, error) {
+	blocks := []*pbsol.Block{}
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -83,14 +86,14 @@ func readDMLogs(filePath, batchFilesPath string) ([]*pbcodec.Block, error) {
 	}
 	defer file.Close()
 
-	reader, err := codec.NewConsoleReader(make(chan string, 10000), batchFilesPath, codec.KeepBatchFiles())
+	reader, err := codec2.NewConsoleReader(make(chan string, 10000), batchFilesPath, codec2.KeepBatchFiles())
 	if err != nil {
 		return nil, fmt.Errorf("unable to create console reader: %w", err)
 	}
 	defer reader.Close()
 
 	go reader.ProcessData(file)
-	var lastBlockRead *pbcodec.Block
+	var lastBlockRead *pbsol.Block
 
 	for {
 		el, err := reader.ReadBlock()
@@ -107,18 +110,18 @@ func readDMLogs(filePath, batchFilesPath string) ([]*pbcodec.Block, error) {
 
 		}
 
-		block, err := codec.BlockDecoder(el)
+		block, err := types.BlockDecoder(el)
 		if err != nil {
 			return nil, fmt.Errorf("unable to to transform bstream.Block into solana pb block: %w", err)
 		}
-		lastBlockRead = block.(*pbcodec.Block)
+		lastBlockRead = block.(*pbsol.Block)
 		blocks = append(blocks, lastBlockRead)
 	}
 
 	return blocks, nil
 }
 
-func writeBlocks(outputFilePath string, blocks []*pbcodec.Block) error {
+func writeBlocks(outputFilePath string, blocks []*pbsol.Block) error {
 	buffer := bytes.NewBuffer(nil)
 	if _, err := buffer.WriteString("[\n"); err != nil {
 		return fmt.Errorf("unable to write list start: %w", err)

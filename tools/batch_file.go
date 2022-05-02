@@ -3,10 +3,11 @@ package tools
 import (
 	"encoding/hex"
 	"fmt"
+
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/streamingfast/sf-solana/codec"
+	"github.com/streamingfast/sf-solana/node-manager/codec"
 	"go.uber.org/zap"
 )
 

@@ -9,13 +9,14 @@ import (
 	"strconv"
 	"strings"
 
+	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	"github.com/streamingfast/jsonpb"
-	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
 	"go.uber.org/zap"
 )
 
@@ -347,7 +348,7 @@ func validateBlockSegment(
 			seenBlockCount++
 
 			if printIndividualSegmentStats {
-				block := block.ToNative().(*pbcodec.Block)
+				block := block.ToProtocol().(*pbsol.Block)
 
 				fmt.Printf("Block #%d (%s) (prev: %s) : %d transactions\n",
 					block.Num(),
@@ -358,7 +359,7 @@ func validateBlockSegment(
 			}
 
 			if printFullBlock {
-				eosBlock := block.ToNative().(*pbcodec.Block)
+				eosBlock := block.ToNative().(*pbsol.Block)
 
 				fmt.Printf(jsonpb.MarshalIndentToString(eosBlock, "  "))
 			}

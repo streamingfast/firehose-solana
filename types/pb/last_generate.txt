@@ -1,0 +1,3 @@
+generate.sh - Mon  2 May 2022 18:15:46 EDT - julien
+streamingfast/proto revision: 
+streamingfast/proto-solana revision: 

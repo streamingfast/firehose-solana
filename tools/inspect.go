@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/mr-tron/base58"
-	pbcodec "github.com/streamingfast/sf-solana/pb/sf/solana/codec/v1"
+	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 
+	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
@@ -127,7 +127,7 @@ func inspectRangeE(cmd *cobra.Command, args []string) error {
 				continue
 			}
 
-			block := blk.ToProtocol().(*pbcodec.Block)
+			block := blk.ToProtocol().(*pbsol.Block)
 
 			isVirutal := false
 			if block.Number != block.Number {

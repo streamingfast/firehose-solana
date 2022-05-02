@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package sf.solana.transforms.v1;
+option go_package = "github.com/streamingfast/sf-solana/pb/sf/solana/transforms/v1;pbtransforms";
+
+
+message ProgramFilter {
+  repeated string program_ids = 1; //base58 representation
+}

@@ -6,6 +6,8 @@ import (
 	"math"
 	"time"
 
+	"github.com/streamingfast/sf-solana/node-manager/codec"
+
 	"github.com/streamingfast/solana-go"
 
 	"github.com/spf13/cobra"
@@ -15,7 +17,6 @@ import (
 	"github.com/streamingfast/dstore"
 	nodeManager "github.com/streamingfast/node-manager"
 	"github.com/streamingfast/node-manager/mindreader"
-	"github.com/streamingfast/sf-solana/codec"
 	nodeManagerSol "github.com/streamingfast/sf-solana/node-manager"
 	"go.uber.org/zap"
 )
