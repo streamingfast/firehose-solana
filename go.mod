@@ -3,6 +3,7 @@ module github.com/streamingfast/sf-solana
 go 1.15
 
 require (
+	cloud.google.com/go/bigtable v1.13.0
 	cloud.google.com/go/storage v1.21.0
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
@@ -10,6 +11,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.5.2
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
+	github.com/klauspost/compress v1.15.2
 	github.com/lithammer/dedent v1.1.0
 	github.com/lorenzosaino/go-sysctl v0.1.1
 	github.com/manifoldco/promptui v0.8.0

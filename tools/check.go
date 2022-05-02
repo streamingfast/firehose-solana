@@ -21,7 +21,10 @@ import (
 
 var errStopWalk = errors.New("stop walk")
 
-var checkCmd = &cobra.Command{Use: "check", Short: "Various checks for deployment, data integrity & debugging"}
+var checkCmd = &cobra.Command{
+	Use:   "check",
+	Short: "Various checks for deployment, data integrity & debugging",
+}
 
 var checkMergedBlocksCmd = &cobra.Command{
 	// TODO: Not sure, it's now a required thing, but we could probably use the same logic as `start`

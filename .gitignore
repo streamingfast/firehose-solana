@@ -16,3 +16,5 @@ venv
 *.tfvars
 .terraform/
 *.auto.pkrvars.hcl
+/apc.json
+*~

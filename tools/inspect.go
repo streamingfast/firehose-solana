@@ -45,7 +45,6 @@ var inspectBlocksGraphCmd = &cobra.Command{
 func init() {
 	Cmd.AddCommand(inspectCmd)
 	inspectCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v5", "block store")
-
 	inspectCmd.PersistentFlags().Uint64("transactions-for-block", 0, "Include transaction IDs in output")
 	inspectCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	inspectCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")

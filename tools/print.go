@@ -27,7 +27,6 @@ var blockCmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(printCmd)
-
 	printCmd.AddCommand(blockCmd)
 
 	printCmd.PersistentFlags().Uint64("transactions-for-block", 0, "Include transaction IDs in output")
