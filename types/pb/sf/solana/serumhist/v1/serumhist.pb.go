@@ -8,9 +8,9 @@ package pbserumhist
 
 import (
 	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -552,12 +552,12 @@ type InstructionRef struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	BlockNum  uint64                 `protobuf:"varint,1,opt,name=block_num,json=blockNum,proto3" json:"block_num,omitempty"`
-	TrxId     []byte                 `protobuf:"bytes,2,opt,name=trx_id,json=trxId,proto3" json:"trx_id,omitempty"`
-	TrxIdx    uint32                 `protobuf:"varint,3,opt,name=trx_idx,json=trxIdx,proto3" json:"trx_idx,omitempty"`
-	InstIdx   uint32                 `protobuf:"varint,4,opt,name=inst_idx,json=instIdx,proto3" json:"inst_idx,omitempty"`
-	BlockId   []byte                 `protobuf:"bytes,5,opt,name=block_id,json=blockId,proto3" json:"block_id,omitempty"`
-	Timestamp *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	BlockNum  uint64               `protobuf:"varint,1,opt,name=block_num,json=blockNum,proto3" json:"block_num,omitempty"`
+	TrxId     []byte               `protobuf:"bytes,2,opt,name=trx_id,json=trxId,proto3" json:"trx_id,omitempty"`
+	TrxIdx    uint32               `protobuf:"varint,3,opt,name=trx_idx,json=trxIdx,proto3" json:"trx_idx,omitempty"`
+	InstIdx   uint32               `protobuf:"varint,4,opt,name=inst_idx,json=instIdx,proto3" json:"inst_idx,omitempty"`
+	BlockId   []byte               `protobuf:"bytes,5,opt,name=block_id,json=blockId,proto3" json:"block_id,omitempty"`
+	Timestamp *timestamp.Timestamp `protobuf:"bytes,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
 func (x *InstructionRef) Reset() {
@@ -627,7 +627,7 @@ func (x *InstructionRef) GetBlockId() []byte {
 	return nil
 }
 
-func (x *InstructionRef) GetTimestamp() *timestamppb.Timestamp {
+func (x *InstructionRef) GetTimestamp() *timestamp.Timestamp {
 	if x != nil {
 		return x.Timestamp
 	}
@@ -694,22 +694,22 @@ type Fill struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Trader            []byte                 `protobuf:"bytes,1,opt,name=trader,proto3" json:"trader,omitempty"`
-	Market            []byte                 `protobuf:"bytes,2,opt,name=market,proto3" json:"market,omitempty"`
-	OrderId           string                 `protobuf:"bytes,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	Side              Side                   `protobuf:"varint,4,opt,name=side,proto3,enum=sf.solana.serumhist.v1.Side" json:"side,omitempty"`
-	Maker             bool                   `protobuf:"varint,5,opt,name=maker,proto3" json:"maker,omitempty"`
-	NativeQtyPaid     uint64                 `protobuf:"varint,6,opt,name=native_qty_paid,json=nativeQtyPaid,proto3" json:"native_qty_paid,omitempty"`
-	NativeQtyReceived uint64                 `protobuf:"varint,7,opt,name=native_qty_received,json=nativeQtyReceived,proto3" json:"native_qty_received,omitempty"`
-	NativeFeeOrRebate uint64                 `protobuf:"varint,8,opt,name=native_fee_or_rebate,json=nativeFeeOrRebate,proto3" json:"native_fee_or_rebate,omitempty"`
-	FeeTier           FeeTier                `protobuf:"varint,9,opt,name=fee_tier,json=feeTier,proto3,enum=sf.solana.serumhist.v1.FeeTier" json:"fee_tier,omitempty"`
-	Timestamp         *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	BlockNum          uint64                 `protobuf:"varint,20,opt,name=block_num,json=blockNum,proto3" json:"block_num,omitempty"`
-	BlockId           []byte                 `protobuf:"bytes,24,opt,name=block_id,json=blockId,proto3" json:"block_id,omitempty"`
-	TrxId             []byte                 `protobuf:"bytes,25,opt,name=trx_id,json=trxId,proto3" json:"trx_id,omitempty"`
-	TrxIdx            uint32                 `protobuf:"varint,21,opt,name=trx_idx,json=trxIdx,proto3" json:"trx_idx,omitempty"`
-	InstIdx           uint32                 `protobuf:"varint,22,opt,name=inst_idx,json=instIdx,proto3" json:"inst_idx,omitempty"`
-	OrderSeqNum       uint64                 `protobuf:"varint,23,opt,name=order_seq_num,json=orderSeqNum,proto3" json:"order_seq_num,omitempty"`
+	Trader            []byte               `protobuf:"bytes,1,opt,name=trader,proto3" json:"trader,omitempty"`
+	Market            []byte               `protobuf:"bytes,2,opt,name=market,proto3" json:"market,omitempty"`
+	OrderId           string               `protobuf:"bytes,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Side              Side                 `protobuf:"varint,4,opt,name=side,proto3,enum=sf.solana.serumhist.v1.Side" json:"side,omitempty"`
+	Maker             bool                 `protobuf:"varint,5,opt,name=maker,proto3" json:"maker,omitempty"`
+	NativeQtyPaid     uint64               `protobuf:"varint,6,opt,name=native_qty_paid,json=nativeQtyPaid,proto3" json:"native_qty_paid,omitempty"`
+	NativeQtyReceived uint64               `protobuf:"varint,7,opt,name=native_qty_received,json=nativeQtyReceived,proto3" json:"native_qty_received,omitempty"`
+	NativeFeeOrRebate uint64               `protobuf:"varint,8,opt,name=native_fee_or_rebate,json=nativeFeeOrRebate,proto3" json:"native_fee_or_rebate,omitempty"`
+	FeeTier           FeeTier              `protobuf:"varint,9,opt,name=fee_tier,json=feeTier,proto3,enum=sf.solana.serumhist.v1.FeeTier" json:"fee_tier,omitempty"`
+	Timestamp         *timestamp.Timestamp `protobuf:"bytes,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	BlockNum          uint64               `protobuf:"varint,20,opt,name=block_num,json=blockNum,proto3" json:"block_num,omitempty"`
+	BlockId           []byte               `protobuf:"bytes,24,opt,name=block_id,json=blockId,proto3" json:"block_id,omitempty"`
+	TrxId             []byte               `protobuf:"bytes,25,opt,name=trx_id,json=trxId,proto3" json:"trx_id,omitempty"`
+	TrxIdx            uint32               `protobuf:"varint,21,opt,name=trx_idx,json=trxIdx,proto3" json:"trx_idx,omitempty"`
+	InstIdx           uint32               `protobuf:"varint,22,opt,name=inst_idx,json=instIdx,proto3" json:"inst_idx,omitempty"`
+	OrderSeqNum       uint64               `protobuf:"varint,23,opt,name=order_seq_num,json=orderSeqNum,proto3" json:"order_seq_num,omitempty"`
 }
 
 func (x *Fill) Reset() {
@@ -807,7 +807,7 @@ func (x *Fill) GetFeeTier() FeeTier {
 	return FeeTier_Base
 }
 
-func (x *Fill) GetTimestamp() *timestamppb.Timestamp {
+func (x *Fill) GetTimestamp() *timestamp.Timestamp {
 	if x != nil {
 		return x.Timestamp
 	}
@@ -1175,12 +1175,12 @@ var file_sf_solana_serumhist_v1_serumhist_proto_rawDesc = []byte{
 	0x47, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x6c, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
 	0x25, 0x2e, 0x73, 0x66, 0x2e, 0x73, 0x6f, 0x6c, 0x61, 0x6e, 0x61, 0x2e, 0x73, 0x65, 0x72, 0x75,
 	0x6d, 0x68, 0x69, 0x73, 0x74, 0x2e, 0x76, 0x31, 0x2e, 0x46, 0x69, 0x6c, 0x6c, 0x73, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x4a, 0x5a, 0x48, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x50, 0x5a, 0x4e, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
 	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x69, 0x6e, 0x67, 0x66, 0x61,
-	0x73, 0x74, 0x2f, 0x73, 0x66, 0x2d, 0x73, 0x6f, 0x6c, 0x61, 0x6e, 0x61, 0x2f, 0x70, 0x62, 0x2f,
-	0x73, 0x66, 0x2f, 0x73, 0x6f, 0x6c, 0x61, 0x6e, 0x61, 0x2f, 0x73, 0x65, 0x72, 0x75, 0x6d, 0x68,
-	0x69, 0x73, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x70, 0x62, 0x73, 0x65, 0x72, 0x75, 0x6d, 0x68, 0x69,
-	0x73, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x74, 0x2f, 0x73, 0x66, 0x2d, 0x73, 0x6f, 0x6c, 0x61, 0x6e, 0x61, 0x2f, 0x74, 0x79, 0x70,
+	0x65, 0x73, 0x2f, 0x70, 0x62, 0x2f, 0x73, 0x66, 0x2f, 0x73, 0x6f, 0x6c, 0x61, 0x6e, 0x61, 0x2f,
+	0x73, 0x65, 0x72, 0x75, 0x6d, 0x68, 0x69, 0x73, 0x74, 0x2f, 0x76, 0x31, 0x3b, 0x70, 0x62, 0x73,
+	0x65, 0x72, 0x75, 0x6d, 0x68, 0x69, 0x73, 0x74, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1211,7 +1211,7 @@ var file_sf_solana_serumhist_v1_serumhist_proto_goTypes = []interface{}{
 	(*Checkpoint)(nil),              // 10: sf.solana.serumhist.v1.Checkpoint
 	(*Fill)(nil),                    // 11: sf.solana.serumhist.v1.Fill
 	(*Order)(nil),                   // 12: sf.solana.serumhist.v1.Order
-	(*timestamppb.Timestamp)(nil),   // 13: google.protobuf.Timestamp
+	(*timestamp.Timestamp)(nil),     // 13: google.protobuf.Timestamp
 }
 var file_sf_solana_serumhist_v1_serumhist_proto_depIdxs = []int32{
 	11, // 0: sf.solana.serumhist.v1.FillsResponse.fill:type_name -> sf.solana.serumhist.v1.Fill

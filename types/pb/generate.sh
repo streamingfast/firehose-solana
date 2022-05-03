@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd .. && pwd )"
+ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ../.. && pwd )"
 
 # Protobuf definitions
 PROTO=${1:-"$ROOT/../proto"}
@@ -26,14 +26,14 @@ function main() {
 
   cd "$ROOT/types/pb" &> /dev/null
 
-  pushd "$ROOT/pb" &> /dev/null
   generate "sf/solana/type/v1/type.proto"
   generate "sf/solana/transforms/v1/transforms.proto"
   generate "sf/solana/serumhist/v1/serumhist.proto"
+  generate "confirmed_block.proto"
 
-  echo "generate.sh - `date` - `whoami`" > $ROOT/pb/last_generate.txt
-  echo "streamingfast/proto revision: `GIT_DIR=$PROTO/.git git rev-parse HEAD`" >> $ROOT/pb/last_generate.txt
-  echo "streamingfast/proto-solana revision: `GIT_DIR=$PROTO_SOLANA/.git git rev-parse HEAD`" >> $ROOT/pb/last_generate.txt
+  echo "generate.sh - `date` - `whoami`" > ./last_generate.txt
+  echo "streamingfast/proto revision: `GIT_DIR=$PROTO/.git git rev-parse HEAD`" >> ./last_generate.txt
+  echo "streamingfast/proto-solana revision: `GIT_DIR=$ROOT/.git git rev-parse HEAD`" >> ./last_generate.txt
 }
 
 # usage:

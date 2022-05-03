@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 
+	pbsolana "github.com/streamingfast/sf-solana/types/pb"
+
 	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 
 	"github.com/streamingfast/bstream"
@@ -13,7 +15,7 @@ import (
 // FIXME: Solana protocol will be the value 3, might not work everywehre ... we will see!
 var Protocol_SOL = pbbstream.Protocol(3)
 
-func BlockDecoder(blk *bstream.Block) (interface{}, error) {
+func PBSolBlockDecoder(blk *bstream.Block) (interface{}, error) {
 	if blk.Kind() != Protocol_SOL {
 		return nil, fmt.Errorf("expected kind %s, got %s", Protocol_SOL, blk.Kind())
 	}
@@ -43,5 +45,27 @@ func BlockDecoder(blk *bstream.Block) (interface{}, error) {
 	// automatically instead of having to re-deploy a new version of bstream (which means
 	// rebuild everything mostly)
 
+	return block, nil
+}
+
+func PBSolanaBlockDecoder(blk *bstream.Block) (interface{}, error) {
+	if blk.Kind() != Protocol_SOL {
+		return nil, fmt.Errorf("expected kind %s, got %s", Protocol_SOL, blk.Kind())
+	}
+
+	if blk.Version() != 1 {
+		return nil, fmt.Errorf("this decoder only knows about version 1, got %d", blk.Version())
+	}
+
+	block := new(pbsolana.ConfirmedBlock)
+	payload, err := blk.Payload.Get()
+	if err != nil {
+		return nil, fmt.Errorf("getting payload: %s", err)
+	}
+
+	err = proto.Unmarshal(payload, block)
+	if err != nil {
+		return nil, fmt.Errorf("unable to decode payload: %s", err)
+	}
 	return block, nil
 }

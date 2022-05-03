@@ -8,10 +8,15 @@ import (
 	"io/ioutil"
 	"os"
 
-	codec2 "github.com/streamingfast/sf-solana/node-manager/codec"
+	"github.com/spf13/viper"
 
+	pbsolana "github.com/streamingfast/sf-solana/types/pb"
+
+	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
+	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/jsonpb"
+	"github.com/streamingfast/sf-solana/node-manager/codec"
 	"github.com/streamingfast/sf-solana/types"
 	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 	sftools "github.com/streamingfast/sf-tools"
@@ -26,13 +31,19 @@ func init() {
 }
 
 var generateCmd = &cobra.Command{
-	Use:   "generate {path_to_dmlog.dmlog} {path-to-deepmind-batch-files} {output.json}",
-	Short: "Prints the content summary of a one block file",
-	Args:  cobra.ExactArgs(3),
+	Use:   "generate-augmented <path_to_dmlog.dmlog> <output.json> [path-to-deepmind-batch-files]",
+	Short: "Generated pbsol or pbsolana blocks from dmlogs. If dmlogs",
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dmlogInputFilePath := args[0]
-		batchFilesPath := args[1]
-		jsonFilePath := args[2]
+		jsonFilePath := args[1]
+		augmentedStack := viper.GetBool("global-augmented-mode")
+		batchFilesPath := ""
+		if augmentedStack && len(args) <= 2 {
+			return fmt.Errorf("you must specficy a deepming batch files path as a third argument when running in --augmented-stack mode")
+		} else {
+			batchFilesPath = args[2]
+		}
 
 		zlog.Info("running battlefield generate",
 			zap.String("dmlog_file_path", dmlogInputFilePath),
@@ -40,7 +51,28 @@ var generateCmd = &cobra.Command{
 			zap.String("json_file_path", jsonFilePath),
 		)
 
-		blocks, err := readDMLogs(dmlogInputFilePath, batchFilesPath)
+		opts := []codec.ConsoleReaderOption{codec.KeepBatchFiles()}
+		if batchFilesPath != "" {
+			opts = append(opts, codec.WithBatchFilesPath(batchFilesPath))
+		}
+
+		parser := &DMParser{
+			crFactory: func() (*codec.ConsoleReader, error) {
+				return codec.NewConsoleReader(zlog, make(chan string, 10000), opts...)
+			},
+			blockDecoder: types.PBSolanaBlockDecoder,
+			blockCaster: func(i interface{}) proto.Message {
+				return i.(*pbsolana.ConfirmedBlock)
+			},
+		}
+		if augmentedStack {
+			parser.blockDecoder = types.PBSolBlockDecoder
+			parser.blockCaster = func(i interface{}) proto.Message {
+				return i.(*pbsol.Block)
+			}
+		}
+
+		blocks, err := parser.readLogs(dmlogInputFilePath)
 		if err != nil {
 			return fmt.Errorf("failed to read dmlogs %q: %w", dmlogInputFilePath, err)
 		}
@@ -50,7 +82,7 @@ var generateCmd = &cobra.Command{
 		)
 
 		fmt.Printf("Writing blocks to disk %q...", jsonFilePath)
-		if err := writeBlocks(jsonFilePath, blocks); err != nil {
+		if err = parser.writeBlocks(jsonFilePath, blocks); err != nil {
 			return fmt.Errorf("failed to write blocks: %w", err)
 		}
 
@@ -77,8 +109,14 @@ var compareCmd = &cobra.Command{
 	},
 }
 
-func readDMLogs(filePath, batchFilesPath string) ([]*pbsol.Block, error) {
-	blocks := []*pbsol.Block{}
+type DMParser struct {
+	crFactory    func() (*codec.ConsoleReader, error)
+	blockDecoder func(blk *bstream.Block) (interface{}, error)
+	blockCaster  func(interface{}) proto.Message
+}
+
+func (d *DMParser) readLogs(filePath string) ([]interface{}, error) {
+	blocks := []interface{}{}
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -86,14 +124,14 @@ func readDMLogs(filePath, batchFilesPath string) ([]*pbsol.Block, error) {
 	}
 	defer file.Close()
 
-	reader, err := codec2.NewConsoleReader(make(chan string, 10000), batchFilesPath, codec2.KeepBatchFiles())
+	reader, err := d.crFactory()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create console reader: %w", err)
 	}
 	defer reader.Close()
 
 	go reader.ProcessData(file)
-	var lastBlockRead *pbsol.Block
+	var lastBlockRead bstream.BlockRef
 
 	for {
 		el, err := reader.ReadBlock()
@@ -105,23 +143,23 @@ func readDMLogs(filePath, batchFilesPath string) ([]*pbsol.Block, error) {
 			if lastBlockRead == nil {
 				return nil, fmt.Errorf("unable to read first block from file %q: %w", filePath, err)
 			} else {
-				return nil, fmt.Errorf("	unable to read block from file %q, last block read was %s: %w", filePath, lastBlockRead.AsRef(), err)
+				return nil, fmt.Errorf("	unable to read block from file %q, last block read was %s: %w", filePath, lastBlockRead, err)
 			}
 
 		}
 
-		block, err := types.BlockDecoder(el)
+		block, err := d.blockDecoder(el)
 		if err != nil {
 			return nil, fmt.Errorf("unable to to transform bstream.Block into solana pb block: %w", err)
 		}
-		lastBlockRead = block.(*pbsol.Block)
-		blocks = append(blocks, lastBlockRead)
+		lastBlockRead = el.AsRef()
+		blocks = append(blocks, block)
 	}
 
 	return blocks, nil
 }
 
-func writeBlocks(outputFilePath string, blocks []*pbsol.Block) error {
+func (d *DMParser) writeBlocks(outputFilePath string, blocks []interface{}) error {
 	buffer := bytes.NewBuffer(nil)
 	if _, err := buffer.WriteString("[\n"); err != nil {
 		return fmt.Errorf("unable to write list start: %w", err)
@@ -130,19 +168,20 @@ func writeBlocks(outputFilePath string, blocks []*pbsol.Block) error {
 	blockCount := len(blocks)
 	if blockCount > 0 {
 		lastIndex := blockCount - 1
-		for i, block := range blocks {
+		for i, blk := range blocks {
+			block := d.blockCaster(blk)
 			out, err := jsonpb.MarshalIndentToString(block, "  ")
 			if err != nil {
-				return fmt.Errorf("unable to marshal block %q: %w", block.AsRef(), err)
+				return fmt.Errorf("unable to marshal block %q: %w", block, err)
 			}
 
 			if _, err = buffer.WriteString(out); err != nil {
-				return fmt.Errorf("unable to write block %q: %w", block.AsRef(), err)
+				return fmt.Errorf("unable to write block: %w", err)
 			}
 
 			if i != lastIndex {
 				if _, err = buffer.WriteString(",\n"); err != nil {
-					return fmt.Errorf("to write block delimiter %q: %w", block.AsRef(), err)
+					return fmt.Errorf("to write block delimiter: %w", err)
 				}
 			}
 		}

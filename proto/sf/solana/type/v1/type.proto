@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package sf.solana.type.v1;
 
-option go_package = "github.com/streamingfast/sf-solana/pb/sf/solana/type/v1;pbsol";
+option go_package = "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1;pbsol";
 
 message Block {
   bytes id = 1;  // corresponds to the Slot id (or hash)

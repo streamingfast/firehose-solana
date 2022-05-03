@@ -2,11 +2,8 @@ package codec
 
 import (
 	"github.com/mr-tron/base58"
-	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 )
-
-var zlog, tracer = logging.PackageLogger("codec", "github.com/streamingfast/sf-solana/node-manager/codec")
 
 type zapBase58 []byte
 

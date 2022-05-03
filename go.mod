@@ -55,3 +55,5 @@ require (
 replace github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
 
 replace github.com/ShinyTrinkets/overseer => github.com/dfuse-io/overseer v0.2.1-0.20191024193921-39856397cf3f
+
+replace github.com/streamingfast/sf-solana/types => /Users/julien/codebase/sf/sf-solana/types

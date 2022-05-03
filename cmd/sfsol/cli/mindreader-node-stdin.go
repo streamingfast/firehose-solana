@@ -15,11 +15,6 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/streamingfast/sf-solana/node-manager/codec"
-	"github.com/streamingfast/solana-go"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
@@ -28,7 +23,6 @@ import (
 	nodeManager "github.com/streamingfast/node-manager"
 	nodeMindreaderStdinApp "github.com/streamingfast/node-manager/app/node_mindreader_stdin"
 	"github.com/streamingfast/node-manager/metrics"
-	"github.com/streamingfast/node-manager/mindreader"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -50,20 +44,11 @@ func init() {
 			archiveStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
 			mergeArchiveStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url"))
 
-			consoleReaderFactory := func(lines chan string) (mindreader.ConsolerReader, error) {
-				batchFilePath := viper.GetString("mindreader-node-deepmind-batch-files-path")
-				zlog.Debug("setting up console reader", zap.String("batch_file_path", batchFilePath))
-				r, err := codec.NewConsoleReader(
-					lines,
-					viper.GetString("mindreader-node-deepmind-batch-files-path"),
-					codec.IgnoreAccountChangesForProgramID(solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111")),
-				)
-				if err != nil {
-					return nil, fmt.Errorf("initiating console reader: %w", err)
-				}
-				return r, nil
-			}
-
+			consoleReaderFactory := getConsoleReaderFactory(
+				appLogger,
+				viper.GetString("mindreader-node-deepmind-batch-files-path"),
+				viper.GetBool("mindreader-node-purge-account-data"),
+			)
 			metricID := "mindreader-node-stdin"
 			headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(metricID)
 			headBlockNumber := metrics.NewHeadBlockNumber(metricID)

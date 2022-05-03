@@ -1,10 +1,9 @@
 syntax = "proto3";
 
 package sf.solana.serumhist.v1;
-option go_package = "github.com/streamingfast/sf-solana/pb/sf/solana/serumhist/v1;pbserumhist";
+option go_package = "github.com/streamingfast/sf-solana/types/pb/sf/solana/serumhist/v1;pbserumhist";
 
 import "google/protobuf/timestamp.proto";
-
 
 service SerumOrderTracker {
   rpc TrackOrder(TrackOrderRequest) returns (stream OrderTransition);

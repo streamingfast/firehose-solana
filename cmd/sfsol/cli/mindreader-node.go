@@ -37,15 +37,37 @@ func registerMindreaderNodeFlags(cmd *cobra.Command) error {
 	cmd.Flags().Duration("mindreader-node-merge-threshold-block-age", time.Duration(math.MaxInt64), "When processing blocks with a blocktime older than this threshold, they will be automatically merged")
 	cmd.Flags().String("mindreader-node-oneblock-suffix", "", "If non-empty, the oneblock files will be appended with that suffix, so that mindreaders can each write their file for a given block instead of competing for writes.")
 	cmd.Flags().Bool("mindreader-node-debug-deep-mind", false, "[DEV] Prints deep mind instrumentation logs to standard output, should be use for debugging purposes only")
-	cmd.Flags().String("mindreader-node-deepmind-batch-files-path", "/tmp/", "Path where deepmind enabled nodes will write the dmlog batch files, and where the console log will read /tmp/")
 	cmd.Flags().Bool("mindreader-node-merge-and-store-directly", false, "[BATCH] When enabled, do not write oneblock files, sidestep the merger and write the merged 100-blocks logs directly to --common-blocks-store-url")
 	cmd.Flags().Uint("mindreader-node-start-block-num", 0, "[BATCH] Blocks that were produced with smaller block number then the given block num are skipped")
 	cmd.Flags().Uint("mindreader-node-stop-block-num", 0, "[BATCH] Shutdown when we the following 'stop-block-num' has been reached, inclusively.")
 	cmd.Flags().Bool("mindreader-node-purge-account-data", false, "When flag enabled, the mindreader will purge the account changes from the blocks before storing it")
+	cmd.Flags().String("mindreader-node-deepmind-batch-files-path", "", "Path where deepmind enabled nodes will write the dmlog batch files, and where the console log will read /tmp/")
 	return nil
 }
 
-func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStoreURL string, blockDataStoreURL string, mergedBlockStoreURL string, mergeAndStoreDirectly bool, mergeThresholdBlockAge time.Duration, workingDir string, blockDataWorkingDir string, batchStartBlockNum uint64, batchStopBlockNum uint64, blocksChanCapacity int, failOnNonContiguousBlock bool, waitTimeForUploadOnShutdown time.Duration, oneBlockFileSuffix string, operatorShutdownFunc func(error), metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager, tracker *bstream.Tracker, appLogger *zap.Logger, purgeAccountChanges bool) (*mindreader.MindReaderPlugin, error) {
+func getConsoleReaderFactory(appLogger *zap.Logger, batchFilePath string, purgeAccountChanges bool) mindreader.ConsolerReaderFactory {
+	return func(lines chan string) (mindreader.ConsolerReader, error) {
+		zlog.Debug("setting up console reader",
+			zap.String("batch_file_path", batchFilePath),
+			zap.Bool("purge_account", purgeAccountChanges),
+		)
+		opts := []codec.ConsoleReaderOption{codec.IgnoreAccountChangesForProgramID(solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111"))}
+		if purgeAccountChanges {
+			opts = append(opts, codec.IgnoreAllAccountChanges())
+		}
+		if batchFilePath != "" {
+			opts = append(opts, codec.WithBatchFilesPath(batchFilePath))
+
+		}
+		r, err := codec.NewConsoleReader(appLogger, lines, opts...)
+		if err != nil {
+			return nil, fmt.Errorf("initiating console reader: %w", err)
+		}
+		return r, nil
+	}
+}
+
+func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStoreURL string, blockDataStoreURL string, mergedBlockStoreURL string, mergeAndStoreDirectly bool, mergeThresholdBlockAge time.Duration, workingDir string, blockDataWorkingDir string, batchStartBlockNum uint64, batchStopBlockNum uint64, blocksChanCapacity int, failOnNonContiguousBlock bool, waitTimeForUploadOnShutdown time.Duration, oneBlockFileSuffix string, operatorShutdownFunc func(error), metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager, tracker *bstream.Tracker, appLogger *zap.Logger, batchFilePath string, purgeAccountChanges bool) (*mindreader.MindReaderPlugin, error) {
 
 	tracker.AddGetter(bstream.NetworkLIBTarget, func(ctx context.Context) (bstream.BlockRef, error) {
 		// FIXME: Need to re-enable the tracker through blockmeta later on (see commented code below), might need to tweak some stuff to make mindreader work...
@@ -67,18 +89,7 @@ func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStore
 	}
 	go blockDataArchiver.Start()
 
-	consoleReaderFactory := func(lines chan string) (mindreader.ConsolerReader, error) {
-		opts := []codec.ConsoleReaderOption{
-			codec.IgnoreAccountChangesForProgramID(solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111")),
-		}
-		if purgeAccountChanges {
-			opts = append(opts, codec.IgnoreAllAccountChanges())
-		}
-		codec.IgnoreAllAccountChanges()
-
-		return codec.NewConsoleReader(lines, viper.GetString("mindreader-node-deepmind-batch-files-path"), opts...)
-	}
-
+	consoleReaderFactory := getConsoleReaderFactory(appLogger, batchFilePath, purgeAccountChanges)
 	return mindreader.NewMindReaderPlugin(
 		oneBlockStoreURL,
 		mergedBlockStoreURL,

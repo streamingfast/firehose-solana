@@ -25,7 +25,6 @@ import (
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/derr"
 	"github.com/streamingfast/dlauncher/launcher"
-	_ "github.com/streamingfast/sf-solana/types"
 	"go.uber.org/zap"
 )
 

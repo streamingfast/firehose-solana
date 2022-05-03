@@ -3,114 +3,110 @@ package codec
 import (
 	"bufio"
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/streamingfast/sf-solana/types"
+	pbsolana "github.com/streamingfast/sf-solana/types/pb"
 
 	"github.com/abourget/llerrgroup"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
+	"github.com/streamingfast/sf-solana/types"
 	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
-var MaxTokenSize uint64
-
-func init() {
-	MaxTokenSize = uint64(50 * 1024 * 1024)
-	if maxBufferSize := os.Getenv("MINDREADER_MAX_TOKEN_SIZE"); maxBufferSize != "" {
-		bs, err := strconv.ParseUint(maxBufferSize, 10, 64)
-		if err != nil {
-			zlog.Error("environment variable 'MINDREADER_MAX_TOKEN_SIZE' is set but invalid parse uint", zap.Error(err))
-		} else {
-			zlog.Info("setting max_token_size from environment variable MINDREADER_MAX_TOKEN_SIZE", zap.Uint64("max_token_size", bs))
-			MaxTokenSize = bs
-		}
-	}
-}
-
-type ConsoleReaderOption = func(reader *ConsoleReader) *ConsoleReader
+type ConsoleReaderOption = func(reader *options) *options
 
 func IgnoreAccountChangesForProgramID(pid solana.PublicKey) ConsoleReaderOption {
-	return func(r *ConsoleReader) *ConsoleReader {
-		r.options.blacklistProgramIDs[pid.String()] = true
-		return r
+	return func(o *options) *options {
+		o.blacklistProgramIDs[pid.String()] = true
+		return o
 	}
 }
 func IgnoreAllAccountChanges() ConsoleReaderOption {
-	return func(r *ConsoleReader) *ConsoleReader {
-		r.options.ignoreAccountChanges = true
-		return r
+	return func(o *options) *options {
+		o.ignoreAccountChanges = true
+		return o
 	}
 }
 
 func KeepBatchFiles() ConsoleReaderOption {
-	return func(r *ConsoleReader) *ConsoleReader {
-		r.options.deleteBatchFiles = false
-		return r
+	return func(o *options) *options {
+		o.deleteBatchFiles = false
+		return o
 	}
 }
 
-func NewConsoleReader(lines chan string, batchFilesPath string, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
-	l := &ConsoleReader{
-		lines: lines,
-		close: func() {},
-		done:  make(chan interface{}),
-		options: &options{
-			blacklistProgramIDs:  map[string]bool{},
-			ignoreAccountChanges: false,
-			deleteBatchFiles:     true,
-		},
+func WithBatchFilesPath(batchFilesPath string) ConsoleReaderOption {
+	return func(o *options) *options {
+		o.batchFilesPath = batchFilesPath
+		return o
 	}
+}
+
+func NewConsoleReader(logger *zap.Logger, lines chan string, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
+	l := &ConsoleReader{
+		lines:  lines,
+		close:  func() {},
+		done:   make(chan interface{}),
+		logger: logger,
+	}
+
+	crOptions := newDefaultOptions()
 
 	for _, opt := range opts {
-		l = opt(l)
+		crOptions = opt(crOptions)
 	}
 
-	l.ctx = newParseCtx(batchFilesPath, l.options)
+	l.ctx = newParseCtx(logger, crOptions)
 	return l, nil
 }
 
-// ConsoleReader is what reads the `nodeos` output directly. It builds
-// up some LogEntry objects. See `LogReader to read those entries .
 type ConsoleReader struct {
+	ver *version
+	ctx *parseCtx
+
 	lines chan string
 	close func()
+	done  chan interface{}
 
-	options *options
-
-	done           chan interface{}
-	ctx            *parseCtx
-	batchFilesPath string
+	augmentedMode bool
+	logger        *zap.Logger
 }
 
-func (c *ConsoleReader) ProcessData(reader io.Reader) error {
-	scanner := c.buildScanner(reader)
+type version struct {
+	dmVersion   string
+	variant     string
+	nodeVersion string
+}
+
+func (cr *ConsoleReader) ProcessData(reader io.Reader) error {
+	scanner := cr.buildScanner(reader)
 	for scanner.Scan() {
 		line := scanner.Text()
-		c.lines <- line
+		cr.lines <- line
 	}
 
 	if scanner.Err() == nil {
-		close(c.lines)
+		close(cr.lines)
 		return io.EOF
 	}
 
 	return scanner.Err()
 }
 
-func (r *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
+func (cr *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
 	buf := make([]byte, 50*1024*1024)
 	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(buf, 50*1024*1024)
@@ -118,30 +114,32 @@ func (r *ConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
 	return scanner
 }
 
-func (r *ConsoleReader) Done() <-chan interface{} {
-	return r.done
+func (cr *ConsoleReader) Done() <-chan interface{} {
+	return cr.done
 }
 
-func (r *ConsoleReader) Close() {
-	r.close()
+func (cr *ConsoleReader) Close() {
+	cr.close()
 }
 
 type parsingStats struct {
 	startAt  time.Time
 	blockNum uint64
 	data     map[string]int
+	logger   *zap.Logger
 }
 
-func newParsingStats(block uint64) *parsingStats {
+func newParsingStats(block uint64, logger *zap.Logger) *parsingStats {
 	return &parsingStats{
 		startAt:  time.Now(),
 		blockNum: block,
 		data:     map[string]int{},
+		logger:   logger,
 	}
 }
 
 func (s *parsingStats) log() {
-	zlog.Info("mindreader block stats",
+	s.logger.Info("mindreader block stats",
 		zap.Uint64("block_num", s.blockNum),
 		zap.Int64("duration", int64(time.Since(s.startAt))),
 		zap.Reflect("stats", s.data),
@@ -158,59 +156,46 @@ func (s *parsingStats) inc(key string) {
 	s.data[k] = value
 }
 
-type version struct {
-	major   uint64
-	minor   uint64
-	patch   uint64
-	commit  string
-	feature string
-}
-
-func (v *version) version() string {
-	return fmt.Sprintf("%d.%d.%d", v.major, v.minor, v.patch)
-}
-
 type parseCtx struct {
-	v              *version
-	activeBank     *bank
-	banks          map[uint64]*bank
-	blockBuffer    chan *bstream.Block
-	batchFilesPath string
-	rootBlock      uint64
+	activeBank  *bank
+	banks       map[uint64]*bank
+	blockBuffer chan *bstream.Block
+	rootBlock   uint64
 
-	stats *parsingStats
-	opts  *options
+	stats  *parsingStats
+	opts   *options
+	logger *zap.Logger
 }
 
-func newParseCtx(batchFilesPath string, opts *options) *parseCtx {
+func newParseCtx(logger *zap.Logger, opts *options) *parseCtx {
 	return &parseCtx{
-		banks:          map[uint64]*bank{},
-		blockBuffer:    make(chan *bstream.Block, 10000),
-		batchFilesPath: batchFilesPath,
-		opts:           opts,
+		banks:       map[uint64]*bank{},
+		blockBuffer: make(chan *bstream.Block, 10000),
+		logger:      logger,
+		opts:        opts,
 	}
 }
 
-func (r *ConsoleReader) ReadBlock() (out *bstream.Block, err error) {
-	return r.next()
+func (cr *ConsoleReader) ReadBlock() (out *bstream.Block, err error) {
+	return cr.next()
 }
 
-func (r *ConsoleReader) next() (out *bstream.Block, err error) {
-	ctx := r.ctx
+func (cr *ConsoleReader) next() (out *bstream.Block, err error) {
+	ctx := cr.ctx
 	select {
 	case b := <-ctx.blockBuffer:
 		return b, nil
 	default:
 	}
 
-	for line := range r.lines {
+	for line := range cr.lines {
 		if !strings.HasPrefix(line, "DMLOG ") {
 			continue
 		}
 
 		line = line[6:] // removes the DMLOG prefix
-		if err = parseLine(ctx, line); err != nil {
-			return nil, r.formatError(line, err)
+		if err = cr.parseLine(ctx, line); err != nil {
+			return nil, cr.formatError(line, err)
 		}
 
 		select {
@@ -226,26 +211,26 @@ func (r *ConsoleReader) next() (out *bstream.Block, err error) {
 	default:
 	}
 
-	zlog.Info("lines channel has been closed")
+	cr.logger.Info("lines channel has been closed")
 	return nil, io.EOF
 }
 
-func parseLine(ctx *parseCtx, line string) (err error) {
+func (cr *ConsoleReader) parseLine(ctx *parseCtx, line string) (err error) {
 	// Order of conditions is based (approximately) on those that will appear more often
 	switch {
 	case strings.HasPrefix(line, "INIT"):
 		ctx.stats.inc("INIT")
-		err = ctx.readInit(line)
+		err = cr.readInit(line)
 
 	// this occurs at the beginning execution of a given block (bank) (this is a 'range' of slot say from 10 to 13,
 	// it can also just be one slot), this can be PARTIAL or FULL work of said block. A given block may have multiple
 	// SLOT_WORK partial but only one SLOT_WORK full.
-	case strings.HasPrefix(line, "BLOCK_WORK"):
+	case strings.HasPrefix(line, "BLOCK_WORK") && cr.augmentedMode:
 		ctx.stats.inc("BLOCK_WORK")
 		err = ctx.readBlockWork(line)
 
 	// output when a group of batch of transaction have been executed and the protobuf has been written to a file on  disk
-	case strings.HasPrefix(line, "BATCH_FILE"):
+	case strings.HasPrefix(line, "BATCH_FILE") && cr.augmentedMode:
 		ctx.stats.inc("BATCH_FILE")
 		err = ctx.readBatchFile(line)
 
@@ -256,19 +241,24 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 	// all these batches and sort them to have a deterministic ordering of transactions.
 	// - Within in given batch, transactions are executed linearly, so partial sort is already done.
 	// - Batches are sorted based on their first transaction's id (hash), sorted alphanumerically
-	case strings.HasPrefix(line, "BATCHES_END"):
+	case strings.HasPrefix(line, "BATCHES_END") && cr.augmentedMode:
 		ctx.stats.inc("BATCHES_END")
 		err = ctx.readBatchesEnd()
 
 	// this occurs when a given block is full (frozen),
-	case strings.HasPrefix(line, "BLOCK_END"):
+	case strings.HasPrefix(line, "BLOCK_END") && cr.augmentedMode:
 		ctx.stats.inc("BLOCK_END")
 		err = ctx.readBlockEnd(line)
 
 	// this occurs when there is a failure in executing a given block
-	case strings.HasPrefix(line, "BLOCK_FAILED"):
+	case strings.HasPrefix(line, "BLOCK_FAILED") && cr.augmentedMode:
 		ctx.stats.inc("BLOCK_FAILED")
 		err = ctx.readBlockFailed(line)
+
+	// this occurs when a given block is full (frozen),
+	case strings.HasPrefix(line, "COMPLETE_BLOCK") && !cr.augmentedMode:
+		ctx.stats.inc("COMPLETE_BLOCK")
+		err = ctx.readCompleteBlock(line)
 
 	// this occurs when the root of the active banks has been computed
 	case strings.HasPrefix(line, "BLOCK_ROOT"):
@@ -276,12 +266,15 @@ func parseLine(ctx *parseCtx, line string) (err error) {
 		err = ctx.readBlockRoot(line)
 
 	default:
-		zlog.Warn("unknown log line", zap.String("line", line))
+		cr.logger.Warn("unable to handle log line. the log line may be known but the console reader may be in the wrong mod and cannot handle said log line",
+			zap.String("line", line),
+			zap.Bool("augmented_mode", cr.augmentedMode),
+		)
 	}
 	return err
 }
 
-func (r *ConsoleReader) formatError(line string, err error) error {
+func (cr *ConsoleReader) formatError(line string, err error) error {
 	chunks := strings.SplitN(line, " ", 2)
 	return fmt.Errorf("%s: %s (line %q)", chunks[0], err, line)
 }
@@ -293,26 +286,36 @@ func (ctx *parseCtx) readBatchFile(line string) (err error) {
 	}
 
 	filename := chunks[1]
-	zlog.Debug("reading batch file", zap.String("file_name", filename))
-	filePath := filepath.Join(ctx.batchFilesPath, filename)
+	ctx.logger.Debug("reading batch file", zap.String("file_name", filename))
+	filePath := filepath.Join(ctx.opts.batchFilesPath, filename)
 	ctx.activeBank.processBatchFile(filePath)
 
 	return nil
 }
 
 const (
+	InitChunkSize        = 4
 	BlockWorkChunkSize   = 14
 	BlockEndChunkSize    = 5
 	BlockFailedChunkSize = 3
 	BlockRootChunkSize   = 2
-	InitChunkSize        = 3
-	SlotBoundChunkSize   = 3
+	BlockCompleteChunk   = 2
 )
 
 type options struct {
+	batchFilesPath       string
 	blacklistProgramIDs  map[string]bool
 	ignoreAccountChanges bool
 	deleteBatchFiles     bool
+}
+
+func newDefaultOptions() *options {
+	return &options{
+		blacklistProgramIDs:  map[string]bool{},
+		ignoreAccountChanges: false,
+		deleteBatchFiles:     true,
+		batchFilesPath:       "",
+	}
 }
 
 type bank struct {
@@ -326,9 +329,10 @@ type bank struct {
 	errGroup        *llerrgroup.Group
 	lock            sync.Mutex
 	opts            *options
+	logger          *zap.Logger
 }
 
-func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte, opts *options) *bank {
+func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte, logger *zap.Logger, opts *options) *bank {
 	return &bank{
 		parentSlotNum:   parentBlockNumber,
 		previousSlotID:  previousSlotID,
@@ -341,6 +345,7 @@ func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte, opts *op
 			PreviousBlock: parentBlockNumber,
 		},
 		errGroup: llerrgroup.New(200),
+		logger:   logger,
 		opts:     opts,
 	}
 }
@@ -352,15 +357,15 @@ func (b *bank) processBatchFile(filePath string) {
 
 	b.errGroup.Go(func() error {
 
-		batch, err := ReadBatchFile(filePath, b.opts.deleteBatchFiles)
+		batch, err := ReadBatchFile(filePath, b.opts.deleteBatchFiles, b.logger)
 		if err != nil {
 			return fmt.Errorf("unable to read batch file %q: %w", filePath, err)
 		}
 
 		for _, tx := range batch.Transactions {
-			zlog.Debug("transaction info", zap.String("program_id", base58.Encode(tx.Id)), zap.Int("instruction_count", len(tx.Instructions)))
+			b.logger.Debug("transaction info", zap.String("program_id", base58.Encode(tx.Id)), zap.Int("instruction_count", len(tx.Instructions)))
 			for idx, i := range tx.Instructions {
-				zlog.Debug("instruction info", zap.String("program_id", base58.Encode(i.ProgramId)), zap.Int("instruction_index", idx), zap.Int("log_count", len(i.Logs)))
+				b.logger.Debug("instruction info", zap.String("program_id", base58.Encode(i.ProgramId)), zap.Int("instruction_index", idx), zap.Int("log_count", len(i.Logs)))
 				removeAccountChange := false
 				if b.opts.ignoreAccountChanges {
 					removeAccountChange = true
@@ -466,33 +471,50 @@ func (ctx *parseCtx) readBatchesEnd() (err error) {
 	return nil
 }
 
-var validVersion = regexp.MustCompile(`^INIT VERSION (\d+)\.?(\d+)\.?(\*|\d+)? \(src:([a-z0-9]+); feat:([a-z0-9A-Z]+)\)$`)
+var supportedVariant = map[string]bool{
+	"vanilla-standard":  true,
+	"vanilla-augmented": true,
+}
 
-//DMLOG INIT VERSION 1.829.23 (src:9f47ac9c; feat:378846963) DM 1
-func (ctx *parseCtx) readInit(line string) (err error) {
-	zlog.Debug("reading init", zap.String("line", line))
+//INIT 1.829.23 (src:9f47ac9c; feat:378846963) DM 1
+func (cr *ConsoleReader) readInit(line string) (err error) {
+	cr.logger.Debug("reading init", zap.String("line", line))
+	chunks := strings.SplitN(line, " ", 4)
+	if len(chunks) != InitChunkSize {
+		return fmt.Errorf("expected %d fields got %d", InitChunkSize, len(chunks))
+	}
 
-	matches := validVersion.FindStringSubmatch(line)
-	if len(matches) != 6 {
-		return fmt.Errorf("expected 6 matches ")
+	if cr.ver != nil {
+		return fmt.Errorf("received DMLOG INIT multiple times")
 	}
-	ctx.v = &version{
-		commit:  matches[4],
-		feature: matches[5],
+
+	cr.ver = &version{
+		dmVersion:   chunks[1],
+		variant:     chunks[2],
+		nodeVersion: chunks[3],
 	}
-	if ctx.v.major, err = strconv.ParseUint(matches[1], 10, 64); err != nil {
-		return fmt.Errorf("unable to parse major %q: %w", matches[1], err)
+
+	if _, found := supportedVariant[cr.ver.variant]; !found {
+		return fmt.Errorf("unsupported variant %q", cr.ver.variant)
 	}
-	if ctx.v.minor, err = strconv.ParseUint(matches[2], 10, 64); err != nil {
-		return fmt.Errorf("unable to parse minor %q: %w", matches[2], err)
+
+	cr.augmentedMode = false
+	if cr.ver.variant == "vanilla-augmented" {
+		cr.augmentedMode = true
+
+		if cr.ctx.opts.batchFilesPath == "" {
+			return fmt.Errorf("attempting to run console reader in augmented mode, without specifying a batch files path")
+		}
+
+		if cr.ver.variant[8:] == "augmented" && !types.IsSfSolAugmented() {
+			return fmt.Errorf("attempting to run console reader in augmented mode, when sfsol is not configured for augmented mode")
+		}
 	}
-	if ctx.v.patch, err = strconv.ParseUint(matches[3], 10, 64); err != nil {
-		return fmt.Errorf("unable to parse patch %q: %w", matches[3], err)
-	}
-	zlog.Info("processing deepmind logs",
-		zap.String("verion", ctx.v.version()),
-		zap.String("feature", ctx.v.feature),
-		zap.String("commit", ctx.v.commit),
+
+	cr.logger.Info("processing deepmind logs",
+		zap.String("dm_version", cr.ver.dmVersion),
+		zap.String("variant", cr.ver.variant),
+		zap.String("node_version", cr.ver.nodeVersion),
 	)
 	return nil
 }
@@ -501,7 +523,7 @@ func (ctx *parseCtx) readInit(line string) (err error) {
 // BLOCK_WORK 55295937 55295938 full Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 224 161 200 0 0 0 Dpt1ohisw1neR8KetzS14LtY9yjq37Q3bAoowGJ5tfSA 0 T;trxid1;trxid2
 // BLOCK_WORK PREVIOUS_BLOCK_NUM BLOCK_NUM <full/partial> PARENT_SLOT_ID NUM_ENTRIES NUM_TXS NUM_SHRED PROGRESS_NUM_ENTRIES PROGRESS_NUM_TXS PROGRESS_NUM_SHREDS PROGESS_LAST_ENTRY PROGRESS_TICK_HASH_COUNT T;TRANSACTION_IDS_VECTOR_SPLIT_BY_;
 func (ctx *parseCtx) readBlockWork(line string) (err error) {
-	zlog.Debug("reading block work", zap.String("line", line))
+	ctx.logger.Debug("reading block work", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != BlockWorkChunkSize {
 		return fmt.Errorf("expected %d fields got %d", BlockWorkChunkSize, len(chunks))
@@ -524,11 +546,11 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 	var b *bank
 	var found bool
 	if b, found = ctx.banks[uint64(blockNum)]; !found {
-		zlog.Info("creating a new bank",
+		ctx.logger.Info("creating a new bank",
 			zap.Int("parent_slot_number", parentSlotNumber),
 			zap.Int("slot_number", blockNum),
 		)
-		b = newBank(uint64(blockNum), uint64(parentSlotNumber), previousSlotID, ctx.opts)
+		b = newBank(uint64(blockNum), uint64(parentSlotNumber), previousSlotID, ctx.logger, ctx.opts)
 		ctx.banks[uint64(blockNum)] = b
 	}
 
@@ -546,14 +568,45 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 	}
 
 	ctx.activeBank = b
-	ctx.stats = newParsingStats(uint64(blockNum))
+	ctx.stats = newParsingStats(uint64(blockNum), ctx.logger)
+	return nil
+}
+
+// COMPLETE_BLOCK 0a2c47426f4....
+// COMPLETE_BLOCK <COMPLETE BLOCK PROTO IN HEX>
+func (ctx *parseCtx) readCompleteBlock(line string) (err error) {
+	ctx.logger.Debug("reading complete block", zap.String("line", line))
+
+	chunks := strings.SplitN(line, " ", -1)
+	if len(chunks) != BlockCompleteChunk {
+		return fmt.Errorf("expected %d fields, got %d", BlockCompleteChunk, len(chunks))
+	}
+
+	var cnt []byte
+	if cnt, err = hex.DecodeString(chunks[1]); err != nil {
+		return fmt.Errorf("unable to hex decode content: %w", err)
+	}
+
+	blk := &pbsolana.ConfirmedBlock{}
+	if err := proto.Unmarshal(cnt, blk); err != nil {
+		return fmt.Errorf("unable to proto unmarhal confirmed block: %w", err)
+	}
+
+	bstreamBlk, err := types.BlockFromPBSolanaProto(blk)
+	if err != nil {
+		return fmt.Errorf("unable to convert solana proto block to bstream block: %w", err)
+	}
+	bstreamBlk.LibNum = ctx.rootBlock
+	ctx.blockBuffer <- bstreamBlk
+
+	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	return nil
 }
 
 // BLOCK_END 4 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1635424623 1635424624
 // BLOCK_END BLOCK_NUM BLOCK_HASH GENESIS_UNIX_TIMESTAMP CLOCK_UNIX_TIMESTAMP
 func (ctx *parseCtx) readBlockEnd(line string) (err error) {
-	zlog.Debug("reading block end", zap.String("line", line))
+	ctx.logger.Debug("reading block end", zap.String("line", line))
 
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != BlockEndChunkSize {
@@ -598,7 +651,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 		return fmt.Errorf("sorting: %w", err)
 	}
 
-	bstreamBlk, err := types.BlockFromProto(ctx.activeBank.blk)
+	bstreamBlk, err := types.BlockFromPBSolProto(ctx.activeBank.blk)
 	if err != nil {
 		return fmt.Errorf("unable to convert solana proto block to bstream block: %w", err)
 	}
@@ -611,7 +664,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 
 	ctx.stats.log()
 
-	zlog.Debug("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
+	ctx.logger.Debug("ctx bank state", zap.Int("bank_count", len(ctx.banks)))
 
 	return nil
 }
@@ -619,7 +672,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 // BLOCK_ROOT 6482838121
 // Simply the root block number, when this block is done processing, and all of its votes are taken into account.
 func (ctx *parseCtx) readBlockRoot(line string) (err error) {
-	zlog.Debug("reading block root", zap.String("line", line))
+	ctx.logger.Debug("reading block root", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != BlockRootChunkSize {
 		return fmt.Errorf("expected %d fields got %d", BlockRootChunkSize, len(chunks))
@@ -637,7 +690,7 @@ func (ctx *parseCtx) readBlockRoot(line string) (err error) {
 
 // SLOT_FAILED SLOT_NUM REASON
 func (ctx *parseCtx) readBlockFailed(line string) (err error) {
-	zlog.Debug("reading block failed", zap.String("line", line))
+	ctx.logger.Debug("reading block failed", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != BlockFailedChunkSize {
 		return fmt.Errorf("expected %d fields got %d", BlockFailedChunkSize, len(chunks))
@@ -659,7 +712,7 @@ func (ctx *parseCtx) readBlockFailed(line string) (err error) {
 	return fmt.Errorf("slot %d failed: %s", blockNum, chunks[2])
 }
 
-func ReadBatchFile(filePath string, deleteFile bool) (*pbsol.Batch, error) {
+func ReadBatchFile(filePath string, deleteFile bool, logger *zap.Logger) (*pbsol.Batch, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
@@ -667,11 +720,11 @@ func ReadBatchFile(filePath string, deleteFile bool) (*pbsol.Batch, error) {
 
 	defer func() {
 		if err := file.Close(); err != nil {
-			zlog.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
+			logger.Warn("read batch file: failed to close file", zap.String("file_path", filePath))
 		}
 		if deleteFile {
 			if err := os.Remove(filePath); err != nil {
-				zlog.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
+				logger.Warn("read batch file: failed to delete file", zap.String("file_path", filePath))
 			}
 		}
 	}()

@@ -326,6 +326,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			failOnNonContiguousBlock := viper.GetBool("mindreader-node-fail-on-non-contiguous-block")
 			waitTimeForUploadOnShutdown := viper.GetDuration("mindreader-node-wait-upload-complete-on-shutdown")
 			oneBlockFileSuffix := viper.GetString("mindreader-node-oneblock-suffix")
+			batchFilePath := viper.GetString("mindreader-node-deepmind-batch-files-path")
 			purgeAccountChanges := viper.GetBool("mindreader-node-purge-account-data")
 			tracker := runtime.Tracker.Clone()
 
@@ -348,6 +349,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 				metricsAndReadinessManager,
 				tracker,
 				appLogger,
+				batchFilePath,
 				purgeAccountChanges,
 			)
 			if err != nil {

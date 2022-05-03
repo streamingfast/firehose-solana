@@ -33,7 +33,7 @@ func batchFilesReadRunE(cmd *cobra.Command, args []string) error {
 	zlog.Info("reading batch file", zap.String("path", batchFilePath))
 
 	detailedView := viper.GetBool("detailed")
-	batch, err := codec.ReadBatchFile(batchFilePath, false)
+	batch, err := codec.ReadBatchFile(batchFilePath, false, zlog)
 	if err != nil {
 		return fmt.Errorf("unable to read batch file %q: %w", batchFilePath, err)
 	}

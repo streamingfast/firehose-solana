@@ -15,113 +15,117 @@
 package codec
 
 import (
+	"bytes"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
+	"os/exec"
+	"reflect"
 	"testing"
 	"time"
 
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	"github.com/streamingfast/sf-solana/types"
 
 	"github.com/abourget/llerrgroup"
+	"github.com/golang/protobuf/proto"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
-	"github.com/streamingfast/sf-solana/types"
+	"github.com/streamingfast/jsonpb"
+	_ "github.com/streamingfast/sf-solana/types"
+	pbsolana "github.com/streamingfast/sf-solana/types/pb"
+	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_processBatchFile(t *testing.T) {
-	t.Skip("skip batch file dmlog")
-	bank := newBank(10, 9, nil, &options{
-		deleteBatchFiles: false,
-	})
-
-	bank.processBatchFile("/tmp/solana-test/dmlog-383-1")
-	err := bank.errGroup.Wait()
-	require.NoError(t, err)
-}
-
-func Test_JustRun(t *testing.T) {
+func TestParseFromFile(t *testing.T) {
 	tests := []struct {
-		name string
-		path string
-	}{}
+		name          string
+		deepmindFile  string
+		batchFilePath string
+		augmented     bool
+		expectedErr   error
+	}{
+		{
+			name:         "deepmind standard mode",
+			deepmindFile: "testdata/deep-mind-standard.dmlog",
+		},
+		{
+			name:          "deepmind augmented mode",
+			deepmindFile:  "testdata/deep-mind-augmented.dmlog",
+			batchFilePath: "testdata/deep-mind-augmented-batches",
+			augmented:     true,
+		},
+	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cleanup, testdir, err := copyTestDir(test.path, "117503050")
-			require.NoError(t, err)
-			defer func() {
-				cleanup()
-			}()
+			cr := testFileConsoleReader(t, test.deepmindFile, test.batchFilePath)
 
-			fmt.Println(test.path)
-			cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", test.path), testdir)
-			for {
-				_, err = cr.ReadBlock()
-				if err == io.EOF {
-					return
+			buf := &bytes.Buffer{}
+			buf.Write([]byte("["))
+			first := true
+
+			var reader ObjectReader = func() (interface{}, error) {
+				out, err := cr.ReadBlock()
+				if err != nil {
+					return nil, err
 				}
 
-				require.NoError(t, err)
+				if test.augmented {
+					return out.ToProtocol().(*pbsol.Block), nil
+				}
+				return out.ToProtocol().(*pbsolana.ConfirmedBlock), nil
+			}
+
+			if test.augmented {
+				types.SetupSfSolAugmented()
+			}
+			for {
+				out, err := reader()
+				if v, ok := out.(proto.Message); ok && !isNil(v) {
+					if !first {
+						buf.Write([]byte(","))
+					}
+					first = false
+
+					value, err := jsonpb.MarshalIndentToString(v, "  ")
+					require.NoError(t, err)
+
+					buf.Write([]byte(value))
+				}
+
+				if err == io.EOF {
+					break
+				}
+
+				if len(buf.Bytes()) != 0 {
+					buf.Write([]byte("\n"))
+				}
+
+				if test.expectedErr == nil {
+					require.NoError(t, err)
+				} else if err != nil {
+					require.Equal(t, test.expectedErr, err)
+					return
+				}
+			}
+			buf.Write([]byte("]"))
+
+			goldenFile := test.deepmindFile + ".golden.json"
+			if os.Getenv("GOLDEN_UPDATE") == "true" {
+				ioutil.WriteFile(goldenFile, buf.Bytes(), os.ModePerm)
+			}
+
+			cnt, err := ioutil.ReadFile(goldenFile)
+			require.NoError(t, err)
+
+			if !assert.JSONEq(t, string(cnt), buf.String()) {
+				t.Error("previous diff:\n" + unifiedDiff(t, cnt, buf.Bytes()))
 			}
 		})
-	}
-}
-
-func Test_readFromFile(t *testing.T) {
-	t.Skip("test is not present")
-	testPath := "testdata/syncer_20210211"
-	cleanup, testdir, err := copyTestDir(testPath, "syncer_20210211")
-	require.NoError(t, err)
-	defer func() {
-		cleanup()
-	}()
-
-	cr := testFileConsoleReader(t, fmt.Sprintf("%s/test.dmlog", testPath), testdir)
-	out, err := cr.ReadBlock()
-	require.NoError(t, err)
-
-	blk, err := types.BlockDecoder(out)
-	require.NoError(t, err)
-	block := blk.(*pbsol.Block)
-
-	assert.Equal(t, "JEHPnjb2tV9ELHF8hK8GMU8RgDfWG1dsKmciBrX83RCQ", base58.Encode(block.Id))
-	assert.Equal(t, uint64(0), block.Number)
-	assert.Equal(t, "11111111111111111111111111111111", base58.Encode(block.PreviousId))
-	assert.Equal(t, uint32(1), block.Version)
-	assert.Equal(t, uint32(0), block.TransactionCount)
-
-	out, err = cr.ReadBlock()
-	require.NoError(t, err)
-
-	blk, err = types.BlockDecoder(out)
-	require.NoError(t, err)
-	block = blk.(*pbsol.Block)
-
-	assert.Equal(t, "EQPhxULMTyjDQWKrbtYm1Mb4zw4VsdK3FLZH8V1uoiLX", base58.Encode(block.Id))
-	assert.Equal(t, uint64(1), block.Number)
-	assert.Equal(t, "JEHPnjb2tV9ELHF8hK8GMU8RgDfWG1dsKmciBrX83RCQ", base58.Encode(block.PreviousId))
-	assert.Equal(t, uint32(1), block.Version)
-	assert.Equal(t, uint32(1), block.TransactionCount)
-	transaction := block.Transactions[0]
-	assert.Equal(t, "4ieqXnsxZuieyUZnyhBfDuwqrYXt48pFaR3M2aoJfARxipSWaVe9FoLBaoLYewF3UvuvMP8bMysvqAPgHiRyBLEP", base58.Encode(transaction.Id))
-
-	for {
-		out, err = cr.ReadBlock()
-		require.NoError(t, err)
-
-		blk, err = types.BlockDecoder(out)
-		require.NoError(t, err)
-		block = blk.(*pbsol.Block)
-
-		if block.Number == 7 {
-			break
-		}
 	}
 }
 
@@ -167,233 +171,57 @@ func Test_processBatchAggregation(t *testing.T) {
 
 func Test_readBlockWork(t *testing.T) {
 	parseCtx := &parseCtx{
-		banks: map[uint64]*bank{},
+		logger: zlog,
+		banks:  map[uint64]*bank{},
 	}
 	err := parseCtx.readBlockWork("BLOCK_WORK 0 1 full D9i2oNmbRpC3crs3JHw1bWXeRaairC1Ko2QeTYgG2Fte 65 1 64 0 0 0 EnYzNaFkUjkkB475ajS5DanXKTFqnWG8uXNU8nrZ6TyW 0 T;59Hrs5YxFh6amJMQcANFXxoph1oaQYYfwy8tQrBmyihyWwvCyncuXxZEUDS7fEbt2b3BUTB858ucXnLqkTQ2MRPT")
 	require.NoError(t, err)
 }
 
-//func Test_readBlockWork(t *testing.T) {
-//	t.Skip()
-//	tests := []struct {
-//		name       string
-//		ctx        *parseCtx
-//		line       string
-//		expectCtx  *parseCtx
-//		expecError bool
-//	}{
-//		{
-//			name: "new full slot work",
-//			ctx: &parseCtx{
-//				banks: map[uint64]*bank{},
-//			},
-//			line: "BLOCK_WORK 55295939 55295941 full 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 932 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0 T;aa;bb",
-//			expectCtx: &parseCtx{
-//				banks: map[uint64]*bank{
-//					55295941: {
-//						parentSlotNum:   55295939,
-//						batchAggregator: [][]*pbcodec.Transaction{},
-//						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						transactionIDs:  trxIDs(t, "aa", "bb"),
-//						blk: &pbcodec.Block{
-//							Version:       1,
-//							Number:        55295941,
-//							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//							PreviousBlock: 55295939,
-//						},
-//					},
-//				},
-//				activeBank: &bank{
-//					parentSlotNum:   55295939,
-//					batchAggregator: [][]*pbcodec.Transaction{},
-//					previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//					transactionIDs:  trxIDs(t, "aa", "bb"),
-//					blk: &pbcodec.Block{
-//						Version:       1,
-//						Number:        55295941,
-//						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						PreviousBlock: 55295939,
-//					},
-//				},
-//			},
-//		},
-//		{
-//			name: "new partial slot work",
-//			ctx: &parseCtx{
-//				banks: map[uint64]*bank{},
-//			},
-//			line: "BLOCK_WORK 55295939 55295941 partial 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 932 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0 T;aa;bb",
-//			expectCtx: &parseCtx{
-//				banks: map[uint64]*bank{
-//					55295941: {
-//						parentSlotNum:   55295939,
-//						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						batchAggregator: [][]*pbcodec.Transaction{},
-//						transactionIDs:  trxIDs(t, "aa", "bb"),
-//						blk: &pbcodec.Block{
-//							Version:       1,
-//							Number:        55295941,
-//							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//							PreviousBlock: 55295939,
-//						},
-//					},
-//				},
-//				activeBank: &bank{
-//					parentSlotNum:   55295939,
-//					previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//					batchAggregator: [][]*pbcodec.Transaction{},
-//					transactionIDs:  trxIDs(t, "aa", "bb"),
-//					blk: &pbcodec.Block{
-//						Version:       1,
-//						Number:        55295941,
-//						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						PreviousBlock: 55295939,
-//					},
-//				},
-//			},
-//		},
-//		{
-//			name: "known partial slot work",
-//			ctx: &parseCtx{
-//				banks: map[uint64]*bank{
-//					55295941: {
-//						parentSlotNum:   55295939,
-//						batchAggregator: [][]*pbcodec.Transaction{},
-//						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						transactionIDs:  trxIDs(t, "aa"),
-//						blk: &pbcodec.Block{
-//							Number:        55295941,
-//							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//							PreviousBlock: 55295939,
-//						},
-//					},
-//				},
-//			},
-//			line: "BLOCK_WORK 55295939 55295941 partial 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 423 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0 T;bb",
-//			expectCtx: &parseCtx{
-//				banks: map[uint64]*bank{
-//					55295941: {
-//						parentSlotNum:   55295939,
-//						batchAggregator: [][]*pbcodec.Transaction{},
-//						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						transactionIDs:  trxIDs(t, "aa", "bb"),
-//						blk: &pbcodec.Block{
-//							Number:        55295941,
-//							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//							PreviousBlock: 55295939,
-//						},
-//					},
-//				},
-//				activeBank: &bank{
-//					parentSlotNum:   55295939,
-//					batchAggregator: [][]*pbcodec.Transaction{},
-//					previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//					transactionIDs:  trxIDs(t, "aa", "bb"),
-//					blk: &pbcodec.Block{
-//						Number:        55295941,
-//						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						PreviousBlock: 55295939,
-//					},
-//				},
-//			},
-//		},
-//		{
-//			name: "known full slot work",
-//			ctx: &parseCtx{
-//				banks: map[uint64]*bank{
-//					55295941: {
-//						parentSlotNum:   55295939,
-//						batchAggregator: [][]*pbcodec.Transaction{},
-//						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						transactionIDs:  trxIDs(t, "aa"),
-//						blk: &pbcodec.Block{
-//							Number:        55295941,
-//							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//							PreviousBlock: 55295939,
-//						},
-//					},
-//				},
-//			},
-//			line: "BLOCK_WORK 55295939 55295941 full 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 423 814 526 0 0 0 8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr 0 T;bb",
-//			expectCtx: &parseCtx{
-//				banks: map[uint64]*bank{
-//					55295941: {
-//						parentSlotNum:   55295939,
-//						batchAggregator: [][]*pbcodec.Transaction{},
-//						previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						transactionIDs:  trxIDs(t, "aa", "bb"),
-//						blk: &pbcodec.Block{
-//							Number:        55295941,
-//							PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//							PreviousBlock: 55295939,
-//						},
-//					},
-//				},
-//				activeBank: &bank{
-//					parentSlotNum:   55295939,
-//					batchAggregator: [][]*pbcodec.Transaction{},
-//					previousSlotID:  blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//					transactionIDs:  trxIDs(t, "aa", "bb"),
-//					blk: &pbcodec.Block{
-//						Number:        55295941,
-//						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
-//						PreviousBlock: 55295939,
-//					},
-//				},
-//			},
-//		},
-//	}
-//
-//	for _, test := range tests {
-//		t.Run(test.name, func(t *testing.T) {
-//			err := test.ctx.readBlockWork(test.line)
-//			if test.expecError {
-//				require.Error(t, err)
-//			} else {
-//				require.NoError(t, err)
-//				assert.Equal(t, test.expectCtx, test.ctx)
-//			}
-//		})
-//	}
-//}
-
 func Test_readInit(t *testing.T) {
 	tests := []struct {
 		name          string
 		line          string
+		cr            *ConsoleReader
 		expectError   bool
 		expectVersion *version
 	}{
 		{
 			name: "golden path",
-			line: "INIT VERSION 1.829.23 (src:9f47ac9c; feat:378846963)",
+			line: "INIT 0.1 vanilla-standard 1.9.15 (src:devbuild; feat:1070292356)",
+			cr:   &ConsoleReader{logger: zlog},
 			expectVersion: &version{
-				major:   1,
-				minor:   829,
-				patch:   23,
-				commit:  "9f47ac9c",
-				feature: "378846963",
+				dmVersion:   "0.1",
+				variant:     "vanilla-standard",
+				nodeVersion: "1.9.15 (src:devbuild; feat:1070292356)",
 			},
 		},
 		{
-			name:        "golden path",
-			line:        "INIT 1.829.23 (src:9f47ac9c; feat:378846963)",
+			name:        "error invalid log line",
+			cr:          &ConsoleReader{logger: zlog},
+			line:        "INIT 0 1 vanilla-standard 1.9.15 (src:devbuild; feat:1070292356)",
+			expectError: true,
+		},
+		{
+			name:        "duplicate init call",
+			line:        "INIT 0.1 vanilla-standard 1.9.15 (src:devbuild; feat:1070292356)",
+			cr:          &ConsoleReader{ver: &version{"a", "b", "c"}, logger: zlog},
 			expectError: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := &parseCtx{}
-			err := ctx.readInit(test.line)
+			err := test.cr.readInit(test.line)
 			if test.expectError {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expectVersion, ctx.v)
+				assert.Equal(t, test.expectVersion, test.cr.ver)
 			}
 		})
 	}
 }
+
 func Test_readBlockEnd(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -406,6 +234,7 @@ func Test_readBlockEnd(t *testing.T) {
 		{
 			name: "end slot",
 			ctx: &parseCtx{
+				logger: zlog,
 				activeBank: &bank{
 					transactionIDs: nil,
 					blk: &pbsol.Block{
@@ -416,7 +245,7 @@ func Test_readBlockEnd(t *testing.T) {
 					errGroup: llerrgroup.New(10),
 				},
 				blockBuffer: make(chan *bstream.Block, 1),
-				stats:       newParsingStats(55295941),
+				stats:       newParsingStats(55295941, zlog),
 			},
 			line:           "BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",
 			expectBlockID:  "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz",
@@ -457,6 +286,7 @@ func Test_readBlockRoot(t *testing.T) {
 		{
 			name: "block root",
 			ctx: &parseCtx{
+				logger: zlog,
 				activeBank: &bank{
 					previousSlotID: blockId(t, "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae"),
 					ended:          true,
@@ -491,7 +321,7 @@ func Test_readBlockRoot(t *testing.T) {
 					},
 				},
 				blockBuffer: make(chan *bstream.Block, 100),
-				stats:       newParsingStats(55295941),
+				stats:       newParsingStats(55295941, zlog),
 			},
 			line: "BANK_ROOT 55295921",
 			expectedBlock: &pbsol.Block{
@@ -539,68 +369,13 @@ func trxSlice(t *testing.T, trxIDs []string) (out []*pbsol.Transaction) {
 	return
 }
 
-func copyTestDir(testPath, testName string) (func(), string, error) {
-	var err error
-	var fds []os.FileInfo
-
-	src := fmt.Sprintf("%s/dmlogs", testPath)
-	dst, err := ioutil.TempDir("", testName)
-	if err != nil {
-		return func() {}, "", fmt.Errorf("unable to create test directory: %w", err)
-	}
-
-	cleanup := func() {
-		os.RemoveAll(dst)
-	}
-
-	if fds, err = ioutil.ReadDir(src); err != nil {
-		return cleanup, "", fmt.Errorf("unable to read test data")
-	}
-
-	for _, fd := range fds {
-		srcfp := path.Join(src, fd.Name())
-		dstfp := path.Join(dst, fd.Name())
-		if !fd.IsDir() {
-			if err = copyFile(srcfp, dstfp); err != nil {
-				return cleanup, "", fmt.Errorf("unable to copy test file %q to tmp dir %q: %w", srcfp, dstfp, err)
-			}
-		}
-	}
-	return cleanup, dst, nil
-}
-
-func copyFile(src, dst string) error {
-	var err error
-	var srcfd *os.File
-	var dstfd *os.File
-	var srcinfo os.FileInfo
-
-	if srcfd, err = os.Open(src); err != nil {
-		return err
-	}
-	defer srcfd.Close()
-
-	if dstfd, err = os.Create(dst); err != nil {
-		return err
-	}
-	defer dstfd.Close()
-
-	if _, err = io.Copy(dstfd, srcfd); err != nil {
-		return err
-	}
-	if srcinfo, err = os.Stat(src); err != nil {
-		return err
-	}
-	return os.Chmod(dst, srcinfo.Mode())
-}
-
-func testFileConsoleReader(t *testing.T, dmlogFile, batchFilesPath string) *ConsoleReader {
+func testFileConsoleReader(t *testing.T, dmlogFilename, batchFilePath string) *ConsoleReader {
 	t.Helper()
 
-	fl, err := os.Open(dmlogFile)
+	fl, err := os.Open(dmlogFilename)
 	require.NoError(t, err)
 
-	cr := testReaderConsoleReader(t, make(chan string, 10000), func() { fl.Close() }, batchFilesPath)
+	cr := testReaderConsoleReader(t, make(chan string, 10000), func() { fl.Close() }, batchFilePath)
 
 	go processData(cr, fl)
 
@@ -609,14 +384,18 @@ func testFileConsoleReader(t *testing.T, dmlogFile, batchFilesPath string) *Cons
 
 func testReaderConsoleReader(t *testing.T, lines chan string, closer func(), batchFilesPath string) *ConsoleReader {
 	t.Helper()
-
-	l := &ConsoleReader{
-		lines: lines,
-		close: closer,
-		ctx:   newParseCtx(batchFilesPath, nil),
+	opts := []ConsoleReaderOption{
+		KeepBatchFiles(),
+	}
+	if batchFilesPath != "" {
+		opts = append(opts, WithBatchFilesPath(batchFilesPath))
 	}
 
-	return l
+	cr, err := NewConsoleReader(zlog, lines, opts...)
+	require.NoError(t, err)
+
+	cr.close = closer
+	return cr
 }
 
 func blockId(t *testing.T, input string) []byte {
@@ -656,4 +435,28 @@ func processData(r *ConsoleReader, reader io.Reader) error {
 	}
 
 	return scanner.Err()
+}
+
+func unifiedDiff(t *testing.T, cnt1, cnt2 []byte) string {
+	file1 := "/tmp/gotests-linediff-1"
+	file2 := "/tmp/gotests-linediff-2"
+	err := ioutil.WriteFile(file1, cnt1, 0600)
+	require.NoError(t, err)
+
+	err = ioutil.WriteFile(file2, cnt2, 0600)
+	require.NoError(t, err)
+
+	cmd := exec.Command("diff", "-u", file1, file2)
+	out, _ := cmd.Output()
+
+	return string(out)
+}
+
+func isNil(v interface{}) bool {
+	if v == nil {
+		return true
+	}
+
+	rv := reflect.ValueOf(v)
+	return rv.Kind() == reflect.Ptr && rv.IsNil()
 }

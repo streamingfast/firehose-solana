@@ -16,11 +16,14 @@ package cli
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
-	"go.uber.org/zap"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/streamingfast/sf-solana/types"
+
+	"github.com/spf13/viper"
+	"go.uber.org/zap"
 
 	// Needs to be in this file which is the main entry of wrapper binary
 	_ "github.com/streamingfast/dauth/authenticator/null"   // auth null plugin
@@ -30,7 +33,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/derr"
 	"github.com/streamingfast/dlauncher/flags"
-	launcher "github.com/streamingfast/dlauncher/launcher"
+	"github.com/streamingfast/dlauncher/launcher"
+	_ "github.com/streamingfast/sf-solana/types"
 )
 
 var RootCmd = &cobra.Command{Use: "sfsol", Short: "Solana on StreamingFast"}
@@ -40,6 +44,7 @@ func Main() {
 	cobra.OnInitialize(func() {
 		allFlags = flags.AutoBind(RootCmd, "SFSOL")
 	})
+	RootCmd.PersistentFlags().Bool("augmented-stack", false, "Skip checks to ensure 'solana' binary is supported")
 
 	RootCmd.PersistentFlags().StringP("data-dir", "d", "./sf-data", "Path to data storage for all components of the stack")
 	RootCmd.PersistentFlags().StringP("config-file", "c", "./sf.yaml", "Configuration file to use. No config file loaded if set to an empty string.")
@@ -66,6 +71,12 @@ func Main() {
 	StartCmd.Example = startCmdExample
 
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		augmentedMode := viper.GetBool("global-augmented-mode")
+		zlog.Info("setting up sfsol bstream", zap.Bool("augmented", augmentedMode))
+		if augmentedMode {
+			types.SetupSfSolAugmented()
+		}
+
 		startupDelay := viper.GetDuration("global-startup-delay")
 		if startupDelay.Microseconds() > 0 {
 			zlog.Info("sleeping before starting application(s)", zap.Duration("delay", startupDelay))
