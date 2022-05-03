@@ -31,7 +31,7 @@ func init() {
 }
 
 var generateCmd = &cobra.Command{
-	Use:   "generate-augmented <path_to_dmlog.dmlog> <output.json> [path-to-deepmind-batch-files]",
+	Use:   "generate <path_to_dmlog.dmlog> <output.json> [path-to-deepmind-batch-files]",
 	Short: "Generated pbsol or pbsolana blocks from dmlogs. If dmlogs",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
