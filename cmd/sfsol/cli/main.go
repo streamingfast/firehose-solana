@@ -44,7 +44,7 @@ func Main() {
 	cobra.OnInitialize(func() {
 		allFlags = flags.AutoBind(RootCmd, "SFSOL")
 	})
-	RootCmd.PersistentFlags().Bool("augmented-stack", false, "Skip checks to ensure 'solana' binary is supported")
+	RootCmd.PersistentFlags().Bool("augmented-mode", false, "Skip checks to ensure 'solana' binary is supported")
 
 	RootCmd.PersistentFlags().StringP("data-dir", "d", "./sf-data", "Path to data storage for all components of the stack")
 	RootCmd.PersistentFlags().StringP("config-file", "c", "./sf.yaml", "Configuration file to use. No config file loaded if set to an empty string.")

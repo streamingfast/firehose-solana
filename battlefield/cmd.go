@@ -40,7 +40,7 @@ var generateCmd = &cobra.Command{
 		augmentedStack := viper.GetBool("global-augmented-mode")
 		batchFilesPath := ""
 		if augmentedStack && len(args) <= 2 {
-			return fmt.Errorf("you must specficy a deepming batch files path as a third argument when running in --augmented-stack mode")
+			return fmt.Errorf("you must specficy a deepming batch files path as a third argument when running in --augmented-mode mode")
 		} else {
 			batchFilesPath = args[2]
 		}
