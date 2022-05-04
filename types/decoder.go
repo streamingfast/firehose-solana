@@ -3,12 +3,10 @@ package types
 import (
 	"fmt"
 
-	pbsolana "github.com/streamingfast/sf-solana/types/pb"
-
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-
 	"github.com/streamingfast/bstream"
 	pbbstream "github.com/streamingfast/pbgo/sf/bstream/v1"
+	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
 	"google.golang.org/protobuf/proto"
 )
 

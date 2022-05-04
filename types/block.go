@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	pbsolana "github.com/streamingfast/sf-solana/types/pb"
+	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
 
 	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 

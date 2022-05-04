@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/streamingfast/sf-solana/types/pb/sol/type;pbsolana";
+option go_package = "github.com/streamingfast/sf-solana/types/pb/sol/type/v1;pbsolana";
 
 package solana.storage.ConfirmedBlock;
 
