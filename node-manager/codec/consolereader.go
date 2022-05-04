@@ -14,13 +14,12 @@ import (
 	"sync"
 	"time"
 
-	pbsolana "github.com/streamingfast/sf-solana/types/pb"
-
 	"github.com/abourget/llerrgroup"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/sf-solana/types"
 	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"

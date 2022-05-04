@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	pbsolana "github.com/streamingfast/sf-solana/types/pb"
+	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
@@ -28,20 +28,22 @@ var Cmd = &cobra.Command{Use: "battlefield", Short: "Battlefield binary"}
 func init() {
 	Cmd.AddCommand(generateCmd)
 	Cmd.AddCommand(compareCmd)
+	compareCmd.Flags().Bool("ignore-extra-blocks", false, "This will ignore extra blocks that may be found in other file (not the reference)")
 }
 
 var generateCmd = &cobra.Command{
 	Use:   "generate <path_to_dmlog.dmlog> <output.json> [path-to-deepmind-batch-files]",
-	Short: "Generated pbsol or pbsolana blocks from dmlogs. If dmlogs",
-	Args:  cobra.MinimumNArgs(1),
+	Short: "Generated pbsol or pbsolana blocks from dmlogs.",
+	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dmlogInputFilePath := args[0]
 		jsonFilePath := args[1]
 		augmentedStack := viper.GetBool("global-augmented-mode")
 		batchFilesPath := ""
-		if augmentedStack && len(args) <= 2 {
-			return fmt.Errorf("you must specficy a deepming batch files path as a third argument when running in --augmented-mode mode")
-		} else {
+		if augmentedStack {
+			if len(args) <= 2 {
+				return fmt.Errorf("you must specficy a deepming batch files path as a third argument when running in --augmented-mode mode")
+			}
 			batchFilesPath = args[2]
 		}
 
@@ -91,14 +93,53 @@ var generateCmd = &cobra.Command{
 }
 
 var compareCmd = &cobra.Command{
-	Use:   "compare {reference_blocks.json} {blocks_b.json}",
+	Use:   "compare {reference_blocks.json} {other_blocks.json}",
 	Short: "Compares 2 blocks file",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		blockAFilePath := args[0]
-		blockBFilePath := args[1]
+		referenceBlocksFilePath := args[0]
+		otherBlocksFilePath := args[1]
+		ignoreExtraBlocks := viper.GetBool("ignore-extra-blocks")
 
-		matched, err := sftools.CompareBlockFiles(blockAFilePath, blockBFilePath, zlog)
+		zlog.Info("running battlefield compare",
+			zap.String("reference_blocks_file_path", referenceBlocksFilePath),
+			zap.String("other_blocks_file_path", otherBlocksFilePath),
+			zap.Bool("ignore_extra_blocks", ignoreExtraBlocks),
+		)
+
+		matched, err := sftools.CompareBlockFiles(referenceBlocksFilePath, otherBlocksFilePath, func(refCnt, otherCnt []byte) (interface{}, interface{}, error) {
+			refStandardBlocks := []*pbsolana.ConfirmedBlock{}
+			err := json.Unmarshal(refCnt, &refStandardBlocks)
+			if err != nil {
+				zlog.Debug("failed unmarshal to array of standard blocks")
+				refAugmentedBlocks := []*pbsol.Block{}
+				err := json.Unmarshal(refCnt, &refAugmentedBlocks)
+				if err != nil {
+					return nil, nil, fmt.Errorf("unable to decode reference blocks in either augmented to standard blocks: %w", err)
+				}
+
+				otherAugmentedBlocks := []*pbsol.Block{}
+				if err := json.Unmarshal(otherCnt, &otherAugmentedBlocks); err != nil {
+					return nil, nil, fmt.Errorf("unable to decode other blocks as augmented blocks: %w", err)
+				}
+
+				if ignoreExtraBlocks {
+					otherAugmentedBlocks = otherAugmentedBlocks[:len(refAugmentedBlocks)]
+				}
+				return refAugmentedBlocks, otherAugmentedBlocks, nil
+
+			}
+
+			otherStandardBlocks := []*pbsolana.ConfirmedBlock{}
+			if err := json.Unmarshal(otherCnt, &otherStandardBlocks); err != nil {
+				return nil, nil, fmt.Errorf("unable to decode other blocks as standard blocks: %w", err)
+			}
+
+			if ignoreExtraBlocks {
+				otherStandardBlocks = otherStandardBlocks[:len(refStandardBlocks)]
+			}
+			return refStandardBlocks, otherStandardBlocks, nil
+		}, zlog)
 		if err != nil {
 			return fmt.Errorf("failed to compare blocks")
 		}

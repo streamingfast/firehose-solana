@@ -120,22 +120,6 @@ func extractCmd(cmd *cobra.Command) []string {
 	return out
 }
 
-func wrapRunE(root *cobra.Command) {
-	original := root.RunE
-
-	root.RunE = nil
-	root.Run = func(cmd *cobra.Command, args []string) {
-		err := original(cmd, args)
-		if err != nil {
-			userLog.Error(err.Error())
-		}
-	}
-
-	for _, child := range root.Commands() {
-		wrapRunE(child)
-	}
-}
-
 func mustFileExists(file string) bool {
 	exists, err := fileExists(file)
 	if err != nil {

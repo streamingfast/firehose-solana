@@ -11,13 +11,10 @@ import (
 	"github.com/streamingfast/solana-go"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/blockstream"
-	"github.com/streamingfast/dstore"
 	nodeManager "github.com/streamingfast/node-manager"
 	"github.com/streamingfast/node-manager/mindreader"
-	nodeManagerSol "github.com/streamingfast/sf-solana/node-manager"
 	"go.uber.org/zap"
 )
 
@@ -67,27 +64,11 @@ func getConsoleReaderFactory(appLogger *zap.Logger, batchFilePath string, purgeA
 	}
 }
 
-func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStoreURL string, blockDataStoreURL string, mergedBlockStoreURL string, mergeAndStoreDirectly bool, mergeThresholdBlockAge time.Duration, workingDir string, blockDataWorkingDir string, batchStartBlockNum uint64, batchStopBlockNum uint64, blocksChanCapacity int, failOnNonContiguousBlock bool, waitTimeForUploadOnShutdown time.Duration, oneBlockFileSuffix string, operatorShutdownFunc func(error), metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager, tracker *bstream.Tracker, appLogger *zap.Logger, batchFilePath string, purgeAccountChanges bool) (*mindreader.MindReaderPlugin, error) {
-
+func getMindreaderLogPlugin(blockStreamServer *blockstream.Server, oneBlockStoreURL string, mergedBlockStoreURL string, mergeAndStoreDirectly bool, mergeThresholdBlockAge time.Duration, workingDir string, blockDataWorkingDir string, batchStartBlockNum uint64, batchStopBlockNum uint64, blocksChanCapacity int, failOnNonContiguousBlock bool, waitTimeForUploadOnShutdown time.Duration, oneBlockFileSuffix string, operatorShutdownFunc func(error), metricsAndReadinessManager *nodeManager.MetricsAndReadinessManager, tracker *bstream.Tracker, appLogger *zap.Logger, batchFilePath string, purgeAccountChanges bool) (*mindreader.MindReaderPlugin, error) {
 	tracker.AddGetter(bstream.NetworkLIBTarget, func(ctx context.Context) (bstream.BlockRef, error) {
 		// FIXME: Need to re-enable the tracker through blockmeta later on (see commented code below), might need to tweak some stuff to make mindreader work...
 		return bstream.BlockRefEmpty, nil
 	})
-
-	blockDataStore, err := dstore.NewDBinStore(blockDataStoreURL)
-	if err != nil {
-		return nil, fmt.Errorf("init block data store: %w", err)
-	}
-	blockDataArchiver := nodeManagerSol.NewBlockDataArchiver(
-		blockDataStore,
-		blockDataWorkingDir,
-		viper.GetString("mindreader-node-block-data-suffix"),
-		appLogger,
-	)
-	if err := blockDataArchiver.Init(); err != nil {
-		return nil, fmt.Errorf("init block data archiver: %w", err)
-	}
-	go blockDataArchiver.Start()
 
 	consoleReaderFactory := getConsoleReaderFactory(appLogger, batchFilePath, purgeAccountChanges)
 	return mindreader.NewMindReaderPlugin(

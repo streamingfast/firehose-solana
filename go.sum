@@ -821,8 +821,12 @@ github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde h1:rm0el70
 github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde/go.mod h1:m+lL+X6GmWmIzxSgbWNsjj+7afeGHSA5RDGATblP6/Y=
 github.com/streamingfast/sf-solana/types v0.0.0-20220502224820-e3da3adb4220 h1:S335r61PUXaG3HzhtToFrvvr4iWYiYTcnFV1qMF5Sj0=
 github.com/streamingfast/sf-solana/types v0.0.0-20220502224820-e3da3adb4220/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
+github.com/streamingfast/sf-solana/types v0.0.0-20220504155254-7402bb410c38 h1:S2eJbI7EbC1lBJjQQ7v98HyEDH2I4jI792QZn9ot8IE=
+github.com/streamingfast/sf-solana/types v0.0.0-20220504155254-7402bb410c38/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
 github.com/streamingfast/sf-tools v0.0.0-20220413151949-d66905428220 h1:6IMTU9BQa6L3MvZXBp2AUos1VcO94M8vuHv1F3YWMCo=
 github.com/streamingfast/sf-tools v0.0.0-20220413151949-d66905428220/go.mod h1:aMfBTj5QyPnXbN+lXCbGcEElI7/llZiE57dz7Hi5tsQ=
+github.com/streamingfast/sf-tools v0.0.0-20220504154702-4b10c7c5fdf1 h1:qVWsdf8BMETONL3IUMg18s4NVJxD++UU+GLcICGiKyM=
+github.com/streamingfast/sf-tools v0.0.0-20220504154702-4b10c7c5fdf1/go.mod h1:aMfBTj5QyPnXbN+lXCbGcEElI7/llZiE57dz7Hi5tsQ=
 github.com/streamingfast/shutter v1.5.0 h1:NpzDYzj0HVpSiDJVO/FFSL6QIK/YKOxY0gJAtyaTOgs=
 github.com/streamingfast/shutter v1.5.0/go.mod h1:B/T6efqdeMGbGwjzPS1ToXzYZI4kDzI5/u4I+7qbjY8=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcIwlbl7PipqrKPgNzfEWD9oxAA0mmjdRd2dTk9/4=

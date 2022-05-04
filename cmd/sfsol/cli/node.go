@@ -315,7 +315,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			zlog.Info("preparing mindreader plugin")
 			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
 			oneBlockStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
-			blockDataStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-block-data-store-url"))
+
 			mergeAndStoreDirectly := viper.GetBool(app + "-merge-and-store-directly")
 			mergeThresholdBlockAge := viper.GetDuration(app + "-merge-threshold-block-age")
 			workingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-working-dir"))
@@ -333,7 +333,6 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			mindreaderPlugin, err = getMindreaderLogPlugin(
 				blockStreamServer,
 				oneBlockStoreURL,
-				blockDataStoreURL,
 				mergedBlocksStoreURL,
 				mergeAndStoreDirectly,
 				mergeThresholdBlockAge,
@@ -474,64 +473,6 @@ func setupNodeSysctl(logger *zap.Logger) error {
 
 	return nil
 }
-
-//func consoleReaderBlockTransformerWithArchive(archiver *nodeManagerSol.BlockDataArchiver, blk *bstream.Block) (*bstream.Block, error) {
-//	obj, err := types.BlockDecoder(blk)
-//	if err != nil {
-//		return nil, fmt.Errorf("unable to decode bstream Block into Solana proto block: %w", err)
-//	}
-//
-//	block, ok := obj.(*pbsol.Block)
-//	zlog.Debug("transforming block", zap.Uint64("slot_num", block.Number))
-//	if !ok {
-//		return nil, fmt.Errorf("expected *pbcodec.Block, got %T", obj)
-//	}
-//
-//	fileName := blockDataFileName(block, "")
-//	block.AccountChangesFileRef = archiver.Store.ObjectURL(fileName)
-//	zlog.Debug("slot data file", zap.String("object_url", block.AccountChangesFileRef))
-//
-//	accountChangesBundle := block.Split(true)
-//	go func() {
-//		err := archiver.StoreBlockData(accountChangesBundle, fileName)
-//		if err != nil {
-//			//todo: This is very bad
-//			panic(fmt.Errorf("storing block data: %w", err))
-//		}
-//		zlog.Debug("slot data store", zap.String("object_path", block.AccountChangesFileRef))
-//
-//	}()
-//
-//	bstreamBlock, err := codec.BlockFromProto(block)
-//	if err != nil {
-//		return nil, fmt.Errorf("block from proto: %w", err)
-//	}
-//
-//	return bstreamBlock, nil
-//}
-
-//duplicated code from node manager
-//func blockDataFileName(slot *pbcodec.Block, suffix string) string {
-//	t := slot.Time()
-//	blockTimeString := fmt.Sprintf("%s.%01d", t.Format("20060102T150405"), t.Nanosecond()/100000000)
-//
-//	blockID := slot.ID()
-//	if len(blockID) > 8 {
-//		blockID = blockID[len(blockID)-8:]
-//	}
-//
-//	previousID := slot.PreviousID()
-//	if len(previousID) > 8 {
-//		previousID = previousID[len(previousID)-8:]
-//	}
-//
-//	suffixString := ""
-//	if suffix != "" {
-//		suffixString = fmt.Sprintf("-%s", suffix)
-//	}
-//	return fmt.Sprintf("%010d-%s-%s-%s%s", slot.Num(), blockTimeString, blockID, previousID, suffixString)
-//}
-
 func registerCommonNodeFlags(cmd *cobra.Command, flagPrefix string, kind string) {
 	cmd.Flags().String(flagPrefix+"-network", "development", "Which network this node refers to, 'development' ")
 	cmd.Flags().String(flagPrefix+"-config-dir", "./"+kind, "Directory for config files")

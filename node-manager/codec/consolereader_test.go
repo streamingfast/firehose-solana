@@ -34,8 +34,8 @@ import (
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/jsonpb"
 	_ "github.com/streamingfast/sf-solana/types"
-	pbsolana "github.com/streamingfast/sf-solana/types/pb"
 	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -4,7 +4,6 @@ start:
   flags:
     log-to-file: false
     common-oneblock-store-url: gs://dfuseio-global-blocks-us/sol-mainnet/v3-oneblock
-    common-block-data-store-url: gs://dfuseio-global-blocks-us/sol-mainnet/v3-block-data
     common-blocks-store-url: gs://dfuseio-global-blocks-us/sol-mainnet/v3
     mindreader-node-grpc-listen-addr: ":9000"
     mindreader-node-blocks-chan-capacity: 10000
