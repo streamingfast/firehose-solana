@@ -43,5 +43,5 @@ func blockReaderFactory(reader io.Reader) (bstream.BlockReader, error) {
 }
 
 func blockWriterFactory(writer io.Writer) (bstream.BlockWriter, error) {
-	return bstream.NewDBinBlockWriter(writer, pbbstream.Protocol_SOLANA.String(), 1)
+	return bstream.NewDBinBlockWriter(writer, "SOL", 1)
 }
