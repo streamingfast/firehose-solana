@@ -5,8 +5,6 @@ import (
 	"io"
 	"time"
 
-	pbbstream "github.com/streamingfast/pbgo/sf/bstream/v1"
-
 	"github.com/streamingfast/bstream"
 )
 
@@ -33,9 +31,8 @@ func init() {
 
 func blockReaderFactory(reader io.Reader) (bstream.BlockReader, error) {
 	return bstream.NewDBinBlockReader(reader, func(contentType string, version int32) error {
-		protocol := pbbstream.Protocol(pbbstream.Protocol_value[contentType])
-		if protocol != pbbstream.Protocol_SOLANA && version != 1 {
-			return fmt.Errorf("reader only knows about %s block kind at version 1, got %s at version %d", protocol, contentType, version)
+		if contentType != "SOL" && version != 1 {
+			return fmt.Errorf("reader only knows about %s block kind at version 1, got %s at version %d", "SOL", contentType, version)
 		}
 
 		return nil
