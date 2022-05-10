@@ -739,6 +739,8 @@ github.com/streamingfast/dipp v1.0.1-0.20210811200841-d2cca4e058e6 h1:8j9KSl3X+G
 github.com/streamingfast/dipp v1.0.1-0.20210811200841-d2cca4e058e6/go.mod h1:9ihwWT1EcYrcjohKEWD415EgDgVAbgWKrcERDoVhkGk=
 github.com/streamingfast/dlauncher v0.0.0-20220307153121-5674e1b64d40 h1:pPEV0xOifHDIGrgTkog3Fgy/YYeGjI8RUU6o1JjYYbY=
 github.com/streamingfast/dlauncher v0.0.0-20220307153121-5674e1b64d40/go.mod h1:vKvY92urkEbtbPCcV4ej4289dhAHS2KCCtocsmEyQa4=
+github.com/streamingfast/dlauncher v0.0.0-20220510190546-3b2b932ceac8 h1:Xq5ywytyLM/ur8GC0Wd1n5cxdbhSXYYo7+Gj7Oc9jMk=
+github.com/streamingfast/dlauncher v0.0.0-20220510190546-3b2b932ceac8/go.mod h1:eHfZYDRV6W6+4FY+yEskuHRE0zrRW1LUUH2onNmsCGY=
 github.com/streamingfast/dmetering v0.0.0-20220301165106-a642bb6a21bd/go.mod h1:Eu1SH2HyBbDUmQqJV+f5oowCQ/c02HkAZyR5U2BKIT8=
 github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9 h1:dy+xdXeyud8v6Zf3tUaZo57mAgpO33nUHlBxxypYhY0=
 github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9/go.mod h1:JwP515aKdtsbm8v4pRjd20Q+2u7GZ03jqIEpzTrtbMw=
@@ -769,6 +771,8 @@ github.com/streamingfast/logging v0.0.0-20220304183711-ddba33d79e27/go.mod h1:4G
 github.com/streamingfast/logging v0.0.0-20220304214715-bc750a74b424/go.mod h1:VlduQ80JcGJSargkRU4Sg9Xo63wZD/l8A5NC/Uo1/uU=
 github.com/streamingfast/logging v0.0.0-20220405224725-2755dab2ce75 h1:ZqpS7rAhhKD7S7DnrpEdrnW1/gZcv82ytpMviovkli4=
 github.com/streamingfast/logging v0.0.0-20220405224725-2755dab2ce75/go.mod h1:VlduQ80JcGJSargkRU4Sg9Xo63wZD/l8A5NC/Uo1/uU=
+github.com/streamingfast/logging v0.0.0-20220510190517-a6ee472bec8e h1:aLqgrQ6R6agmcz6gCnksDD0uwU8DVzLp2G5k7kLafDo=
+github.com/streamingfast/logging v0.0.0-20220510190517-a6ee472bec8e/go.mod h1:VlduQ80JcGJSargkRU4Sg9Xo63wZD/l8A5NC/Uo1/uU=
 github.com/streamingfast/merger v0.0.3-0.20220412144000-3ad818763ec5/go.mod h1:S8+TtO6v8tm3MI3pTI6w3vIlHk8SnlnWGGfR7VYvWaI=
 github.com/streamingfast/merger v0.0.3-0.20220427133815-fb04cd671db1 h1:Pyw5q5mRvelCY/KTK7sS20v5czRJm2Adp4+926hPMmM=
 github.com/streamingfast/merger v0.0.3-0.20220427133815-fb04cd671db1/go.mod h1:hmSlm5RBySzsk0Xjv/UpB74bHwKUK+x8GjGMnBX3NUg=

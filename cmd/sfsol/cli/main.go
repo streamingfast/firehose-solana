@@ -69,10 +69,8 @@ func Main() {
 	StartCmd.Example = startCmdExample
 
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		augmentedMode := viper.GetBool("global-augmented-mode")
-		zlog.Info("setting up sfsol bstream", zap.Bool("augmented", augmentedMode))
-		if augmentedMode {
-			types.SetupSfSolAugmented()
+		if err := setupCmd(cmd); err != nil {
+			return fmt.Errorf("failed to bootstrap system")
 		}
 
 		startupDelay := viper.GetDuration("global-startup-delay")
@@ -81,7 +79,13 @@ func Main() {
 			time.Sleep(startupDelay)
 		}
 
-		return setupCmd(cmd)
+		augmentedMode := viper.GetBool("global-augmented-mode")
+		zlog.Info("setting up sfsol bstream", zap.Bool("augmented", augmentedMode))
+		if augmentedMode {
+			types.SetupSfSolAugmented()
+		}
+
+		return nil
 	}
 
 	derr.Check("Solana on StreamingFast", RootCmd.Execute())

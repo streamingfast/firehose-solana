@@ -108,7 +108,7 @@ func Start(dataDir string, args []string) (err error) {
 		//maybeCheckNodeosVersion() //todo
 	}
 
-	zlog.Info("launching applications %s", zap.Strings("apps", apps))
+	zlog.Info("launching applications", zap.Strings("apps", apps))
 	if err = launch.Launch(apps); err != nil {
 		return err
 	}

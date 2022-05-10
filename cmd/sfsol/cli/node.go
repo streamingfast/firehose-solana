@@ -10,12 +10,10 @@ import (
 	"time"
 
 	"github.com/lorenzosaino/go-sysctl"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream/blockstream"
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/dstore"
-	"github.com/streamingfast/logging"
 	nodeManager "github.com/streamingfast/node-manager"
 	nodeManagerApp "github.com/streamingfast/node-manager/app/node_manager2"
 	"github.com/streamingfast/node-manager/metrics"
@@ -59,35 +57,6 @@ var p2pPortEndByKind = map[string]string{
 	"peering":    PeeringNodeP2PPortEnd,
 }
 
-// RegisterMindreaderSolanaNodeApp is an helper function that registers a given Solana node app. The `kind` value determines
-// how the app is configured initial as well as being used to register flags, loggers, metrics, etc.
-//
-// Supported `kind`:
-// - miner
-// - peering
-func RegisterMindreaderSolanaNodeApp(extraFlagRegistration func(cmd *cobra.Command) error) {
-	app := "mindreader-node"
-	kind := "mindreader"
-
-	mindreader, _ := logging.PackageLogger("mindreader", fmt.Sprintf("github.com/streamingfast/sf-solana/mindreader"))
-	nodeLogger, _ := logging.PackageLogger("node", fmt.Sprintf("github.com/streamingfast/sf-solana/mindreader/node"))
-
-	launcher.RegisterApp(zlog, &launcher.AppDef{
-		ID:          "mindreader",
-		Title:       fmt.Sprintf("Solana Mindreader"),
-		Description: fmt.Sprintf("Solana %s node with built-in operational manager", "mindreader"),
-		RegisterFlags: func(cmd *cobra.Command) error {
-			registerCommonNodeFlags(cmd, app, kind)
-			extraFlagRegistration(cmd)
-			return nil
-		},
-		InitFunc: func(runtime *launcher.Runtime) error {
-			return nil
-		},
-		FactoryFunc: nodeFactoryFunc(app, kind, mindreader, nodeLogger),
-	})
-}
-
 func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*launcher.Runtime) (launcher.App, error) {
 	return func(runtime *launcher.Runtime) (launcher.App, error) {
 		if err := setupNodeSysctl(appLogger); err != nil {
@@ -97,40 +66,12 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 		sfDataDir := runtime.AbsDataDir
 
 		dataDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir"))
-		configDir, err := filepath.Abs(viper.GetString(app + "-config-dir"))
-		if err != nil {
-			return nil, fmt.Errorf("invalid config directory %q: %w", viper.GetString(app+"-config-dir"), err)
-		}
-
 		///sf-data/node-manager/<node workingdir>
 
 		headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(app)
 		headBlockNumber := metrics.NewHeadBlockNumber(app)
 
-		arguments := append([]string{
-			//"--ledger", dataDir,
-			//"--gossip-port", viper.GetString(app + "-gossip-port"),
-			//"--dynamic-port-range", fmt.Sprintf("%s-%s", viper.GetString(app+"-p2p-port-start"), viper.GetString(app+"-p2p-port-end")),
-			//"--log", "-",
-			//"--no-snapshot-fetch",
-			//"--no-genesis-fetch",
-		})
-		if app == "miner" {
-			identityFile := filepath.Join(configDir, "identity.json")
-			if !mustFileExists(identityFile) {
-				return nil, fmt.Errorf("identity file %q does not exist but it should", identityFile)
-			}
-
-			voteAccountFile := identityFile
-			if mustFileExists(filepath.Join(configDir, "vote-account.json")) {
-				voteAccountFile = filepath.Join(configDir, "vote-account.json")
-			}
-
-			arguments = append(arguments,
-				"--identity", identityFile,
-				"--vote-account", voteAccountFile,
-			)
-		}
+		arguments := append([]string{})
 
 		rpcPort := viper.GetString(app + "-rpc-port")
 		if rpcPort != "" {
@@ -148,24 +89,14 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			}
 		}
 
-		if kind == "miner" {
-			arguments = append(arguments,
-				"--init-complete-file", filepath.Join(dataDir, "init-complete.log"),
-			)
-		}
-
 		network := viper.GetString(app + "-network")
 		startupDelay := viper.GetDuration(app + "-startup-delay")
 		extraArguments := getExtraArguments(kind)
 
-		if kind == "peering" || kind == "mindreader" {
+		if kind == "mindreader" {
 			(*appLogger).Info("configuring node for syncing", zap.String("network", network))
 
 			arguments = append(arguments, "--limit-ledger-size")
-			if kind == "peering" {
-				arguments = append(arguments, "400000000")
-			}
-
 			if network == "development" {
 				(*appLogger).Info("configuring node for development syncing")
 				// FIXME: What a bummer, connection refused on cluster endpoint simply terminates the process!
@@ -355,7 +286,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 
 			superviser.RegisterLogPlugin(mindreaderPlugin)
 		}
-		zlog.Info("mindreaderPlugin", zap.Bool("nil", mindreaderPlugin == nil))
+
 		return nodeManagerApp.New(&nodeManagerApp.Config{
 			HTTPAddr:     viper.GetString(app + "-http-listen-addr"),
 			GRPCAddr:     viper.GetString(app + "-grpc-listen-addr"),
@@ -463,26 +394,4 @@ func setupNodeSysctl(logger *zap.Logger) error {
 	}
 
 	return nil
-}
-func registerCommonNodeFlags(cmd *cobra.Command, flagPrefix string, kind string) {
-	cmd.Flags().String(flagPrefix+"-network", "development", "Which network this node refers to, 'development' ")
-	cmd.Flags().String(flagPrefix+"-config-dir", "./"+kind, "Directory for config files")
-	cmd.Flags().String(flagPrefix+"-data-dir", fmt.Sprintf("{sf-data-dir}/%s/data", kind), "Directory for data (node blocks and state)")
-	cmd.Flags().String(flagPrefix+"-rpc-port", rpcPortByKind[kind], "HTTP listening port of Solana node, setting this to empty string disable RPC endpoint for the node")
-	cmd.Flags().String(flagPrefix+"-gossip-port", gossipPortByKind[kind], "TCP gossip listening port of Solana node")
-	cmd.Flags().String(flagPrefix+"-p2p-port-start", p2pPortStartByKind[kind], "P2P dynamic range start listening port of Solana node")
-	cmd.Flags().String(flagPrefix+"-p2p-port-end", p2pPortEndByKind[kind], "P2P dynamic range end of Solana node")
-	cmd.Flags().String(flagPrefix+"-http-listen-addr", httpListenAddrByKind[kind], "Solana node manager HTTP address when operational command can be send to control the node")
-	cmd.Flags().Duration(flagPrefix+"-readiness-max-latency", 30*time.Second, "The health endpoint '/healthz' will return an error until the head block time is within that duration to now")
-	cmd.Flags().Duration(flagPrefix+"-shutdown-delay", 0, "Delay before shutting manager when sigterm received")
-	cmd.Flags().String(flagPrefix+"-extra-arguments", "", "Extra arguments to be passed when executing superviser binary")
-	cmd.Flags().String(flagPrefix+"-bootstrap-data-url", "", "URL where to find bootstrapping data for this node, the URL must point to a `.tar.zst` archive containing the full data directory to bootstrap from")
-	cmd.Flags().Bool(flagPrefix+"-log-to-zap", true, "Enable all node logs to transit into app's logger directly, when false, prints node logs directly to stdout")
-	cmd.Flags().Bool(flagPrefix+"-rpc-enable-debug-apis", false, "[DEV] Enable some of the Solana validator RPC APIs that can be used for debugging purposes")
-	cmd.Flags().Duration(flagPrefix+"-startup-delay", 0, "[DEV] wait time before launching")
-	cmd.Flags().String(flagPrefix+"-restore-snapshot-name", "", "If non-empty, the node will be restored from that snapshot when it starts.")
-	cmd.Flags().Duration(flagPrefix+"-auto-snapshot-period", 0, "If non-zero, the node manager will check on disk at this period interval to see if the underlying node has produced a snapshot. Use in conjunction with --snapshot-interval-slots in the --"+flagPrefix+"-extra-arguments. Specify 1m, 2m...")
-	cmd.Flags().String(flagPrefix+"-local-snapshot-folder", "", "where solana snapshots are stored by the node")
-	cmd.Flags().Int(flagPrefix+"-number-of-snapshots-to-keep", 0, "if non-zero, after a successful snapshot, older snapshots will be deleted to only keep that number of recent snapshots")
-	cmd.Flags().String(flagPrefix+"-genesis-url", "", "url to genesis.tar.bz2")
 }
