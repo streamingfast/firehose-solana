@@ -197,8 +197,7 @@ func inspectBlocksE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
 	}
-
-	outputDot := viper.GetBool("viz")
+	augmentedStack := viper.GetBool("global-augmented-mode")
 	str := viper.GetString("store")
 
 	store, err := dstore.NewDBinStore(str)
@@ -212,12 +211,8 @@ func inspectBlocksE(cmd *cobra.Command, args []string) error {
 	}
 	defer closeFunc()
 
-	if outputDot {
-		fmt.Println("// Run: dot -Tpdf file.dot -o file.pdf")
-		fmt.Println("digraph D {")
-	} else {
-		fmt.Printf("Merged Blocks File: %s\n", fileURL)
-	}
+	fmt.Printf("Merged Blocks File: %s\n", fileURL)
+
 	seenBlockCount := 0
 	for {
 		block, err := readerFactory.Read()
@@ -229,19 +224,14 @@ func inspectBlocksE(cmd *cobra.Command, args []string) error {
 
 		}
 
-		if err := readBlock(block, outputDot); err != nil {
+		if err := readBlock(block, augmentedStack); err != nil {
 			return fmt.Errorf("processing block: %w", err)
 		}
 
 		seenBlockCount++
 	}
 
-	if outputDot {
-		fmt.Println("}")
-	} else {
-		fmt.Printf("Total blocks: %d\n", seenBlockCount)
-	}
-
+	fmt.Printf("Total blocks: %d\n", seenBlockCount)
 	return nil
 }
 
@@ -251,6 +241,7 @@ func inspectBlockE(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
 	}
+	augmentedStack := viper.GetBool("global-augmented-mode")
 
 	delta := blockNum % 100
 	baseBlockNum := blockNum - delta
@@ -280,7 +271,7 @@ func inspectBlockE(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		if err := readBlock(block, false); err != nil {
+		if err := readBlock(block, augmentedStack); err != nil {
 			return fmt.Errorf("processing block: %w", err)
 		}
 

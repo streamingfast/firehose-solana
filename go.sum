@@ -745,6 +745,8 @@ github.com/streamingfast/bstream v0.0.2-0.20220330124346-02408ab3db65/go.mod h1:
 github.com/streamingfast/bstream v0.0.2-0.20220330132237-248bc2d8ea7e/go.mod h1:Cd/32kGRHt2aqJ62PLQZQ9O3azBT/vCPvCrP7vBc2cs=
 github.com/streamingfast/bstream v0.0.2-0.20220428192925-5d0312d274f0 h1:h0tl0BvogxoU05g6bjCFv9W862Wb07t/RAvp1U8GfeY=
 github.com/streamingfast/bstream v0.0.2-0.20220428192925-5d0312d274f0/go.mod h1:5uiGlDGmqMmjY5rz4uIet74NyAiv/YZRShjFftFJtDE=
+github.com/streamingfast/bstream v0.0.2-0.20220505155906-a0834b9c5258 h1:eQgMxScR/3b5QWSIDbhTA11VRYvlpCiN11DXUjU/f54=
+github.com/streamingfast/bstream v0.0.2-0.20220505155906-a0834b9c5258/go.mod h1:5uiGlDGmqMmjY5rz4uIet74NyAiv/YZRShjFftFJtDE=
 github.com/streamingfast/cli v0.0.3/go.mod h1:0+crhXhsHDBwb1EWceYcFM5Z3zp6gXsxNxkl+rTMZj0=
 github.com/streamingfast/cli v0.0.4-0.20220113202443-f7bcefa38f7e h1:RNQiFMOloBPAMA5PCwShiOoMQ1FeKsVJXcwo9Lq0iHI=
 github.com/streamingfast/cli v0.0.4-0.20220113202443-f7bcefa38f7e/go.mod h1:0+crhXhsHDBwb1EWceYcFM5Z3zp6gXsxNxkl+rTMZj0=
@@ -823,6 +825,8 @@ github.com/streamingfast/sf-solana/types v0.0.0-20220502224820-e3da3adb4220 h1:S
 github.com/streamingfast/sf-solana/types v0.0.0-20220502224820-e3da3adb4220/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
 github.com/streamingfast/sf-solana/types v0.0.0-20220504155254-7402bb410c38 h1:S2eJbI7EbC1lBJjQQ7v98HyEDH2I4jI792QZn9ot8IE=
 github.com/streamingfast/sf-solana/types v0.0.0-20220504155254-7402bb410c38/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
+github.com/streamingfast/sf-solana/types v0.0.0-20220505183419-daee6f2a30b9 h1:TYTNekrVKPtdQSlg6pu5uP8GJMwo+mclWt8f6BK+RGE=
+github.com/streamingfast/sf-solana/types v0.0.0-20220505183419-daee6f2a30b9/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
 github.com/streamingfast/sf-tools v0.0.0-20220413151949-d66905428220 h1:6IMTU9BQa6L3MvZXBp2AUos1VcO94M8vuHv1F3YWMCo=
 github.com/streamingfast/sf-tools v0.0.0-20220413151949-d66905428220/go.mod h1:aMfBTj5QyPnXbN+lXCbGcEElI7/llZiE57dz7Hi5tsQ=
 github.com/streamingfast/sf-tools v0.0.0-20220504154702-4b10c7c5fdf1 h1:qVWsdf8BMETONL3IUMg18s4NVJxD++UU+GLcICGiKyM=
