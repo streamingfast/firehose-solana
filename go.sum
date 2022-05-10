@@ -827,6 +827,8 @@ github.com/streamingfast/sf-solana/types v0.0.0-20220504155254-7402bb410c38 h1:S
 github.com/streamingfast/sf-solana/types v0.0.0-20220504155254-7402bb410c38/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
 github.com/streamingfast/sf-solana/types v0.0.0-20220505183419-daee6f2a30b9 h1:TYTNekrVKPtdQSlg6pu5uP8GJMwo+mclWt8f6BK+RGE=
 github.com/streamingfast/sf-solana/types v0.0.0-20220505183419-daee6f2a30b9/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
+github.com/streamingfast/sf-solana/types v0.0.0-20220510151525-c5fbf19481f0 h1:1iEZPOn0ZaMBl0CervSQYo2ohpit4MwWOxU2kMOTkHM=
+github.com/streamingfast/sf-solana/types v0.0.0-20220510151525-c5fbf19481f0/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
 github.com/streamingfast/sf-tools v0.0.0-20220413151949-d66905428220 h1:6IMTU9BQa6L3MvZXBp2AUos1VcO94M8vuHv1F3YWMCo=
 github.com/streamingfast/sf-tools v0.0.0-20220413151949-d66905428220/go.mod h1:aMfBTj5QyPnXbN+lXCbGcEElI7/llZiE57dz7Hi5tsQ=
 github.com/streamingfast/sf-tools v0.0.0-20220504154702-4b10c7c5fdf1 h1:qVWsdf8BMETONL3IUMg18s4NVJxD++UU+GLcICGiKyM=
