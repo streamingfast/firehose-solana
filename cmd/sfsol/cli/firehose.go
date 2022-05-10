@@ -28,12 +28,10 @@ func init() {
 	appLogger := zap.NewNop()
 	appLogger, _ = logging.PackageLogger("firehose", "github.com/streamingfast/sf-solana/firehose")
 
-	launcher.RegisterApp(&launcher.AppDef{
+	launcher.RegisterApp(zlog, &launcher.AppDef{
 		ID:          "firehose",
 		Title:       "Block Firehose",
 		Description: "Provides on-demand filtered blocks, depends on common-blocks-store-url and common-blockstream-addr",
-		MetricsID:   "merged-filter",
-		Logger:      launcher.NewLoggingDef("github.com/streamingfast/sf-solana/firehose.*", nil),
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("firehose-grpc-listen-addr", FirehoseGRPCServingAddr, "Address on which the firehose will listen")
 			cmd.Flags().StringSlice("firehose-blocks-store-urls", nil, "If non-empty, overrides common-blocks-store-url with a list of blocks stores")

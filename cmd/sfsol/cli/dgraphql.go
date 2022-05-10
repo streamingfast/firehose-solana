@@ -9,12 +9,10 @@ import (
 )
 
 func init() {
-	launcher.RegisterApp(&launcher.AppDef{
+	launcher.RegisterApp(zlog, &launcher.AppDef{
 		ID:          "dgraphql",
 		Title:       "GraphQL",
 		Description: "Serves GraphQL queries to clients",
-		MetricsID:   "dgraphql",
-		Logger:      launcher.NewLoggingDef("github.com/streamingfast/(dgraphql.*|sf-solana/dgraphql.*)", nil),
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("dgraphql-http-addr", DgraphqlHTTPServingAddr, "TCP Listener addr for http")
 			cmd.Flags().String("dgraphql-grpc-addr", DgraphqlGRPCServingAddr, "TCP Listener addr for gRPC")

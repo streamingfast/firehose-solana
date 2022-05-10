@@ -3,12 +3,14 @@ package types
 import (
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/streamingfast/bstream"
 )
 
 var CurrentMode = "standard"
+var SetCurrentMode sync.Once
 
 func IsSfSolAugmented() bool {
 	return CurrentMode == "augmented"
@@ -16,10 +18,19 @@ func IsSfSolAugmented() bool {
 
 func SetupSfSolAugmented() {
 	bstream.GetBlockDecoder = bstream.BlockDecoderFunc(PBSolBlockDecoder)
-	CurrentMode = "augmented"
+	SetCurrentMode.Do(func() {
+		CurrentMode = "augmented"
+	})
 }
 
 func init() {
+	if CurrentMode == "" {
+		CurrentMode = "standard"
+	} else {
+		SetCurrentMode.Do(func() {
+			CurrentMode = "augmented"
+		})
+	}
 	bstream.GetBlockReaderFactory = bstream.BlockReaderFactoryFunc(blockReaderFactory)
 	bstream.GetBlockWriterFactory = bstream.BlockWriterFactoryFunc(blockWriterFactory)
 	bstream.GetProtocolFirstStreamableBlock = 0

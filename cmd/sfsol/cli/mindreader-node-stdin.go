@@ -23,19 +23,15 @@ import (
 	nodeManager "github.com/streamingfast/node-manager"
 	nodeMindreaderStdinApp "github.com/streamingfast/node-manager/app/node_mindreader_stdin"
 	"github.com/streamingfast/node-manager/metrics"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 func init() {
 	appLogger, _ := logging.PackageLogger("mindreader-node-stdin", "github.com/streamingfast/sf-ethereum/mindreader-node-stdin")
 
-	launcher.RegisterApp(&launcher.AppDef{
+	launcher.RegisterApp(zlog, &launcher.AppDef{
 		ID:          "mindreader-node-stdin",
 		Title:       "Mindreader Node (stdin)",
 		Description: "Blocks reading node, unmanaged, reads deep mind from standard input",
-		MetricsID:   "mindreader-node-stdin",
-		Logger:      launcher.NewLoggingDef("github.com/streamingfast/sf-ethereum/mindreader-node-stdin$", []zapcore.Level{zap.WarnLevel, zap.WarnLevel, zap.InfoLevel, zap.DebugLevel}),
 		RegisterFlags: func(cmd *cobra.Command) error {
 			return nil
 		},

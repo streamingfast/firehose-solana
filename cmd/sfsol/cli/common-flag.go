@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
+
 	"github.com/streamingfast/cli"
 	_ "github.com/streamingfast/dauth/authenticator/null" // register authenticator plugin
 	_ "github.com/streamingfast/dauth/ratelimiter/null"   // register ratelimiter plugin
@@ -13,7 +15,7 @@ import (
 )
 
 func init() {
-	launcher.RegisterCommonFlags = func(cmd *cobra.Command) error {
+	launcher.RegisterCommonFlags = func(logger *zap.Logger, cmd *cobra.Command) error {
 		// Network config
 		cmd.Flags().String("common-network-id", NetworkID, "[COMMON] Solana network identifier known to us for pre-configured elements Used by: miner-node, mindreader-node")
 		cmd.Flags().String("common-sf-network-id", SFNetworkID, "[COMMON] StreamingFast network ID, used for some billing functions by dgraphql")

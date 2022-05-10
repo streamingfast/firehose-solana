@@ -15,9 +15,7 @@
 package cli
 
 import (
-	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/logging"
 )
 
-var userLog = launcher.UserLog
-var zlog, tracer = logging.PackageLogger("sfsol", "github.com/streamingfast/sf-solana/cmd/sfsol")
+var zlog, _ = logging.RootLogger("sfsol", "github.com/streamingfast/sf-solana/cmd/sfsol")

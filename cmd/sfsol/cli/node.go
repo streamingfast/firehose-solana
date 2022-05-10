@@ -26,7 +26,6 @@ import (
 	nodeManagerSol "github.com/streamingfast/sf-solana/node-manager"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 )
 
@@ -60,31 +59,23 @@ var p2pPortEndByKind = map[string]string{
 	"peering":    PeeringNodeP2PPortEnd,
 }
 
-// RegisterSolanaNodeApp is an helper function that registers a given Solana node app. The `kind` value determines
+// RegisterMindreaderSolanaNodeApp is an helper function that registers a given Solana node app. The `kind` value determines
 // how the app is configured initial as well as being used to register flags, loggers, metrics, etc.
 //
 // Supported `kind`:
 // - miner
 // - peering
-func RegisterSolanaNodeApp(kind string, extraFlagRegistration func(cmd *cobra.Command) error) {
-	if kind != "miner" && kind != "mindreader" && kind != "peering" {
-		panic(fmt.Errorf("invalid kind value, must be either 'miner', 'mindreader' or 'peering', got %q", kind))
-	}
+func RegisterMindreaderSolanaNodeApp(extraFlagRegistration func(cmd *cobra.Command) error) {
+	app := "mindreader-node"
+	kind := "mindreader"
 
-	app := fmt.Sprintf("%s-node", kind)
+	mindreader, _ := logging.PackageLogger("mindreader", fmt.Sprintf("github.com/streamingfast/sf-solana/mindreader"))
+	nodeLogger, _ := logging.PackageLogger("node", fmt.Sprintf("github.com/streamingfast/sf-solana/mindreader/node"))
 
-	appLogger, _ := logging.PackageLogger(app, fmt.Sprintf("github.com/streamingfast/sf-solana/%s", app))
-	nodeLogger, _ := logging.PackageLogger("node", fmt.Sprintf("github.com/streamingfast/sf-solana/%s/node", app))
-
-	launcher.RegisterApp(&launcher.AppDef{
-		ID:          app,
-		Title:       fmt.Sprintf("Solana Node (%s)", kind),
-		Description: fmt.Sprintf("Solana %s node with built-in operational manager", kind),
-		MetricsID:   app,
-		Logger: launcher.NewLoggingDef(
-			fmt.Sprintf("github.com/streamingfast/sf-solana/%s.*", app),
-			[]zapcore.Level{zap.WarnLevel, zap.WarnLevel, zap.InfoLevel, zap.DebugLevel},
-		),
+	launcher.RegisterApp(zlog, &launcher.AppDef{
+		ID:          "mindreader",
+		Title:       fmt.Sprintf("Solana Mindreader"),
+		Description: fmt.Sprintf("Solana %s node with built-in operational manager", "mindreader"),
 		RegisterFlags: func(cmd *cobra.Command) error {
 			registerCommonNodeFlags(cmd, app, kind)
 			extraFlagRegistration(cmd)
@@ -93,7 +84,7 @@ func RegisterSolanaNodeApp(kind string, extraFlagRegistration func(cmd *cobra.Co
 		InitFunc: func(runtime *launcher.Runtime) error {
 			return nil
 		},
-		FactoryFunc: nodeFactoryFunc(app, kind, appLogger, nodeLogger),
+		FactoryFunc: nodeFactoryFunc(app, kind, mindreader, nodeLogger),
 	})
 }
 

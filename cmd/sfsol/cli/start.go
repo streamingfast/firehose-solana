@@ -17,7 +17,6 @@ package cli
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -36,18 +35,17 @@ func init() {
 
 func sfStartE(cmd *cobra.Command, args []string) (err error) {
 	dataDir := viper.GetString("global-data-dir")
-	userLog.Debug("sfsol binary started", zap.String("data_dir", dataDir))
+	zlog.Debug("sfsol binary started", zap.String("data_dir", dataDir))
 
 	configFile := viper.GetString("global-config-file")
-	userLog.Printf("Starting Solana on StreamingFast with config file '%s'", configFile)
+	zlog.Info("starting Solana on StreamingFast with config file", zap.String("config_file", configFile))
 
 	err = Start(dataDir, args)
 	if err != nil {
 		return fmt.Errorf("unable to launch: %w", err)
 	}
 
-	// If an error occurred, saying Goodbye is not greate
-	userLog.Printf("Goodbye")
+	zlog.Info("goodbye")
 	return
 }
 
@@ -63,33 +61,8 @@ func Start(dataDir string, args []string) (err error) {
 		return err
 	}
 
-	//meshClient, err := dmeshClient.New(viper.GetString("search-common-mesh-dsn"))
-	//if err != nil {
-	//	return fmt.Errorf("unable to create dmesh client: %w", err)
-	//}
-
 	// FIXME: Most probably wrong, cannot do much yet ...
 	tracker := bstream.NewTracker(250)
-
-	//
-	//blockmetaAddr := viper.GetString("common-blockmeta-addr")
-	//if blockmetaAddr != "" {
-	//	conn, err := dgrpc.NewInternalClient(blockmetaAddr)
-	//	if err != nil {
-	//		userLog.Warn("cannot get grpc connection to blockmeta, disabling this startBlockResolver for search indexer", zap.Error(err), zap.String("blockmeta_addr", blockmetaAddr))
-	//	} else {
-	//		blockmetaCli := pbblockmeta.NewBlockIDClient(conn)
-	//		tracker.AddResolver(bstream.StartBlockResolver(pbblockmeta.StartBlockResolver(blockmetaCli)))
-	//	}
-	//}
-	//
-	//blocksStoreURL := mustReplaceDataDir(dataDirAbs, viper.GetString("common-blocks-store-url"))
-	//blocksStore, err := dstore.NewDBinStore(blocksStoreURL)
-	//if err != nil {
-	//	userLog.Warn("cannot get setup blockstore, disabling this startBlockResolver", zap.Error(err), zap.String("blocksStoreURL", blocksStoreURL))
-	//} else {
-	//	tracker.AddResolver(codec.BlockstoreStartBlockResolver(blocksStore))
-	//}
 
 	// FIXME: Most probably wrong, cannot do much yet ...
 	tracker.AddResolver(bstream.OffsetStartBlockResolver(200))
@@ -97,8 +70,6 @@ func Start(dataDir string, args []string) (err error) {
 	////////
 
 	modules := &launcher.Runtime{
-		//SearchDmeshClient: meshClient,
-		//BlockFilter:       blockfilter,
 		AbsDataDir: dataDirAbs,
 		Tracker:    tracker,
 	}
@@ -121,8 +92,8 @@ func Start(dataDir string, args []string) (err error) {
 			return fmt.Errorf("protocol specific hooks not configured correctly: %w", err)
 		}
 	*/
-	launch := launcher.NewLauncher(modules)
-	userLog.Debug("launcher created")
+	launch := launcher.NewLauncher(zlog, modules)
+	zlog.Debug("launcher created")
 
 	runByDefault := func(file string) bool {
 		return true
@@ -130,14 +101,14 @@ func Start(dataDir string, args []string) (err error) {
 
 	apps := launcher.ParseAppsFromArgs(args, runByDefault)
 	if len(args) == 0 {
-		apps = launcher.ParseAppsFromArgs(launcher.DfuseConfig["start"].Args, runByDefault)
+		apps = launcher.ParseAppsFromArgs(launcher.Config["start"].Args, runByDefault)
 	}
 
 	if containsApp(apps, "mindreader") {
 		//maybeCheckNodeosVersion() //todo
 	}
 
-	userLog.Printf("Launching applications %s", strings.Join(apps, ","))
+	zlog.Info("launching applications %s", zap.Strings("apps", apps))
 	if err = launch.Launch(apps); err != nil {
 		return err
 	}
@@ -147,13 +118,13 @@ func Start(dataDir string, args []string) (err error) {
 	signalHandler := derr.SetupSignalHandler(0 * time.Second)
 	select {
 	case <-signalHandler:
-		userLog.Printf("Received termination signal, quitting")
+		zlog.Info("received termination signal, quitting")
 		go launch.Close()
 	case appID := <-launch.Terminating():
 		if launch.Err() == nil {
-			userLog.Printf("Application %s triggered a clean shutdown, quitting", appID)
+			zlog.Info("application triggered a clean shutdown, quitting", zap.String("app_id", appID))
 		} else {
-			userLog.Printf("Application %s shutdown unexpectedly, quitting", appID)
+			zlog.Info("application shutdown unexpectedly, quitting", zap.String("app_id", appID))
 			return launch.Err()
 		}
 	}
@@ -187,7 +158,7 @@ func printWelcomeMessage(apps []string) {
 		formatArgs = append(formatArgs, APIProxyHTTPListenAddr, APIProxyHTTPListenAddr)
 	}
 
-	userLog.Printf(format, formatArgs...)
+	zlog.Info(fmt.Sprintf(format, formatArgs...))
 }
 
 func containsApp(apps []string, searchedApp string) bool {

@@ -28,7 +28,6 @@ func init() {
 
 func sfInitE(cmd *cobra.Command, args []string) (err error) {
 	configFile := viper.GetString("global-config-file")
-	userLog.Debug("starting init", zap.String("config-file", configFile))
-
+	zlog.Debug("starting init", zap.String("config-file", configFile))
 	return nil
 }

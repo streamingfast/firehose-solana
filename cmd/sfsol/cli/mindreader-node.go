@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	RegisterSolanaNodeApp("mindreader", registerMindreaderNodeFlags)
+	RegisterMindreaderSolanaNodeApp(registerMindreaderNodeFlags)
 }
 
 func registerMindreaderNodeFlags(cmd *cobra.Command) error {

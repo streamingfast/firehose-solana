@@ -25,7 +25,7 @@ require (
 	github.com/streamingfast/derr v0.0.0-20220301163149-de09cb18fc70
 	github.com/streamingfast/dgraphql v0.0.2-0.20220307143518-466192441cfe
 	github.com/streamingfast/dgrpc v0.0.0-20220301153539-536adf71b594
-	github.com/streamingfast/dlauncher v0.0.0-20211210162313-cf4aa5fc4878
+	github.com/streamingfast/dlauncher v0.0.0-20220307153121-5674e1b64d40
 	github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9
 	github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447
 	github.com/streamingfast/dstore v0.1.1-0.20220419183635-aad7bcb15b8e
@@ -55,3 +55,5 @@ require (
 replace github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
 
 replace github.com/ShinyTrinkets/overseer => github.com/dfuse-io/overseer v0.2.1-0.20191024193921-39856397cf3f
+
+replace github.com/streamingfast/sf-solana/types => ./types

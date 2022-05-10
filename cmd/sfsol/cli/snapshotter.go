@@ -8,12 +8,10 @@ import (
 )
 
 func init() {
-	launcher.RegisterApp(&launcher.AppDef{
+	launcher.RegisterApp(zlog, &launcher.AppDef{
 		ID:          "snapshotter",
 		Title:       "snapshotter",
 		Description: "Manage solana snapshot",
-		MetricsID:   "snapshotter",
-		Logger:      launcher.NewLoggingDef("github.com/streamingfast/sf-solana/snapshotter.*", nil),
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("snapshotter-source-bucket", "mainnet-beta-ledger-us-west1", "bucket where solana snapshot are stored")
 			cmd.Flags().String("snapshotter-source-prefix", "", "mainnet-beta-ledger-us-west1")

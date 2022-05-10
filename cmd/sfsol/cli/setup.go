@@ -56,7 +56,7 @@ func setupCmd(cmd *cobra.Command) error {
 		}
 	}
 
-	subconf := launcher.DfuseConfig[subCommand]
+	subconf := launcher.Config[subCommand]
 	if subconf != nil {
 		for k, v := range subconf.Flags {
 			validFlag := false
@@ -74,17 +74,17 @@ func setupCmd(cmd *cobra.Command) error {
 		}
 	}
 
-	launcher.SetupLogger(&launcher.LoggingOptions{
+	launcher.SetupLogger(zlog, &launcher.LoggingOptions{
 		WorkingDir:    viper.GetString("global-data-dir"),
 		Verbosity:     viper.GetInt("global-verbose"),
 		LogFormat:     viper.GetString("global-log-format"),
 		LogToFile:     isMatchingCommand(cmds, logToFileOn) && viper.GetBool("global-log-to-file"),
 		LogListenAddr: viper.GetString("global-log-level-switcher-listen-addr"),
 	})
-	launcher.SetupTracing()
-	launcher.SetupAnalyticsMetrics(viper.GetString("global-metrics-listen-addr"), viper.GetString("global-pprof-listen-addr"))
+	launcher.SetupTracing("sf-solana")
+	launcher.SetupAnalyticsMetrics(zlog, viper.GetString("global-metrics-listen-addr"), viper.GetString("global-pprof-listen-addr"))
 
-	if err := launcher.SetMaxOpenFilesLimit(1000000, 24576); err != nil {
+	if err := launcher.SetMaxOpenFilesLimit(zlog, 1000000, 24576); err != nil {
 		return fmt.Errorf("sysctl setup: %w", err)
 	}
 
