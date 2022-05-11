@@ -12,6 +12,9 @@ message ConfirmedBlock {
     repeated Reward rewards = 5;
     UnixTimestamp block_time = 6;
     BlockHeight block_height = 7;
+
+    // StreamingFast additions
+    uint64 slot = 20;
 }
 
 message ConfirmedTransaction {

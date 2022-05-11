@@ -298,7 +298,7 @@ const (
 	BlockEndChunkSize    = 5
 	BlockFailedChunkSize = 3
 	BlockRootChunkSize   = 2
-	BlockCompleteChunk   = 2
+	BlockCompleteChunk   = 3
 )
 
 type options struct {
@@ -572,7 +572,7 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 }
 
 // COMPLETE_BLOCK 0a2c47426f4....
-// COMPLETE_BLOCK <COMPLETE BLOCK PROTO IN HEX>
+// COMPLETE_BLOCK <SLOT_NUM> <COMPLETE BLOCK PROTO IN HEX>
 func (ctx *parseCtx) readCompleteBlock(line string) (err error) {
 	ctx.logger.Debug("reading complete block", zap.String("line", line))
 
@@ -580,9 +580,13 @@ func (ctx *parseCtx) readCompleteBlock(line string) (err error) {
 	if len(chunks) != BlockCompleteChunk {
 		return fmt.Errorf("expected %d fields, got %d", BlockCompleteChunk, len(chunks))
 	}
+	var slotNum uint64
+	if slotNum, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
+		return fmt.Errorf("slotNumber to int: %w", err)
+	}
 
 	var cnt []byte
-	if cnt, err = hex.DecodeString(chunks[1]); err != nil {
+	if cnt, err = hex.DecodeString(chunks[2]); err != nil {
 		return fmt.Errorf("unable to hex decode content: %w", err)
 	}
 
@@ -590,6 +594,7 @@ func (ctx *parseCtx) readCompleteBlock(line string) (err error) {
 	if err := proto.Unmarshal(cnt, blk); err != nil {
 		return fmt.Errorf("unable to proto unmarhal confirmed block: %w", err)
 	}
+	blk.Slot = slotNum
 
 	bstreamBlk, err := types.BlockFromPBSolanaProto(blk)
 	if err != nil {

@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream/blockstream"
 	"github.com/streamingfast/dlauncher/launcher"
-	"github.com/streamingfast/dstore"
 	nodeManager "github.com/streamingfast/node-manager"
 	nodeManagerApp "github.com/streamingfast/node-manager/app/node_manager2"
 	"github.com/streamingfast/node-manager/metrics"
@@ -64,9 +63,7 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 		}
 
 		sfDataDir := runtime.AbsDataDir
-
 		dataDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir"))
-		///sf-data/node-manager/<node workingdir>
 
 		headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(app)
 		headBlockNumber := metrics.NewHeadBlockNumber(app)
@@ -156,10 +153,6 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			}
 		}
 
-		if viper.GetDuration(app+"-auto-snapshot-period") != 0 && !hasExtraArgument(extraArguments, "--snapshot-interval-slots") {
-			return nil, fmt.Errorf("extra argument --snapshot-interval-slots XYZ required if you pass in --%s-auto-snapshot-period", app)
-		}
-
 		if len(extraArguments) > 0 {
 			arguments = append(arguments, extraArguments...)
 		}
@@ -205,30 +198,6 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			return nil, fmt.Errorf("unable to create chain operator: %w", err)
 		}
 		mergedBlocksStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url"))
-		snapshotStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-snapshots-store-url"))
-		if snapshotStoreURL != "" {
-			localSnapshotDir := viper.GetString(app + "-local-snapshot-folder")
-			genesisURL := viper.GetString(app + "-genesis-url")
-			snapshotStore, err := dstore.NewSimpleStore(snapshotStoreURL)
-			if err != nil {
-				return nil, fmt.Errorf("unable to create snapshot store from url %q: %w", snapshotStoreURL, err)
-			}
-
-			mergedBlocksStore, err := dstore.NewDBinStore(mergedBlocksStoreURL)
-			if err != nil {
-				return nil, fmt.Errorf("setting up merged blocks store: %w", err)
-			}
-
-			snapshotter := nodeManagerSol.NewSnapshotter(localSnapshotDir, genesisURL, snapshotStore, mergedBlocksStore)
-			chainOperator.RegisterBackupModule("snapshotter", snapshotter)
-
-			// TODO check me
-			chainOperator.RegisterBackupSchedule(&operator.BackupSchedule{
-				TimeBetweenRuns:       viper.GetDuration(app + "-auto-snapshot-period"),
-				RequiredHostnameMatch: "",
-				BackuperName:          "snapshotter",
-			})
-		}
 
 		var mindreaderPlugin *mindreader.MindReaderPlugin
 		var registerServices func(server *grpc.Server) error

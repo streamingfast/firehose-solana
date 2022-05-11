@@ -36,15 +36,10 @@ func BlockFromPBSolanaProto(blk *pbsolana.ConfirmedBlock) (*bstream.Block, error
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal to binary form: %s", err)
 	}
-
-	blockHeight := uint64(0)
-	if blk.BlockHeight != nil {
-		blockHeight = blk.BlockHeight.GetBlockHeight()
-	}
 	blockTime := time.Unix(blk.BlockTime.GetTimestamp(), 0)
 	block := &bstream.Block{
 		Id:             blk.Blockhash,
-		Number:         blockHeight,
+		Number:         blk.Slot,
 		PreviousId:     blk.PreviousBlockhash,
 		Timestamp:      blockTime,
 		PayloadKind:    Protocol_SOL,

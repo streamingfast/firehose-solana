@@ -48,6 +48,7 @@ func init() {
 			cmd.Flags().Bool("mindreader-node-rpc-enable-debug-apis", false, "[DEV] Enable some of the Solana validator RPC APIs that can be used for debugging purposes")
 			cmd.Flags().Duration("mindreader-node-startup-delay", 0, "[DEV] wait time before launching")
 			cmd.Flags().String("mindreader-node-restore-snapshot-name", "", "If non-empty, the node will be restored from that snapshot when it starts.")
+
 			cmd.Flags().Duration("mindreader-node-auto-snapshot-period", 0, "If non-zero, the node manager will check on disk at this period interval to see if the underlying node has produced a snapshot. Use in conjunction with --snapshot-interval-slots in the --mindreader-node-extra-arguments. Specify 1m, 2m...")
 			cmd.Flags().String("mindreader-node-local-snapshot-folder", "", "where solana snapshots are stored by the node")
 			cmd.Flags().Int("mindreader-node-number-of-snapshots-to-keep", 0, "if non-zero, after a successful snapshot, older snapshots will be deleted to only keep that number of recent snapshots")
