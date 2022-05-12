@@ -21,13 +21,16 @@ var reprocCmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(reprocCmd)
-
-	reprocCmd.PersistentFlags().String("dest-store", "./localblocks", "Destination blocks store")
+	reprocCmd.Flags().String("oneblock-suffix", "default", "If non-empty, the oneblock files will be appended with that suffix, so that mindreaders can each write their file for a given block instead of competing for writes.")
+	reprocCmd.Flags().String("dest-store", "./localblocks", "Destination blocks store")
+	reprocCmd.Flags().Bool("one-block-files", false, "Generate one block files")
 }
 
 func reprocRunE(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
+	oneBlockFile := viper.GetBool("one-block-files")
+	oneblockSuffix := viper.GetString("oneblock-suffix")
 	store, err := dstore.NewDBinStore(viper.GetString("dest-store"))
 	if err != nil {
 		return fmt.Errorf("unable to create store at path %q: %w", store, err)
@@ -48,9 +51,22 @@ func reprocRunE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to parse end block number %q: %w", args[3], err)
 	}
 
-	reprocClient, err := reproc.New(store, client, startBlockNum, endBlockNum)
+	var writer reproc.Writer
+	if oneBlockFile {
+		writer, err = reproc.NewBlockWriter(oneblockSuffix, store)
+		if err != nil {
+			return fmt.Errorf("unable to setup bundle writer: %w", err)
+		}
+	} else {
+		writer, err = reproc.NewBundleWriter(startBlockNum, store)
+		if err != nil {
+			return fmt.Errorf("unable to setup bundle writer: %w", err)
+		}
+	}
+
+	reprocClient, err := reproc.New(client, writer)
 	if err != nil {
 		return fmt.Errorf("unable to create reproc: %w", err)
 	}
-	return reprocClient.Launch(ctx)
+	return reprocClient.Launch(ctx, startBlockNum, endBlockNum)
 }

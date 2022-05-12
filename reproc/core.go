@@ -14,7 +14,6 @@ import (
 
 	"cloud.google.com/go/bigtable"
 	"github.com/klauspost/compress/zstd"
-	"github.com/streamingfast/dstore"
 	"go.uber.org/zap"
 )
 
@@ -22,35 +21,27 @@ const PRINT_FREQ = 10
 
 type Reproc struct {
 	bt             *bigtable.Client
-	startBlockNum  uint64
-	stopBlockNum   uint64
 	seenStartBlock bool
 
-	bundleWriter *BundleWriter
+	writer Writer
 }
 
-func New(mergedBlockStore dstore.Store, bt *bigtable.Client, startBlockNum, stopBlockNum uint64) (*Reproc, error) {
-	bw, err := NewBundleWriter(startBlockNum, mergedBlockStore)
-	if err != nil {
-		return nil, fmt.Errorf("unable to setup bundle writer: %w", err)
-	}
+func New(bt *bigtable.Client, writer Writer) (*Reproc, error) {
 	return &Reproc{
-		bt:            bt,
-		startBlockNum: startBlockNum,
-		stopBlockNum:  stopBlockNum,
-		bundleWriter:  bw,
+		bt:     bt,
+		writer: writer,
 	}, nil
 }
 
-func (r *Reproc) Launch(ctx context.Context) error {
+func (r *Reproc) Launch(ctx context.Context, startBlockNum, stopBlockNum uint64) error {
 	zlog.Info("launching sf-solana reprocessing",
-		zap.Uint64("start_block_num", r.startBlockNum),
-		zap.Uint64("start_block_num", r.stopBlockNum),
+		zap.Uint64("start_block_num", startBlockNum),
+		zap.Uint64("start_block_num", stopBlockNum),
 	)
 	table := r.bt.Open("blocks")
-	btRange := bigtable.NewRange(fmt.Sprintf("%016x", r.startBlockNum), fmt.Sprintf("%016x", r.stopBlockNum))
+	btRange := bigtable.NewRange(fmt.Sprintf("%016x", startBlockNum), fmt.Sprintf("%016x", stopBlockNum))
 	if err := table.ReadRows(ctx, btRange, func(row bigtable.Row) bool {
-		return r.processRow(ctx, row)
+		return r.processRow(ctx, row, startBlockNum, stopBlockNum)
 	}); err != nil {
 		return fmt.Errorf("error while reading rows: %w", err)
 	}
@@ -59,24 +50,20 @@ func (r *Reproc) Launch(ctx context.Context) error {
 
 }
 
-func (r *Reproc) processRow(ctx context.Context, row bigtable.Row) bool {
+func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum, stopBlockNum uint64) bool {
 	el := row["x"][0]
 	blockNum, _ := new(big.Int).SetString(el.Row, 16)
 	zlogger := zlog.With(zap.Uint64("block_num", blockNum.Uint64()))
 
 	if !r.seenStartBlock {
-		if blockNum.Uint64() != r.startBlockNum {
+		if blockNum.Uint64() != startBlockNum {
 			zlogger.Warn("expected to receive start block as first block",
-				zap.Uint64("expected_block", r.startBlockNum),
+				zap.Uint64("expected_block", startBlockNum),
 				zap.Uint64("received_block", blockNum.Uint64()),
 			)
 			return false
 		}
 		r.seenStartBlock = true
-	}
-
-	if tracer.Enabled() {
-		zlogger.Debug("handing block")
 	}
 
 	var cnt []byte
@@ -92,22 +79,24 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row) bool {
 		return true
 	}
 
+	blk.Slot = blockNum.Uint64()
+
+	if tracer.Enabled() {
+		zlogger.Debug("handing block",
+			zap.Uint64("slot", blk.Slot),
+			zap.Uint64("parent_slot", blk.ParentSlot),
+			zap.String("hash", blk.Blockhash),
+		)
+	}
+
 	// Adjustment:
 	// some blocks do not have a height in the proto bug, we assume
 	// this is because the field was added later
-
-	if blk.BlockHeight == nil {
-		blk.BlockHeight = &pbsolana.BlockHeight{
-			BlockHeight: blockNum.Uint64(),
-		}
-	}
-
 	if blockNum.Uint64()%PRINT_FREQ == 0 {
 		opts := []zap.Field{
 			zap.String("hash", blk.Blockhash),
 			zap.String("previous_hash", blk.PreviousID()),
 			zap.Uint64("parent_slot", blk.ParentSlot),
-			zap.Uint64("block_height", blk.BlockHeight.BlockHeight),
 		}
 
 		if blk.BlockTime != nil {
@@ -118,7 +107,7 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row) bool {
 
 		zlogger.Info(fmt.Sprintf("processing block 1 / %d", PRINT_FREQ), opts...)
 	}
-	if err := r.saveBlock(ctx, blockNum.Uint64(), blk, zlogger); err != nil {
+	if err := r.saveBlock(ctx, blk.ParentSlot, blk, zlogger); err != nil {
 		zlogger.Warn("failed to write block", zap.Error(err))
 		return true
 	}

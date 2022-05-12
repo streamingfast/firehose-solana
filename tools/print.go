@@ -171,7 +171,6 @@ func readPBSolanaBlock(block *pbsolana.ConfirmedBlock, LibNum uint64) error {
 		block.Time(),
 		len(block.Transactions),
 	)
-
 	if viper.GetBool("transactions") || viper.GetUint64("transactions-for-block") == block.Num() {
 		totalInstr := 0
 		fmt.Println("- Transactions: ")

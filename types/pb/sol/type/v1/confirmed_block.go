@@ -7,10 +7,7 @@ import (
 )
 
 func (c *ConfirmedBlock) Num() uint64 {
-	if c.BlockHeight != nil {
-		return c.BlockHeight.GetBlockHeight()
-	}
-	return 0
+	return c.Slot
 }
 
 func (c *ConfirmedBlock) Time() time.Time {

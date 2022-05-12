@@ -6,15 +6,22 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/streamingfast/sf-solana/types"
+
 	"go.uber.org/zap"
 
 	"github.com/streamingfast/dstore"
-	"github.com/streamingfast/sf-solana/types"
 
 	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
 
 	"github.com/streamingfast/bstream"
 )
+
+type Writer interface {
+	Write(blk *bstream.Block) error
+	Flush(ctx context.Context) error
+	Next() error
+}
 
 const BUNDLE_SIZE = 100
 
@@ -24,6 +31,7 @@ type BundleWriter struct {
 	exclusiveStopBlockNum uint64
 	buf                   *bytes.Buffer
 	store                 dstore.Store
+	oneBlockSuffix        string
 }
 
 func NewBundleWriter(startBlockNum uint64, mergedBlockStore dstore.Store) (*BundleWriter, error) {
@@ -43,16 +51,12 @@ func NewBundleWriter(startBlockNum uint64, mergedBlockStore dstore.Store) (*Bund
 
 var errBundleComplete = errors.New("bundle complete")
 
-func (w *BundleWriter) Write(blkNum uint64, blk *pbsolana.ConfirmedBlock) error {
-	if blkNum >= w.exclusiveStopBlockNum {
+func (w *BundleWriter) Write(blk *bstream.Block) error {
+	if blk.Num() >= w.exclusiveStopBlockNum {
 		return errBundleComplete
 	}
 
-	bstreamBlk, err := types.BlockFromPBSolanaProto(blk)
-	if err != nil {
-		return fmt.Errorf("failed to convert pbsolana block into bstream block: %w", err)
-	}
-	if err := w.w.Write(bstreamBlk); err != nil {
+	if err := w.w.Write(blk); err != nil {
 		return fmt.Errorf("failed to write bstream block: %w", err)
 	}
 
@@ -85,16 +89,23 @@ func (w *BundleWriter) Next() (err error) {
 	return nil
 }
 
-func (r *Reproc) saveBlock(ctx context.Context, blkNum uint64, blk *pbsolana.ConfirmedBlock, zlogger *zap.Logger) error {
+func (r *Reproc) saveBlock(ctx context.Context, parentNum uint64, blk *pbsolana.ConfirmedBlock, zlogger *zap.Logger) error {
 	if tracer.Enabled() {
 		zlogger.Debug("writing block to bundle")
 	}
-	err := r.bundleWriter.Write(blkNum, blk)
+
+	block, err := types.BlockFromPBSolanaProto(blk)
+	if err != nil {
+		return fmt.Errorf("unable to convert block to proto: %w", err)
+	}
+
+	block.LibNum = parentNum
+	err = r.writer.Write(block)
 	if err == errBundleComplete {
-		if err := r.bundleWriter.Flush(ctx); err != nil {
+		if err := r.writer.Flush(ctx); err != nil {
 			return fmt.Errorf("unable to flush bundle: %w", err)
 		}
-		if err := r.bundleWriter.Next(); err != nil {
+		if err := r.writer.Next(); err != nil {
 			return fmt.Errorf("unable to go to next bundle: %w", err)
 		}
 		return nil
