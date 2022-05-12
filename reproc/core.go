@@ -56,12 +56,12 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum
 	zlogger := zlog.With(zap.Uint64("block_num", blockNum.Uint64()))
 
 	if !r.seenStartBlock {
-		if blockNum.Uint64() != startBlockNum {
-			zlogger.Warn("expected to receive start block as first block",
+		if blockNum.Uint64() < startBlockNum {
+			zlogger.Warn("skipping blow below start block",
 				zap.Uint64("expected_block", startBlockNum),
 				zap.Uint64("received_block", blockNum.Uint64()),
 			)
-			return false
+			return true
 		}
 		r.seenStartBlock = true
 	}
