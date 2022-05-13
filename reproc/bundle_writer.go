@@ -40,6 +40,10 @@ func NewBundleWriter(startBlockNum uint64, mergedBlockStore dstore.Store) (*Bund
 	if err != nil {
 		return nil, fmt.Errorf("unable to get block writer: %w", err)
 	}
+	if startBlockNum%100 != 0 {
+		return nil, fmt.Errorf("bundle needs a clean start block %100")
+	}
+
 	return &BundleWriter{
 		w:                     blockWriter,
 		buf:                   buffer,
@@ -86,6 +90,9 @@ func (w *BundleWriter) Next() (err error) {
 	}
 	w.startBlockNum = w.exclusiveStopBlockNum
 	w.exclusiveStopBlockNum = w.startBlockNum + BUNDLE_SIZE
+	if w.startBlockNum%100 != 0 {
+		panic("weird start block")
+	}
 	return nil
 }
 
@@ -108,6 +115,11 @@ func (r *Reproc) saveBlock(ctx context.Context, parentNum uint64, blk *pbsolana.
 		if err := r.writer.Next(); err != nil {
 			return fmt.Errorf("unable to go to next bundle: %w", err)
 		}
+
+		if err := r.writer.Write(block); err != nil {
+			return fmt.Errorf("unable to write blokc in new bundle: %w", err)
+		}
+
 		return nil
 	}
 	if err != nil {

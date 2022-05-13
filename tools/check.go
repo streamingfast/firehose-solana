@@ -120,10 +120,11 @@ func checkMergedBlocksE(cmd *cobra.Command, args []string) error {
 		if baseNum32 != expected {
 			// There is no previous valid block range if we are the ever first seen file
 			if count > 1 {
-				fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, roundToBundleEndBlock(expected-fileBlockSize, fileBlockSize))
+				printValidRange(currentStartBlk, roundToBundleEndBlock(expected-fileBlockSize, fileBlockSize))
 			}
 
-			fmt.Printf("❌ Missing blocks range %d - %d!\n", expected, roundToBundleEndBlock(baseNum32-fileBlockSize, fileBlockSize))
+			printMissingRange(expected, roundToBundleEndBlock(baseNum32-fileBlockSize, fileBlockSize))
+
 			currentStartBlk = baseNum32
 
 			holeFound = true
@@ -131,7 +132,7 @@ func checkMergedBlocksE(cmd *cobra.Command, args []string) error {
 		expected = baseNum32 + fileBlockSize
 
 		if count%10000 == 0 {
-			fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, roundToBundleEndBlock(baseNum32, fileBlockSize))
+			printValidRange(currentStartBlk, roundToBundleEndBlock(baseNum32, fileBlockSize))
 			currentStartBlk = baseNum32 + fileBlockSize
 		}
 
@@ -150,7 +151,7 @@ func checkMergedBlocksE(cmd *cobra.Command, args []string) error {
 		actualEndBlock = uint32(blockRange.Stop)
 	}
 
-	fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, actualEndBlock)
+	printValidRange(currentStartBlk, actualEndBlock)
 
 	if len(seenFilters) > 0 {
 		fmt.Println()
@@ -220,10 +221,10 @@ func checkOneBlocksE(cmd *cobra.Command, args []string) error {
 		if int64(baseNum32)-int64(expected) > 0 {
 			// There is no previous valid block range if we are the ever first seen file
 			if count > 1 {
-				fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, expected-1)
+				printValidRange(currentStartBlk, expected-1)
 			}
 
-			fmt.Printf("❌ Missing blocks range %d - %d!\n", expected, baseNum32-1)
+			printMissingRange(expected, baseNum32-1)
 			currentStartBlk = baseNum32
 
 			holeFound = true
@@ -235,7 +236,7 @@ func checkOneBlocksE(cmd *cobra.Command, args []string) error {
 		prevBlockNum = baseNum32
 
 		if count%10000 == 0 {
-			fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, baseNum32)
+			printValidRange(currentStartBlk, baseNum32)
 			currentStartBlk = baseNum32 + 1
 		}
 
@@ -254,7 +255,7 @@ func checkOneBlocksE(cmd *cobra.Command, args []string) error {
 		actualEndBlock = uint32(blockRange.Stop)
 	}
 
-	fmt.Printf("✅ Valid blocks range %d - %d\n", currentStartBlk, actualEndBlock)
+	printValidRange(currentStartBlk, actualEndBlock)
 
 	if len(seenFilters) > 0 {
 		fmt.Println()
@@ -389,4 +390,14 @@ func expectedBlockCount(segment string, fileBlockSize uint32) int {
 	}
 
 	return int(fileBlockSize)
+}
+
+func printValidRange(start, end uint32) {
+	delta := end - start
+	fmt.Printf("✅ Valid blocks range %d - %d [%s blks]\n", start, end, humanize.Comma(int64(delta)))
+}
+
+func printMissingRange(start, end uint32) {
+	delta := end - start
+	fmt.Printf("❌ Missing blocks range %d - %d [%s blks]!\n", start, end, humanize.Comma(int64(delta)))
 }
