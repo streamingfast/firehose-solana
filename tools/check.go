@@ -398,6 +398,6 @@ func printValidRange(start, end uint32) {
 }
 
 func printMissingRange(start, end uint32) {
-	delta := end - start
+	delta := end - start + 1
 	fmt.Printf("❌ Missing blocks range %d - %d [%s blks]!\n", start, end, humanize.Comma(int64(delta)))
 }
