@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/dustin/go-humanize"
 	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 
-	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
@@ -393,7 +393,7 @@ func expectedBlockCount(segment string, fileBlockSize uint32) int {
 }
 
 func printValidRange(start, end uint32) {
-	delta := end - start
+	delta := end - start + 1
 	fmt.Printf("✅ Valid blocks range %d - %d [%s blks]\n", start, end, humanize.Comma(int64(delta)))
 }
 
