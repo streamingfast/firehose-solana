@@ -23,7 +23,8 @@ type Reproc struct {
 	bt             *bigtable.Client
 	seenStartBlock bool
 
-	writer Writer
+	writer        Writer
+	lastSeenBlock *pbsolana.ConfirmedBlock
 }
 
 func New(bt *bigtable.Client, writer Writer) (*Reproc, error) {
@@ -39,18 +40,37 @@ func (r *Reproc) Launch(ctx context.Context, startBlockNum, stopBlockNum uint64)
 		zap.Uint64("start_block_num", stopBlockNum),
 	)
 	table := r.bt.Open("blocks")
-	btRange := bigtable.NewRange(fmt.Sprintf("%016x", startBlockNum), fmt.Sprintf("%016x", stopBlockNum))
-	if err := table.ReadRows(ctx, btRange, func(row bigtable.Row) bool {
-		return r.processRow(ctx, row, startBlockNum, stopBlockNum)
-	}); err != nil {
-		return fmt.Errorf("error while reading rows: %w", err)
+	attempts := uint64(0)
+
+	for {
+		if r.lastSeenBlock != nil {
+			resolvedStartBlock := r.lastSeenBlock.Num() - (r.lastSeenBlock.Num() % r.writer.BundleSize())
+			zlog.Info("restarting read rows will retry last boundary",
+				zap.Uint64("last_seen_block", r.lastSeenBlock.Num()),
+				zap.Uint64("resolved_block", resolvedStartBlock),
+				zap.Uint64("bundle_size", r.writer.BundleSize()),
+			)
+			startBlockNum = resolvedStartBlock
+		}
+
+		btRange := bigtable.NewRange(fmt.Sprintf("%016x", startBlockNum), fmt.Sprintf("%016x", stopBlockNum))
+		err := table.ReadRows(ctx, btRange, func(row bigtable.Row) bool {
+			return r.processRow(ctx, row, startBlockNum)
+		})
+		if err != nil {
+			attempts++
+			zlog.Error("error white reading rows", zap.Error(err), zap.Reflect("last_seen_block", r.lastSeenBlock), zap.Uint64("attempts", attempts))
+			continue
+		}
+		zlog.Info("read block finished", zap.Reflect("last_seen_block", r.lastSeenBlock))
+		return nil
 	}
 
 	return nil
 
 }
 
-func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum, stopBlockNum uint64) bool {
+func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum uint64) bool {
 	el := row["x"][0]
 	blockNum, _ := new(big.Int).SetString(el.Row, 16)
 	zlogger := zlog.With(zap.Uint64("block_num", blockNum.Uint64()))
@@ -76,7 +96,7 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum
 	blk := &pbsolana.ConfirmedBlock{}
 	if err := proto.Unmarshal(cnt, blk); err != nil {
 		zlogger.Warn("failed to unmarshal block", zap.Error(err))
-		return true
+		return false
 	}
 
 	blk.Slot = blockNum.Uint64()
@@ -109,9 +129,9 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum
 	}
 	if err := r.saveBlock(ctx, blk.ParentSlot, blk, zlogger); err != nil {
 		zlogger.Warn("failed to write block", zap.Error(err))
-		return true
+		return false
 	}
-
+	r.lastSeenBlock = blk
 	return true
 }
 func decompress(in []byte) (out []byte, err error) {

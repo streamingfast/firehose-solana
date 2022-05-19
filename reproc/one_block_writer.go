@@ -33,6 +33,10 @@ func NewBlockWriter(oneBlockSuffix string, oneBlockStore dstore.Store) (*BlockWr
 	}, nil
 }
 
+func (w *BlockWriter) BundleSize() uint64 {
+	return 1
+}
+
 func (w *BlockWriter) Write(blk *bstream.Block) error {
 	if err := w.w.Write(blk); err != nil {
 		return fmt.Errorf("failed to write bstream block: %w", err)

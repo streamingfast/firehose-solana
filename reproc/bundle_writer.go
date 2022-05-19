@@ -18,6 +18,7 @@ import (
 )
 
 type Writer interface {
+	BundleSize() uint64
 	Write(blk *bstream.Block) error
 	Flush(ctx context.Context) error
 	Next() error
@@ -41,7 +42,7 @@ func NewBundleWriter(startBlockNum uint64, mergedBlockStore dstore.Store) (*Bund
 		return nil, fmt.Errorf("unable to get block writer: %w", err)
 	}
 	if startBlockNum%100 != 0 {
-		return nil, fmt.Errorf("bundle needs a clean start block %100")
+		return nil, fmt.Errorf("bundle needs a clean start block %%100")
 	}
 
 	return &BundleWriter{
@@ -55,6 +56,9 @@ func NewBundleWriter(startBlockNum uint64, mergedBlockStore dstore.Store) (*Bund
 
 var errBundleComplete = errors.New("bundle complete")
 
+func (w *BundleWriter) BundleSize() uint64 {
+	return BUNDLE_SIZE
+}
 func (w *BundleWriter) Write(blk *bstream.Block) error {
 	if blk.Num() >= w.exclusiveStopBlockNum {
 		return errBundleComplete
