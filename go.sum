@@ -735,6 +735,8 @@ github.com/streamingfast/dgrpc v0.0.0-20220301153539-536adf71b594 h1:/TrU0xalSNF
 github.com/streamingfast/dgrpc v0.0.0-20220301153539-536adf71b594/go.mod h1:HFjyAk8wkkb92dLBq1lxArfaWvDHb9Y53+fg7O5WTiU=
 github.com/streamingfast/dhammer v0.0.0-20220301172711-8ed5599dbab1 h1:aGIe8dENSOj1tcWfjyL7PS0g/LYalrkRWjAr/uO6WYI=
 github.com/streamingfast/dhammer v0.0.0-20220301172711-8ed5599dbab1/go.mod h1:mYYgb16eA6NAaLrsbOYxIiuTDnuYQWAaYUccSE+E0yk=
+github.com/streamingfast/dhammer v0.0.0-20220506192416-3797a7906da2 h1:/mcLVdwy6NeHWfJwuh2GD4+FMfPa59fkfM15sl8Jejk=
+github.com/streamingfast/dhammer v0.0.0-20220506192416-3797a7906da2/go.mod h1:MyG3U4ABuf7ANS8tix+e8UUevN7B9juhEnAbslS/X3M=
 github.com/streamingfast/dipp v1.0.1-0.20210811200841-d2cca4e058e6 h1:8j9KSl3X+G4ABwbCR221rErFFoPKJhMq4lUICJtbRE0=
 github.com/streamingfast/dipp v1.0.1-0.20210811200841-d2cca4e058e6/go.mod h1:9ihwWT1EcYrcjohKEWD415EgDgVAbgWKrcERDoVhkGk=
 github.com/streamingfast/dlauncher v0.0.0-20220510190546-3b2b932ceac8 h1:Xq5ywytyLM/ur8GC0Wd1n5cxdbhSXYYo7+Gj7Oc9jMk=
@@ -772,8 +774,13 @@ github.com/streamingfast/logging v0.0.0-20220510190517-a6ee472bec8e/go.mod h1:Vl
 github.com/streamingfast/merger v0.0.3-0.20220412144000-3ad818763ec5/go.mod h1:S8+TtO6v8tm3MI3pTI6w3vIlHk8SnlnWGGfR7VYvWaI=
 github.com/streamingfast/merger v0.0.3-0.20220427133815-fb04cd671db1 h1:Pyw5q5mRvelCY/KTK7sS20v5czRJm2Adp4+926hPMmM=
 github.com/streamingfast/merger v0.0.3-0.20220427133815-fb04cd671db1/go.mod h1:hmSlm5RBySzsk0Xjv/UpB74bHwKUK+x8GjGMnBX3NUg=
+github.com/streamingfast/merger v0.0.3-0.20220506192522-f8be80e054cb/go.mod h1:nuYb7xVnolRgDCrrjmuaHcdl9GqFKkdJl3Pc1KRTTdc=
+github.com/streamingfast/merger v0.0.3-0.20220510150626-2e0bad630abf h1:m0O/WEukXUkfcxw7czv60oA6VSdq+PseIUgiV13VIzk=
+github.com/streamingfast/merger v0.0.3-0.20220510150626-2e0bad630abf/go.mod h1:nuYb7xVnolRgDCrrjmuaHcdl9GqFKkdJl3Pc1KRTTdc=
 github.com/streamingfast/node-manager v0.0.2-0.20220422154052-6a6439016eaf h1:SqQ4hN07LEX7h0xMRZ3lyK/6iJvdyg6b+txsZoD7fzM=
 github.com/streamingfast/node-manager v0.0.2-0.20220422154052-6a6439016eaf/go.mod h1:EZULV3bL4jP6dymx99P2qBPJF46X5+lAPTFIwU9QkoA=
+github.com/streamingfast/node-manager v0.0.2-0.20220512153229-28b9e3ac6f30 h1:pLiTRS579l2dXD4gZQ/nmgX/6SGIE/IIu1n2CmhevFA=
+github.com/streamingfast/node-manager v0.0.2-0.20220512153229-28b9e3ac6f30/go.mod h1:71VUGgY0qlkql+32aFekfJSeIyF1rcq+5ykmPCMIwy0=
 github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 h1:xlWSfi1BoPfsHtPb0VEHGUcAdBF208LUiFCwfaVPfLA=
 github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308/go.mod h1:K1p8Bj/wG34KJvYzPUqtzpndffmpkrVY11u2hkyxCWQ=
 github.com/streamingfast/pbgo v0.0.6-0.20220228185940-1bbaafec7d8a/go.mod h1:huKwfgTGFIFZMKSVbD5TywClM7zAeBUG/zePZMqvXQQ=
@@ -1127,6 +1134,8 @@ golang.org/x/sys v0.0.0-20220114195835-da31bd327af9/go.mod h1:oPkhp1MJrh7nUepCBc
 golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220209214540-3681064d5158 h1:rm+CHSpPEEW2IsXUib1ThaHIjuBVZjxNgSKmBLFfD4c=
 golang.org/x/sys v0.0.0-20220209214540-3681064d5158/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 h1:nonptSpoQ4vQjyraW20DXPAglgQfVnM9ZC6MmNLMR60=
+golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 h1:JGgROgKl9N8DuW20oFS5gxc+lE67/N3FcwmBPMe7ArY=
 golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=

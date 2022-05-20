@@ -32,7 +32,7 @@ func NewFiller(bt *bigtable.Client, startBlockNum uint64, oneBlockStore, mergedB
 		bt:                bt,
 		startBlockNum:     startBlockNum,
 		mergedBlocksStore: mergedBlocksStore,
-		store:             merger.NewDStoreIO(oneBlockStore, nil, 0, 0),
+		store:             merger.NewDStoreIO(zlogger, nil, oneBlockStore, nil, 0, 0, bstream.GetProtocolFirstStreamableBlock, 100),
 		zlogger:           zlogger,
 		repocCli:          client,
 	}, nil
@@ -45,7 +45,7 @@ func (f *Filler) Run(ctx context.Context) error {
 		zap.Uint64("start_block", f.startBlockNum),
 		zap.Uint64("bundle_size", BUNDLE_SIZE),
 	)
-	bundler := bundle.NewBundler(BUNDLE_SIZE, f.startBlockNum+BUNDLE_SIZE)
+	bundler := bundle.NewBundler(zlog, f.startBlockNum, bstream.GetProtocolFirstStreamableBlock, BUNDLE_SIZE)
 	err := bundler.Bootstrap(func(lowBlockNum uint64) ([]*bundle.OneBlockFile, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), GetObjectTimeout)
 		defer cancel()
@@ -65,7 +65,10 @@ func (f *Filler) Run(ctx context.Context) error {
 		if err := f.retrieveOneBlockFile(ctx, bundler); err != nil {
 			return err
 		}
-		isBundleComplete, highestBundleBlockNum := bundler.BundleCompleted()
+		isBundleComplete, highestBundleBlockNum, err := bundler.BundleCompleted()
+		if err != nil {
+			return err
+		}
 		if isBundleComplete {
 			bundler.Commit(highestBundleBlockNum)
 		} else {

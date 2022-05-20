@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream/blockstream"
 	"github.com/streamingfast/dlauncher/launcher"
+	"github.com/streamingfast/logging"
 	nodeManager "github.com/streamingfast/node-manager"
 	nodeManagerApp "github.com/streamingfast/node-manager/app/node_manager2"
 	"github.com/streamingfast/node-manager/metrics"
@@ -56,7 +57,7 @@ var p2pPortEndByKind = map[string]string{
 	"peering":    PeeringNodeP2PPortEnd,
 }
 
-func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*launcher.Runtime) (launcher.App, error) {
+func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.Tracer, nodeLogger *zap.Logger) func(*launcher.Runtime) (launcher.App, error) {
 	return func(runtime *launcher.Runtime) (launcher.App, error) {
 		if err := setupNodeSysctl(appLogger); err != nil {
 			return nil, fmt.Errorf("systcl configuration for %s failed: %w", app, err)
@@ -207,14 +208,12 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
 			oneBlockStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
 
-			mergeAndStoreDirectly := viper.GetBool(app + "-merge-and-store-directly")
-			mergeThresholdBlockAge := viper.GetDuration(app + "-merge-threshold-block-age")
+			mergeThresholdBlockAge := viper.GetString(app + "-merge-threshold-block-age")
 			workingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-working-dir"))
 			blockDataWorkingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-block-data-working-dir"))
 			batchStartBlockNum := viper.GetUint64("mindreader-node-start-block-num")
 			batchStopBlockNum := viper.GetUint64("mindreader-node-stop-block-num")
 			blocksChanCapacity := viper.GetInt("mindreader-node-blocks-chan-capacity")
-			failOnNonContiguousBlock := viper.GetBool("mindreader-node-fail-on-non-contiguous-block")
 			waitTimeForUploadOnShutdown := viper.GetDuration("mindreader-node-wait-upload-complete-on-shutdown")
 			oneBlockFileSuffix := viper.GetString("mindreader-node-oneblock-suffix")
 			batchFilePath := viper.GetString("mindreader-node-deepmind-batch-files-path")
@@ -225,20 +224,19 @@ func nodeFactoryFunc(app, kind string, appLogger, nodeLogger *zap.Logger) func(*
 				blockStreamServer,
 				oneBlockStoreURL,
 				mergedBlocksStoreURL,
-				mergeAndStoreDirectly,
 				mergeThresholdBlockAge,
 				workingDir,
 				blockDataWorkingDir,
 				batchStartBlockNum,
 				batchStopBlockNum,
 				blocksChanCapacity,
-				failOnNonContiguousBlock,
 				waitTimeForUploadOnShutdown,
 				oneBlockFileSuffix,
 				chainOperator.Shutdown,
 				metricsAndReadinessManager,
 				tracker,
 				appLogger,
+				appTracer,
 				batchFilePath,
 				purgeAccountChanges,
 			)

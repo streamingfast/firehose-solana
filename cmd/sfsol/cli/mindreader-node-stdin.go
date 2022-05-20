@@ -17,7 +17,6 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/logging"
 	nodeManager "github.com/streamingfast/node-manager"
@@ -26,7 +25,7 @@ import (
 )
 
 func init() {
-	appLogger, _ := logging.PackageLogger("mindreader-node-stdin", "github.com/streamingfast/sf-ethereum/mindreader-node-stdin")
+	appLogger, appTracer := logging.PackageLogger("mindreader-node-stdin", "github.com/streamingfast/sf-ethereum/mindreader-node-stdin")
 
 	launcher.RegisterApp(zlog, &launcher.AppDef{
 		ID:          "mindreader-node-stdin",
@@ -50,19 +49,14 @@ func init() {
 			headBlockNumber := metrics.NewHeadBlockNumber(metricID)
 			metricsAndReadinessManager := nodeManager.NewMetricsAndReadinessManager(headBlockTimeDrift, headBlockNumber, viper.GetDuration("mindreader-node-readiness-max-latency"))
 
-			blockmetaAddr := viper.GetString("common-blockmeta-addr")
-			tracker := runtime.Tracker.Clone()
-			tracker.AddGetter(bstream.NetworkLIBTarget, bstream.NetworkLIBBlockRefGetter(blockmetaAddr))
 			return nodeMindreaderStdinApp.New(&nodeMindreaderStdinApp.Config{
 				GRPCAddr:                     viper.GetString("mindreader-node-grpc-listen-addr"),
 				ArchiveStoreURL:              archiveStoreURL,
 				MergeArchiveStoreURL:         mergeArchiveStoreURL,
-				BatchMode:                    viper.GetBool("mindreader-node-merge-and-store-directly"),
-				MergeThresholdBlockAge:       viper.GetDuration("mindreader-node-merge-threshold-block-age"),
+				MergeThresholdBlockAge:       viper.GetString("mindreader-node-merge-threshold-block-age"),
 				MindReadBlocksChanCapacity:   viper.GetInt("mindreader-node-blocks-chan-capacity"),
 				StartBlockNum:                viper.GetUint64("mindreader-node-start-block-num"),
 				StopBlockNum:                 viper.GetUint64("mindreader-node-stop-block-num"),
-				FailOnNonContinuousBlocks:    viper.GetBool("mindreader-node-fail-on-non-contiguous-block"),
 				WorkingDir:                   MustReplaceDataDir(sfDataDir, viper.GetString("mindreader-node-working-dir")),
 				WaitUploadCompleteOnShutdown: viper.GetDuration("mindreader-node-wait-upload-complete-on-shutdown"),
 				OneblockSuffix:               viper.GetString("mindreader-node-oneblock-suffix"),
@@ -71,8 +65,7 @@ func init() {
 			}, &nodeMindreaderStdinApp.Modules{
 				ConsoleReaderFactory:       consoleReaderFactory,
 				MetricsAndReadinessManager: metricsAndReadinessManager,
-				Tracker:                    tracker,
-			}, appLogger), nil
+			}, appLogger, appTracer), nil
 		},
 	})
 }

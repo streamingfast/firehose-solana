@@ -33,8 +33,8 @@ require (
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
 	github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3
 	github.com/streamingfast/logging v0.0.0-20220510190517-a6ee472bec8e
-	github.com/streamingfast/merger v0.0.3-0.20220427133815-fb04cd671db1
-	github.com/streamingfast/node-manager v0.0.2-0.20220422154052-6a6439016eaf
+	github.com/streamingfast/merger v0.0.3-0.20220510150626-2e0bad630abf
+	github.com/streamingfast/node-manager v0.0.2-0.20220512153229-28b9e3ac6f30
 	github.com/streamingfast/pbgo v0.0.6-0.20220428192744-f80aee7d4688
 	github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde
 	github.com/streamingfast/sf-solana/types v0.0.0-20220512212630-aa4f9d5a0b1a
