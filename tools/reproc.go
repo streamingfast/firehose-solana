@@ -1,10 +1,13 @@
 package tools
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/streamingfast/sf-solana/reproc"
+	"go.uber.org/zap"
 
 	"cloud.google.com/go/bigtable"
 	"github.com/spf13/cobra"
@@ -51,22 +54,117 @@ func reprocRunE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to parse end block number %q: %w", args[3], err)
 	}
 
-	var writer reproc.Writer
 	if oneBlockFile {
-		writer, err = reproc.NewBlockWriter(oneblockSuffix, store)
+		writer, err := reproc.NewBlockWriter(oneblockSuffix, store)
 		if err != nil {
 			return fmt.Errorf("unable to setup bundle writer: %w", err)
 		}
-	} else {
-		writer, err = reproc.NewBundleWriter(startBlockNum, store)
+		reprocClient, err := reproc.New(client, writer)
 		if err != nil {
-			return fmt.Errorf("unable to setup bundle writer: %w", err)
+			return fmt.Errorf("unable to create reproc: %w", err)
 		}
+		return reprocClient.Launch(ctx, startBlockNum, endBlockNum)
+
 	}
 
-	reprocClient, err := reproc.New(client, writer)
-	if err != nil {
-		return fmt.Errorf("unable to create reproc: %w", err)
+	if startBlockNum/100*100 != startBlockNum {
+		return fmt.Errorf("writing merged files: must start on a 100-blocks boundary, not %d", startBlockNum)
 	}
-	return reprocClient.Launch(ctx, startBlockNum, endBlockNum)
+	if endBlockNum/100*100 != endBlockNum {
+		return fmt.Errorf("writing merged files: must stop on a 100-blocks boundary, not %d", endBlockNum)
+	}
+
+	startRange := startBlockNum
+	for {
+		var endRange uint64
+		startRange, endRange = findStartEndBlock(ctx, startRange, endBlockNum, store)
+		zlog.Info("resolved next bundle boundaries", zap.Uint64("start_range", startRange), zap.Uint64("end_range", endRange))
+		if startRange == endRange {
+			zlog.Info("nothing to process, range is already covered")
+			return nil
+		}
+		writer, err := reproc.NewBundleWriter(startRange, store)
+		if err != nil {
+			return fmt.Errorf("unable to setup bundle writer: %w", err)
+		}
+		reprocClient, err := reproc.New(client, writer)
+		if err != nil {
+			return fmt.Errorf("unable to create reproc: %w", err)
+		}
+		if err := reprocClient.Launch(ctx, startRange, endRange); err != nil {
+			return err
+		}
+
+		if endRange >= endBlockNum {
+			return nil
+		}
+	}
+}
+
+func findStartEndBlock(ctx context.Context, start, end uint64, store dstore.Store) (uint64, uint64) {
+
+	errDone := errors.New("done")
+	errComplete := errors.New("complete")
+
+	var seenStart *uint64
+	var seenEnd *uint64
+
+	hasEnd := end >= 100
+
+	err := store.WalkFrom(ctx, "", reproc.FilenameForBlocksBundle(start), func(filename string) error {
+		num, err := strconv.ParseUint(filename, 10, 64)
+		if err != nil {
+			return err
+		}
+		if num < start { // user has decided to start its merger in the 'future'
+			return nil
+		}
+
+		if num == start {
+			seenStart = &num
+			return nil
+		}
+
+		// num > start
+		if seenStart == nil {
+			seenEnd = &num
+			return errDone // first block after a hole
+		}
+
+		// increment by 100
+		if num == *seenStart+100 {
+			if hasEnd && num == end-100 { // at end-100, we return immediately with errComplete, this will return (end, end)
+				return errComplete
+			}
+
+			seenStart = &num
+			return nil
+		}
+
+		seenEnd = &num
+		return errDone
+	})
+
+	if err != nil && !errors.Is(err, errDone) {
+		if errors.Is(err, errComplete) {
+			return end, end
+		}
+		zlog.Error("got error walking store", zap.Error(err))
+		return start, end
+	}
+
+	switch {
+	case seenStart == nil && seenEnd == nil:
+		return start, end // nothing was found
+	case seenStart == nil:
+		if *seenEnd > end {
+			return start, end // blocks were found passed our range
+		}
+		return start, *seenEnd // we found some blocks mid-range
+	case seenEnd == nil:
+		return *seenStart + 100, end
+	default:
+		return *seenStart + 100, *seenEnd
+	}
+
 }

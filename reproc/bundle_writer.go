@@ -72,7 +72,7 @@ func (w *BundleWriter) Write(blk *bstream.Block) error {
 }
 
 func (w *BundleWriter) Flush(ctx context.Context) error {
-	filename := fileNameForBlocksBundle(w.startBlockNum)
+	filename := FilenameForBlocksBundle(w.startBlockNum)
 	zlog.Info("flushing merged block files",
 		zap.Uint64("start_block_num", w.startBlockNum),
 		zap.Uint64("stop_block_num", w.exclusiveStopBlockNum),
@@ -123,6 +123,7 @@ func (r *Reproc) saveBlock(ctx context.Context, parentNum uint64, blk *pbsolana.
 		if err := r.writer.Write(block); err != nil {
 			return fmt.Errorf("unable to write blokc in new bundle: %w", err)
 		}
+		zlog.Info("wrote bundle", zap.Uint64("block_num", blk.Num()-100))
 
 		return nil
 	}
@@ -131,6 +132,6 @@ func (r *Reproc) saveBlock(ctx context.Context, parentNum uint64, blk *pbsolana.
 	}
 	return nil
 }
-func fileNameForBlocksBundle(blockNum uint64) string {
+func FilenameForBlocksBundle(blockNum uint64) string {
 	return fmt.Sprintf("%010d", blockNum)
 }

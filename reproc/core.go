@@ -37,7 +37,7 @@ func New(bt *bigtable.Client, writer Writer) (*Reproc, error) {
 func (r *Reproc) Launch(ctx context.Context, startBlockNum, stopBlockNum uint64) error {
 	zlog.Info("launching sf-solana reprocessing",
 		zap.Uint64("start_block_num", startBlockNum),
-		zap.Uint64("start_block_num", stopBlockNum),
+		zap.Uint64("stop_block_num", stopBlockNum),
 	)
 	table := r.bt.Open("blocks")
 	attempts := uint64(0)
@@ -53,24 +53,22 @@ func (r *Reproc) Launch(ctx context.Context, startBlockNum, stopBlockNum uint64)
 			startBlockNum = resolvedStartBlock
 		}
 
-		btRange := bigtable.NewRange(fmt.Sprintf("%016x", startBlockNum), fmt.Sprintf("%016x", stopBlockNum))
+		btRange := bigtable.NewRange(fmt.Sprintf("%016x", startBlockNum), "")
 		err := table.ReadRows(ctx, btRange, func(row bigtable.Row) bool {
-			return r.processRow(ctx, row, startBlockNum)
+			return r.processRow(ctx, row, startBlockNum, stopBlockNum)
 		})
 		if err != nil {
 			attempts++
 			zlog.Error("error white reading rows", zap.Error(err), zap.Reflect("last_seen_block", r.lastSeenBlock), zap.Uint64("attempts", attempts))
 			continue
 		}
-		zlog.Info("read block finished", zap.Reflect("last_seen_block", r.lastSeenBlock))
+		zlog.Info("read block finished", zap.Stringer("last_seen_block", r.lastSeenBlock.AsRef()))
 		return nil
 	}
 
-	return nil
-
 }
 
-func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum uint64) bool {
+func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum, stopBlockNum uint64) bool {
 	el := row["x"][0]
 	blockNum, _ := new(big.Int).SetString(el.Row, 16)
 	zlogger := zlog.With(zap.Uint64("block_num", blockNum.Uint64()))
@@ -132,6 +130,9 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum
 		return false
 	}
 	r.lastSeenBlock = blk
+	if blk.Num() > stopBlockNum { // means we wrote the bundle
+		return false
+	}
 	return true
 }
 func decompress(in []byte) (out []byte, err error) {

@@ -49,7 +49,7 @@ func (f *Filler) Run(ctx context.Context) error {
 	err := bundler.Bootstrap(func(lowBlockNum uint64) ([]*bundle.OneBlockFile, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), GetObjectTimeout)
 		defer cancel()
-		reader, err := f.mergedBlocksStore.OpenObject(ctx, fileNameForBlocksBundle(f.startBlockNum-100))
+		reader, err := f.mergedBlocksStore.OpenObject(ctx, FilenameForBlocksBundle(f.startBlockNum-100))
 		if err != nil {
 			return nil, err
 		}
