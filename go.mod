@@ -17,7 +17,7 @@ require (
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mr-tron/base58 v1.2.0
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.10.1
 	github.com/streamingfast/bstream v0.0.2-0.20220505155906-a0834b9c5258
 	github.com/streamingfast/cli v0.0.4-0.20220113202443-f7bcefa38f7e
@@ -38,7 +38,7 @@ require (
 	github.com/streamingfast/pbgo v0.0.6-0.20220428192744-f80aee7d4688
 	github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde
 	github.com/streamingfast/sf-solana/types v0.0.0-20220512212630-aa4f9d5a0b1a
-	github.com/streamingfast/sf-tools v0.0.0-20220504154702-4b10c7c5fdf1
+	github.com/streamingfast/sf-tools v0.0.0-20220510152242-8343cb8e91aa
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
 	github.com/streamingfast/substreams v0.0.5-beta

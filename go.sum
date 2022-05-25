@@ -693,6 +693,8 @@ github.com/spf13/cobra v1.0.0/go.mod h1:/6GTrnGXV9HjY+aR4k0oJ5tcvakLuG6EuKReYlHN
 github.com/spf13/cobra v1.1.3/go.mod h1:pGADOWyqRD/YMrPZigI/zbliZ2wVD/23d+is3pSWzOo=
 github.com/spf13/cobra v1.3.0 h1:R7cSvGu+Vv+qX0gW5R/85dx2kmmJT5z5NM8ifdYjdn0=
 github.com/spf13/cobra v1.3.0/go.mod h1:BrRVncBjOJa/eUcVVm9CE+oC6as8k+VYr4NY7WCi9V4=
+github.com/spf13/cobra v1.4.0 h1:y+wJpx64xcgO1V+RcnwW0LEHxTKRi2ZDPSBjWnrg88Q=
+github.com/spf13/cobra v1.4.0/go.mod h1:Wo4iy3BUC+X2Fybo0PDqwJIv3dNRiZLHQymsfxlB84g=
 github.com/spf13/jwalterweatherman v1.0.0/go.mod h1:cQK4TGJAtQXfYWX+Ddv3mKDzgVb68N+wFjFa4jdeBTo=
 github.com/spf13/jwalterweatherman v1.1.0 h1:ue6voC5bR5F8YxI5S67j9i582FU4Qvo2bmqnqMYADFk=
 github.com/spf13/jwalterweatherman v1.1.0/go.mod h1:aNWZUN0dPAAO/Ljvb5BEdw96iTZ0EXowPYD95IqWIGo=
@@ -792,6 +794,8 @@ github.com/streamingfast/sf-solana/types v0.0.0-20220512212630-aa4f9d5a0b1a h1:O
 github.com/streamingfast/sf-solana/types v0.0.0-20220512212630-aa4f9d5a0b1a/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
 github.com/streamingfast/sf-tools v0.0.0-20220504154702-4b10c7c5fdf1 h1:qVWsdf8BMETONL3IUMg18s4NVJxD++UU+GLcICGiKyM=
 github.com/streamingfast/sf-tools v0.0.0-20220504154702-4b10c7c5fdf1/go.mod h1:aMfBTj5QyPnXbN+lXCbGcEElI7/llZiE57dz7Hi5tsQ=
+github.com/streamingfast/sf-tools v0.0.0-20220510152242-8343cb8e91aa h1:eGoU7qqHa5qfSZK9qg6lmSRPPCTwqGlO1KmaMCopH8Y=
+github.com/streamingfast/sf-tools v0.0.0-20220510152242-8343cb8e91aa/go.mod h1:2TCAMgYZaTweX6qya0LxusT2OB59NS5N4UDAhmIzHS0=
 github.com/streamingfast/shutter v1.5.0 h1:NpzDYzj0HVpSiDJVO/FFSL6QIK/YKOxY0gJAtyaTOgs=
 github.com/streamingfast/shutter v1.5.0/go.mod h1:B/T6efqdeMGbGwjzPS1ToXzYZI4kDzI5/u4I+7qbjY8=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcIwlbl7PipqrKPgNzfEWD9oxAA0mmjdRd2dTk9/4=
