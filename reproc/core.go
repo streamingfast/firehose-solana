@@ -130,7 +130,7 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum
 		return false
 	}
 	r.lastSeenBlock = blk
-	if blk.Num() > stopBlockNum { // means we wrote the bundle
+	if stopBlockNum != 0 && blk.Num() > stopBlockNum { // means we wrote the bundle
 		return false
 	}
 	return true

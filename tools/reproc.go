@@ -95,6 +95,9 @@ func reprocRunE(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
+		if endBlockNum == 0 {
+			continue
+		}
 		if endRange >= endBlockNum {
 			return nil
 		}
