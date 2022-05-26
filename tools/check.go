@@ -11,9 +11,10 @@ import (
 
 	"github.com/dustin/go-humanize"
 	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
+	sftools "github.com/streamingfast/sf-tools"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	"github.com/streamingfast/jsonpb"
@@ -64,111 +65,38 @@ func checkMergedBlocksE(cmd *cobra.Command, args []string) error {
 	storeURL := args[0]
 	fileBlockSize := uint32(100)
 
-	fmt.Printf("Checking block holes on %s\n", storeURL)
-
-	number := regexp.MustCompile(`(\d{10})`)
-
-	var expected uint32
-	var count int
-	var baseNum32 uint32
-	holeFound := false
-	printIndividualSegmentStats := viper.GetBool("print-stats")
-	printFullBlock := viper.GetBool("print-full")
-
-	blockRange, err := getBlockRangeFromFlag()
+	blockRange, err := sftools.Flags.GetBlockRange("range")
 	if err != nil {
 		return err
 	}
 
-	expected = uint32(blockRange.Start)
-	currentStartBlk := uint32(blockRange.Start)
-	seenFilters := map[string]FilteringFilters{}
-
-	blocksStore, err := dstore.NewDBinStore(storeURL)
-	if err != nil {
-		return err
+	printDetails := sftools.PrintNothing
+	if mustGetBool(cmd, "print-stats") {
+		printDetails = sftools.PrintStats
 	}
 
-	ctx := context.Background()
-	walkPrefix := walkBlockPrefix(blockRange, fileBlockSize)
-
-	zlog.Debug("walking merged blocks", zap.Stringer("block_range", blockRange), zap.String("walk_prefix", walkPrefix))
-	err = blocksStore.Walk(ctx, walkPrefix, ".tmp", func(filename string) error {
-		match := number.FindStringSubmatch(filename)
-		if match == nil {
-			return nil
-		}
-
-		zlog.Debug("received merged blocks", zap.String("filename", filename))
-
-		count++
-		baseNum, _ := strconv.ParseUint(match[1], 10, 32)
-		if baseNum+uint64(fileBlockSize) < blockRange.Start {
-			zlog.Debug("base num lower then block range start, quitting")
-			return nil
-		}
-
-		baseNum32 = uint32(baseNum)
-
-		if printIndividualSegmentStats || printFullBlock {
-			newSeenFilters := validateBlockSegment(blocksStore, filename, fileBlockSize, blockRange, printIndividualSegmentStats, printFullBlock)
-			for key, filters := range newSeenFilters {
-				seenFilters[key] = filters
-			}
-		}
-
-		if baseNum32 != expected {
-			// There is no previous valid block range if we are the ever first seen file
-			if count > 1 {
-				printValidRange(currentStartBlk, roundToBundleEndBlock(expected-fileBlockSize, fileBlockSize))
-			}
-
-			printMissingRange(expected, roundToBundleEndBlock(baseNum32-fileBlockSize, fileBlockSize))
-
-			currentStartBlk = baseNum32
-
-			holeFound = true
-		}
-		expected = baseNum32 + fileBlockSize
-
-		if count%10000 == 0 {
-			printValidRange(currentStartBlk, roundToBundleEndBlock(baseNum32, fileBlockSize))
-			currentStartBlk = baseNum32 + fileBlockSize
-		}
-
-		if !blockRange.Unbounded() && roundToBundleEndBlock(baseNum32, fileBlockSize) >= uint32(blockRange.Stop-1) {
-			return errStopWalk
-		}
-
-		return nil
-	})
-	if err != nil && err != errStopWalk {
-		return err
+	if mustGetBool(cmd, "print-full") {
+		printDetails = sftools.PrintFull
 	}
 
-	actualEndBlock := roundToBundleEndBlock(baseNum32, fileBlockSize)
-	if !blockRange.Unbounded() {
-		actualEndBlock = uint32(blockRange.Stop)
-	}
+	return sftools.CheckMergedBlocks(cmd.Context(), zlog, storeURL, fileBlockSize, blockRange, blockPrinter, printDetails)
+}
 
-	printValidRange(currentStartBlk, actualEndBlock)
+func blockPrinter(block *bstream.Block) {
+	ethBlock := block.ToNative().(*pbsolana.ConfirmedBlock)
 
-	if len(seenFilters) > 0 {
-		fmt.Println()
-		fmt.Println("Seen filters")
-		for _, filters := range seenFilters {
-			fmt.Printf("- [Include %q, Exclude %q, System %q]\n", filters.Include, filters.Exclude, filters.System)
+	callCount := 0
+	for _, tx := range ethBlock.Transactions {
+		if tx.Transaction != nil && tx.Transaction.Message != nil {
+			callCount += len(tx.Transaction.Message.Instructions)
 		}
-		fmt.Println()
 	}
 
-	if holeFound {
-		fmt.Printf("🆘 Holes found!\n")
-	} else {
-		fmt.Printf("🆗 No hole found\n")
-	}
-
-	return nil
+	fmt.Printf("Block %s %d transactions, %d calls\n",
+		block,
+		len(ethBlock.Transactions),
+		callCount,
+	)
 }
 
 func checkOneBlocksE(cmd *cobra.Command, args []string) error {
