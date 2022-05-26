@@ -1,19 +1,13 @@
 package reproc
 
 import (
-	"bytes"
-	"compress/bzip2"
-	"compress/gzip"
 	"context"
 	"fmt"
-	"io/ioutil"
-	"math/big"
 
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
-	"google.golang.org/protobuf/proto"
+	"github.com/streamingfast/sf-solana/bt"
 
 	"cloud.google.com/go/bigtable"
-	"github.com/klauspost/compress/zstd"
+	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
 	"go.uber.org/zap"
 )
 
@@ -69,10 +63,8 @@ func (r *Reproc) Launch(ctx context.Context, startBlockNum, stopBlockNum uint64)
 }
 
 func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum, stopBlockNum uint64) bool {
-	el := row["x"][0]
-	blockNum, _ := new(big.Int).SetString(el.Row, 16)
+	blockNum, _ := bt.ExplodeRow(row)
 	zlogger := zlog.With(zap.Uint64("block_num", blockNum.Uint64()))
-
 	if !r.seenStartBlock {
 		if blockNum.Uint64() < startBlockNum {
 			zlogger.Warn("skipping blow below start block",
@@ -84,20 +76,11 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum
 		r.seenStartBlock = true
 	}
 
-	var cnt []byte
-	var err error
-	if cnt, err = decompress(el.Value); err != nil {
-		zlogger.Warn("failed to decompress payload", zap.Error(err))
+	blk, err := bt.ProcessRow(row, zlogger)
+	if err != nil {
+		zlogger.Warn("failed to read row", zap.Error(err))
 		return false
 	}
-
-	blk := &pbsolana.ConfirmedBlock{}
-	if err := proto.Unmarshal(cnt, blk); err != nil {
-		zlogger.Warn("failed to unmarshal block", zap.Error(err))
-		return false
-	}
-
-	blk.Slot = blockNum.Uint64()
 
 	if tracer.Enabled() {
 		zlogger.Debug("handing block",
@@ -134,41 +117,4 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum
 		return false
 	}
 	return true
-}
-func decompress(in []byte) (out []byte, err error) {
-	switch in[0] {
-	case 0:
-		// uncompressed
-	case 1:
-		// bzip2
-		out, err = ioutil.ReadAll(bzip2.NewReader(bytes.NewBuffer(in[4:])))
-		if err != nil {
-			return nil, fmt.Errorf("bzip2 decompress: %w", err)
-		}
-	case 2:
-		// gzip
-		reader, err := gzip.NewReader(bytes.NewBuffer(in[4:]))
-		if err != nil {
-			return nil, fmt.Errorf("gzip reader: %w", err)
-		}
-		out, err = ioutil.ReadAll(reader)
-		if err != nil {
-			return nil, fmt.Errorf("gzip decompress: %w", err)
-		}
-	case 3:
-		// zstd
-		var dec *zstd.Decoder
-		dec, err = zstd.NewReader(nil)
-		if err != nil {
-			return nil, fmt.Errorf("zstd reader: %w", err)
-		}
-		out, err = dec.DecodeAll(in[4:], out)
-		if err != nil {
-			return nil, fmt.Errorf("zstd decompress: %w", err)
-
-		}
-	default:
-		return nil, fmt.Errorf("unsupported compression scheme for a block %d", in[0])
-	}
-	return
 }
