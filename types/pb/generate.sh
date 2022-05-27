@@ -27,9 +27,9 @@ function main() {
   cd "$ROOT/types/pb" &> /dev/null
 
   generate "sf/solana/type/v1/type.proto"
+  generate "sf/solana/type/v2/type.proto"
   generate "sf/solana/transforms/v1/transforms.proto"
   generate "sf/solana/serumhist/v1/serumhist.proto"
-  generate "sol/type/v1/confirmed_block.proto"
 
   echo "generate.sh - `date` - `whoami`" > ./last_generate.txt
   echo "streamingfast/proto revision: `GIT_DIR=$PROTO/.git git rev-parse HEAD`" >> ./last_generate.txt

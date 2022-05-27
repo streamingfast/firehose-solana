@@ -18,8 +18,8 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/sf-solana/types"
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -322,9 +322,9 @@ type bank struct {
 	processTrxCount uint64
 	previousSlotID  []byte
 	transactionIDs  [][]byte
-	blk             *pbsol.Block
+	blk             *pbsolv2.Block
 	ended           bool
-	batchAggregator [][]*pbsol.Transaction
+	batchAggregator [][]*pbsolv2.Transaction
 	errGroup        *llerrgroup.Group
 	lock            sync.Mutex
 	opts            *options
@@ -337,7 +337,7 @@ func newBank(blockNum, parentBlockNumber uint64, previousSlotID []byte, logger *
 		previousSlotID:  previousSlotID,
 		transactionIDs:  nil,
 		batchAggregator: nil,
-		blk: &pbsol.Block{
+		blk: &pbsolv2.Block{
 			Version:       1,
 			Number:        blockNum,
 			PreviousId:    previousSlotID,
@@ -394,7 +394,7 @@ func (b *bank) processBatchAggregation() error {
 		indexMap[string(trxID)] = idx
 	}
 
-	b.blk.Transactions = make([]*pbsol.Transaction, len(b.transactionIDs))
+	b.blk.Transactions = make([]*pbsolv2.Transaction, len(b.transactionIDs))
 	b.blk.TransactionCount = uint32(len(b.transactionIDs))
 
 	var count int
@@ -428,7 +428,7 @@ func max(a, b uint64) uint64 {
 	return b
 }
 
-func setTrxTotalOrdinal(lastTotalOrdinal uint64, transaction *pbsol.Transaction) uint64 {
+func setTrxTotalOrdinal(lastTotalOrdinal uint64, transaction *pbsolv2.Transaction) uint64 {
 	maxOrdinal := uint64(0)
 	transaction.BeginOrdinal += lastTotalOrdinal
 	maxOrdinal = max(maxOrdinal, transaction.BeginOrdinal)
@@ -448,7 +448,7 @@ func setTrxTotalOrdinal(lastTotalOrdinal uint64, transaction *pbsol.Transaction)
 	return transaction.EndOrdinal
 }
 
-func (b *bank) getActiveTransaction(batchNum uint64, trxID []byte) (*pbsol.Transaction, error) {
+func (b *bank) getActiveTransaction(batchNum uint64, trxID []byte) (*pbsolv2.Transaction, error) {
 	length := len(b.batchAggregator[batchNum])
 	if length == 0 {
 		return nil, fmt.Errorf("unable to retrieve transaction trace on an empty batch")
@@ -590,7 +590,7 @@ func (ctx *parseCtx) readCompleteBlock(line string) (err error) {
 		return fmt.Errorf("unable to hex decode content: %w", err)
 	}
 
-	blk := &pbsolana.ConfirmedBlock{}
+	blk := &pbsolv1.Block{}
 	if err := proto.Unmarshal(cnt, blk); err != nil {
 		return fmt.Errorf("unable to proto unmarhal confirmed block: %w", err)
 	}
@@ -716,7 +716,7 @@ func (ctx *parseCtx) readBlockFailed(line string) (err error) {
 	return fmt.Errorf("slot %d failed: %s", blockNum, chunks[2])
 }
 
-func ReadBatchFile(filePath string, deleteFile bool, logger *zap.Logger) (*pbsol.Batch, error) {
+func ReadBatchFile(filePath string, deleteFile bool, logger *zap.Logger) (*pbsolv2.Batch, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
@@ -738,7 +738,7 @@ func ReadBatchFile(filePath string, deleteFile bool, logger *zap.Logger) (*pbsol
 		return nil, fmt.Errorf("unable to read file: %w", err)
 	}
 
-	batch := &pbsol.Batch{}
+	batch := &pbsolv2.Batch{}
 	err = proto.Unmarshal(data, batch)
 	if err != nil {
 		return nil, fmt.Errorf("unbale to proto unmarshal batch with data length %d: %w", len(data), err)

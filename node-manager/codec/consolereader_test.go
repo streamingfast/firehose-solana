@@ -34,8 +34,8 @@ import (
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/jsonpb"
 	_ "github.com/streamingfast/sf-solana/types"
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -75,9 +75,9 @@ func TestParseFromFile(t *testing.T) {
 				}
 
 				if test.augmented {
-					return out.ToProtocol().(*pbsol.Block), nil
+					return out.ToProtocol().(*pbsolv2.Block), nil
 				}
-				return out.ToProtocol().(*pbsolana.ConfirmedBlock), nil
+				return out.ToProtocol().(*pbsolv1.Block), nil
 			}
 
 			if test.augmented {
@@ -132,11 +132,11 @@ func TestParseFromFile(t *testing.T) {
 func Test_processBatchAggregation(t *testing.T) {
 	b := &bank{
 		transactionIDs: trxIDs(t, "11", "aa", "cc", "bb", "dd", "ee"),
-		blk: &pbsol.Block{
+		blk: &pbsolv2.Block{
 			Id:     blockId(t, "A"),
 			Number: 1,
 		},
-		batchAggregator: [][]*pbsol.Transaction{
+		batchAggregator: [][]*pbsolv2.Transaction{
 			{
 				{Id: trxID(t, "dd")},
 			},
@@ -158,7 +158,7 @@ func Test_processBatchAggregation(t *testing.T) {
 	err := b.processBatchAggregation()
 	require.NoError(t, err)
 
-	expectOut := []*pbsol.Transaction{
+	expectOut := []*pbsolv2.Transaction{
 		{Id: trxID(t, "11"), Index: uint64(0), BeginOrdinal: 0, EndOrdinal: 1},
 		{Id: trxID(t, "aa"), Index: uint64(1), BeginOrdinal: 1, EndOrdinal: 2},
 		{Id: trxID(t, "cc"), Index: uint64(2), BeginOrdinal: 2, EndOrdinal: 3},
@@ -237,7 +237,7 @@ func Test_readBlockEnd(t *testing.T) {
 				logger: zlog,
 				activeBank: &bank{
 					transactionIDs: nil,
-					blk: &pbsol.Block{
+					blk: &pbsolv2.Block{
 						Number:        55295941,
 						PreviousId:    blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
 						PreviousBlock: 55295939,
@@ -279,7 +279,7 @@ func Test_readBlockRoot(t *testing.T) {
 		name          string
 		ctx           *parseCtx
 		line          string
-		expectedBlock *pbsol.Block
+		expectedBlock *pbsolv2.Block
 		expectCtx     *parseCtx
 		expectError   bool
 	}{
@@ -290,7 +290,7 @@ func Test_readBlockRoot(t *testing.T) {
 				activeBank: &bank{
 					previousSlotID: blockId(t, "5XcRYrCbLFGSACy43fRdG4zJ88tWxB3eSx36MePjy3Ae"),
 					ended:          true,
-					blk: &pbsol.Block{
+					blk: &pbsolv2.Block{
 						Id:                   blockId(t, "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"),
 						Number:               55295941,
 						Version:              1,
@@ -307,7 +307,7 @@ func Test_readBlockRoot(t *testing.T) {
 						parentSlotNum:  55295939,
 						previousSlotID: blockId(t, "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"),
 						ended:          true,
-						blk: &pbsol.Block{
+						blk: &pbsolv2.Block{
 							Id:                   blockId(t, "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"),
 							Number:               55295941,
 							Version:              1,
@@ -324,7 +324,7 @@ func Test_readBlockRoot(t *testing.T) {
 				stats:       newParsingStats(55295941, zlog),
 			},
 			line: "BANK_ROOT 55295921",
-			expectedBlock: &pbsol.Block{
+			expectedBlock: &pbsolv2.Block{
 				Id:                   blockId(t, "3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz"),
 				Number:               55295941,
 				PreviousId:           blockId(t, "8iCeHcXf6o7Qi8UjYzjoVqo2AUEyo3tpd9V7yVgCesNr"),
@@ -362,9 +362,9 @@ func Test_readBlockRoot(t *testing.T) {
 	}
 }
 
-func trxSlice(t *testing.T, trxIDs []string) (out []*pbsol.Transaction) {
+func trxSlice(t *testing.T, trxIDs []string) (out []*pbsolv2.Transaction) {
 	for i, id := range trxIDs {
-		out = append(out, &pbsol.Transaction{Id: trxID(t, id), Index: uint64(i)})
+		out = append(out, &pbsolv2.Transaction{Id: trxID(t, id), Index: uint64(i)})
 	}
 	return
 }

@@ -7,15 +7,12 @@ import (
 	"strconv"
 
 	"github.com/mr-tron/base58"
-
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
-
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 )
 
 var printCmd = &cobra.Command{
@@ -103,12 +100,12 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 
 func readBlock(blk *bstream.Block, augmentedData bool) error {
 	if augmentedData {
-		return readPBSolBlock(blk.ToProtocol().(*pbsol.Block), blk.LibNum)
+		return readPBSolBlock(blk.ToProtocol().(*pbsolv2.Block), blk.LibNum)
 	}
-	return readPBSolanaBlock(blk.ToProtocol().(*pbsolana.ConfirmedBlock), blk.LibNum)
+	return readPBSolanaBlock(blk.ToProtocol().(*pbsolv1.Block), blk.LibNum)
 }
 
-func readPBSolBlock(block *pbsol.Block, LibNum uint64) error {
+func readPBSolBlock(block *pbsolv2.Block, LibNum uint64) error {
 	blockId := block.ID()
 	blockPreviousId := block.PreviousID()
 	hasAccountData := hasAccountData(block)
@@ -158,7 +155,7 @@ func readPBSolBlock(block *pbsol.Block, LibNum uint64) error {
 	return nil
 }
 
-func readPBSolanaBlock(block *pbsolana.ConfirmedBlock, LibNum uint64) error {
+func readPBSolanaBlock(block *pbsolv1.Block, LibNum uint64) error {
 	blockId := block.ID()
 	blockPreviousId := block.PreviousID()
 
@@ -204,7 +201,7 @@ func readPBSolanaBlock(block *pbsolana.ConfirmedBlock, LibNum uint64) error {
 	}
 	return nil
 }
-func hasAccountData(block *pbsol.Block) bool {
+func hasAccountData(block *pbsolv2.Block) bool {
 	for _, t := range block.Transactions {
 		for _, inst := range t.Instructions {
 			if len(inst.AccountChanges) > 0 {

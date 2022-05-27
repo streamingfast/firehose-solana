@@ -1,4 +1,4 @@
-package pbsolana
+package pbsol
 
 import (
 	"time"
@@ -6,25 +6,25 @@ import (
 	"github.com/streamingfast/bstream"
 )
 
-func (c *ConfirmedBlock) Num() uint64 {
+func (c *Block) Num() uint64 {
 	return c.Slot
 }
 
-func (c *ConfirmedBlock) Time() time.Time {
+func (c *Block) Time() time.Time {
 	if c.BlockTime == nil {
 		return time.Unix(0, 0)
 	}
 	return time.Unix(int64(c.BlockTime.Timestamp), 0)
 }
 
-func (b *ConfirmedBlock) ID() string {
+func (b *Block) ID() string {
 	return b.Blockhash
 }
 
-func (b *ConfirmedBlock) PreviousID() string {
+func (b *Block) PreviousID() string {
 	return b.PreviousBlockhash
 }
 
-func (b *ConfirmedBlock) AsRef() bstream.BlockRef {
+func (b *Block) AsRef() bstream.BlockRef {
 	return bstream.NewBlockRef(b.ID(), b.Num())
 }

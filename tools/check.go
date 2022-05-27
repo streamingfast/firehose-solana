@@ -10,14 +10,13 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
-	sftools "github.com/streamingfast/sf-tools"
-
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	"github.com/streamingfast/jsonpb"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
+	sftools "github.com/streamingfast/sf-tools"
 	"go.uber.org/zap"
 )
 
@@ -83,7 +82,7 @@ func checkMergedBlocksE(cmd *cobra.Command, args []string) error {
 }
 
 func blockPrinter(block *bstream.Block) {
-	ethBlock := block.ToNative().(*pbsolana.ConfirmedBlock)
+	ethBlock := block.ToNative().(*pbsolv1.Block)
 
 	callCount := 0
 	for _, tx := range ethBlock.Transactions {
@@ -277,7 +276,7 @@ func validateBlockSegment(
 			seenBlockCount++
 
 			if printIndividualSegmentStats {
-				block := block.ToProtocol().(*pbsol.Block)
+				block := block.ToProtocol().(*pbsolv2.Block)
 
 				fmt.Printf("Block #%d (%s) (prev: %s) : %d transactions\n",
 					block.Num(),
@@ -288,7 +287,7 @@ func validateBlockSegment(
 			}
 
 			if printFullBlock {
-				eosBlock := block.ToNative().(*pbsol.Block)
+				eosBlock := block.ToNative().(*pbsolv2.Block)
 
 				fmt.Printf(jsonpb.MarshalIndentToString(eosBlock, "  "))
 			}

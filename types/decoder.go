@@ -5,8 +5,8 @@ import (
 
 	"github.com/streamingfast/bstream"
 	pbbstream "github.com/streamingfast/pbgo/sf/bstream/v1"
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -22,7 +22,7 @@ func PBSolBlockDecoder(blk *bstream.Block) (interface{}, error) {
 		return nil, fmt.Errorf("this decoder only knows about version 1, got %d", blk.Version())
 	}
 
-	block := new(pbsol.Block)
+	block := new(pbsolv2.Block)
 	payload, err := blk.Payload.Get()
 	if err != nil {
 		return nil, fmt.Errorf("getting payload: %s", err)
@@ -55,7 +55,7 @@ func PBSolanaBlockDecoder(blk *bstream.Block) (interface{}, error) {
 		return nil, fmt.Errorf("this decoder only knows about version 1, got %d", blk.Version())
 	}
 
-	block := new(pbsolana.ConfirmedBlock)
+	block := new(pbsolv1.Block)
 	payload, err := blk.Payload.Get()
 	if err != nil {
 		return nil, fmt.Errorf("getting payload: %s", err)

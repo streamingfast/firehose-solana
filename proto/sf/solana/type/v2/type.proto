@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package sf.solana.type.v2;
+
+option go_package = "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2;pbsol";
+
+message Block {
+  bytes id = 1;  // corresponds to the Slot id (or hash)
+  uint64 number = 2; // corresponds to the Slot number for this block
+  uint32 version = 3;
+  bytes previous_id = 4; // corresponds to the previous_blockhash, might skip some slots, so beware
+  uint64 previous_block = 5;
+  uint64 genesis_unix_timestamp = 6;
+  uint64 clock_unix_timestamp = 7;
+  bytes last_entry_hash = 8;
+  repeated Transaction transactions = 9;
+  uint32 transaction_count = 10;
+  bool has_split_account_changes = 11;
+  string account_changes_file_ref = 12;
+}
+
+message Batch {
+  repeated Transaction transactions = 1;
+}
+
+message Transaction {
+  // The transaction ID corresponds to the _first_
+  // signature. Additional signatures are in `additional_signatures`.
+  bytes id = 1;
+
+  // Index from within a single Slot, deterministically ordered to the
+  // best of our ability using the transaction ID as a sort key for
+  // the batch of transactions executed in parallel.
+  uint64 index = 2;
+
+  repeated bytes additional_signatures = 3;
+
+  MessageHeader header = 4;
+  // From the original Message object
+  repeated bytes account_keys = 5;
+  // From the original Message object
+  bytes recent_blockhash = 6;
+
+  // Instructions, containing both top-level and nested transactions
+  repeated Instruction instructions = 7;
+
+  bool failed = 8;
+  TransactionError error = 9;
+
+  uint64 begin_ordinal = 10;
+  uint64 end_ordinal = 11;
+}
+
+message MessageHeader  {
+  uint32 num_required_signatures = 1;
+  uint32 num_readonly_signed_accounts = 2;
+  uint32 num_readonly_unsigned_accounts = 3;
+}
+
+message Instruction {
+  bytes program_id = 3;
+  repeated bytes account_keys = 4;
+  bytes data = 5;
+
+  // What follows is execution trace data, could be empty for un-executed transactions.
+  uint32 index = 6;
+  uint32 parent_index = 7;
+  uint32 depth = 8;
+
+  repeated BalanceChange balance_changes = 9;
+  repeated AccountChange account_changes = 10;
+
+  repeated Log logs = 11;
+
+  bool failed = 15;
+  InstructionError error = 16;
+
+  uint64 begin_ordinal = 17;
+  uint64 end_ordinal = 18;
+}
+
+message BalanceChange {
+  bytes pubkey = 1;
+  uint64 prev_lamports = 2;
+  uint64 new_lamports = 3;
+}
+
+message AccountChange {
+  bytes pubkey = 1;
+  bytes prev_data = 2;
+  bytes new_data = 3;
+  uint64 new_data_length = 4;
+}
+
+message Log {
+  string message = 1;
+  uint64 ordinal = 2;
+}
+
+message TransactionError {
+  string error = 2;
+}
+
+message TransactionInstructionError {
+  string error = 2;
+}
+
+message InstructionError {
+  string error = 2;
+}
+
+message InstructionErrorCustom {
+  string error = 2;
+}

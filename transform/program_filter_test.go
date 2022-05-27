@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	pbtransforms "github.com/streamingfast/sf-solana/types/pb/sf/solana/transforms/v1"
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 
 	"github.com/streamingfast/bstream/transform"
 	"github.com/streamingfast/solana-go"
@@ -68,7 +68,7 @@ func TestProgramFilter_Transform(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				pbcodecBlock := output.(*pbsol.Block)
+				pbcodecBlock := output.(*pbsolv2.Block)
 				assert.Equal(t, test.expectTrxLenght, len(pbcodecBlock.Transactions))
 			}
 		})

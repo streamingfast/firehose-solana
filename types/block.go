@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"time"
 
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
-
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-
 	"github.com/streamingfast/bstream"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	"google.golang.org/protobuf/proto"
 )
 
-func BlockFromPBSolProto(slot *pbsol.Block) (*bstream.Block, error) {
+func BlockFromPBSolProto(slot *pbsolv2.Block) (*bstream.Block, error) {
 	blockTime := slot.Time()
 
 	content, err := proto.Marshal(slot)
@@ -31,7 +29,7 @@ func BlockFromPBSolProto(slot *pbsol.Block) (*bstream.Block, error) {
 	return bstream.GetBlockPayloadSetter(block, content)
 }
 
-func BlockFromPBSolanaProto(blk *pbsolana.ConfirmedBlock) (*bstream.Block, error) {
+func BlockFromPBSolanaProto(blk *pbsolv1.Block) (*bstream.Block, error) {
 	content, err := proto.Marshal(blk)
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal to binary form: %s", err)

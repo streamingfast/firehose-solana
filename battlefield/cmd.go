@@ -8,17 +8,15 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/spf13/viper"
-
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/jsonpb"
 	"github.com/streamingfast/sf-solana/node-manager/codec"
 	"github.com/streamingfast/sf-solana/types"
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	sftools "github.com/streamingfast/sf-tools"
 	"go.uber.org/zap"
 )
@@ -64,13 +62,13 @@ var generateCmd = &cobra.Command{
 			},
 			blockDecoder: types.PBSolanaBlockDecoder,
 			blockCaster: func(i interface{}) proto.Message {
-				return i.(*pbsolana.ConfirmedBlock)
+				return i.(*pbsolv1.Block)
 			},
 		}
 		if augmentedStack {
 			parser.blockDecoder = types.PBSolBlockDecoder
 			parser.blockCaster = func(i interface{}) proto.Message {
-				return i.(*pbsol.Block)
+				return i.(*pbsolv2.Block)
 			}
 		}
 
@@ -108,17 +106,17 @@ var compareCmd = &cobra.Command{
 		)
 
 		matched, err := sftools.CompareBlockFiles(referenceBlocksFilePath, otherBlocksFilePath, func(refCnt, otherCnt []byte) (interface{}, interface{}, error) {
-			refStandardBlocks := []*pbsolana.ConfirmedBlock{}
+			refStandardBlocks := []*pbsolv1.Block{}
 			err := json.Unmarshal(refCnt, &refStandardBlocks)
 			if err != nil {
 				zlog.Debug("failed unmarshal to array of standard blocks")
-				refAugmentedBlocks := []*pbsol.Block{}
+				refAugmentedBlocks := []*pbsolv2.Block{}
 				err := json.Unmarshal(refCnt, &refAugmentedBlocks)
 				if err != nil {
 					return nil, nil, fmt.Errorf("unable to decode reference blocks in either augmented to standard blocks: %w", err)
 				}
 
-				otherAugmentedBlocks := []*pbsol.Block{}
+				otherAugmentedBlocks := []*pbsolv2.Block{}
 				if err := json.Unmarshal(otherCnt, &otherAugmentedBlocks); err != nil {
 					return nil, nil, fmt.Errorf("unable to decode other blocks as augmented blocks: %w", err)
 				}
@@ -130,7 +128,7 @@ var compareCmd = &cobra.Command{
 
 			}
 
-			otherStandardBlocks := []*pbsolana.ConfirmedBlock{}
+			otherStandardBlocks := []*pbsolv1.Block{}
 			if err := json.Unmarshal(otherCnt, &otherStandardBlocks); err != nil {
 				return nil, nil, fmt.Errorf("unable to decode other blocks as standard blocks: %w", err)
 			}

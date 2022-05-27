@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	pbsol "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/transform"
@@ -60,8 +60,8 @@ func (p *ProgramFilter) matches(programId []byte) bool {
 	return false
 }
 func (p *ProgramFilter) Transform(readOnlyBlk *bstream.Block, in transform.Input) (transform.Output, error) {
-	solBlock := readOnlyBlk.ToProtocol().(*pbsol.Block)
-	filteredTransactions := []*pbsol.Transaction{}
+	solBlock := readOnlyBlk.ToProtocol().(*pbsolv2.Block)
+	filteredTransactions := []*pbsolv2.Transaction{}
 	for _, transaction := range solBlock.Transactions {
 		match := false
 		for _, instruction := range transaction.Instructions {
