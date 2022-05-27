@@ -805,6 +805,8 @@ github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcI
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
 github.com/streamingfast/substreams v0.0.6-beta.0.20220527154648-a8778d58eb10 h1:zFRv3lz17Vxfs7jalhZZAzxdrtT1QuuF4Bz72Ssz04Y=
 github.com/streamingfast/substreams v0.0.6-beta.0.20220527154648-a8778d58eb10/go.mod h1:PBlBxnkeTi81cWvW+UIgByS31WLhg2hQ2jXn7Z7GBGI=
+github.com/streamingfast/substreams v0.0.6-beta.0.20220527221844-8ffb63114dfe h1:EMhdms1a7kPkocOrdaxIT3OMpmuqYJrDVaJO+0QroqE=
+github.com/streamingfast/substreams v0.0.6-beta.0.20220527221844-8ffb63114dfe/go.mod h1:PBlBxnkeTi81cWvW+UIgByS31WLhg2hQ2jXn7Z7GBGI=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
