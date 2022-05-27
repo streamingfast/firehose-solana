@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/streamingfast/sf-solana/bt"
-
 	"cloud.google.com/go/bigtable"
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
+	"github.com/streamingfast/sf-solana/bt"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 	"go.uber.org/zap"
 )
 
@@ -18,7 +17,7 @@ type Reproc struct {
 	seenStartBlock bool
 
 	writer        Writer
-	lastSeenBlock *pbsolana.ConfirmedBlock
+	lastSeenBlock *pbsolv1.Block
 }
 
 func New(bt *bigtable.Client, writer Writer) (*Reproc, error) {

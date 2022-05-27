@@ -6,15 +6,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/streamingfast/sf-solana/types"
-
-	"go.uber.org/zap"
-
-	"github.com/streamingfast/dstore"
-
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
-
 	"github.com/streamingfast/bstream"
+	"github.com/streamingfast/dstore"
+	"github.com/streamingfast/sf-solana/types"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	"go.uber.org/zap"
 )
 
 type Writer interface {
@@ -100,7 +96,7 @@ func (w *BundleWriter) Next() (err error) {
 	return nil
 }
 
-func (r *Reproc) saveBlock(ctx context.Context, parentNum uint64, blk *pbsolana.ConfirmedBlock, zlogger *zap.Logger) error {
+func (r *Reproc) saveBlock(ctx context.Context, parentNum uint64, blk *pbsolv1.Block, zlogger *zap.Logger) error {
 	if tracer.Enabled() {
 		zlogger.Debug("writing block to bundle")
 	}

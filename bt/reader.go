@@ -4,16 +4,14 @@ import (
 	"bytes"
 	"compress/bzip2"
 	"compress/gzip"
-
-	"cloud.google.com/go/bigtable"
-
 	"fmt"
 	"io/ioutil"
 	"math/big"
 
+	"cloud.google.com/go/bigtable"
 	"github.com/golang/protobuf/proto"
 	"github.com/klauspost/compress/zstd"
-	pbsolana "github.com/streamingfast/sf-solana/types/pb/sol/type/v1"
+	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +20,7 @@ func ExplodeRow(row bigtable.Row) (*big.Int, []byte) {
 	blockNum, _ := new(big.Int).SetString(el.Row, 16)
 	return blockNum, el.Value
 }
-func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolana.ConfirmedBlock, error) {
+func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 	blockNum, rowCnt := ExplodeRow(row)
 	zlogger.Debug("found bigtable row", zap.Stringer("blk_num", blockNum), zap.Int("uncompressed_length", len(rowCnt)))
 	var cnt []byte
@@ -35,7 +33,7 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolana.ConfirmedBlock
 		zap.Int("compressed_length", len(cnt)),
 	)
 
-	blk := &pbsolana.ConfirmedBlock{}
+	blk := &pbsolv1.Block{}
 	if err := proto.Unmarshal(cnt, blk); err != nil {
 		return nil, fmt.Errorf("unable to unmarshall confirmed block: %w", err)
 	}
