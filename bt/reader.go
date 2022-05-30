@@ -4,9 +4,14 @@ import (
 	"bytes"
 	"compress/bzip2"
 	"compress/gzip"
+	"encoding/gob"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/big"
+	"strings"
+
+	msgpack "github.com/Xuanwo/serde-msgpack-go"
 
 	"cloud.google.com/go/bigtable"
 	"github.com/golang/protobuf/proto"
@@ -15,13 +20,27 @@ import (
 	"go.uber.org/zap"
 )
 
-func ExplodeRow(row bigtable.Row) (*big.Int, []byte) {
+type RowType string
+
+const (
+	RowTypeProto RowType = "proto"
+	RowTypeBin   RowType = "bin"
+)
+
+func ExplodeRow(row bigtable.Row) (*big.Int, RowType, []byte) {
 	el := row["x"][0]
+	var rowType RowType
+	if strings.HasSuffix(el.Column, "proto") {
+		rowType = RowTypeProto
+	} else {
+		rowType = RowTypeBin
+	}
 	blockNum, _ := new(big.Int).SetString(el.Row, 16)
-	return blockNum, el.Value
+	return blockNum, rowType, el.Value
 }
+
 func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
-	blockNum, rowCnt := ExplodeRow(row)
+	blockNum, rowType, rowCnt := ExplodeRow(row)
 	zlogger.Debug("found bigtable row", zap.Stringer("blk_num", blockNum), zap.Int("uncompressed_length", len(rowCnt)))
 	var cnt []byte
 	var err error
@@ -31,9 +50,27 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 	zlogger.Debug("found bigtable row", zap.Stringer("blk_num", blockNum),
 		zap.Int("uncompressed_length", len(rowCnt)),
 		zap.Int("compressed_length", len(cnt)),
+		zap.String("row_type", string(rowType)),
 	)
-
 	blk := &pbsolv1.Block{}
+
+	if rowType == RowTypeBin {
+
+		x := serdeStructFieldVisitor_StoredConfirmedBlock{}
+		err = msgpack.DeserializeFromBytes(cnt, &x)
+		if err != nil {
+			log.Fatalf("msgpack DeserializeFromBytes: %v", err)
+		}
+		log.Printf("%#+v", x)
+
+		buf := bytes.NewBuffer(cnt)
+		decoder := gob.NewDecoder(buf)
+		if err := decoder.Decode(&blk); err != nil {
+			return nil, fmt.Errorf("unable to bin decode confirmed block: %w", err)
+		}
+		//return nil, fmt.Errorf("unable to decode row of type binary")
+	}
+
 	if err := proto.Unmarshal(cnt, blk); err != nil {
 		return nil, fmt.Errorf("unable to unmarshall confirmed block: %w", err)
 	}

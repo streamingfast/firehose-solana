@@ -62,8 +62,8 @@ func (r *Reproc) Launch(ctx context.Context, startBlockNum, stopBlockNum uint64)
 }
 
 func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum, stopBlockNum uint64) bool {
-	blockNum, _ := bt.ExplodeRow(row)
-	zlogger := zlog.With(zap.Uint64("block_num", blockNum.Uint64()))
+	blockNum, rowType, _ := bt.ExplodeRow(row)
+	zlogger := zlog.With(zap.Uint64("block_num", blockNum.Uint64()), zap.String("row_type", string(rowType)))
 	if !r.seenStartBlock {
 		if blockNum.Uint64() < startBlockNum {
 			zlogger.Warn("skipping blow below start block",
