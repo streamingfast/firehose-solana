@@ -807,6 +807,10 @@ github.com/streamingfast/substreams v0.0.6-beta.0.20220527154648-a8778d58eb10 h1
 github.com/streamingfast/substreams v0.0.6-beta.0.20220527154648-a8778d58eb10/go.mod h1:PBlBxnkeTi81cWvW+UIgByS31WLhg2hQ2jXn7Z7GBGI=
 github.com/streamingfast/substreams v0.0.6-beta.0.20220527221844-8ffb63114dfe h1:EMhdms1a7kPkocOrdaxIT3OMpmuqYJrDVaJO+0QroqE=
 github.com/streamingfast/substreams v0.0.6-beta.0.20220527221844-8ffb63114dfe/go.mod h1:PBlBxnkeTi81cWvW+UIgByS31WLhg2hQ2jXn7Z7GBGI=
+github.com/streamingfast/substreams v0.0.6-beta.0.20220530154223-26cddf485f66 h1:2/xBz+c7/BDlx5R5gL8u+e1PgK16LLiAdwRCgQ1QBfQ=
+github.com/streamingfast/substreams v0.0.6-beta.0.20220530154223-26cddf485f66/go.mod h1:PBlBxnkeTi81cWvW+UIgByS31WLhg2hQ2jXn7Z7GBGI=
+github.com/streamingfast/substreams v0.0.6-beta.0.20220530160447-450855f1882a h1:Q33w9bm2pHTQXgt6LSlAjrNVVJmZXJbgncY+SwUix9s=
+github.com/streamingfast/substreams v0.0.6-beta.0.20220530160447-450855f1882a/go.mod h1:PBlBxnkeTi81cWvW+UIgByS31WLhg2hQ2jXn7Z7GBGI=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
