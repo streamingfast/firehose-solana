@@ -47,7 +47,6 @@ func init() {
 			cmd.Flags().String("substreams-state-store-url", "{sf-data-dir}/localdata", "where substreams state data are stored")
 			cmd.Flags().Uint64("substreams-stores-save-interval", uint64(1_000), "Interval in blocks at which to save store snapshots")     // fixme
 			cmd.Flags().Uint64("substreams-output-cache-save-interval", uint64(100), "Interval in blocks at which to save store snapshots") // fixme
-			cmd.Flags().Int("substreams-parallel-subrequest-limit", 4, "number of parallel subrequests substream can make to synchronize its stores")
 			cmd.Flags().String("substreams-client-endpoint", "", "firehose endpoint for substreams client.  if left empty, will default to this current local firehose.")
 			cmd.Flags().String("substreams-client-jwt", "", "jwt for substreams client authentication")
 			cmd.Flags().Bool("substreams-client-insecure", false, "substreams client in insecure mode")
@@ -106,7 +105,6 @@ func init() {
 				}
 
 				opts := []substreamsService.Option{
-					substreamsService.WithParallelBlocksRequestsLimit(viper.GetInt("substreams-parallel-subrequest-limit")),
 					substreamsService.WithStoresSaveInterval(viper.GetUint64("substreams-stores-save-interval")),
 					substreamsService.WithOutCacheSaveInterval(viper.GetUint64("substreams-output-cache-save-interval")),
 				}
