@@ -18,6 +18,7 @@ type Reproc struct {
 
 	writer        Writer
 	lastSeenBlock *pbsolv1.Block
+	fatalError    error
 }
 
 func New(bt *bigtable.Client, writer Writer) (*Reproc, error) {
@@ -56,7 +57,7 @@ func (r *Reproc) Launch(ctx context.Context, startBlockNum, stopBlockNum uint64)
 			continue
 		}
 		zlog.Info("read block finished", zap.Stringer("last_seen_block", r.lastSeenBlock.AsRef()))
-		return nil
+		return r.fatalError
 	}
 
 }
@@ -78,6 +79,7 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum
 	blk, err := bt.ProcessRow(row, zlogger)
 	if err != nil {
 		zlogger.Warn("failed to read row", zap.Error(err))
+		r.fatalError = err
 		return false
 	}
 
