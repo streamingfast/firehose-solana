@@ -48,11 +48,15 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 	switch rowType {
 	case RowTypeBin:
 		cnt, err = externalBinToProto(rowCnt, "solana-bigtable-decoder", "--hex")
+		if err != nil {
+			return nil, fmt.Errorf("unable get external bin %s: %w", blockNum.String(), err)
+		}
 	default:
 		cnt, err = Decompress(rowCnt)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("unable to decompress block %s (uncompresse length %d): %w", blockNum.String(), len(rowCnt), err)
+		if err != nil {
+			return nil, fmt.Errorf("unable to decompress block %s (uncompresse length %d): %w", blockNum.String(), len(rowCnt), err)
+		}
+
 	}
 	zlogger.Debug("found bigtable row", zap.Stringer("blk_num", blockNum),
 		zap.String("key", row.Key()),
@@ -83,25 +87,32 @@ func externalBinToProto(in []byte, command string, args ...string) ([]byte, erro
 		io.WriteString(stdin, inString)
 	}()
 
-	outHex, err := cmd.Output()
+	outCntHex, err := cmd.Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	return hex.DecodeString(string(outHex))
+	outHex := string(outCntHex)
+	if strings.HasPrefix(outHex, "0x") {
+		outHex = outHex[2:]
+	}
+	outHex = strings.TrimRight(outHex, "\n")
+	return hex.DecodeString(outHex)
 }
 
 func Decompress(in []byte) (out []byte, err error) {
 	switch in[0] {
 	case 0:
+		zlog.Debug("no compression found")
 		out = in[4:]
 	case 1:
+		zlog.Debug("bzip2 compression")
 		// bzip2
 		out, err = ioutil.ReadAll(bzip2.NewReader(bytes.NewBuffer(in[4:])))
 		if err != nil {
 			return nil, fmt.Errorf("bzip2 decompress: %w", err)
 		}
 	case 2:
+		zlog.Debug("gzip compression")
 		// gzip
 		reader, err := gzip.NewReader(bytes.NewBuffer(in[4:]))
 		if err != nil {
@@ -112,6 +123,7 @@ func Decompress(in []byte) (out []byte, err error) {
 			return nil, fmt.Errorf("gzip decompress: %w", err)
 		}
 	case 3:
+		zlog.Debug("zstd compression")
 		// zstd
 		var dec *zstd.Decoder
 		dec, err = zstd.NewReader(nil)
