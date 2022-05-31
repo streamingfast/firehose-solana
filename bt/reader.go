@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"compress/bzip2"
 	"compress/gzip"
-	"encoding/gob"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/big"
+	"os/exec"
 	"strings"
-
-	msgpack "github.com/Xuanwo/serde-msgpack-go"
 
 	"cloud.google.com/go/bigtable"
 	"github.com/golang/protobuf/proto"
@@ -44,39 +44,51 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 	zlogger.Debug("found bigtable row", zap.Stringer("blk_num", blockNum), zap.Int("uncompressed_length", len(rowCnt)))
 	var cnt []byte
 	var err error
-	if cnt, err = Decompress(rowCnt); err != nil {
+
+	switch rowType {
+	case RowTypeBin:
+		cnt, err = externalBinToProto(rowCnt, "solana-bigtable-decoder", "--hex")
+	default:
+		cnt, err = Decompress(rowCnt)
+	}
+	if err != nil {
 		return nil, fmt.Errorf("unable to decompress block %s (uncompresse length %d): %w", blockNum.String(), len(rowCnt), err)
 	}
 	zlogger.Debug("found bigtable row", zap.Stringer("blk_num", blockNum),
 		zap.String("key", row.Key()),
-		zap.Int("uncompressed_length", len(rowCnt)),
-		zap.Int("compressed_length", len(cnt)),
+		zap.Int("compressed_length", len(rowCnt)),
+		zap.Int("uncompressed_length", len(cnt)),
 		zap.String("row_type", string(rowType)),
 	)
+
 	blk := &pbsolv1.Block{}
-
-	if rowType == RowTypeBin {
-
-		x := serdeStructFieldVisitor_StoredConfirmedBlock{}
-		err = msgpack.DeserializeFromBytes(cnt, &x)
-		if err != nil {
-			log.Fatalf("msgpack DeserializeFromBytes: %v", err)
-		}
-		log.Printf("%#+v", x)
-
-		buf := bytes.NewBuffer(cnt)
-		decoder := gob.NewDecoder(buf)
-		if err := decoder.Decode(&blk); err != nil {
-			return nil, fmt.Errorf("unable to bin decode confirmed block: %w", err)
-		}
-		//return nil, fmt.Errorf("unable to decode row of type binary")
-	}
-
 	if err := proto.Unmarshal(cnt, blk); err != nil {
 		return nil, fmt.Errorf("unable to unmarshall confirmed block: %w", err)
 	}
 	blk.Slot = blockNum.Uint64()
 	return blk, nil
+}
+
+func externalBinToProto(in []byte, command string, args ...string) ([]byte, error) {
+	cmd := exec.Command(command, args...)
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	inString := hex.EncodeToString(in)
+
+	go func() {
+		defer stdin.Close()
+		io.WriteString(stdin, inString)
+	}()
+
+	outHex, err := cmd.Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return hex.DecodeString(string(outHex))
 }
 
 func Decompress(in []byte) (out []byte, err error) {
