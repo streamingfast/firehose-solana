@@ -7,6 +7,7 @@ require (
 	cloud.google.com/go/storage v1.21.0
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/ShinyTrinkets/overseer v0.3.0
+	github.com/Xuanwo/serde-msgpack-go v0.0.0-20201221022950-ed5a34f5fb33
 	github.com/abourget/llerrgroup v0.2.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.5.2
