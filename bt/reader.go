@@ -29,6 +29,7 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 		return nil, fmt.Errorf("unable to decompress block %s (uncompresse length %d): %w", blockNum.String(), len(rowCnt), err)
 	}
 	zlogger.Debug("found bigtable row", zap.Stringer("blk_num", blockNum),
+		zap.String("key", row.Key()),
 		zap.Int("uncompressed_length", len(rowCnt)),
 		zap.Int("compressed_length", len(cnt)),
 	)
