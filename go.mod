@@ -39,7 +39,7 @@ require (
 	github.com/streamingfast/pbgo v0.0.6-0.20220428192744-f80aee7d4688
 	github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde
 	github.com/streamingfast/sf-solana/types v0.0.0-20220527152523-4238e142d533
-	github.com/streamingfast/sf-tools v0.0.0-20220510152242-8343cb8e91aa
+	github.com/streamingfast/sf-tools v0.0.0-20220601163521-585a45167662
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
 	github.com/streamingfast/substreams v0.0.6-beta.0.20220530160447-450855f1882a

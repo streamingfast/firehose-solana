@@ -27,6 +27,13 @@ var checkCmd = &cobra.Command{
 	Short: "Various checks for deployment, data integrity & debugging",
 }
 
+var flagMergedBlocksCmd = &cobra.Command{
+	Use:   "flag-merged-blocks {store-url} {dest-store-url}",
+	Short: "Check for missing or broken merged-blocks-files in store-url, write an empty file to a dest-store-url for every problem found",
+	Args:  cobra.ExactArgs(2),
+	RunE:  flagMergedBlocksE,
+}
+
 var checkMergedBlocksCmd = &cobra.Command{
 	// TODO: Not sure, it's now a required thing, but we could probably use the same logic as `start`
 	//       and avoid altogether passing the args. If this would also load the config and everything else,
@@ -45,6 +52,7 @@ var checkOneBlocksCmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(checkCmd)
+	checkCmd.AddCommand(flagMergedBlocksCmd)
 	checkCmd.AddCommand(checkMergedBlocksCmd)
 	checkCmd.AddCommand(checkOneBlocksCmd)
 
@@ -58,6 +66,19 @@ type blockNum uint64
 
 func (b blockNum) String() string {
 	return "#" + strings.ReplaceAll(humanize.Comma(int64(b)), ",", " ")
+}
+
+func flagMergedBlocksE(cmd *cobra.Command, args []string) error {
+	storeURL := args[0]
+	destURL := args[1]
+	fileBlockSize := uint32(100)
+
+	blockRange, err := sftools.Flags.GetBlockRange("range")
+	if err != nil {
+		return err
+	}
+
+	return sftools.FlagMergedBlocks(cmd.Context(), zlog, storeURL, destURL, fileBlockSize, blockRange)
 }
 
 func checkMergedBlocksE(cmd *cobra.Command, args []string) error {
