@@ -70,6 +70,16 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 		return nil, fmt.Errorf("unable to unmarshall confirmed block: %w", err)
 	}
 	blk.Slot = blockNum.Uint64()
+
+	// horrible tweaks
+	switch blk.Blockhash {
+	case "Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v":
+		zlog.Warn("applying horrible tweak to block Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v")
+		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
+			blk.PreviousBlockhash = "HQEr9qcbUVBt2okfu755FdJvJrPYTSpzzmmyeWTj5oau"
+		}
+	}
+
 	return blk, nil
 }
 
