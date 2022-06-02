@@ -83,6 +83,16 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
 			blk.PreviousBlockhash = "7cLQx2cZvyKbGoMuutXEZ3peg3D21D5qbX19T5V1XEiK"
 		}
+	case "Fqbm7QvCTYnToXWcCw6nbkWhMmXx2Nv91LsXBrKraB43":
+		zlog.Warn("applying horrible tweak to block 53,135,959")
+		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
+			blk.PreviousBlockhash = "RfXUrekgajPSb1R4CGFJWNaHTnB6p53Tzert4gouj2u"
+		}
+	case "ABp9G2NaPzM6kQbeyZYCYgdzL8JN9AxSSbCQG2X1K9UF":
+		zlog.Warn("applying horrible tweak to block 46,223,993")
+		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
+			blk.PreviousBlockhash = "9F2C7TGqUpFu6krd8vQbUv64BskrneBSgY7U2QfrGx96"
+		}
 	}
 
 	return blk, nil
