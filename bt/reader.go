@@ -93,6 +93,11 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
 			blk.PreviousBlockhash = "9F2C7TGqUpFu6krd8vQbUv64BskrneBSgY7U2QfrGx96"
 		}
+	case "ByUxmGuaT7iQS9qGS8on5xHRjiHXcGxvwPPaTGZXQyz7":
+		zlog.Warn("applying horrible tweak to block 61,328,766")
+		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
+			blk.PreviousBlockhash = "J6rRToKMK5DQDzVLqo7ibL3snwBYtqkYnRnQ7vXoUSEc"
+		}
 	}
 
 	return blk, nil
