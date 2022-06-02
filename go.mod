@@ -11,6 +11,7 @@ require (
 	github.com/abourget/llerrgroup v0.2.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/golang/protobuf v1.5.2
+	github.com/gosuri/uilive v0.0.4 // indirect
 	github.com/graph-gophers/graphql-go v0.0.0-20201027172035-4c772c181653
 	github.com/klauspost/compress v1.15.2
 	github.com/lithammer/dedent v1.1.0
@@ -18,6 +19,7 @@ require (
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mr-tron/base58 v1.2.0
+	github.com/rakyll/statik v0.1.7 // indirect
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.10.1
 	github.com/streamingfast/bstream v0.0.2-0.20220526185710-de6068c0276a
@@ -42,12 +44,13 @@ require (
 	github.com/streamingfast/sf-tools v0.0.0-20220601163521-585a45167662
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
-	github.com/streamingfast/substreams v0.0.6-beta.0.20220530160447-450855f1882a
+	github.com/streamingfast/substreams v0.0.10-beta.0.20220602230555-682c86469a74
 	github.com/stretchr/testify v1.7.1
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	golang.org/x/exp v0.0.0-20220518171630-0b5c67f07fdf // indirect
 	google.golang.org/api v0.70.0
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
