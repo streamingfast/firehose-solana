@@ -115,11 +115,6 @@ github.com/ShinyTrinkets/meta-logger v0.2.0/go.mod h1:cY1KnpPfpLIopR+arZXHYVrVGO
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
 github.com/Sytten/logrus-zap-hook v0.1.0/go.mod h1:J0ktevklw/xJNpI2FzfTdJssk4P0vq3K2qzwihJ2gWU=
-github.com/Xuanwo/serde-go v0.0.0-20201221022836-dc57ade2082e h1:3vEOvyvSCPTthNUaaVZuj5r5X63JDPYRiWUofmV1fuc=
-github.com/Xuanwo/serde-go v0.0.0-20201221022836-dc57ade2082e/go.mod h1:bDQAjt8ycslkdt3/ZnCUktUqr5vIGTsoXeclaazzfcQ=
-github.com/Xuanwo/serde-msgpack-go v0.0.0-20201221022950-ed5a34f5fb33 h1:mkMGjcbwjJR9zYoR02KAcWDO9J5L3u56EjMQJulD7AU=
-github.com/Xuanwo/serde-msgpack-go v0.0.0-20201221022950-ed5a34f5fb33/go.mod h1:g1g+1slr8CfqkrhQoT9Q3r32xMbKiRJW66oiouLuSYo=
-github.com/Xuanwo/templateutils v0.0.0-20201216100309-46f73cd4e4b1/go.mod h1:x0qS7gfgEm24b8V9U+0zBEBAu/VpxZhO/+EWtpgEgDw=
 github.com/abourget/llerrgroup v0.0.0-20161118145731-75f536392d17/go.mod h1:QukSa1Sim/0R4aRlWdiBdAy+0i1PBfOd1WHpfYM1ngA=
 github.com/abourget/llerrgroup v0.2.0 h1:2nPXy6Owo/KOKDQYvjMmS8rsjtitvuP2OEGrqgpj428=
 github.com/abourget/llerrgroup v0.2.0/go.mod h1:QukSa1Sim/0R4aRlWdiBdAy+0i1PBfOd1WHpfYM1ngA=
@@ -392,7 +387,6 @@ github.com/gorilla/websocket v1.4.1-0.20190629185528-ae1634f6a989/go.mod h1:E7qH
 github.com/gorilla/websocket v1.4.1/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/gosuri/uilive v0.0.4/go.mod h1:V/epo5LjjlDE5RJUcqx8dbw+zc93y5Ya3yg8tfZ74VI=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190717153623-606c73359dba/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 h1:+9834+KizmvFV7pXQGSXQTsaWhq2GjuNUt0aUU0YBYw=
@@ -671,7 +665,6 @@ github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1
 github.com/prometheus/procfs v0.7.3 h1:4jVXhlkAyzOScmCkXBTOLRLTz8EeU+eyjrwB/EPq0VU=
 github.com/prometheus/procfs v0.7.3/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1xBZuNvfVA=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
-github.com/rakyll/statik v0.1.7/go.mod h1:AlZONWzMtEnMs7W4e/1LURLiI49pIMmp6V9Unghqrcc=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/remyoudompheng/bigfft v0.0.0-20170806203942-52369c62f446/go.mod h1:uYEyJGbgTkfkS4+E/PavXkNJcbFIpEtjt2B0KDQ5+9M=
 github.com/remyoudompheng/bigfft v0.0.0-20190728182440-6a916e37a237/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
@@ -813,20 +806,12 @@ github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde h1:rm0el70
 github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde/go.mod h1:m+lL+X6GmWmIzxSgbWNsjj+7afeGHSA5RDGATblP6/Y=
 github.com/streamingfast/sf-solana/types v0.0.0-20220527152523-4238e142d533 h1:NgS0dovUSXdTgR9d8rTww68Be4MHous6WxHimiY45rk=
 github.com/streamingfast/sf-solana/types v0.0.0-20220527152523-4238e142d533/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
-github.com/streamingfast/sf-tools v0.0.0-20220510152242-8343cb8e91aa h1:eGoU7qqHa5qfSZK9qg6lmSRPPCTwqGlO1KmaMCopH8Y=
-github.com/streamingfast/sf-tools v0.0.0-20220510152242-8343cb8e91aa/go.mod h1:2TCAMgYZaTweX6qya0LxusT2OB59NS5N4UDAhmIzHS0=
 github.com/streamingfast/sf-tools v0.0.0-20220601163521-585a45167662 h1:6dXw4e8yHdzTC8a1pnIByoMrWCUQPehnyna584lxSVU=
 github.com/streamingfast/sf-tools v0.0.0-20220601163521-585a45167662/go.mod h1:2TCAMgYZaTweX6qya0LxusT2OB59NS5N4UDAhmIzHS0=
 github.com/streamingfast/shutter v1.5.0 h1:NpzDYzj0HVpSiDJVO/FFSL6QIK/YKOxY0gJAtyaTOgs=
 github.com/streamingfast/shutter v1.5.0/go.mod h1:B/T6efqdeMGbGwjzPS1ToXzYZI4kDzI5/u4I+7qbjY8=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcIwlbl7PipqrKPgNzfEWD9oxAA0mmjdRd2dTk9/4=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
-github.com/streamingfast/substreams v0.0.6-beta.0.20220530160447-450855f1882a h1:Q33w9bm2pHTQXgt6LSlAjrNVVJmZXJbgncY+SwUix9s=
-github.com/streamingfast/substreams v0.0.6-beta.0.20220530160447-450855f1882a/go.mod h1:PBlBxnkeTi81cWvW+UIgByS31WLhg2hQ2jXn7Z7GBGI=
-github.com/streamingfast/substreams v0.0.10-beta.0.20220602230555-682c86469a74 h1:hoARhFkOrTlsuXrNYmUm1dVDFewr7AhU1SunA/o9OtY=
-github.com/streamingfast/substreams v0.0.10-beta.0.20220602230555-682c86469a74/go.mod h1:kEnR9+Glho71YMUHTbDCw8X7dkGAIWR4M7vDUYZDC9E=
-github.com/streamingfast/substreams v0.0.12-0.20220603163035-bcebc40f6422 h1:W3Sqw13uOMDEeGVbDzQ/xbB5Rmy634IglotrZsxTN/A=
-github.com/streamingfast/substreams v0.0.12-0.20220603163035-bcebc40f6422/go.mod h1:kEnR9+Glho71YMUHTbDCw8X7dkGAIWR4M7vDUYZDC9E=
 github.com/streamingfast/substreams v0.0.13-0.20220603230030-152de88e2a6d h1:NVJHExpxi1933mR5Rmz3gjjzZGKaOYpfqEIY7FuxuhQ=
 github.com/streamingfast/substreams v0.0.13-0.20220603230030-152de88e2a6d/go.mod h1:kEnR9+Glho71YMUHTbDCw8X7dkGAIWR4M7vDUYZDC9E=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
@@ -869,10 +854,6 @@ github.com/ulikunitz/xz v0.5.7/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oW
 github.com/unrolled/render v1.0.0/go.mod h1:tu82oB5W2ykJRVioYsB+IQKcft7ryBr7w12qMBUPyXg=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.0.1/go.mod h1:UQGH1tvbgY+Nz5t2n7tXsz52dQxojPUpymEIMZ47gx8=
-github.com/vmihailenco/msgpack/v5 v5.1.0 h1:+od5YbEXxW95SPlW6beocmt8nOtlh83zqat5Ip9Hwdc=
-github.com/vmihailenco/msgpack/v5 v5.1.0/go.mod h1:C5gboKD0TJPqWDTVTtrQNfRbiBwHZGo8UTqP/9/XvLI=
-github.com/vmihailenco/tagparser v0.1.2 h1:gnjoVuB/kljJ5wICEEOpx98oXMWPLj22G67Vbd1qPqc=
-github.com/vmihailenco/tagparser v0.1.2/go.mod h1:OeAg3pn3UbLjkWt+rN9oFYB6u/cQgqMEUPoW2WPyhdI=
 github.com/wasmerio/wasmer-go v1.0.4 h1:MnqHoOGfiQ8MMq2RF6wyCeebKOe84G88h5yv+vmxJgs=
 github.com/wasmerio/wasmer-go v1.0.4/go.mod h1:0gzVdSfg6pysA6QVp6iVRPTagC6Wq9pOE8J86WKb2Fk=
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofmx9yWTog9BfvIu0q41lo=
@@ -965,8 +946,6 @@ golang.org/x/exp v0.0.0-20191227195350-da58074b4299/go.mod h1:2RIsYlXP63K8oxa1u0
 golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a/go.mod h1:2RIsYlXP63K8oxa1u096TMicItID8zy7Y6sNkU49FU4=
 golang.org/x/exp v0.0.0-20200207192155-f17229e696bd/go.mod h1:J/WKrq2StrnmMY6+EHIKF9dgMWnmCNThgcyBT1FY9mM=
 golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6/go.mod h1:3jZMyOhIsHpP37uCMkUooju7aAi5cS1Q23tOzKc+0MU=
-golang.org/x/exp v0.0.0-20220518171630-0b5c67f07fdf h1:oXVg4h2qJDd9htKxb5SCpFBHLipW6hXmL3qpUixS2jw=
-golang.org/x/exp v0.0.0-20220518171630-0b5c67f07fdf/go.mod h1:yh0Ynu2b5ZUe3MQfp2nM0ecK7wsgouWTDN0FNeJuIys=
 golang.org/x/image v0.0.0-20190227222117-0694c2d4d067/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/image v0.0.0-20190802002840-cff245a6509b/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=
@@ -1250,7 +1229,6 @@ golang.org/x/tools v0.0.0-20200825202427-b303f430e36d/go.mod h1:njjCfa9FT2d7l9Bc
 golang.org/x/tools v0.0.0-20200904185747-39188db58858/go.mod h1:Cj7w3i3Rnn0Xh82ur9kSqwfTHTeVxaDqrfMjpcNT6bE=
 golang.org/x/tools v0.0.0-20201110124207-079ba7bd75cd/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20201114224030-61ea331ec02b/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
-golang.org/x/tools v0.0.0-20201201064407-fd09bd90d85c/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20201201161351-ac6f37ff4c2a/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20201208233053-a543418bbed2/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.0.0-20210105154028-b0ab187a4818/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=

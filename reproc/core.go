@@ -109,11 +109,11 @@ func (r *Reproc) processRow(ctx context.Context, row bigtable.Row, startBlockNum
 
 		zlogger.Info(fmt.Sprintf("processing block 1 / %d", PRINT_FREQ), opts...)
 	}
+	r.lastSeenBlock = blk
 	if err := r.saveBlock(ctx, blk.ParentSlot, blk, zlogger); err != nil {
 		zlogger.Warn("failed to write block", zap.Error(err))
 		return false
 	}
-	r.lastSeenBlock = blk
 	if stopBlockNum != 0 && blk.Num() > stopBlockNum { // means we wrote the bundle
 		return false
 	}

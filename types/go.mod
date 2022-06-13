@@ -6,8 +6,6 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/mr-tron/base58 v1.2.0
 	github.com/streamingfast/bstream v0.0.2-0.20220428192925-5d0312d274f0
-	github.com/streamingfast/dbin v0.0.0-20210809205249-73d5eca35dc5
-	github.com/streamingfast/dstore v0.1.1-0.20220304164644-696f9c5fc231
 	github.com/streamingfast/logging v0.0.0-20220304214715-bc750a74b424
 	github.com/streamingfast/pbgo v0.0.6-0.20220428192744-f80aee7d4688
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
@@ -54,8 +52,10 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/streamingfast/atm v0.0.0-20220131151839-18c87005e680 // indirect
 	github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5 // indirect
+	github.com/streamingfast/dbin v0.0.0-20210809205249-73d5eca35dc5 // indirect
 	github.com/streamingfast/dgrpc v0.0.0-20220301153539-536adf71b594 // indirect
 	github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447 // indirect
+	github.com/streamingfast/dstore v0.1.1-0.20220304164644-696f9c5fc231 // indirect
 	github.com/streamingfast/dtracing v0.0.0-20210811175635-d55665d3622a // indirect
 	github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 // indirect
 	github.com/streamingfast/shutter v1.5.0 // indirect
