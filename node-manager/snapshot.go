@@ -43,7 +43,7 @@ func (s *Snapshotter) Restore(snapshotName string) error {
 
 	if snapshotName == "before-last-merged" {
 		zlog.Info("walking snapshot folder before last merger", zap.String("snapshot_name", snapshotName))
-		err := s.snapshotStore.Walk(ctx, "", "", func(filename string) (err error) {
+		err := s.snapshotStore.Walk(ctx, "", func(filename string) (err error) {
 			zlog.Info("found snapshot", zap.String("file_name", filename))
 			//snapshot-64506076-2qzVcbpcSwhxqtD7wjwgvAHWriSZtfJtynWQ4syS43mb.tar.zst
 			//           64506000

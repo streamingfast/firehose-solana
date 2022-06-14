@@ -88,7 +88,7 @@ func inspectRangeE(cmd *cobra.Command, args []string) error {
 	fmt.Println("// Run: dot -Tpdf file.dot -o file.pdf")
 	fmt.Println("digraph D {")
 
-	err = store.Walk(ctx, walkPrefix, ".tmp", func(filename string) error {
+	err = store.Walk(ctx, walkPrefix, func(filename string) error {
 		match := number.FindStringSubmatch(filename)
 		if match == nil {
 			return nil

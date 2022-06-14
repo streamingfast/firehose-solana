@@ -56,7 +56,7 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 	var files []string
 	filePrefix := fmt.Sprintf("%010d", blockNum)
 	fmt.Println(filePrefix)
-	err = store.Walk(ctx, filePrefix, "", func(filename string) (err error) {
+	err = store.Walk(ctx, filePrefix, func(filename string) (err error) {
 		files = append(files, filename)
 		return nil
 	})

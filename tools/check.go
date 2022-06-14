@@ -150,7 +150,7 @@ func checkOneBlocksE(cmd *cobra.Command, args []string) error {
 	walkPrefix := walkBlockPrefix(blockRange, 1)
 
 	zlog.Debug("walking one blocks", zap.Stringer("block_range", blockRange), zap.String("walk_prefix", walkPrefix))
-	err = blocksStore.Walk(ctx, walkPrefix, ".tmp", func(filename string) error {
+	err = blocksStore.Walk(ctx, walkPrefix, func(filename string) error {
 		match := number.FindStringSubmatch(filename)
 		if match == nil {
 			return nil

@@ -19,7 +19,7 @@ require (
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.10.1
-	github.com/streamingfast/bstream v0.0.2-0.20220526185710-de6068c0276a
+	github.com/streamingfast/bstream v0.0.2-0.20220614134008-8e1d8f2e3fba
 	github.com/streamingfast/cli v0.0.4-0.20220113202443-f7bcefa38f7e
 	github.com/streamingfast/dauth v0.0.0-20220526210215-024098ade521
 	github.com/streamingfast/derr v0.0.0-20220526184630-695c21740145
@@ -28,20 +28,20 @@ require (
 	github.com/streamingfast/dlauncher v0.0.0-20220510190546-3b2b932ceac8
 	github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9
 	github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447
-	github.com/streamingfast/dstore v0.1.1-0.20220419183635-aad7bcb15b8e
+	github.com/streamingfast/dstore v0.1.1-0.20220607202639-35118aeaf648
 	github.com/streamingfast/firehose v0.1.1-0.20220427051727-9b108461d3a6
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
 	github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3
 	github.com/streamingfast/logging v0.0.0-20220511154537-ce373d264338
 	github.com/streamingfast/merger v0.0.3-0.20220510150626-2e0bad630abf
-	github.com/streamingfast/node-manager v0.0.2-0.20220512153229-28b9e3ac6f30
+	github.com/streamingfast/node-manager v0.0.2-0.20220607203459-eb51a943d516
 	github.com/streamingfast/pbgo v0.0.6-0.20220428192744-f80aee7d4688
 	github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde
 	github.com/streamingfast/sf-solana/types v0.0.0-20220527152523-4238e142d533
-	github.com/streamingfast/sf-tools v0.0.0-20220601163521-585a45167662
+	github.com/streamingfast/sf-tools v0.0.0-20220607203155-f40739ab46fc
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
-	github.com/streamingfast/substreams v0.0.13-0.20220603230030-152de88e2a6d
+	github.com/streamingfast/substreams v0.0.14-0.20220613142408-bbb8d32e32f9
 	github.com/stretchr/testify v1.7.1
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4
