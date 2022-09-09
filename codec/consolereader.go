@@ -18,8 +18,8 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/sf-solana/types"
-	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -510,7 +510,7 @@ func (cr *ConsoleReader) readInit(line string) (err error) {
 		}
 	}
 
-	cr.logger.Info("processing deepmind logs",
+	cr.logger.Info("processing firehose logs",
 		zap.String("dm_version", cr.ver.dmVersion),
 		zap.String("variant", cr.ver.variant),
 		zap.String("node_version", cr.ver.nodeVersion),

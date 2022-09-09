@@ -43,26 +43,26 @@ import (
 func TestParseFromFile(t *testing.T) {
 	tests := []struct {
 		name          string
-		deepmindFile  string
+		firehoseFile  string
 		batchFilePath string
 		augmented     bool
 		expectedErr   error
 	}{
 		{
-			name:         "deepmind standard mode",
-			deepmindFile: "testdata/deep-mind-standard.dmlog",
+			name:         "firehose standard mode",
+			firehoseFile: "testdata/full-standard.firelog",
 		},
 		{
-			name:          "deepmind augmented mode",
-			deepmindFile:  "testdata/deep-mind-augmented.dmlog",
-			batchFilePath: "testdata/deep-mind-augmented-batches",
+			name:          "firehose augmented mode",
+			firehoseFile:  "testdata/full-augmented.firelog",
+			batchFilePath: "testdata/firehose-augmented-batches",
 			augmented:     true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cr := testFileConsoleReader(t, test.deepmindFile, test.batchFilePath)
+			cr := testFileConsoleReader(t, test.firehoseFile, test.batchFilePath)
 
 			buf := &bytes.Buffer{}
 			buf.Write([]byte("["))
@@ -114,7 +114,7 @@ func TestParseFromFile(t *testing.T) {
 			}
 			buf.Write([]byte("]"))
 
-			goldenFile := test.deepmindFile + ".golden.json"
+			goldenFile := test.firehoseFile + ".golden.json"
 			if os.Getenv("GOLDEN_UPDATE") == "true" {
 				ioutil.WriteFile(goldenFile, buf.Bytes(), os.ModePerm)
 			}
