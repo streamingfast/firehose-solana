@@ -33,7 +33,7 @@ main() {
     rm -rf sf-data &> /dev/null || true
   fi
 
-  exec $sfsol -c $(basename $ROOT).yaml start mindreader-node
+  exec $sfsol -c $(basename $ROOT).yaml start reader-node
 }
 
 usage_error() {
@@ -49,7 +49,7 @@ usage_error() {
 usage() {
   echo "usage: start.sh [-c] [-n <network>]"
   echo ""
-  echo "Start $(basename $ROOT) environment syncing mindreader with the pre-defined <network>. When nothing is specified,"
+  echo "Start $(basename $ROOT) environment syncing reader with the pre-defined <network>. When nothing is specified,"
   echo "sync with 'mainnet-beta' network."
   echo ""
   echo "Available networks:"
@@ -58,13 +58,13 @@ usage() {
   echo "  devnet"
   echo "  custom"
   echo ""
-  echo "When providing 'custom', you must manully provide the extra flags required for mindreader to know where"
+  echo "When providing 'custom', you must manully provide the extra flags required for reader to know where"
   echo "to connect to:"
-  echo '  start.sh custom -- --mindreader-node-extra-arguments="--entrypoint <value> --trusted-validator <value1> --trusted-validator <value2>... --expected-genesis-hash <value>"'
+  echo '  start.sh custom -- --reader-node-extra-arguments="--entrypoint <value> --trusted-validator <value1> --trusted-validator <value2>... --expected-genesis-hash <value>"'
   echo ""
   echo "Options"
   echo "    -c             Clean actual data directory first"
-  echo "    -n <network>   Actual network to connect to, values can be any '--mindreader-node-network' accepted value (expect 'development' which will not work properly if chosen)"
+  echo "    -n <network>   Actual network to connect to, values can be any '--reader-node-network' accepted value (expect 'development' which will not work properly if chosen)"
 }
 
 main "$@"

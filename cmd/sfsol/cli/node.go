@@ -28,33 +28,33 @@ import (
 )
 
 var httpListenAddrByKind = map[string]string{
-	"miner":      MinerNodeHTTPServingAddr,
-	"mindreader": MindreaderNodeHTTPServingAddr,
-	"peering":    PeeringNodeHTTPServingAddr,
+	"miner":   MinerNodeHTTPServingAddr,
+	"reader":  ReaderNodeHTTPServingAddr,
+	"peering": PeeringNodeHTTPServingAddr,
 }
 
 var rpcPortByKind = map[string]string{
-	"miner":      MinerNodeRPCPort,
-	"mindreader": MindreaderNodeRPCPort,
-	"peering":    PeeringNodeRPCPort,
+	"miner":   MinerNodeRPCPort,
+	"reader":  ReaderNodeRPCPort,
+	"peering": PeeringNodeRPCPort,
 }
 
 var gossipPortByKind = map[string]string{
-	"miner":      MinerNodeGossipPort,
-	"mindreader": MindreaderNodeGossipPort,
-	"peering":    PeeringNodeGossipPort,
+	"miner":   MinerNodeGossipPort,
+	"reader":  ReaderNodeGossipPort,
+	"peering": PeeringNodeGossipPort,
 }
 
 var p2pPortStartByKind = map[string]string{
-	"miner":      MinerNodeP2PPortStart,
-	"mindreader": MindreaderNodeP2PPortStart,
-	"peering":    PeeringNodeP2PPortStart,
+	"miner":   MinerNodeP2PPortStart,
+	"reader":  ReaderNodeP2PPortStart,
+	"peering": PeeringNodeP2PPortStart,
 }
 
 var p2pPortEndByKind = map[string]string{
-	"miner":      MinerNodeP2PPortEnd,
-	"mindreader": MindreaderNodeP2PPortEnd,
-	"peering":    PeeringNodeP2PPortEnd,
+	"miner":   MinerNodeP2PPortEnd,
+	"reader":  ReaderNodeP2PPortEnd,
+	"peering": PeeringNodeP2PPortEnd,
 }
 
 func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.Tracer, nodeLogger *zap.Logger) func(*launcher.Runtime) (launcher.App, error) {
@@ -91,7 +91,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 		startupDelay := viper.GetDuration(app + "-startup-delay")
 		extraArguments := getExtraArguments(kind)
 
-		if kind == "mindreader" {
+		if kind == "reader" {
 			(*appLogger).Info("configuring node for syncing", zap.String("network", network))
 
 			arguments = append(arguments, "--limit-ledger-size")
@@ -171,7 +171,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 				BinaryPath:          viper.GetString("global-validator-path"),
 				Arguments:           arguments,
 				DataDirPath:         MustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir")),
-				DebugDeepMind:       viper.GetBool(app + "-debug-deep-mind"),
+				DebugFirehoseLogs:   viper.GetBool(app + "-debug-firehose-logs"),
 				LogToZap:            viper.GetBool(app + "-log-to-zap"),
 				HeadBlockUpdateFunc: metricsAndReadinessManager.UpdateHeadBlock,
 			})
@@ -200,27 +200,27 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 		}
 		mergedBlocksStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url"))
 
-		var mindreaderPlugin *mindreader.MindReaderPlugin
+		var readerPlugin *mindreader.MindReaderPlugin
 		var registerServices func(server *grpc.Server) error
 
-		if kind == "mindreader" {
-			zlog.Info("preparing mindreader plugin")
+		if kind == "reader" {
+			zlog.Info("preparing reader plugin")
 			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
 			oneBlockStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
 
 			mergeThresholdBlockAge := viper.GetString(app + "-merge-threshold-block-age")
 			workingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-working-dir"))
 			blockDataWorkingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-block-data-working-dir"))
-			batchStartBlockNum := viper.GetUint64("mindreader-node-start-block-num")
-			batchStopBlockNum := viper.GetUint64("mindreader-node-stop-block-num")
-			blocksChanCapacity := viper.GetInt("mindreader-node-blocks-chan-capacity")
-			waitTimeForUploadOnShutdown := viper.GetDuration("mindreader-node-wait-upload-complete-on-shutdown")
-			oneBlockFileSuffix := viper.GetString("mindreader-node-oneblock-suffix")
-			batchFilePath := viper.GetString("mindreader-node-deepmind-batch-files-path")
-			purgeAccountChanges := viper.GetBool("mindreader-node-purge-account-data")
+			batchStartBlockNum := viper.GetUint64("reader-node-start-block-num")
+			batchStopBlockNum := viper.GetUint64("reader-node-stop-block-num")
+			blocksChanCapacity := viper.GetInt("reader-node-blocks-chan-capacity")
+			waitTimeForUploadOnShutdown := viper.GetDuration("reader-node-wait-upload-complete-on-shutdown")
+			oneBlockFileSuffix := viper.GetString("reader-node-oneblock-suffix")
+			batchFilePath := viper.GetString("reader-node-firehose-batch-files-path")
+			purgeAccountChanges := viper.GetBool("reader-node-purge-account-data")
 			tracker := runtime.Tracker.Clone()
 
-			mindreaderPlugin, err = getMindreaderLogPlugin(
+			readerPlugin, err = getReaderLogPlugin(
 				blockStreamServer,
 				oneBlockStoreURL,
 				mergedBlocksStoreURL,
@@ -241,7 +241,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 				purgeAccountChanges,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("new mindreader plugin: %w", err)
+				return nil, fmt.Errorf("new reader plugin: %w", err)
 			}
 
 			registerServices = func(server *grpc.Server) error {
@@ -251,7 +251,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 				return nil
 			}
 
-			superviser.RegisterLogPlugin(mindreaderPlugin)
+			superviser.RegisterLogPlugin(readerPlugin)
 		}
 
 		return nodeManagerApp.New(&nodeManagerApp.Config{
@@ -260,7 +260,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 			StartupDelay: startupDelay,
 		}, &nodeManagerApp.Modules{
 			Operator:                   chainOperator,
-			MindreaderPlugin:           mindreaderPlugin,
+			MindreaderPlugin:           readerPlugin,
 			MetricsAndReadinessManager: metricsAndReadinessManager,
 			RegisterGRPCService:        registerServices,
 		}, appLogger), nil

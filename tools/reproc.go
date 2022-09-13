@@ -24,7 +24,7 @@ var reprocCmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(reprocCmd)
-	reprocCmd.Flags().String("oneblock-suffix", "default", "If non-empty, the oneblock files will be appended with that suffix, so that mindreaders can each write their file for a given block instead of competing for writes.")
+	reprocCmd.Flags().String("oneblock-suffix", "default", "If non-empty, the oneblock files will be appended with that suffix, so that readers can each write their file for a given block instead of competing for writes.")
 	reprocCmd.Flags().String("dest-store", "./localblocks", "Destination blocks store")
 	reprocCmd.Flags().Bool("one-block-files", false, "Generate one block files")
 }

@@ -20,13 +20,13 @@ func NewStream(wsClient *ws.Client) Stream {
 }
 
 func (s *Stream) WatchAccount(ctx context.Context, account solana.PublicKey) (*Subscription, error) {
-	//todo: Replace ws subscription by a mindreader backed account data stream.
+	//todo: Replace ws subscription by a reader backed account data stream.
 	wsSub, err := s.wsClient.AccountSubscribe(account, rpc.CommitmentRecent)
 	if err != nil {
 		return nil, fmt.Errorf("watch account: ws sub: %w", err)
 	}
 
-	//todo: move this in the mindreader backed account data stream.
+	//todo: move this in the reader backed account data stream.
 	sub := newSubscription(account, nil)
 	for {
 		wsRes, err := wsSub.Recv(ctx)
@@ -43,7 +43,7 @@ func (s *Stream) WatchAccount(ctx context.Context, account solana.PublicKey) (*S
 			},
 			Value: &ResultValue{
 				Data: wsAcc.Data,
-				//todo: not sure we will get those value from mindreader...
+				//todo: not sure we will get those value from reader...
 				//Executable: wsAcc.Executable,
 				//Lamports:   uint64(wsAcc.Lamports),
 				//Owner:      wsAcc.Owner,

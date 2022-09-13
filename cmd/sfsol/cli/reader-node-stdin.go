@@ -20,17 +20,17 @@ import (
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/logging"
 	nodeManager "github.com/streamingfast/node-manager"
-	nodeMindreaderStdinApp "github.com/streamingfast/node-manager/app/node_mindreader_stdin"
+	nodeReaderStdinApp "github.com/streamingfast/node-manager/app/node_mindreader_stdin"
 	"github.com/streamingfast/node-manager/metrics"
 )
 
 func init() {
-	appLogger, appTracer := logging.PackageLogger("mindreader-node-stdin", "github.com/streamingfast/sf-ethereum/mindreader-node-stdin")
+	appLogger, appTracer := logging.PackageLogger("reader-node-stdin", "github.com/streamingfast/sf-ethereum/mindreader-node-stdin")
 
 	launcher.RegisterApp(zlog, &launcher.AppDef{
-		ID:          "mindreader-node-stdin",
-		Title:       "Mindreader Node (stdin)",
-		Description: "Blocks reading node, unmanaged, reads deep mind from standard input",
+		ID:          "reader-node-stdin",
+		Title:       "Reader Node (stdin)",
+		Description: "Blocks reading node, unmanaged, reads firehose logs from standard input",
 		RegisterFlags: func(cmd *cobra.Command) error {
 			return nil
 		},
@@ -41,28 +41,28 @@ func init() {
 
 			consoleReaderFactory := getConsoleReaderFactory(
 				appLogger,
-				viper.GetString("mindreader-node-deepmind-batch-files-path"),
-				viper.GetBool("mindreader-node-purge-account-data"),
+				viper.GetString("reader-node-firehose-batch-files-path"),
+				viper.GetBool("reader-node-purge-account-data"),
 			)
-			metricID := "mindreader-node-stdin"
+			metricID := "reader-node-stdin"
 			headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(metricID)
 			headBlockNumber := metrics.NewHeadBlockNumber(metricID)
-			metricsAndReadinessManager := nodeManager.NewMetricsAndReadinessManager(headBlockTimeDrift, headBlockNumber, viper.GetDuration("mindreader-node-readiness-max-latency"))
+			metricsAndReadinessManager := nodeManager.NewMetricsAndReadinessManager(headBlockTimeDrift, headBlockNumber, viper.GetDuration("reader-node-readiness-max-latency"))
 
-			return nodeMindreaderStdinApp.New(&nodeMindreaderStdinApp.Config{
-				GRPCAddr:                     viper.GetString("mindreader-node-grpc-listen-addr"),
+			return nodeReaderStdinApp.New(&nodeReaderStdinApp.Config{
+				GRPCAddr:                     viper.GetString("reader-node-grpc-listen-addr"),
 				ArchiveStoreURL:              archiveStoreURL,
 				MergeArchiveStoreURL:         mergeArchiveStoreURL,
-				MergeThresholdBlockAge:       viper.GetString("mindreader-node-merge-threshold-block-age"),
-				MindReadBlocksChanCapacity:   viper.GetInt("mindreader-node-blocks-chan-capacity"),
-				StartBlockNum:                viper.GetUint64("mindreader-node-start-block-num"),
-				StopBlockNum:                 viper.GetUint64("mindreader-node-stop-block-num"),
-				WorkingDir:                   MustReplaceDataDir(sfDataDir, viper.GetString("mindreader-node-working-dir")),
-				WaitUploadCompleteOnShutdown: viper.GetDuration("mindreader-node-wait-upload-complete-on-shutdown"),
-				OneblockSuffix:               viper.GetString("mindreader-node-oneblock-suffix"),
-				LogToZap:                     viper.GetBool("mindreader-node-log-to-zap"),
-				DebugDeepMind:                viper.GetBool("mindreader-node-debug-deep-mind"),
-			}, &nodeMindreaderStdinApp.Modules{
+				MergeThresholdBlockAge:       viper.GetString("reader-node-merge-threshold-block-age"),
+				MindReadBlocksChanCapacity:   viper.GetInt("reader-node-blocks-chan-capacity"),
+				StartBlockNum:                viper.GetUint64("reader-node-start-block-num"),
+				StopBlockNum:                 viper.GetUint64("reader-node-stop-block-num"),
+				WorkingDir:                   MustReplaceDataDir(sfDataDir, viper.GetString("reader-node-working-dir")),
+				WaitUploadCompleteOnShutdown: viper.GetDuration("reader-node-wait-upload-complete-on-shutdown"),
+				OneblockSuffix:               viper.GetString("reader-node-oneblock-suffix"),
+				LogToZap:                     viper.GetBool("reader-node-log-to-zap"),
+				DebugDeepMind:                viper.GetBool("reader-node-debug-firehose-logs"),
+			}, &nodeReaderStdinApp.Modules{
 				ConsoleReaderFactory:       consoleReaderFactory,
 				MetricsAndReadinessManager: metricsAndReadinessManager,
 			}, appLogger, appTracer), nil

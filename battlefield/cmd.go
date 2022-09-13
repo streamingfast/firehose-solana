@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/streamingfast/sf-solana/codec"
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,7 +14,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/jsonpb"
-	"github.com/streamingfast/sf-solana/node-manager/codec"
 	"github.com/streamingfast/sf-solana/types"
 	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
 	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
@@ -30,8 +30,8 @@ func init() {
 }
 
 var generateCmd = &cobra.Command{
-	Use:   "generate <path_to_dmlog.dmlog> <output.json> [path-to-deepmind-batch-files]",
-	Short: "Generated pbsol or pbsolana blocks from dmlogs.",
+	Use:   "generate <path_to_firelog.firelog> <output.json> [path-to-firehose-batch-files]",
+	Short: "Generated pbsol or pbsolana blocks from firelogs.",
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dmlogInputFilePath := args[0]
@@ -40,7 +40,7 @@ var generateCmd = &cobra.Command{
 		batchFilesPath := ""
 		if augmentedStack {
 			if len(args) <= 2 {
-				return fmt.Errorf("you must specficy a deepming batch files path as a third argument when running in --augmented-mode mode")
+				return fmt.Errorf("you must specficy a firehose batch files path as a third argument when running in --augmented-mode mode")
 			}
 			batchFilesPath = args[2]
 		}

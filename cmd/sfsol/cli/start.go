@@ -104,7 +104,7 @@ func Start(dataDir string, args []string) (err error) {
 		apps = launcher.ParseAppsFromArgs(launcher.Config["start"].Args, runByDefault)
 	}
 
-	if containsApp(apps, "mindreader") {
+	if containsApp(apps, "reader") {
 		//maybeCheckNodeosVersion() //todo
 	}
 

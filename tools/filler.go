@@ -21,7 +21,7 @@ var fillerCmd = &cobra.Command{
 }
 
 func init() {
-	fillerCmd.Flags().String("oneblock-suffix", "default", "If non-empty, the oneblock files will be appended with that suffix, so that mindreaders can each write their file for a given block instead of competing for writes.")
+	fillerCmd.Flags().String("oneblock-suffix", "default", "If non-empty, the oneblock files will be appended with that suffix, so that readers can each write their file for a given block instead of competing for writes.")
 	Cmd.AddCommand(fillerCmd)
 }
 

@@ -128,7 +128,7 @@ func (f *Filler) retrieveOneBlockFile(ctx context.Context, bundler *bundle.Bundl
 	return nil
 }
 
-// TODO(froch, 20220107): remove this code, dead code with new mindreader and correct filenames
+// TODO(froch, 20220107): remove this code, dead code with new reader and correct filenames
 func toOneBlockFile(mergeFileReader io.ReadCloser) (oneBlockFiles []*bundle.OneBlockFile, err error) {
 	defer mergeFileReader.Close()
 
