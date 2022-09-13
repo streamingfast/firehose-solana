@@ -2,7 +2,7 @@ package codec
 
 import "github.com/streamingfast/logging"
 
-var zlog, _ = logging.PackageLogger("sfsol", "github.com/streamingfast/sf-solana/node-mananager/codec")
+var zlog, _ = logging.PackageLogger("sfsol", "github.com/streamingfast/firehose-solana/node-mananager/codec")
 
 func init() {
 	logging.InstantiateLoggers()

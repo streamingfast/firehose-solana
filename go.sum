@@ -803,8 +803,8 @@ github.com/streamingfast/pbgo v0.0.6-0.20220428192744-f80aee7d4688 h1:TNGT5Khvyo
 github.com/streamingfast/pbgo v0.0.6-0.20220428192744-f80aee7d4688/go.mod h1:huKwfgTGFIFZMKSVbD5TywClM7zAeBUG/zePZMqvXQQ=
 github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde h1:rm0el70hYsJ54yM+YzXPkg6GYtts+GOeYR4RCLyarTE=
 github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde/go.mod h1:m+lL+X6GmWmIzxSgbWNsjj+7afeGHSA5RDGATblP6/Y=
-github.com/streamingfast/sf-solana/types v0.0.0-20220527152523-4238e142d533 h1:NgS0dovUSXdTgR9d8rTww68Be4MHous6WxHimiY45rk=
-github.com/streamingfast/sf-solana/types v0.0.0-20220527152523-4238e142d533/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
+github.com/streamingfast/firehose-solana/types v0.0.0-20220527152523-4238e142d533 h1:NgS0dovUSXdTgR9d8rTww68Be4MHous6WxHimiY45rk=
+github.com/streamingfast/firehose-solana/types v0.0.0-20220527152523-4238e142d533/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
 github.com/streamingfast/sf-tools v0.0.0-20220607203155-f40739ab46fc h1:QXXCDCVMsyidCjasAlGJxJgGcyne5NzzQEbgAmwSkpw=
 github.com/streamingfast/sf-tools v0.0.0-20220607203155-f40739ab46fc/go.mod h1:H5wez+y1nuO8o/W3sH8RmLuAXfVwx3PLHw1+tfuUEuU=
 github.com/streamingfast/shutter v1.5.0 h1:NpzDYzj0HVpSiDJVO/FFSL6QIK/YKOxY0gJAtyaTOgs=

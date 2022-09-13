@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/streamingfast/sf-solana/cmd/sfsol/cli"
+	"github.com/streamingfast/firehose-solana/cmd/sfsol/cli"
 )
 
 // Commit sha1 value, injected via go build `ldflags` at build time

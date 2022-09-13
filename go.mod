@@ -1,4 +1,4 @@
-module github.com/streamingfast/sf-solana
+module github.com/streamingfast/firehose-solana
 
 go 1.15
 
@@ -37,7 +37,7 @@ require (
 	github.com/streamingfast/node-manager v0.0.2-0.20220607203459-eb51a943d516
 	github.com/streamingfast/pbgo v0.0.6-0.20220428192744-f80aee7d4688
 	github.com/streamingfast/relayer v0.0.2-0.20220307182103-5f4178c54fde
-	github.com/streamingfast/sf-solana/types v0.0.0-20220527152523-4238e142d533
+	github.com/streamingfast/firehose-solana/types v0.0.0-20220527152523-4238e142d533
 	github.com/streamingfast/sf-tools v0.0.0-20220607203155-f40739ab46fc
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8

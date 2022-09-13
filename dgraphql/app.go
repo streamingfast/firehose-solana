@@ -19,7 +19,7 @@ import (
 	drateLimiter "github.com/streamingfast/dauth/ratelimiter"
 	"github.com/streamingfast/dgraphql"
 	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
-	solResolver "github.com/streamingfast/sf-solana/dgraphql/resolvers"
+	solResolver "github.com/streamingfast/firehose-solana/dgraphql/resolvers"
 	"github.com/streamingfast/solana-go/rpc"
 	"go.uber.org/zap"
 )

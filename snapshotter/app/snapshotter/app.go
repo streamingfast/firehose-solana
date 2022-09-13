@@ -1,7 +1,7 @@
 package snapshotter
 
 import (
-	"github.com/streamingfast/sf-solana/snapshotter/snapshot"
+	"github.com/streamingfast/firehose-solana/snapshotter/snapshot"
 	"github.com/streamingfast/shutter"
 )
 

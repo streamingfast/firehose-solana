@@ -4,4 +4,4 @@ import (
 	"github.com/streamingfast/logging"
 )
 
-var zlog, tracer = logging.PackageLogger("snapshotter", "github.com/streamingfast/sf-solana/snapshotter/snapshot")
+var zlog, tracer = logging.PackageLogger("snapshotter", "github.com/streamingfast/firehose-solana/snapshotter/snapshot")

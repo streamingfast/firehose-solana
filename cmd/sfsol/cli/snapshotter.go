@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/dlauncher/launcher"
-	"github.com/streamingfast/sf-solana/snapshotter/app/snapshotter"
+	"github.com/streamingfast/firehose-solana/snapshotter/app/snapshotter"
 )
 
 func init() {

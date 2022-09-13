@@ -3,7 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
-	"github.com/streamingfast/sf-solana/codec"
+	"github.com/streamingfast/firehose-solana/codec"
 	"time"
 
 	"github.com/streamingfast/logging"
@@ -22,8 +22,8 @@ import (
 
 func init() {
 
-	appLogger, appTracer := logging.PackageLogger("reader", fmt.Sprintf("github.com/streamingfast/sf-solana/reader"))
-	nodeLogger, _ := logging.PackageLogger("node", fmt.Sprintf("github.com/streamingfast/sf-solana/reader/node"))
+	appLogger, appTracer := logging.PackageLogger("reader", fmt.Sprintf("github.com/streamingfast/firehose-solana/reader"))
+	nodeLogger, _ := logging.PackageLogger("node", fmt.Sprintf("github.com/streamingfast/firehose-solana/reader/node"))
 
 	launcher.RegisterApp(zlog, &launcher.AppDef{
 		ID:          "reader-node",

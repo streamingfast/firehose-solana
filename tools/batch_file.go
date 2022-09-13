@@ -3,7 +3,7 @@ package tools
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/streamingfast/sf-solana/codec"
+	"github.com/streamingfast/firehose-solana/codec"
 
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"

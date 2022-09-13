@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/streamingfast/bstream"
+	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
 	pbbstream "github.com/streamingfast/pbgo/sf/bstream/v1"
-	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	"google.golang.org/protobuf/proto"
 )
 

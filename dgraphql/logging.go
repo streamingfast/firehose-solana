@@ -18,4 +18,4 @@ import (
 	"github.com/streamingfast/logging"
 )
 
-var zlog, _ = logging.PackageLogger("dgraphql", "github.com/streamingfast/sf-solana/dgraphql")
+var zlog, _ = logging.PackageLogger("dgraphql", "github.com/streamingfast/firehose-solana/dgraphql")

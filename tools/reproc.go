@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/streamingfast/sf-solana/reproc"
+	"github.com/streamingfast/firehose-solana/reproc"
 	"go.uber.org/zap"
 
 	"cloud.google.com/go/bigtable"

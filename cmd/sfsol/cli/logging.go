@@ -18,4 +18,4 @@ import (
 	"github.com/streamingfast/logging"
 )
 
-var zlog, _ = logging.RootLogger("sfsol", "github.com/streamingfast/sf-solana/cmd/sfsol")
+var zlog, _ = logging.RootLogger("sfsol", "github.com/streamingfast/firehose-solana/cmd/sfsol")

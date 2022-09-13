@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 	dgraphqlApp "github.com/streamingfast/dgraphql/app/dgraphql"
 	"github.com/streamingfast/dlauncher/launcher"
-	dgraphqlSol "github.com/streamingfast/sf-solana/dgraphql"
+	dgraphqlSol "github.com/streamingfast/firehose-solana/dgraphql"
 )
 
 func init() {

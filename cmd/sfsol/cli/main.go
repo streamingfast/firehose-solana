@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/streamingfast/sf-solana/types"
+	"github.com/streamingfast/firehose-solana/types"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -35,7 +35,7 @@ import (
 	"github.com/streamingfast/derr"
 	"github.com/streamingfast/dlauncher/flags"
 	"github.com/streamingfast/dlauncher/launcher"
-	_ "github.com/streamingfast/sf-solana/types"
+	_ "github.com/streamingfast/firehose-solana/types"
 )
 
 var RootCmd = &cobra.Command{Use: "sfsol", Short: "Solana on StreamingFast"}

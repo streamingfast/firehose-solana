@@ -26,16 +26,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/streamingfast/sf-solana/types"
+	"github.com/streamingfast/firehose-solana/types"
 
 	"github.com/abourget/llerrgroup"
 	"github.com/golang/protobuf/proto"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
+	_ "github.com/streamingfast/firehose-solana/types"
+	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
 	"github.com/streamingfast/jsonpb"
-	_ "github.com/streamingfast/sf-solana/types"
-	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

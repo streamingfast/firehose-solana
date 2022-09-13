@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/streamingfast/sf-solana/reproc"
+	"github.com/streamingfast/firehose-solana/reproc"
 
 	"cloud.google.com/go/bigtable"
 	"github.com/spf13/cobra"
