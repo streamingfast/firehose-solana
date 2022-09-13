@@ -34,7 +34,7 @@ var generateCmd = &cobra.Command{
 	Short: "Generated pbsol or pbsolana blocks from firelogs.",
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dmlogInputFilePath := args[0]
+		firelogInputFilePath := args[0]
 		jsonFilePath := args[1]
 		augmentedStack := viper.GetBool("global-augmented-mode")
 		batchFilesPath := ""
@@ -46,7 +46,7 @@ var generateCmd = &cobra.Command{
 		}
 
 		zlog.Info("running battlefield generate",
-			zap.String("dmlog_file_path", dmlogInputFilePath),
+			zap.String("firelog_file_path", firelogInputFilePath),
 			zap.String("batch_file_path", batchFilesPath),
 			zap.String("json_file_path", jsonFilePath),
 		)
@@ -72,13 +72,13 @@ var generateCmd = &cobra.Command{
 			}
 		}
 
-		blocks, err := parser.readLogs(dmlogInputFilePath)
+		blocks, err := parser.readLogs(firelogInputFilePath)
 		if err != nil {
-			return fmt.Errorf("failed to read dmlogs %q: %w", dmlogInputFilePath, err)
+			return fmt.Errorf("failed to read firelogs %q: %w", firelogInputFilePath, err)
 		}
-		zlog.Info("read all blocks from dmlog file",
+		zlog.Info("read all blocks from firelog file",
 			zap.Int("block_count", len(blocks)),
-			zap.String("file", dmlogInputFilePath),
+			zap.String("file", firelogInputFilePath),
 		)
 
 		fmt.Printf("Writing blocks to disk %q...", jsonFilePath)
@@ -159,7 +159,7 @@ func (d *DMParser) readLogs(filePath string) ([]interface{}, error) {
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to open dmlof file %q: %w", filePath, err)
+		return nil, fmt.Errorf("unable to open firelog file %q: %w", filePath, err)
 	}
 	defer file.Close()
 

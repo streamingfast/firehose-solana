@@ -188,11 +188,11 @@ func (cr *ConsoleReader) next() (out *bstream.Block, err error) {
 	}
 
 	for line := range cr.lines {
-		if !strings.HasPrefix(line, "DMLOG ") {
+		if !strings.HasPrefix(line, "FIRE ") {
 			continue
 		}
 
-		line = line[6:] // removes the DMLOG prefix
+		line = strings.TrimPrefix(line, "FIRE ") // removes the FIRE prefix
 		if err = cr.parseLine(ctx, line); err != nil {
 			return nil, cr.formatError(line, err)
 		}
@@ -484,7 +484,7 @@ func (cr *ConsoleReader) readInit(line string) (err error) {
 	}
 
 	if cr.ver != nil {
-		return fmt.Errorf("received DMLOG INIT multiple times")
+		return fmt.Errorf("received FIRE INIT multiple times")
 	}
 
 	cr.ver = &version{

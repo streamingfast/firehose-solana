@@ -64,7 +64,7 @@ func init() {
 			cmd.Flags().Uint("reader-node-start-block-num", 0, "[BATCH] Blocks that were produced with smaller block number then the given block num are skipped")
 			cmd.Flags().Uint("reader-node-stop-block-num", 0, "[BATCH] Shutdown when we the following 'stop-block-num' has been reached, inclusively.")
 			cmd.Flags().Bool("reader-node-purge-account-data", false, "When flag enabled, the reader will purge the account changes from the blocks before storing it")
-			cmd.Flags().String("reader-node-firehose-batch-files-path", "", "Path where firehose enabled nodes will write the dmlog batch files, and where the console log will read /tmp/")
+			cmd.Flags().String("reader-node-firehose-batch-files-path", "", "Path where firehose enabled nodes will write the firelog batch files, and where the console log will read /tmp/")
 			return nil
 		},
 		InitFunc: func(runtime *launcher.Runtime) error {

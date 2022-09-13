@@ -369,10 +369,10 @@ func trxSlice(t *testing.T, trxIDs []string) (out []*pbsolv2.Transaction) {
 	return
 }
 
-func testFileConsoleReader(t *testing.T, dmlogFilename, batchFilePath string) *ConsoleReader {
+func testFileConsoleReader(t *testing.T, firelogFilename, batchFilePath string) *ConsoleReader {
 	t.Helper()
 
-	fl, err := os.Open(dmlogFilename)
+	fl, err := os.Open(firelogFilename)
 	require.NoError(t, err)
 
 	cr := testReaderConsoleReader(t, make(chan string, 10000), func() { fl.Close() }, batchFilePath)
