@@ -11,7 +11,7 @@ Welcome to this node manager pod, common commands:
  - Show version           sfsol --version
 
 Node manager commands (sol-... <tab> to show all):
- - Debug Deep Mind logs for 30s            sol-debug-deep-mind-30s
+ - Debug Firehose logs for 30s             sol-debug-firehose-logs-30s
  - View Node Drift                         sol-drift
 
  - Stop Validator instance                 sol-maintenance
