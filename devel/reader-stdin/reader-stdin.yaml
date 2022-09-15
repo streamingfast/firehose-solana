@@ -3,8 +3,8 @@ start:
   - reader-node-stdin
   flags:
     log-to-file: false
-    common-oneblock-store-url: gs://dfuseio-global-blocks-us/sol-mainnet/v3-oneblock
-    common-blocks-store-url: gs://dfuseio-global-blocks-us/sol-mainnet/v3
+    common-one-block-store-url: gs://dfuseio-global-blocks-us/sol-mainnet/v3-oneblock
+    common-merged-blocks-store-url: gs://dfuseio-global-blocks-us/sol-mainnet/v3
     reader-node-grpc-listen-addr: ":9000"
     reader-node-blocks-chan-capacity: 10000
     reader-node-merge-and-store-directly: false

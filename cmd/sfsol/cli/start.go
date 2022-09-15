@@ -81,7 +81,7 @@ func Start(dataDir string, args []string) (err error) {
 		bstream.GetBlockPayloadSetter = bstream.ATMCachedPayloadSetter
 
 		cacheDir := MustReplaceDataDir(modules.AbsDataDir, viper.GetString("common-blocks-cache-dir"))
-		storeUrl := MustReplaceDataDir(modules.AbsDataDir, viper.GetString("common-blocks-store-url"))
+		storeUrl := MustReplaceDataDir(modules.AbsDataDir, viper.GetString("common-merged-blocks-store-url"))
 		maxRecentEntryBytes := viper.GetInt("common-blocks-cache-max-recent-entry-bytes")
 		maxEntryByAgeBytes := viper.GetInt("common-blocks-cache-max-entry-by-age-bytes")
 		bstream.InitCache(storeUrl, cacheDir, maxRecentEntryBytes, maxEntryByAgeBytes)

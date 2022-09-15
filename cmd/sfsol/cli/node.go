@@ -198,7 +198,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 		if err != nil {
 			return nil, fmt.Errorf("unable to create chain operator: %w", err)
 		}
-		mergedBlocksStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url"))
+		mergedBlocksStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-merged-blocks-store-url"))
 
 		var readerPlugin *mindreader.MindReaderPlugin
 		var registerServices func(server *grpc.Server) error
@@ -206,7 +206,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 		if kind == "reader" {
 			zlog.Info("preparing reader plugin")
 			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
-			oneBlockStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-oneblock-store-url"))
+			oneBlockStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-one-block-store-url"))
 
 			mergeThresholdBlockAge := viper.GetString(app + "-merge-threshold-block-age")
 			workingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-working-dir"))

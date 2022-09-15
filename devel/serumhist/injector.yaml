@@ -2,8 +2,8 @@ start:
   args:
   - serumhist
   flags:
-    common-blockstream-addr: ""
-    common-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v1"
+    common-live-blocks-addr: ""
+    common-merged-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v1"
     serumhist-enable-injector-mode: true
     serumhist-enable-bigquery-injector-mode: true
     serumhist-enable-server-mode: false

@@ -3,8 +3,8 @@ start:
     - reader-node
   flags:
     augmented-mode: "false"
-    common-oneblock-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v4-oneblock"
-    common-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v4"
+    common-one-block-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v4-oneblock"
+    common-merged-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v4"
     reader-node-grpc-listen-addr: ":8899"
     reader-node-merge-and-store-directly: "false"
     reader-node-network: "mainnet-beta"

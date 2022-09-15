@@ -36,7 +36,7 @@ func init() {
 				MaxSourceLatency:   viper.GetDuration("relayer-max-source-latency"),
 				SourceRequestBurst: viper.GetInt("relayer-source-request-burst"),
 				MinStartOffset:     viper.GetUint64("relayer-min-start-offset"),
-				SourceStoreURL:     MustReplaceDataDir(sfDataDir, viper.GetString("common-blocks-store-url")),
+				SourceStoreURL:     MustReplaceDataDir(sfDataDir, viper.GetString("common-merged-blocks-store-url")),
 			}, &relayerApp.Modules{}), nil
 		},
 	})

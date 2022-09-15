@@ -43,12 +43,12 @@ func init() {
 			`))
 
 		// Common stores configuration flags
-		cmd.Flags().String("common-blocks-store-url", MergedBlocksStoreURL, "[COMMON] Store URL (with prefix) where to read/write. Used by: relayer, statedb, trxdb-loader, blockmeta, search-indexer, search-live, search-forkresolver, eosws, accounthist")
-		cmd.Flags().String("common-oneblock-store-url", OneBlockStoreURL, "[COMMON] Store URL (with prefix) to read/write one-block files. Used by: reader, merger")
+		cmd.Flags().String("common-merged-blocks-store-url", MergedBlocksStoreURL, "[COMMON] Store URL (with prefix) where to read/write. Used by: relayer, statedb, trxdb-loader, blockmeta, search-indexer, search-live, search-forkresolver, eosws, accounthist")
+		cmd.Flags().String("common-one-block-store-url", OneBlockStoreURL, "[COMMON] Store URL (with prefix) to read/write one-block files. Used by: reader, merger")
 
 		// Service addresses
 		cmd.Flags().String("common-blockmeta-addr", BlockmetaServingAddr, "[COMMON]gRPC endpoint to reach the Blockmeta. Used by: search-indexer, search-router, search-live, eosws, dgraphql")
-		cmd.Flags().String("common-blockstream-addr", RelayerServingAddr, "[COMMON]gRPC endpoint to get real-time blocks")
+		cmd.Flags().String("common-live-blocks-addr", RelayerServingAddr, "[COMMON]gRPC endpoint to get real-time blocks")
 		cmd.Flags().String("common-firehose-addr", FirehoseGRPCServingAddr, "[COMMON]gRPC endpoint to get firehose blocks")
 
 		//// Authentication, metering and rate limiter plugins

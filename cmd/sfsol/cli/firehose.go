@@ -36,11 +36,11 @@ func init() {
 	launcher.RegisterApp(zlog, &launcher.AppDef{
 		ID:          "firehose",
 		Title:       "Block Firehose",
-		Description: "Provides on-demand filtered blocks, depends on common-blocks-store-url and common-blockstream-addr",
+		Description: "Provides on-demand filtered blocks, depends on common-merged-blocks-store-url and common-live-blocks-addr",
 		RegisterFlags: func(cmd *cobra.Command) error {
-			cmd.Flags().String("firehose-grpc-listen-addr", FirehoseGRPCServingAddr, "Address on which the firehose will listen")
-			cmd.Flags().StringSlice("firehose-blocks-store-urls", nil, "If non-empty, overrides common-blocks-store-url with a list of blocks stores")
-			cmd.Flags().Duration("firehose-real-time-tolerance", 1*time.Minute, "firehose will became alive if now - block time is smaller then tolerance")
+			cmd.Flags().String("firehose-grpc-listen-addr", FirehoseGRPCServingAddr, "Address on which the Firehose will listen")
+			cmd.Flags().StringSlice("firehose-blocks-store-urls", nil, "If non-empty, overrides common-merged-blocks-store-url with a list of blocks stores")
+			cmd.Flags().Duration("firehose-real-time-tolerance", 1*time.Minute, "Firehose will became alive if now - block time is smaller then tolerance")
 
 			cmd.Flags().Bool("substreams-enabled", false, "Whether to enable substreams")
 			cmd.Flags().Bool("substreams-partial-mode-enabled", false, "Whether to enable partial stores generation support on this instance (usually for internal deployments only)")
@@ -60,7 +60,7 @@ func init() {
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
 			sfDataDir := runtime.AbsDataDir
 			tracker := runtime.Tracker.Clone()
-			blockstreamAddr := viper.GetString("common-blockstream-addr")
+			blockstreamAddr := viper.GetString("common-live-blocks-addr")
 			if blockstreamAddr != "" {
 				tracker.AddGetter(bstream.BlockStreamLIBTarget, bstream.StreamLIBBlockRefGetter(blockstreamAddr))
 			}
@@ -80,7 +80,7 @@ func init() {
 
 			firehoseBlocksStoreURLs := viper.GetStringSlice("firehose-blocks-store-urls")
 			if len(firehoseBlocksStoreURLs) == 0 {
-				firehoseBlocksStoreURLs = []string{viper.GetString("common-blocks-store-url")}
+				firehoseBlocksStoreURLs = []string{viper.GetString("common-merged-blocks-store-url")}
 			} else if len(firehoseBlocksStoreURLs) == 1 && strings.Contains(firehoseBlocksStoreURLs[0], ",") {
 				// Providing multiple elements from config doesn't work with `viper.GetStringSlice`, so let's also handle the case where a single element has separator
 				firehoseBlocksStoreURLs = strings.Split(firehoseBlocksStoreURLs[0], ",")
