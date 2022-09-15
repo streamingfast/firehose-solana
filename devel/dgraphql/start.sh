@@ -2,7 +2,7 @@
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-sfsol="$ROOT/../sfsol"
+firesol="$ROOT/../firesol"
 
 main() {
   pushd "$ROOT" &> /dev/null
@@ -23,7 +23,7 @@ main() {
     rm -rf sf-data &> /dev/null || true
   fi
 
-  exec $sfsol -c $(basename $ROOT).yaml start "$@"
+  exec $firesol -c $(basename $ROOT).yaml start "$@"
 }
 
 usage_error() {

@@ -8,7 +8,7 @@
                /_/   \_,_//___/\__/
 
 Welcome to this node manager pod, common commands:
- - Show version           sfsol --version
+ - Show version           firesol --version
 
 Node manager commands (sol-... <tab> to show all):
  - Debug Firehose logs for 30s             sol-debug-firehose-logs-30s

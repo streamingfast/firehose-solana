@@ -19,17 +19,17 @@ main() {
   fi
 
   pushd "$ROOT" &> /dev/null
-    go install -ldflags "-X main.Version=$version -X main.Commit=$commit -X main.IsDirty=$dirty" ./cmd/sfsol
+    go install -ldflags "-X main.Version=$version -X main.Commit=$commit -X main.IsDirty=$dirty" ./cmd/firesol
   popd &> /dev/null
 
   if [[ $KILL_AFTER != "" ]]; then
-    ${GOPATH:-$HOME/go}/bin/sfsol "$@" &
+    ${GOPATH:-$HOME/go}/bin/firesol "$@" &
     active_pid=$!
 
     sleep $KILL_AFTER
     kill -s TERM $active_pid &> /dev/null || true
   else
-    exec ${GOPATH:-$HOME/go}/bin/sfsol "$@"
+    exec ${GOPATH:-$HOME/go}/bin/firesol "$@"
   fi
 }
 

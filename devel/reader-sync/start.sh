@@ -4,7 +4,7 @@ ulimit -n 960480 960480
 
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-sfsol="$ROOT/../sfsol"
+firesol="$ROOT/../firesol"
 
 export RUST_LOG=solana=info,solana_metrics=error
 
@@ -33,7 +33,7 @@ main() {
     rm -rf sf-data &> /dev/null || true
   fi
 
-  exec $sfsol -c $(basename $ROOT).yaml start reader-node
+  exec $firesol -c $(basename $ROOT).yaml start reader-node
 }
 
 usage_error() {

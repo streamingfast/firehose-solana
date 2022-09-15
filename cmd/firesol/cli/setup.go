@@ -46,7 +46,7 @@ func setupCmd(cmd *cobra.Command) error {
 		}
 
 		if !exists && isMatchingCommand(cmds, forceConfigOn) {
-			return fmt.Errorf("config file %q not found. Did you 'sfsol init'?", configFile)
+			return fmt.Errorf("config file %q not found. Did you 'firesol init'?", configFile)
 		}
 
 		if exists {

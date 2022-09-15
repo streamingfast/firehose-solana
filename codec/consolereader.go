@@ -506,7 +506,7 @@ func (cr *ConsoleReader) readInit(line string) (err error) {
 		}
 
 		if cr.ver.variant[8:] == "augmented" && !types.IsSfSolAugmented() {
-			return fmt.Errorf("attempting to run console reader in augmented mode, when sfsol is not configured for augmented mode")
+			return fmt.Errorf("attempting to run console reader in augmented mode, when firesol is not configured for augmented mode")
 		}
 	}
 

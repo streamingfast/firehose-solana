@@ -35,7 +35,7 @@ func init() {
 
 func sfStartE(cmd *cobra.Command, args []string) (err error) {
 	dataDir := viper.GetString("global-data-dir")
-	zlog.Debug("sfsol binary started", zap.String("data_dir", dataDir))
+	zlog.Debug("firesol binary started", zap.String("data_dir", dataDir))
 
 	configFile := viper.GetString("global-config-file")
 	zlog.Info("starting Solana on StreamingFast with config file", zap.String("config_file", configFile))

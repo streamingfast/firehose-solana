@@ -28,10 +28,10 @@ func Test_extractCmd(t *testing.T) {
 		return nil
 	}
 
-	rootCmd := &cobra.Command{Use: "sfsol", Short: "Solana on StreamingFast"}
+	rootCmd := &cobra.Command{Use: "firesol", Short: "Solana on StreamingFast"}
 	startCmd := &cobra.Command{Use: "start", Short: "Starts Solana on StreamingFast services all at once", RunE: testCmdE}
 	initCmd := &cobra.Command{Use: "init", Short: "Initializes StreamingFast's local environment", RunE: testCmdE}
-	toolCmd := &cobra.Command{Use: "tools", Short: "Developer tools related to sfsol", RunE: testCmdE}
+	toolCmd := &cobra.Command{Use: "tools", Short: "Developer tools related to firesol", RunE: testCmdE}
 	dbBlkCmd := &cobra.Command{Use: "blk", Short: "Read a Blk", RunE: testCmdE}
 
 	rootCmd.AddCommand(initCmd)
@@ -47,17 +47,17 @@ func Test_extractCmd(t *testing.T) {
 		{
 			name:      "root command",
 			cmd:       rootCmd,
-			expectCmd: []string{"sfsol"},
+			expectCmd: []string{"firesol"},
 		},
 		{
 			name:      "first tier command",
 			cmd:       startCmd,
-			expectCmd: []string{"sfsol", "start"},
+			expectCmd: []string{"firesol", "start"},
 		},
 		{
 			name:      "child command",
 			cmd:       dbBlkCmd,
-			expectCmd: []string{"sfsol", "tools", "blk"},
+			expectCmd: []string{"firesol", "tools", "blk"},
 		},
 	}
 
@@ -74,10 +74,10 @@ func Test_shouldRunSetup(t *testing.T) {
 		return nil
 	}
 
-	rootCmd := &cobra.Command{Use: "sfsol", Short: "Solana on StreamingFast"}
+	rootCmd := &cobra.Command{Use: "firesol", Short: "Solana on StreamingFast"}
 	startCmd := &cobra.Command{Use: "start", Short: "Starts services all at once", RunE: testCmdE}
 	initCmd := &cobra.Command{Use: "init", Short: "Initializes local environment", RunE: testCmdE}
-	toolCmd := &cobra.Command{Use: "tools", Short: "Developer tools related to sfsol", RunE: testCmdE}
+	toolCmd := &cobra.Command{Use: "tools", Short: "Developer tools related to firesol", RunE: testCmdE}
 	dbBlkCmd := &cobra.Command{Use: "blk", Short: "Read a Blk", RunE: testCmdE}
 
 	rootCmd.AddCommand(initCmd)
@@ -92,17 +92,17 @@ func Test_shouldRunSetup(t *testing.T) {
 	}{
 		{
 			name:       "root command",
-			cmds:       []string{"sfsol"},
+			cmds:       []string{"firesol"},
 			expectBool: false,
 		},
 		{
 			name:       "first tier command",
-			cmds:       []string{"sfsol", "start"},
+			cmds:       []string{"firesol", "start"},
 			expectBool: true,
 		},
 		{
 			name:       "child command",
-			cmds:       []string{"sfsol", "tools", "blk"},
+			cmds:       []string{"firesol", "tools", "blk"},
 			expectBool: false,
 		},
 	}

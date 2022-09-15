@@ -8,6 +8,6 @@
           /_/   \_,_//___/\__/
 
 Welcome to this pod, common commands:
- - Show version             sfsol --version
+ - Show version             firesol --version
  - Monitor Solana Validator solana-validator --ledger /data/sf-data/mindreader/data monitor
 

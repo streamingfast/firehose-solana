@@ -38,7 +38,7 @@ import (
 	_ "github.com/streamingfast/firehose-solana/types"
 )
 
-var RootCmd = &cobra.Command{Use: "sfsol", Short: "Solana on StreamingFast"}
+var RootCmd = &cobra.Command{Use: "firesol", Short: "Solana on StreamingFast"}
 var allFlags = make(map[string]bool) // used as global because of async access to cobra init functions
 
 func Main() {
@@ -81,7 +81,7 @@ func Main() {
 		}
 
 		augmentedMode := viper.GetBool("global-augmented-mode")
-		zlog.Info("setting up sfsol bstream", zap.Bool("augmented", augmentedMode))
+		zlog.Info("setting up firesol bstream", zap.Bool("augmented", augmentedMode))
 		if augmentedMode {
 			types.SetupSfSolAugmented()
 		}
@@ -92,7 +92,7 @@ func Main() {
 	derr.Check("Solana on StreamingFast", RootCmd.Execute())
 }
 
-var startCmdExample = `sfsol start relayer merger --merger-grpc-serving-addr=localhost:12345 --relayer-merger-addr=localhost:12345`
+var startCmdExample = `firesol start relayer merger --merger-grpc-serving-addr=localhost:12345 --relayer-merger-addr=localhost:12345`
 var startCmdHelpTemplate = `Usage:{{if .Runnable}}
   {{.UseLine}}{{end}} [all|command1 [command2...]]{{if gt (len .Aliases) 0}}
 
