@@ -510,7 +510,7 @@ func (cr *ConsoleReader) readInit(line string) (err error) {
 		}
 	}
 
-	cr.logger.Info("processing firehose logs",
+	cr.logger.Info("processing Firehose logs",
 		zap.String("dm_version", cr.ver.dmVersion),
 		zap.String("variant", cr.ver.variant),
 		zap.String("node_version", cr.ver.nodeVersion),

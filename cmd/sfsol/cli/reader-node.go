@@ -59,12 +59,12 @@ func init() {
 			cmd.Flags().Bool("reader-node-fail-on-non-contiguous-block", false, "Enables the Continuity Checker that stops (or refuses to start) the superviser if a block was missed. It has a significant performance cost on reprocessing large segments of blocks")
 			cmd.Flags().String("reader-node-merge-threshold-block-age", "24h", "When processing blocks with a blocktime older than this threshold, they will be automatically merged (you can also use \"always\" or \"never\")")
 			cmd.Flags().String("reader-node-oneblock-suffix", "", "If non-empty, the oneblock files will be appended with that suffix, so that readers can each write their file for a given block instead of competing for writes.")
-			cmd.Flags().Bool("reader-node-debug-firehose-logs", false, "[DEV] Prints firehose logs to standard output, should be use for debugging purposes only")
-			cmd.Flags().Bool("reader-node-merge-and-store-directly", false, "[BATCH] When enabled, do not write oneblock files, sidestep the merger and write the merged 100-blocks logs directly to --common-blocks-store-url")
+			cmd.Flags().Bool("reader-node-debug-firehose-logs", false, "[DEV] Prints Firehose logs to standard output, should be use for debugging purposes only")
+			cmd.Flags().Bool("reader-node-merge-and-store-directly", false, "[BATCH] When enabled, do not write oneblock files, sidestep the merger and write the merged 100-blocks logs directly to --common-merged-blocks-store-url")
 			cmd.Flags().Uint("reader-node-start-block-num", 0, "[BATCH] Blocks that were produced with smaller block number then the given block num are skipped")
 			cmd.Flags().Uint("reader-node-stop-block-num", 0, "[BATCH] Shutdown when we the following 'stop-block-num' has been reached, inclusively.")
 			cmd.Flags().Bool("reader-node-purge-account-data", false, "When flag enabled, the reader will purge the account changes from the blocks before storing it")
-			cmd.Flags().String("reader-node-firehose-batch-files-path", "", "Path where firehose enabled nodes will write the firelog batch files, and where the console log will read /tmp/")
+			cmd.Flags().String("reader-node-firehose-batch-files-path", "", "Path where Firehose enabled nodes will write the firelog batch files, and where the console log will read /tmp/")
 			return nil
 		},
 		InitFunc: func(runtime *launcher.Runtime) error {

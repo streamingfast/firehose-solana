@@ -49,11 +49,11 @@ func TestParseFromFile(t *testing.T) {
 		expectedErr   error
 	}{
 		{
-			name:         "firehose standard mode",
+			name:         "Firehose standard mode",
 			firehoseFile: "testdata/full-standard.firelog",
 		},
 		{
-			name:          "firehose augmented mode",
+			name:          "Firehose augmented mode",
 			firehoseFile:  "testdata/full-augmented.firelog",
 			batchFilePath: "testdata/firehose-augmented-batches",
 			augmented:     true,

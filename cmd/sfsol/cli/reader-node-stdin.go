@@ -30,7 +30,7 @@ func init() {
 	launcher.RegisterApp(zlog, &launcher.AppDef{
 		ID:          "reader-node-stdin",
 		Title:       "Reader Node (stdin)",
-		Description: "Blocks reading node, unmanaged, reads firehose logs from standard input",
+		Description: "Blocks reading node, unmanaged, reads Firehose logs from standard input",
 		RegisterFlags: func(cmd *cobra.Command) error {
 			return nil
 		},
