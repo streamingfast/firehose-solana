@@ -51,7 +51,7 @@ func Main() {
 	RootCmd.PersistentFlags().String("validator-path", "solana-validator", "Path to the solana binary. Defaults to the solana found in your PATH")
 	RootCmd.PersistentFlags().Bool("skip-checks", false, "Skip checks to ensure 'solana' binary is supported")
 	RootCmd.PersistentFlags().String("log-format", "text", "Format for logging to stdout. Either 'text' or 'stackdriver'")
-	RootCmd.PersistentFlags().Bool("log-to-file", true, "Also write logs to {sf-data-dir}/sf.log.json ")
+	RootCmd.PersistentFlags().Bool("log-to-file", true, "Also write logs to {data-dir}/sf.log.json ")
 	RootCmd.PersistentFlags().CountP("verbose", "v", "Enables verbose output (-vvvv for max verbosity)")
 	RootCmd.PersistentFlags().String("log-level-switcher-listen-addr", "localhost:1065", "If non-empty, the process will listen on this address for json-formatted requests to change different logger levels (see DEBUG.md for more info)")
 	RootCmd.PersistentFlags().String("metrics-listen-addr", MetricsListenAddr, "If non-empty, the process will listen on this address to server Prometheus metrics")

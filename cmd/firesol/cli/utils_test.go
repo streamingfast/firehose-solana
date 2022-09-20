@@ -9,7 +9,7 @@ import (
 //"/storage/megered-blocks"
 //:// -> assume passit dreiclty
 //NO -> "/" directly
-//relative + datadir
+//relative + dataDir
 
 func Test_getDirsToMake(t *testing.T) {
 	tests := []struct {

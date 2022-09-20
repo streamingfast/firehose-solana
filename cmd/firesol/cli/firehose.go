@@ -44,7 +44,7 @@ func init() {
 
 			cmd.Flags().Bool("substreams-enabled", false, "Whether to enable substreams")
 			cmd.Flags().Bool("substreams-partial-mode-enabled", false, "Whether to enable partial stores generation support on this instance (usually for internal deployments only)")
-			cmd.Flags().String("substreams-state-store-url", "{sf-data-dir}/localdata", "where substreams state data are stored")
+			cmd.Flags().String("substreams-state-store-url", "{data-dir}/localdata", "where substreams state data are stored")
 			cmd.Flags().Uint64("substreams-stores-save-interval", uint64(1_000), "Interval in blocks at which to save store snapshots")     // fixme
 			cmd.Flags().Uint64("substreams-output-cache-save-interval", uint64(100), "Interval in blocks at which to save store snapshots") // fixme
 			cmd.Flags().String("substreams-client-endpoint", "", "Firehose endpoint for substreams client.  if left empty, will default to this current local Firehose.")
@@ -58,7 +58,7 @@ func init() {
 		},
 
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
-			sfDataDir := runtime.AbsDataDir
+			dataDir := runtime.AbsDataDir
 			tracker := runtime.Tracker.Clone()
 			blockstreamAddr := viper.GetString("common-live-blocks-addr")
 			if blockstreamAddr != "" {
@@ -87,7 +87,7 @@ func init() {
 			}
 
 			for _, url := range firehoseBlocksStoreURLs {
-				url = MustReplaceDataDir(sfDataDir, url)
+				url = MustReplaceDataDir(dataDir, url)
 			}
 
 			shutdownSignalDelay := viper.GetDuration("common-system-shutdown-signal-delay")
@@ -99,7 +99,7 @@ func init() {
 			var registerServiceExt firehoseApp.RegisterServiceExtensionFunc
 			if viper.GetBool("substreams-enabled") {
 
-				stateStore, err := dstore.NewStore(MustReplaceDataDir(sfDataDir, viper.GetString("substreams-state-store-url")), "", "", true)
+				stateStore, err := dstore.NewStore(MustReplaceDataDir(dataDir, viper.GetString("substreams-state-store-url")), "", "", true)
 				if err != nil {
 					return nil, fmt.Errorf("setting up state store for data: %w", err)
 				}

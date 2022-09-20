@@ -26,7 +26,7 @@ func MustReplaceDataDir(dataDir, in string) string {
 		panic(fmt.Errorf("file path abs: %w", err))
 	}
 
-	in = strings.Replace(in, "{sf-data-dir}", d, -1)
+	in = strings.Replace(in, "{data-dir}", d, -1)
 	return in
 }
 

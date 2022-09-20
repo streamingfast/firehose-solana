@@ -27,27 +27,27 @@ func init() {
 		//        and avoid the duplication? Note that this duplicate happens in many other apps, we might need to re-think our
 		//        init flow and call init after the factory and giving it the instantiated app...
 		InitFunc: func(runtime *launcher.Runtime) (err error) {
-			sfDataDir := runtime.AbsDataDir
+			dataDir := runtime.AbsDataDir
 
-			if err = mkdirStorePathIfLocal(MustReplaceDataDir(sfDataDir, viper.GetString("common-merged-blocks-store-url"))); err != nil {
+			if err = mkdirStorePathIfLocal(MustReplaceDataDir(dataDir, viper.GetString("common-merged-blocks-store-url"))); err != nil {
 				return
 			}
 
-			if err = mkdirStorePathIfLocal(MustReplaceDataDir(sfDataDir, viper.GetString("common-one-block-store-url"))); err != nil {
+			if err = mkdirStorePathIfLocal(MustReplaceDataDir(dataDir, viper.GetString("common-one-block-store-url"))); err != nil {
 				return
 			}
 
-			if err = mkdirStorePathIfLocal(MustReplaceDataDir(sfDataDir, viper.GetString("merger-state-file"))); err != nil {
+			if err = mkdirStorePathIfLocal(MustReplaceDataDir(dataDir, viper.GetString("merger-state-file"))); err != nil {
 				return
 			}
 
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
-			sfDataDir := runtime.AbsDataDir
+			dataDir := runtime.AbsDataDir
 			return mergerApp.New(&mergerApp.Config{
-				StorageMergedBlocksFilesPath:   MustReplaceDataDir(sfDataDir, viper.GetString("common-merged-blocks-store-url")),
-				StorageOneBlockFilesPath:       MustReplaceDataDir(sfDataDir, viper.GetString("common-one-block-store-url")),
+				StorageMergedBlocksFilesPath:   MustReplaceDataDir(dataDir, viper.GetString("common-merged-blocks-store-url")),
+				StorageOneBlockFilesPath:       MustReplaceDataDir(dataDir, viper.GetString("common-one-block-store-url")),
 				GRPCListenAddr:                 viper.GetString("merger-grpc-listen-addr"),
 				WritersLeewayDuration:          viper.GetDuration("merger-writers-leeway"),
 				TimeBetweenStoreLookups:        viper.GetDuration("merger-time-between-store-lookups"),

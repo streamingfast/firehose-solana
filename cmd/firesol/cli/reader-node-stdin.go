@@ -35,9 +35,9 @@ func init() {
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
-			sfDataDir := runtime.AbsDataDir
-			archiveStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-one-block-store-url"))
-			mergeArchiveStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-merged-blocks-store-url"))
+			dataDir := runtime.AbsDataDir
+			archiveStoreURL := MustReplaceDataDir(dataDir, viper.GetString("common-one-block-store-url"))
+			mergeArchiveStoreURL := MustReplaceDataDir(dataDir, viper.GetString("common-merged-blocks-store-url"))
 
 			consoleReaderFactory := getConsoleReaderFactory(
 				appLogger,
@@ -57,9 +57,9 @@ func init() {
 				MindReadBlocksChanCapacity:   viper.GetInt("reader-node-blocks-chan-capacity"),
 				StartBlockNum:                viper.GetUint64("reader-node-start-block-num"),
 				StopBlockNum:                 viper.GetUint64("reader-node-stop-block-num"),
-				WorkingDir:                   MustReplaceDataDir(sfDataDir, viper.GetString("reader-node-working-dir")),
+				WorkingDir:                   MustReplaceDataDir(dataDir, viper.GetString("reader-node-working-dir")),
 				WaitUploadCompleteOnShutdown: viper.GetDuration("reader-node-wait-upload-complete-on-shutdown"),
-				OneblockSuffix:               viper.GetString("reader-node-oneblock-suffix"),
+				OneblockSuffix:               viper.GetString("reader-node-one-block-suffix"),
 				LogToZap:                     viper.GetBool("reader-node-log-to-zap"),
 				DebugDeepMind:                viper.GetBool("reader-node-debug-firehose-logs"),
 			}, &nodeReaderStdinApp.Modules{

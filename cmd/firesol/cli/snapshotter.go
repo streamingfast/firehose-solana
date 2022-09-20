@@ -17,14 +17,14 @@ func init() {
 			cmd.Flags().String("snapshotter-source-prefix", "", "mainnet-beta-ledger-us-west1")
 			cmd.Flags().String("snapshotter-destination-bucket", "", "bucket where solana snapshot will be stored and uncompressed")
 			cmd.Flags().String("snapshotter-destination-prefix", "sol-mainnet/snapshots", "")
-			cmd.Flags().String("snapshotter-working-dir", "{sf-data-dir}/working", "")
+			cmd.Flags().String("snapshotter-working-dir", "{data-dir}/working", "")
 			return nil
 		},
 		InitFunc: func(runtime *launcher.Runtime) (err error) {
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
-			sfDataDir := runtime.AbsDataDir
+			dataDir := runtime.AbsDataDir
 
 			return snapshotter.New(
 				&snapshotter.Config{
@@ -32,7 +32,7 @@ func init() {
 					SourceSnapshotsFolder:      viper.GetString("snapshotter-source-prefix"),
 					DestinationBucket:          viper.GetString("snapshotter-destination-bucket"),
 					DestinationSnapshotsFolder: viper.GetString("snapshotter-destination-prefix"),
-					Workdir:                    MustReplaceDataDir(sfDataDir, viper.GetString("snapshotter-working-dir")),
+					Workdir:                    MustReplaceDataDir(dataDir, viper.GetString("snapshotter-working-dir")),
 				},
 			), nil
 		},

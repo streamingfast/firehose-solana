@@ -2,16 +2,16 @@ package cli
 
 const (
 	//Protocol               pbbstream.Protocol = pbbstream.Protocol_EOS //todo
-	TrxDBDSN               string = "badger://{sf-data-dir}/storage/trxdb"     //%s will be replaced by `<data-dir>`
-	FluxDSN                string = "badger://{sf-data-dir}/storage/statedb"   //%s will be replaced by `<data-dir>/<flux-data-dir>
-	SerumHistDSN           string = "badger://{sf-data-dir}/storage/serumhist" //%s will be replaced by `<data-dir>/<flux-data-dir>
-	MergedBlocksStoreURL   string = "file://{sf-data-dir}/storage/merged-blocks"
-	FilteredBlocksStoreURL string = "file://{sf-data-dir}/storage/filtered-merged-blocks"
-	IndicesStoreURL        string = "file://{sf-data-dir}/storage/indexes"
-	OneBlockStoreURL       string = "file://{sf-data-dir}/storage/one-blocks"
-	BlockDataStoreURL      string = "file://{sf-data-dir}/storage/data-blocks"
-	SnapshotsURL           string = "file://{sf-data-dir}/storage/snapshots"
-	BlocksCacheDirectory   string = "{sf-data-dir}/blocks-cache"
+	TrxDBDSN               string = "badger://{data-dir}/storage/trxdb"     //%s will be replaced by `<data-dir>`
+	FluxDSN                string = "badger://{data-dir}/storage/statedb"   //%s will be replaced by `<data-dir>/<flux-data-dir>
+	SerumHistDSN           string = "badger://{data-dir}/storage/serumhist" //%s will be replaced by `<data-dir>/<flux-data-dir>
+	MergedBlocksStoreURL   string = "file://{data-dir}/storage/merged-blocks"
+	FilteredBlocksStoreURL string = "file://{data-dir}/storage/filtered-merged-blocks"
+	IndicesStoreURL        string = "file://{data-dir}/storage/indexes"
+	OneBlockStoreURL       string = "file://{data-dir}/storage/one-blocks"
+	BlockDataStoreURL      string = "file://{data-dir}/storage/data-blocks"
+	SnapshotsURL           string = "file://{data-dir}/storage/snapshots"
+	BlocksCacheDirectory   string = "{data-dir}/blocks-cache"
 	DmeshDSN               string = "local://"
 	DmeshServiceVersion    string = "v1"
 	NetworkID              string = "development"

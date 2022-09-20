@@ -26,7 +26,7 @@ func init() {
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
-			sfDataDir := runtime.AbsDataDir
+			dataDir := runtime.AbsDataDir
 
 			return relayerApp.New(&relayerApp.Config{
 				SourcesAddr:        viper.GetStringSlice("relayer-source"),
@@ -36,7 +36,7 @@ func init() {
 				MaxSourceLatency:   viper.GetDuration("relayer-max-source-latency"),
 				SourceRequestBurst: viper.GetInt("relayer-source-request-burst"),
 				MinStartOffset:     viper.GetUint64("relayer-min-start-offset"),
-				SourceStoreURL:     MustReplaceDataDir(sfDataDir, viper.GetString("common-merged-blocks-store-url")),
+				SourceStoreURL:     MustReplaceDataDir(dataDir, viper.GetString("common-merged-blocks-store-url")),
 			}, &relayerApp.Modules{}), nil
 		},
 	})

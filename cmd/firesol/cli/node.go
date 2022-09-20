@@ -63,8 +63,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 			return nil, fmt.Errorf("systcl configuration for %s failed: %w", app, err)
 		}
 
-		sfDataDir := runtime.AbsDataDir
-		dataDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir"))
+		dataDir := runtime.AbsDataDir
 
 		headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(app)
 		headBlockNumber := metrics.NewHeadBlockNumber(app)
@@ -170,7 +169,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 			&nodeManagerSol.Options{
 				BinaryPath:          viper.GetString("global-validator-path"),
 				Arguments:           arguments,
-				DataDirPath:         MustReplaceDataDir(sfDataDir, viper.GetString(app+"-data-dir")),
+				DataDirPath:         MustReplaceDataDir(dataDir, viper.GetString(app+"-data-dir")),
 				DebugFirehoseLogs:   viper.GetBool(app + "-debug-firehose-logs"),
 				LogToZap:            viper.GetBool(app + "-log-to-zap"),
 				HeadBlockUpdateFunc: metricsAndReadinessManager.UpdateHeadBlock,
@@ -198,7 +197,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 		if err != nil {
 			return nil, fmt.Errorf("unable to create chain operator: %w", err)
 		}
-		mergedBlocksStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-merged-blocks-store-url"))
+		mergedBlocksStoreURL := MustReplaceDataDir(dataDir, viper.GetString("common-merged-blocks-store-url"))
 
 		var readerPlugin *mindreader.MindReaderPlugin
 		var registerServices func(server *grpc.Server) error
@@ -206,16 +205,16 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 		if kind == "reader" {
 			zlog.Info("preparing reader plugin")
 			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
-			oneBlockStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("common-one-block-store-url"))
+			oneBlockStoreURL := MustReplaceDataDir(dataDir, viper.GetString("common-one-block-store-url"))
 
 			mergeThresholdBlockAge := viper.GetString(app + "-merge-threshold-block-age")
-			workingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-working-dir"))
-			blockDataWorkingDir := MustReplaceDataDir(sfDataDir, viper.GetString(app+"-block-data-working-dir"))
+			workingDir := MustReplaceDataDir(dataDir, viper.GetString(app+"-working-dir"))
+			blockDataWorkingDir := MustReplaceDataDir(dataDir, viper.GetString(app+"-block-data-working-dir"))
 			batchStartBlockNum := viper.GetUint64("reader-node-start-block-num")
 			batchStopBlockNum := viper.GetUint64("reader-node-stop-block-num")
 			blocksChanCapacity := viper.GetInt("reader-node-blocks-chan-capacity")
 			waitTimeForUploadOnShutdown := viper.GetDuration("reader-node-wait-upload-complete-on-shutdown")
-			oneBlockFileSuffix := viper.GetString("reader-node-oneblock-suffix")
+			oneBlockFileSuffix := viper.GetString("reader-node-one-block-suffix")
 			batchFilePath := viper.GetString("reader-node-firehose-batch-files-path")
 			purgeAccountChanges := viper.GetBool("reader-node-purge-account-data")
 			tracker := runtime.Tracker.Clone()
