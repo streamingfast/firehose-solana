@@ -20,7 +20,7 @@ main() {
   [[ $1 = "--" ]] && shift
 
   if [[ $clean == "true" ]]; then
-    rm -rf sf-data &> /dev/null || true
+    rm -rf firedata &> /dev/null || true
   fi
 
   exec $firesol -c $(basename $ROOT).yaml start "$@"

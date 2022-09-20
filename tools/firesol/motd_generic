@@ -9,5 +9,5 @@
 
 Welcome to this pod, common commands:
  - Show version             firesol --version
- - Monitor Solana Validator solana-validator --ledger /data/sf-data/mindreader/data monitor
+ - Monitor Solana Validator solana-validator --ledger /data/firedata/mindreader/data monitor
 
