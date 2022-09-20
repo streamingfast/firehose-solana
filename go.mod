@@ -30,7 +30,7 @@ require (
 	github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447
 	github.com/streamingfast/dstore v0.1.1-0.20220607202639-35118aeaf648
 	github.com/streamingfast/firehose v0.1.1-0.20220427051727-9b108461d3a6
-	github.com/streamingfast/firehose-solana/types v0.0.0-20220913161957-4400b1e1cda6 // indirect
+	github.com/streamingfast/firehose-solana/types v0.0.0-20220920143135-b897693e3032 // indirect
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
 	github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3
 	github.com/streamingfast/logging v0.0.0-20220511154537-ce373d264338

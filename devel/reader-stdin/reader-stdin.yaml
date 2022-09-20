@@ -11,5 +11,5 @@ start:
     reader-node-network: "mainnet-beta"
     reader-node-debug-firehose-logs:  true
     reader-node-log-to-zap: true
-    reader-node-oneblock-suffix: "bozo"
+    reader-node-one-block-suffix: "bozo"
     reader-node-firehose-batch-files-path: "/firehose-ram-disk/"

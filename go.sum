@@ -781,6 +781,8 @@ github.com/streamingfast/firehose-solana/types v0.0.0-20220527152523-4238e142d53
 github.com/streamingfast/firehose-solana/types v0.0.0-20220527152523-4238e142d533/go.mod h1:38dY0nZlkglMcImxtXZBRDn0hnfGNp88QZZkYZc8vBQ=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220913161957-4400b1e1cda6 h1:oW5ORlqdVt+JGKjxVG52yzvb4wohBLVGiKdyWpk5snA=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220913161957-4400b1e1cda6/go.mod h1:tE6sMS6bVtNKyFtfwpk0mVF5/mR98/pPCUiRPWBy9R0=
+github.com/streamingfast/firehose-solana/types v0.0.0-20220920143135-b897693e3032 h1:N1c/PLIT7WRHVFP7OfSN50h0Wfw8x8r71V6v8LuR9bo=
+github.com/streamingfast/firehose-solana/types v0.0.0-20220920143135-b897693e3032/go.mod h1:tE6sMS6bVtNKyFtfwpk0mVF5/mR98/pPCUiRPWBy9R0=
 github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c h1:myR0e7b9irsMsRHs42+Oo6ZVuHfGTDHjQhlI1Tk/9/U=
 github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 h1:g8eEYbFSykyzIyuxNMmHEUGGUvJE0ivmqZagLDK42gw=

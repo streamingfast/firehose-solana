@@ -31,7 +31,7 @@ func init() {
 
 var generateCmd = &cobra.Command{
 	Use:   "generate <path_to_firelog.firelog> <output.json> [path-to-firehose-batch-files]",
-	Short: "Generated pbsol or pbsolana blocks from firelogs.",
+	Short: "Generated pbsol or pbsolana blocks from firehose logs.",
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		firelogInputFilePath := args[0]
@@ -74,9 +74,9 @@ var generateCmd = &cobra.Command{
 
 		blocks, err := parser.readLogs(firelogInputFilePath)
 		if err != nil {
-			return fmt.Errorf("failed to read firelogs %q: %w", firelogInputFilePath, err)
+			return fmt.Errorf("failed to read firehose logs %q: %w", firelogInputFilePath, err)
 		}
-		zlog.Info("read all blocks from firelog file",
+		zlog.Info("read all blocks from firehose logs from file",
 			zap.Int("block_count", len(blocks)),
 			zap.String("file", firelogInputFilePath),
 		)
@@ -159,7 +159,7 @@ func (d *DMParser) readLogs(filePath string) ([]interface{}, error) {
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to open firelog file %q: %w", filePath, err)
+		return nil, fmt.Errorf("unable to open firehose logs file %q: %w", filePath, err)
 	}
 	defer file.Close()
 

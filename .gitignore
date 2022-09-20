@@ -4,7 +4,7 @@
 *.log.json
 /dashboard/rice-box.go
 /deploy/firesol
-/sf-data
+/firedata
 /sf.yaml
 /proj
 /firesol

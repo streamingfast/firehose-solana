@@ -16,6 +16,7 @@ for instructions to keep up to date.
 #### Flags and environment variables
 
 * Renamed `common-blocks-store-url` to `common-merged-blocks-store-url`
+* Renamed `mindreader-node-deepmind-batch-files-path` to `reader-node-firehose-batch-files-path`
 * Renamed `common-oneblock-store-url` to `common-one-block-store-url`
 * Renamed `common-blockstream-addr` to `common-live-blocks-addr`
 * Renamed the `mindreader` application to `reader`
@@ -24,4 +25,4 @@ for instructions to keep up to date.
 * Renamed `debug-deepmind` to `debug-firehose-logs`
 * Renamed `dmlog` to `firelog`
 * Renamed `DMLOG` prefix to `FIRE`
-* 
+
