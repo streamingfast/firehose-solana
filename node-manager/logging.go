@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var zlog, tracer = logging.PackageLogger("nodemanager", "github.com/streamingfast/sf-solana/nodemanager")
+var zlog, tracer = logging.PackageLogger("nodemanager", "github.com/streamingfast/firehose-solana/nodemanager")
 
 type stringArray []string
 

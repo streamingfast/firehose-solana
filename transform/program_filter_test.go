@@ -3,8 +3,8 @@ package transform
 import (
 	"testing"
 
-	pbtransforms "github.com/streamingfast/sf-solana/types/pb/sf/solana/transforms/v1"
-	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
+	pbtransforms "github.com/streamingfast/firehose-solana/types/pb/sf/solana/transforms/v1"
+	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
 
 	"github.com/streamingfast/bstream/transform"
 	"github.com/streamingfast/solana-go"

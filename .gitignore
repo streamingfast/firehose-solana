@@ -3,11 +3,11 @@
 .DS_Store
 *.log.json
 /dashboard/rice-box.go
-/deploy/sfsol
-/sf-data
+/deploy/firesol
+/firedata
 /sf.yaml
 /proj
-/sfsol
+/firesol
 .idea
 venv
 *.tfstate

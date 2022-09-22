@@ -13,9 +13,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
+	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
 	"github.com/streamingfast/jsonpb"
-	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	sftools "github.com/streamingfast/sf-tools"
 	"go.uber.org/zap"
 )

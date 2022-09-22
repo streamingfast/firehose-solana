@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/streamingfast/sf-solana/reproc"
+	"github.com/streamingfast/firehose-solana/reproc"
 	"go.uber.org/zap"
 
 	"cloud.google.com/go/bigtable"
@@ -24,7 +24,7 @@ var reprocCmd = &cobra.Command{
 
 func init() {
 	Cmd.AddCommand(reprocCmd)
-	reprocCmd.Flags().String("oneblock-suffix", "default", "If non-empty, the oneblock files will be appended with that suffix, so that mindreaders can each write their file for a given block instead of competing for writes.")
+	reprocCmd.Flags().String("one-block-suffix", "default", "If non-empty, the oneblock files will be appended with that suffix, so that readers can each write their file for a given block instead of competing for writes.")
 	reprocCmd.Flags().String("dest-store", "./localblocks", "Destination blocks store")
 	reprocCmd.Flags().Bool("one-block-files", false, "Generate one block files")
 }
@@ -33,7 +33,7 @@ func reprocRunE(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
 	oneBlockFile := viper.GetBool("one-block-files")
-	oneblockSuffix := viper.GetString("oneblock-suffix")
+	oneblockSuffix := viper.GetString("one-block-suffix")
 	store, err := dstore.NewDBinStore(viper.GetString("dest-store"))
 	if err != nil {
 		return fmt.Errorf("unable to create store at path %q: %w", store, err)

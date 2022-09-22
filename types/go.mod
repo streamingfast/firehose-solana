@@ -1,4 +1,4 @@
-module github.com/streamingfast/sf-solana/types
+module github.com/streamingfast/firehose-solana/types
 
 go 1.17
 

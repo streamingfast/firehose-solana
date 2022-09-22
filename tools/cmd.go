@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Cmd = &cobra.Command{Use: "tools", Short: "Developer tools related to sfsol"}
+var Cmd = &cobra.Command{Use: "tools", Short: "Developer tools related to firesol"}
 
 func mustGetBool(cmd *cobra.Command, flagName string) bool {
 	val, err := cmd.Flags().GetBool(flagName)

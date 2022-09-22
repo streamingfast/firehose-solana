@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strconv"
 
-	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
+	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
 
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"

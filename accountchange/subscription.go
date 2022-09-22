@@ -18,7 +18,7 @@ type Subscription struct {
 
 func newSubscription(account solana.PublicKey, closeFunc func(err error)) *Subscription {
 
-	//todo: register to the mindreader backed account data stream.
+	//todo: register to the reader backed account data stream.
 
 	return &Subscription{
 		account:   account,
@@ -39,7 +39,7 @@ type ResultContext struct {
 
 type ResultValue struct {
 	Data solana.Data `json:"data"`
-	//todo: not sure we will get those value from mindreader...
+	//todo: not sure we will get those value from reader...
 	//Executable bool             `json:"executable"`
 	//Lamports   uint64           `json:"lamports"`
 	//Owner      solana.PublicKey `json:"owner"`
@@ -56,7 +56,7 @@ func (s *Subscription) Recv() (*Result, error) {
 }
 
 func (s *Subscription) Unsubscribe() {
-	//todo: unregister to the mindreader backed account data stream.
+	//todo: unregister to the reader backed account data stream.
 	s.unsubscribe(nil)
 }
 

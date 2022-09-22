@@ -3,7 +3,7 @@
 ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 clean=
-sfsol="$ROOT/../sfsol"
+firesol="$ROOT/../firesol"
 
 main() {
   pushd "$ROOT" &> /dev/null
@@ -21,10 +21,10 @@ main() {
   set -e
 
   if [[ $clean == "true" ]]; then
-    rm -rf sf-data &> /dev/null || true
+    rm -rf firedata &> /dev/null || true
   fi
 
-  exec DEBUG=".*" $sfsol -c $(basename $ROOT).yaml start "$@"
+  exec DEBUG=".*" $firesol -c $(basename $ROOT).yaml start "$@"
 }
 
 usage_error() {

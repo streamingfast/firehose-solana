@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/bigtable"
-	"github.com/streamingfast/sf-solana/bt"
-	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	"github.com/streamingfast/firehose-solana/bt"
+	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
 	"go.uber.org/zap"
 )
 
@@ -29,7 +29,7 @@ func New(bt *bigtable.Client, writer Writer) (*Reproc, error) {
 }
 
 func (r *Reproc) Launch(ctx context.Context, startBlockNum, stopBlockNum uint64) error {
-	zlog.Info("launching sf-solana reprocessing",
+	zlog.Info("launching firehose-solana reprocessing",
 		zap.Uint64("start_block_num", startBlockNum),
 		zap.Uint64("stop_block_num", stopBlockNum),
 	)

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/streamingfast/dgraphql"
-	"github.com/streamingfast/sf-solana/dgraphql/resolvers"
+	"github.com/streamingfast/firehose-solana/dgraphql/resolvers"
 	"github.com/stretchr/testify/require"
 )
 

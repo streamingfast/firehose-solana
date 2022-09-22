@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/streamingfast/bstream"
-	"github.com/streamingfast/sf-solana/types"
-	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
+	"github.com/streamingfast/firehose-solana/types"
+	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )

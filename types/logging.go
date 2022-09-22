@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var zlog, tracer = logging.PackageLogger("codec", "github.com/streamingfast/sf-solana/codec")
+var zlog, tracer = logging.PackageLogger("types", "github.com/streamingfast/firehose-solana/types")
 
 type zapBase58 []byte
 

@@ -16,7 +16,7 @@ package dgraphql
 
 import (
 	"github.com/streamingfast/dgraphql"
-	"github.com/streamingfast/sf-solana/dgraphql/schema"
+	"github.com/streamingfast/firehose-solana/dgraphql/schema"
 )
 
 func init() {

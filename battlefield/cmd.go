@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/streamingfast/firehose-solana/codec"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,11 +13,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
+	"github.com/streamingfast/firehose-solana/types"
+	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
 	"github.com/streamingfast/jsonpb"
-	"github.com/streamingfast/sf-solana/node-manager/codec"
-	"github.com/streamingfast/sf-solana/types"
-	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
-	pbsolv2 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v2"
 	sftools "github.com/streamingfast/sf-tools"
 	"go.uber.org/zap"
 )
@@ -30,23 +30,23 @@ func init() {
 }
 
 var generateCmd = &cobra.Command{
-	Use:   "generate <path_to_dmlog.dmlog> <output.json> [path-to-deepmind-batch-files]",
-	Short: "Generated pbsol or pbsolana blocks from dmlogs.",
+	Use:   "generate <path_to_firelog.firelog> <output.json> [path-to-firehose-batch-files]",
+	Short: "Generated pbsol or pbsolana blocks from firehose logs.",
 	Args:  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dmlogInputFilePath := args[0]
+		firelogInputFilePath := args[0]
 		jsonFilePath := args[1]
 		augmentedStack := viper.GetBool("global-augmented-mode")
 		batchFilesPath := ""
 		if augmentedStack {
 			if len(args) <= 2 {
-				return fmt.Errorf("you must specficy a deepming batch files path as a third argument when running in --augmented-mode mode")
+				return fmt.Errorf("you must specficy a firehose batch files path as a third argument when running in --augmented-mode mode")
 			}
 			batchFilesPath = args[2]
 		}
 
 		zlog.Info("running battlefield generate",
-			zap.String("dmlog_file_path", dmlogInputFilePath),
+			zap.String("firelog_file_path", firelogInputFilePath),
 			zap.String("batch_file_path", batchFilesPath),
 			zap.String("json_file_path", jsonFilePath),
 		)
@@ -72,13 +72,13 @@ var generateCmd = &cobra.Command{
 			}
 		}
 
-		blocks, err := parser.readLogs(dmlogInputFilePath)
+		blocks, err := parser.readLogs(firelogInputFilePath)
 		if err != nil {
-			return fmt.Errorf("failed to read dmlogs %q: %w", dmlogInputFilePath, err)
+			return fmt.Errorf("failed to read firehose logs %q: %w", firelogInputFilePath, err)
 		}
-		zlog.Info("read all blocks from dmlog file",
+		zlog.Info("read all blocks from firehose logs from file",
 			zap.Int("block_count", len(blocks)),
-			zap.String("file", dmlogInputFilePath),
+			zap.String("file", firelogInputFilePath),
 		)
 
 		fmt.Printf("Writing blocks to disk %q...", jsonFilePath)
@@ -159,7 +159,7 @@ func (d *DMParser) readLogs(filePath string) ([]interface{}, error) {
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to open dmlof file %q: %w", filePath, err)
+		return nil, fmt.Errorf("unable to open firehose logs file %q: %w", filePath, err)
 	}
 	defer file.Close()
 

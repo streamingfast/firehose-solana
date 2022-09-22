@@ -45,12 +45,12 @@ type Options struct {
 	DataDirPath         string
 	RCPPort             string
 	LogToZap            bool
-	DebugDeepMind       bool
+	DebugFirehoseLogs   bool
 	HeadBlockUpdateFunc nodeManager.HeadBlockUpdater
 }
 
 func NewSuperviser(appLogger *zap.Logger, nodelogger *zap.Logger, options *Options) (*Superviser, error) {
-	// Ensure process manager line buffer is large enough (50 MiB) for our Deep Mind instrumentation outputting lot's of text.
+	// Ensure process manager line buffer is large enough (50 MiB) for our Firehose instrumentation outputting lot's of text.
 	overseer.DEFAULT_LINE_BUFFER_SIZE = 50 * 1024 * 1024
 
 	client := rpc.NewClient(fmt.Sprintf("http://127.0.0.1:%s", options.RCPPort))
@@ -62,12 +62,12 @@ func NewSuperviser(appLogger *zap.Logger, nodelogger *zap.Logger, options *Optio
 		client:     client,
 	}
 
-	s.RegisterLogPlugin(logplugin.NewKeepLastLinesLogPlugin(25, options.DebugDeepMind))
+	s.RegisterLogPlugin(logplugin.NewKeepLastLinesLogPlugin(25, options.DebugFirehoseLogs))
 
 	if options.LogToZap {
-		s.RegisterLogPlugin(logplugin.NewToZapLogPlugin(options.DebugDeepMind, nodelogger))
+		s.RegisterLogPlugin(logplugin.NewToZapLogPlugin(options.DebugFirehoseLogs, nodelogger))
 	} else {
-		s.RegisterLogPlugin(logplugin.NewToConsoleLogPlugin(options.DebugDeepMind))
+		s.RegisterLogPlugin(logplugin.NewToConsoleLogPlugin(options.DebugFirehoseLogs))
 	}
 
 	appLogger.Info("created geth superviser", zap.Object("superviser", s))

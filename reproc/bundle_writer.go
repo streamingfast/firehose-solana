@@ -8,8 +8,8 @@ import (
 
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
-	"github.com/streamingfast/sf-solana/types"
-	pbsolv1 "github.com/streamingfast/sf-solana/types/pb/sf/solana/type/v1"
+	"github.com/streamingfast/firehose-solana/types"
+	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
 	"go.uber.org/zap"
 )
 

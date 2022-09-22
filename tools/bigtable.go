@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/streamingfast/sf-solana/bt"
+	"github.com/streamingfast/firehose-solana/bt"
 
 	"cloud.google.com/go/bigtable"
 	"github.com/spf13/cobra"

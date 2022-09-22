@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package sf.solana.transforms.v1;
-option go_package = "github.com/streamingfast/sf-solana/types/pb/sf/solana/transforms/v1;pbtransforms";
+option go_package = "github.com/streamingfast/firehose-solana/types/pb/sf/solana/transforms/v1;pbtransforms";
 
 message ProgramFilter {
   repeated string program_ids = 1; //base58 representation
