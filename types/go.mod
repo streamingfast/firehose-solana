@@ -3,7 +3,6 @@ module github.com/streamingfast/firehose-solana/types
 go 1.17
 
 require (
-	github.com/golang/protobuf v1.5.2
 	github.com/mr-tron/base58 v1.2.0
 	github.com/streamingfast/bstream v0.0.2-0.20220428192925-5d0312d274f0
 	github.com/streamingfast/logging v0.0.0-20220304214715-bc750a74b424

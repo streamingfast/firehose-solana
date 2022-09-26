@@ -22,13 +22,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/streamingfast/dgrpc"
 	"github.com/streamingfast/dlauncher/launcher"
 )
-
-func init() {
-	dgrpc.Verbosity = 2
-}
 
 func setupCmd(cmd *cobra.Command) error {
 	cmd.SilenceUsage = true

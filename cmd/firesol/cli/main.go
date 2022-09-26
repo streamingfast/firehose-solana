@@ -43,11 +43,11 @@ var allFlags = make(map[string]bool) // used as global because of async access t
 
 func Main() {
 	cobra.OnInitialize(func() {
-		allFlags = flags.AutoBind(RootCmd, "SFSOL")
+		allFlags = flags.AutoBind(RootCmd, "FIRESOL")
 	})
 	RootCmd.PersistentFlags().Bool("augmented-mode", false, "Setups binary to support augmented protobuf  blocks (pbsol.Block) which contains account changes, total ordering, etc...")
 	RootCmd.PersistentFlags().StringP("data-dir", "d", "./firedata", "Path to data storage for all components of the stack")
-	RootCmd.PersistentFlags().StringP("config-file", "c", "./sf.yaml", "Configuration file to use. No config file loaded if set to an empty string.")
+	RootCmd.PersistentFlags().StringP("config-file", "c", "", "Configuration file to use. No config file loaded if set to an empty string.")
 	RootCmd.PersistentFlags().String("validator-path", "solana-validator", "Path to the solana binary. Defaults to the solana found in your PATH")
 	RootCmd.PersistentFlags().Bool("skip-checks", false, "Skip checks to ensure 'solana' binary is supported")
 	RootCmd.PersistentFlags().String("log-format", "text", "Format for logging to stdout. Either 'text' or 'stackdriver'")
@@ -71,7 +71,7 @@ func Main() {
 
 	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := setupCmd(cmd); err != nil {
-			return fmt.Errorf("failed to bootstrap system")
+			return fmt.Errorf("failed to bootstrap system: %w", err)
 		}
 
 		startupDelay := viper.GetDuration("global-startup-delay")

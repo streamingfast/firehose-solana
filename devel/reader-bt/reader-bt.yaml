@@ -1,0 +1,14 @@
+start:
+  args:
+    - reader-bt
+  flags:
+    common-one-block-store-url: "./localdata/blocks"
+    data-dir: "./firedata"
+    reader-bt-project-id: "mainnet-beta"
+    reader-bt-instance-id: "solana-ledger"
+    reader-bt-start-block-num: "55065000"
+    reader-bt-stop-block-num: "55065300"
+    reader-bt-debug-firehose-logs: "false"
+    reader-bt-log-to-zap: "true"
+    reader-bt-one-block-suffix: "default"
+    reader-bt-path: "firesol"

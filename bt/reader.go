@@ -27,7 +27,7 @@ const (
 	RowTypeBin   RowType = "bin"
 )
 
-func ExplodeRow(row bigtable.Row) (*big.Int, RowType, []byte) {
+func explodeRow(row bigtable.Row) (*big.Int, RowType, []byte) {
 	el := row["x"][0]
 	var rowType RowType
 	if strings.HasSuffix(el.Column, "proto") {
@@ -39,9 +39,17 @@ func ExplodeRow(row bigtable.Row) (*big.Int, RowType, []byte) {
 	return blockNum, rowType, el.Value
 }
 
-func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
-	blockNum, rowType, rowCnt := ExplodeRow(row)
-	zlogger.Debug("found bigtable row", zap.Stringer("blk_num", blockNum), zap.Int("uncompressed_length", len(rowCnt)))
+func processRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, *zap.Logger, error) {
+	blockNum, rowType, rowCnt := explodeRow(row)
+	zlogger = zlog.With(
+		zap.Uint64("block_num", blockNum.Uint64()),
+		zap.String("row_type", string(rowType)),
+		zap.String("row_key", row.Key()),
+	)
+
+	zlogger.Debug("found bigtable row",
+		zap.Int("uncompressed_length", len(rowCnt)),
+	)
 	var cnt []byte
 	var err error
 
@@ -49,16 +57,17 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 	case RowTypeBin:
 		cnt, err = externalBinToProto(rowCnt, "solana-bigtable-decoder", "--hex")
 		if err != nil {
-			return nil, fmt.Errorf("unable get external bin %s: %w", blockNum.String(), err)
+			return nil, zlogger, fmt.Errorf("unable get external bin %s: %w", blockNum.String(), err)
 		}
 	default:
-		cnt, err = Decompress(rowCnt)
+		cnt, err = decompress(rowCnt)
 		if err != nil {
-			return nil, fmt.Errorf("unable to decompress block %s (uncompresse length %d): %w", blockNum.String(), len(rowCnt), err)
+			return nil, zlogger, fmt.Errorf("unable to decompress block %s (uncompresse length %d): %w", blockNum.String(), len(rowCnt), err)
 		}
 
 	}
-	zlogger.Debug("found bigtable row", zap.Stringer("blk_num", blockNum),
+	zlogger.Debug("found bigtable row",
+		zap.Stringer("blk_num", blockNum),
 		zap.String("key", row.Key()),
 		zap.Int("compressed_length", len(rowCnt)),
 		zap.Int("uncompressed_length", len(cnt)),
@@ -67,7 +76,7 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 
 	blk := &pbsolv1.Block{}
 	if err := proto.Unmarshal(cnt, blk); err != nil {
-		return nil, fmt.Errorf("unable to unmarshall confirmed block: %w", err)
+		return nil, zlogger, fmt.Errorf("unable to unmarshall confirmed block: %w", err)
 	}
 	blk.Slot = blockNum.Uint64()
 
@@ -100,7 +109,7 @@ func ProcessRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, error) {
 		}
 	}
 
-	return blk, nil
+	return blk, zlogger, nil
 }
 
 func externalBinToProto(in []byte, command string, args ...string) ([]byte, error) {
@@ -129,7 +138,7 @@ func externalBinToProto(in []byte, command string, args ...string) ([]byte, erro
 	return hex.DecodeString(outHex)
 }
 
-func Decompress(in []byte) (out []byte, err error) {
+func decompress(in []byte) (out []byte, err error) {
 	switch in[0] {
 	case 0:
 		zlog.Debug("no compression found")

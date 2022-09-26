@@ -55,26 +55,16 @@ func Start(dataDir string, args []string) (err error) {
 		return fmt.Errorf("unable to setup directory structure: %w", err)
 	}
 
-	// TODO: directories are created in the app init funcs... but this does not belong to a specific application
 	err = makeDirs([]string{dataDirAbs})
 	if err != nil {
 		return err
 	}
 
-	// FIXME: Most probably wrong, cannot do much yet ...
-	tracker := bstream.NewTracker(250)
-
-	// FIXME: Most probably wrong, cannot do much yet ...
-	tracker.AddResolver(bstream.OffsetStartBlockResolver(200))
-
-	////////
-
-	modules := &launcher.Runtime{
-		AbsDataDir: dataDirAbs,
-		Tracker:    tracker,
-	}
-
 	bstream.GetProtocolFirstStreamableBlock = viper.GetUint64("common-protocol-first-streamable-block")
+	modules := &launcher.Runtime{
+		AbsDataDir:              dataDirAbs,
+		ProtocolSpecificModules: map[string]interface{}{},
+	}
 
 	blocksCacheEnabled := viper.GetBool("common-blocks-cache-enabled")
 	if blocksCacheEnabled {
@@ -87,11 +77,6 @@ func Start(dataDir string, args []string) (err error) {
 		bstream.InitCache(storeUrl, cacheDir, maxRecentEntryBytes, maxEntryByAgeBytes)
 	}
 
-	/*	err = bstream.ValidateRegistry()
-		if err != nil {
-			return fmt.Errorf("protocol specific hooks not configured correctly: %w", err)
-		}
-	*/
 	launch := launcher.NewLauncher(zlog, modules)
 	zlog.Debug("launcher created")
 

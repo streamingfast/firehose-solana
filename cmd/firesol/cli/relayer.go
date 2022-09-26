@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -18,26 +19,22 @@ func init() {
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("relayer-grpc-listen-addr", RelayerServingAddr, "Address to listen for incoming gRPC requests")
 			cmd.Flags().StringSlice("relayer-source", []string{ReaderNodeGRPCAddr}, "List of Blockstream sources (readers) to connect to for live block feeds (repeat flag as needed)")
-			cmd.Flags().Int("relayer-source-request-burst", 90, "Block burst requested by relayer (useful when chaining relayers together, because normally a reader won't have a block buffer)")
-			cmd.Flags().String("relayer-merger-addr", MergerServingAddr, "Address for grpc merger service")
-			cmd.Flags().Int("relayer-buffer-size", 350, "Number of blocks that will be kept and sent immediately on connection")
-			cmd.Flags().Uint64("relayer-min-start-offset", 120, "Number of blocks before HEAD where we want to start for faster buffer filling (missing blocks come from files/merger)")
 			cmd.Flags().Duration("relayer-max-source-latency", 10*time.Minute, "Max latency tolerated to connect to a source")
+
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
-			dataDir := runtime.AbsDataDir
+			_, oneBlocksStoreURL, _, err := getCommonStoresURLs(runtime.AbsDataDir)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get common block store URL: %w", err)
+			}
 
 			return relayerApp.New(&relayerApp.Config{
-				SourcesAddr:        viper.GetStringSlice("relayer-source"),
-				GRPCListenAddr:     viper.GetString("relayer-grpc-listen-addr"),
-				MergerAddr:         viper.GetString("relayer-merger-addr"),
-				BufferSize:         viper.GetInt("relayer-buffer-size"),
-				MaxSourceLatency:   viper.GetDuration("relayer-max-source-latency"),
-				SourceRequestBurst: viper.GetInt("relayer-source-request-burst"),
-				MinStartOffset:     viper.GetUint64("relayer-min-start-offset"),
-				SourceStoreURL:     MustReplaceDataDir(dataDir, viper.GetString("common-merged-blocks-store-url")),
-			}, &relayerApp.Modules{}), nil
+				SourcesAddr:      viper.GetStringSlice("relayer-source"),
+				OneBlocksURL:     oneBlocksStoreURL,
+				GRPCListenAddr:   viper.GetString("relayer-grpc-listen-addr"),
+				MaxSourceLatency: viper.GetDuration("relayer-max-source-latency"),
+			}), nil
 		},
 	})
 }

@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/streamingfast/bstream/transform"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/streamingfast/bstream"
 	dauthAuthenticator "github.com/streamingfast/dauth/authenticator"
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/dmetering"
@@ -19,10 +17,8 @@ import (
 	firehoseApp "github.com/streamingfast/firehose/app/firehose"
 	"github.com/streamingfast/logging"
 	"github.com/streamingfast/substreams/client"
-	pbsubstreams "github.com/streamingfast/substreams/pb/sf/substreams/v1"
 	substreamsService "github.com/streamingfast/substreams/service"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 var metricset = dmetrics.NewSet()
@@ -39,8 +35,6 @@ func init() {
 		Description: "Provides on-demand filtered blocks, depends on common-merged-blocks-store-url and common-live-blocks-addr",
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("firehose-grpc-listen-addr", FirehoseGRPCServingAddr, "Address on which the Firehose will listen")
-			cmd.Flags().StringSlice("firehose-blocks-store-urls", nil, "If non-empty, overrides common-merged-blocks-store-url with a list of blocks stores")
-			cmd.Flags().Duration("firehose-real-time-tolerance", 1*time.Minute, "Firehose will became alive if now - block time is smaller then tolerance")
 
 			cmd.Flags().Bool("substreams-enabled", false, "Whether to enable substreams")
 			cmd.Flags().Bool("substreams-partial-mode-enabled", false, "Whether to enable partial stores generation support on this instance (usually for internal deployments only)")
@@ -59,11 +53,8 @@ func init() {
 
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
 			dataDir := runtime.AbsDataDir
-			tracker := runtime.Tracker.Clone()
+
 			blockstreamAddr := viper.GetString("common-live-blocks-addr")
-			if blockstreamAddr != "" {
-				tracker.AddGetter(bstream.BlockStreamLIBTarget, bstream.StreamLIBBlockRefGetter(blockstreamAddr))
-			}
 
 			// FIXME: That should be a shared dependencies across `EOSIO on StreamingFast`
 			authenticator, err := dauthAuthenticator.New(viper.GetString("common-auth-plugin"))
@@ -78,16 +69,9 @@ func init() {
 			}
 			dmetering.SetDefaultMeter(metering)
 
-			firehoseBlocksStoreURLs := viper.GetStringSlice("firehose-blocks-store-urls")
-			if len(firehoseBlocksStoreURLs) == 0 {
-				firehoseBlocksStoreURLs = []string{viper.GetString("common-merged-blocks-store-url")}
-			} else if len(firehoseBlocksStoreURLs) == 1 && strings.Contains(firehoseBlocksStoreURLs[0], ",") {
-				// Providing multiple elements from config doesn't work with `viper.GetStringSlice`, so let's also handle the case where a single element has separator
-				firehoseBlocksStoreURLs = strings.Split(firehoseBlocksStoreURLs[0], ",")
-			}
-
-			for _, url := range firehoseBlocksStoreURLs {
-				url = MustReplaceDataDir(dataDir, url)
+			mergedBlocksStoreURL, oneBlockStoreURL, forkedBlocksStoreURL, err := getCommonStoresURLs(runtime.AbsDataDir)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get common store URL: %w", err)
 			}
 
 			shutdownSignalDelay := viper.GetDuration("common-system-shutdown-signal-delay")
@@ -119,28 +103,29 @@ func init() {
 					return nil, fmt.Errorf("cannot set both substreams-client-insecure and substreams-client-plaintext")
 				}
 
-				ssClientFactory := func() (pbsubstreams.StreamClient, []grpc.CallOption, error) {
-					endpoint := viper.GetString("substreams-client-endpoint")
-					if endpoint == "" {
-						endpoint = viper.GetString("firehose-grpc-listen-addr")
-					}
-
-					return client.NewSubstreamsClient(
-						endpoint,
-						os.ExpandEnv(viper.GetString("substreams-client-jwt")),
-						ssClientInsecure,
-						ssClientPlaintext,
-					)
+				endpoint := viper.GetString("substreams-client-endpoint")
+				if endpoint == "" {
+					endpoint = viper.GetString("firehose-grpc-listen-addr")
 				}
 
-				sss := substreamsService.New(
+				substreamsClientConfig := client.NewSubstreamsClientConfig(
+					endpoint,
+					os.ExpandEnv(viper.GetString("substreams-client-jwt")),
+					viper.GetBool("substreams-client-insecure"),
+					viper.GetBool("substreams-client-plaintext"),
+				)
+
+				sss, err := substreamsService.New(
 					stateStore,
 					"sf.solana.type.v1.Block",
-					ssClientFactory,
 					viper.GetInt("substreams-sub-request-parallel-jobs"),
 					viper.GetInt("substreams-sub-request-block-range-size"),
+					substreamsClientConfig,
 					opts...,
 				)
+				if err != nil {
+					return nil, fmt.Errorf("creating substreams service: %w", err)
+				}
 
 				registerServiceExt = sss.Register
 			}
@@ -148,18 +133,17 @@ func init() {
 			registry := transform.NewRegistry()
 
 			return firehoseApp.New(appLogger, &firehoseApp.Config{
-				BlockStoreURLs:          firehoseBlocksStoreURLs,
+				MergedBlocksStoreURL:    mergedBlocksStoreURL,
+				OneBlocksStoreURL:       oneBlockStoreURL,
+				ForkedBlocksStoreURL:    forkedBlocksStoreURL,
 				BlockStreamAddr:         blockstreamAddr,
 				GRPCListenAddr:          viper.GetString("firehose-grpc-listen-addr"),
 				GRPCShutdownGracePeriod: grcpShutdownGracePeriod,
-				RealtimeTolerance:       viper.GetDuration("firehose-real-time-tolerance"),
-				//IrreversibleBlocksIndexStoreURL: viper.GetString("firehose-irreversible-blocks-index-url"),
-				//IrreversibleBlocksBundleSizes:   bundleSizes,
+				ServiceDiscoveryURL:     nil,
 			}, &firehoseApp.Modules{
 				Authenticator:            authenticator,
 				HeadTimeDriftMetric:      headTimeDriftmetric,
 				HeadBlockNumberMetric:    headBlockNumMetric,
-				Tracker:                  tracker,
 				TransformRegistry:        registry,
 				RegisterServiceExtension: registerServiceExt,
 			}), nil

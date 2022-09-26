@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/viper"
+
 	"go.uber.org/zap"
 )
 
@@ -56,4 +58,28 @@ func getDirsToMake(storeURL string) []string {
 
 	// If we reach here, it's a local store path
 	return []string{storeURL}
+}
+
+var commonStoresCreated bool
+
+func getCommonStoresURLs(dataDir string) (mergedBlocksStoreURL, oneBlockStoreURL, forkedBlocksStoreURL string, err error) {
+	mergedBlocksStoreURL = MustReplaceDataDir(dataDir, viper.GetString("common-merged-blocks-store-url"))
+	oneBlockStoreURL = MustReplaceDataDir(dataDir, viper.GetString("common-one-block-store-url"))
+	forkedBlocksStoreURL = MustReplaceDataDir(dataDir, viper.GetString("common-forked-blocks-store-url"))
+
+	if commonStoresCreated {
+		return
+	}
+
+	if err = mkdirStorePathIfLocal(forkedBlocksStoreURL); err != nil {
+		return
+	}
+	if err = mkdirStorePathIfLocal(oneBlockStoreURL); err != nil {
+		return
+	}
+	if err = mkdirStorePathIfLocal(mergedBlocksStoreURL); err != nil {
+		return
+	}
+	commonStoresCreated = true
+	return
 }

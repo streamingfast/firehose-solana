@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/lorenzosaino/go-sysctl"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream/blockstream"
@@ -18,7 +20,6 @@ import (
 	nodeManager "github.com/streamingfast/node-manager"
 	nodeManagerApp "github.com/streamingfast/node-manager/app/node_manager2"
 	"github.com/streamingfast/node-manager/metrics"
-	"github.com/streamingfast/node-manager/mindreader"
 	"github.com/streamingfast/node-manager/operator"
 	pbbstream "github.com/streamingfast/pbgo/sf/bstream/v1"
 	pbheadinfo "github.com/streamingfast/pbgo/sf/headinfo/v1"
@@ -57,27 +58,36 @@ var p2pPortEndByKind = map[string]string{
 	"peering": PeeringNodeP2PPortEnd,
 }
 
-func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.Tracer, nodeLogger *zap.Logger) func(*launcher.Runtime) (launcher.App, error) {
+// flags common to reader and regular node
+// app is expected to either be 'reader-node' or 'reader-bt'
+func registerCommonNodeFlags(cmd *cobra.Command, app string) {
+	cmd.Flags().Duration(app+"-readiness-max-latency", 30*time.Second, "The health endpoint '/healthz' will return an error until the head block time is within that duration to now")
+	cmd.Flags().String(app+"-data-dir", fmt.Sprintf("{data-dir}/%s/data", "reader"), "Directory for data (node blocks and state)")
+	cmd.Flags().Bool(app+"-debug-firehose-logs", false, "[DEV] Prints Firehose logs to standard output, should be use for debugging purposes only")
+	cmd.Flags().Bool(app+"-log-to-zap", true, "Enable all node logs to transit into app's logger directly, when false, prints node logs directly to stdout")
+	cmd.Flags().Duration(app+"-shutdown-delay", 0, "Delay before shutting manager when sigterm received")
+	cmd.Flags().String(app+"-working-dir", "{data-dir}/reader/work", "Path where reader will stores its files")
+	cmd.Flags().Int(app+"-blocks-chan-capacity", 100, "Capacity of the channel holding blocks read by the reader. Process will shutdown superviser/geth if the channel gets over 90% of that capacity to prevent horrible consequences. Raise this number when processing tiny blocks very quickly")
+	cmd.Flags().String(app+"-one-block-suffix", "", "If non-empty, the oneblock files will be appended with that suffix, so that readers can each write their file for a given block instead of competing for writes.")
+	cmd.Flags().Duration(app+"-startup-delay", 0, "[DEV] wait time before launching")
+
+}
+
+func nodeFactoryFunc(app string, appLogger *zap.Logger, appTracer logging.Tracer, nodeLogger *zap.Logger) func(*launcher.Runtime) (launcher.App, error) {
 	return func(runtime *launcher.Runtime) (launcher.App, error) {
+		fmt.Println("YOU ARE HEREHEREHEREHEREHEREHEREHEREHEREHERE")
 		if err := setupNodeSysctl(appLogger); err != nil {
 			return nil, fmt.Errorf("systcl configuration for %s failed: %w", app, err)
 		}
 
 		dataDir := runtime.AbsDataDir
-
-		headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(app)
-		headBlockNumber := metrics.NewHeadBlockNumber(app)
-
-		arguments := append([]string{})
+		args := []string{}
 
 		rpcPort := viper.GetString(app + "-rpc-port")
 		if rpcPort != "" {
-			arguments = append(arguments,
-				"--rpc-port", rpcPort,
-			)
-
+			args = append(args, "--rpc-port", rpcPort)
 			if viper.GetBool(app + "-rpc-enable-debug-apis") {
-				arguments = append(arguments,
+				args = append(args,
 					"--enable-rpc-exit",
 					"--enable-rpc-set-log-filter",
 					// FIXME: Not really a debug stuff, but usefull to have there for easier developer work
@@ -88,78 +98,83 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 
 		network := viper.GetString(app + "-network")
 		startupDelay := viper.GetDuration(app + "-startup-delay")
-		extraArguments := getExtraArguments(kind)
+		(*appLogger).Info("configuring node for syncing", zap.String("network", network))
+		args = append(args, "--limit-ledger-size")
+		if network == "development" {
+			(*appLogger).Info("configuring node for development syncing")
+			// FIXME: What a bummer, connection refused on cluster endpoint simply terminates the process!
+			//        It means that we will need to implement something in the manager to track those kind
+			//        of error and restart the manager manually!
+			//
+			//        For now in development, let 15s for miner app to properly start.
+			startupDelay = 5 * time.Second
 
-		if kind == "reader" {
-			(*appLogger).Info("configuring node for syncing", zap.String("network", network))
+			minerPublicKey, err := readPublicKeyFromConfigFile("miner", "identity.json")
+			if err != nil {
+				return nil, fmt.Errorf("unable to read miner public key: %w", err)
+			}
 
-			arguments = append(arguments, "--limit-ledger-size")
-			if network == "development" {
-				(*appLogger).Info("configuring node for development syncing")
-				// FIXME: What a bummer, connection refused on cluster endpoint simply terminates the process!
-				//        It means that we will need to implement something in the manager to track those kind
-				//        of error and restart the manager manually!
-				//
-				//        For now in development, let 15s for miner app to properly start.
-				startupDelay = 5 * time.Second
+			minerGenesisHash, err := readConfigFile("miner", "genesis.hash")
+			if err != nil {
+				return nil, fmt.Errorf("unable to read miner genesis hash: %w", err)
+			}
 
-				minerPublicKey, err := readPublicKeyFromConfigFile("miner", "identity.json")
-				if err != nil {
-					return nil, fmt.Errorf("unable to read miner public key: %w", err)
-				}
+			minerGenesisShred, err := readConfigFile("miner", "genesis.shred")
+			if err != nil {
+				return nil, fmt.Errorf("unable to read miner genesis shred: %w", err)
+			}
 
-				minerGenesisHash, err := readConfigFile("miner", "genesis.hash")
-				if err != nil {
-					return nil, fmt.Errorf("unable to read miner genesis hash: %w", err)
-				}
+			args = append(args,
+				"--entrypoint", "127.0.0.1:"+viper.GetString("miner-node-gossip-port"),
+				"--trusted-validator", minerPublicKey.String(),
 
-				minerGenesisShred, err := readConfigFile("miner", "genesis.shred")
-				if err != nil {
-					return nil, fmt.Errorf("unable to read miner genesis shred: %w", err)
-				}
+				// FIXME: In development, how could we actually read this data from somewhere? When bootstrap data is available, we
+				//        could actually read from it. Otherwise, the init phase would have generated something, what do we do
+				//        in this case? Maybe always generate .hash and .shred file just like in battlefield ...
+				"--expected-genesis-hash", minerGenesisHash,
+				"--expected-shred-version", minerGenesisShred,
+			)
+		} else if network == "mainnet-beta" {
+			args = append(args)
 
-				arguments = append(arguments,
-					"--entrypoint", "127.0.0.1:"+viper.GetString("miner-node-gossip-port"),
-					"--trusted-validator", minerPublicKey.String(),
+		} else if network == "testnet" {
+			args = append(args,
+				"--entrypoint", "entrypoint.testnet.solana.com:8001",
+				"--trusted-validator", "5D1fNXzvv5NjV1ysLjirC4WY92RNsVH18vjmcszZd8on",
+				"--trusted-validator", "ta1Uvfb7W5BRPrdGnhP9RmeCGKzBySGM1hTE4rBRy6T",
+				"--trusted-validator", "Ft5fbkqNa76vnsjYNwjDZUXoTWpP7VYm3mtsaQckQADN",
+				"--trusted-validator", "9QxCLckBiJc783jnMvXZubK4wH86Eqqvashtrwvcsgkv",
+				"--expected-genesis-hash", "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY",
+			)
+		} else if network == "devnet" {
+			args = append(args,
+				"--entrypoint", "entrypoint.devnet.solana.com:8001",
+				"--trusted-validator", "dv1LfzJvDF7S1fBKpFgKoKXK5yoSosmkAdfbxBo1GqJ",
+				"--expected-genesis-hash", "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+			)
+		} else if network == "custom" {
+			(*appLogger).Info("configuring node for custom syncing, you are expected to provide the required arguments through the '" + app + "-arguments' flag")
+		} else {
+			return nil, fmt.Errorf(`unkown network %q, valid networks are "development", "mainnet-beta", "testnet", "devnet", "custom"`, network)
+		}
 
-					// FIXME: In development, how could we actually read this data from somewhere? When bootstrap data is available, we
-					//        could actually read from it. Otherwise, the init phase would have generated something, what do we do
-					//        in this case? Maybe always generate .hash and .shred file just like in battlefield ...
-					"--expected-genesis-hash", minerGenesisHash,
-					"--expected-shred-version", minerGenesisShred,
-				)
-			} else if network == "mainnet-beta" {
-				arguments = append(arguments)
-
-			} else if network == "testnet" {
-				arguments = append(arguments,
-					"--entrypoint", "entrypoint.testnet.solana.com:8001",
-					"--trusted-validator", "5D1fNXzvv5NjV1ysLjirC4WY92RNsVH18vjmcszZd8on",
-					"--trusted-validator", "ta1Uvfb7W5BRPrdGnhP9RmeCGKzBySGM1hTE4rBRy6T",
-					"--trusted-validator", "Ft5fbkqNa76vnsjYNwjDZUXoTWpP7VYm3mtsaQckQADN",
-					"--trusted-validator", "9QxCLckBiJc783jnMvXZubK4wH86Eqqvashtrwvcsgkv",
-					"--expected-genesis-hash", "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY",
-				)
-			} else if network == "devnet" {
-				arguments = append(arguments,
-					"--entrypoint", "entrypoint.devnet.solana.com:8001",
-					"--trusted-validator", "dv1LfzJvDF7S1fBKpFgKoKXK5yoSosmkAdfbxBo1GqJ",
-					"--expected-genesis-hash", "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
-				)
-			} else if network == "custom" {
-				(*appLogger).Info("configuring node for custom syncing, you are expected to provide the required arguments through the '" + app + "-extra-arguments' flag")
+		if providedArgument := viper.GetString(app + "-arguments"); providedArgument != "" {
+			if strings.HasPrefix(providedArgument, "+") {
+				(*appLogger).Info("appending provided arguments to default", zap.String("provided_arguments", providedArgument))
+				args = append(args, strings.Split(strings.TrimLeft(providedArgument, "+"), " ")...)
 			} else {
-				return nil, fmt.Errorf(`unkown network %q, valid networks are "development", "mainnet-beta", "testnet", "devnet", "custom"`, network)
+				(*appLogger).Info("overriding default arguments with provided arguments", zap.String("provided_arguments", providedArgument))
+				args = strings.Split(providedArgument, " ")
 			}
 		}
 
-		if len(extraArguments) > 0 {
-			arguments = append(arguments, extraArguments...)
-		}
-
+		headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(app)
+		headBlockNumber := metrics.NewHeadBlockNumber(app)
+		appReadiness := metrics.NewAppReadiness(app)
 		metricsAndReadinessManager := nodeManager.NewMetricsAndReadinessManager(
 			headBlockTimeDrift,
 			headBlockNumber,
+			appReadiness,
 			viper.GetDuration(app+"-readiness-max-latency"),
 		)
 
@@ -168,7 +183,7 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 			nodeLogger,
 			&nodeManagerSol.Options{
 				BinaryPath:          viper.GetString("global-validator-path"),
-				Arguments:           arguments,
+				Arguments:           args,
 				DataDirPath:         MustReplaceDataDir(dataDir, viper.GetString(app+"-data-dir")),
 				DebugFirehoseLogs:   viper.GetBool(app + "-debug-firehose-logs"),
 				LogToZap:            viper.GetBool(app + "-log-to-zap"),
@@ -197,62 +212,41 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 		if err != nil {
 			return nil, fmt.Errorf("unable to create chain operator: %w", err)
 		}
-		mergedBlocksStoreURL := MustReplaceDataDir(dataDir, viper.GetString("common-merged-blocks-store-url"))
 
-		var readerPlugin *mindreader.MindReaderPlugin
-		var registerServices func(server *grpc.Server) error
-
-		if kind == "reader" {
-			zlog.Info("preparing reader plugin")
-			blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
-			oneBlockStoreURL := MustReplaceDataDir(dataDir, viper.GetString("common-one-block-store-url"))
-
-			mergeThresholdBlockAge := viper.GetString(app + "-merge-threshold-block-age")
-			workingDir := MustReplaceDataDir(dataDir, viper.GetString(app+"-working-dir"))
-			blockDataWorkingDir := MustReplaceDataDir(dataDir, viper.GetString(app+"-block-data-working-dir"))
-			batchStartBlockNum := viper.GetUint64("reader-node-start-block-num")
-			batchStopBlockNum := viper.GetUint64("reader-node-stop-block-num")
-			blocksChanCapacity := viper.GetInt("reader-node-blocks-chan-capacity")
-			waitTimeForUploadOnShutdown := viper.GetDuration("reader-node-wait-upload-complete-on-shutdown")
-			oneBlockFileSuffix := viper.GetString("reader-node-one-block-suffix")
-			batchFilePath := viper.GetString("reader-node-firehose-batch-files-path")
-			purgeAccountChanges := viper.GetBool("reader-node-purge-account-data")
-			tracker := runtime.Tracker.Clone()
-
-			readerPlugin, err = getReaderLogPlugin(
-				blockStreamServer,
-				oneBlockStoreURL,
-				mergedBlocksStoreURL,
-				mergeThresholdBlockAge,
-				workingDir,
-				blockDataWorkingDir,
-				batchStartBlockNum,
-				batchStopBlockNum,
-				blocksChanCapacity,
-				waitTimeForUploadOnShutdown,
-				oneBlockFileSuffix,
-				chainOperator.Shutdown,
-				metricsAndReadinessManager,
-				tracker,
-				appLogger,
-				appTracer,
-				batchFilePath,
-				purgeAccountChanges,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("new reader plugin: %w", err)
-			}
-
-			registerServices = func(server *grpc.Server) error {
-				pbheadinfo.RegisterHeadInfoServer(server, blockStreamServer)
-				pbbstream.RegisterBlockStreamServer(server, blockStreamServer)
-
-				return nil
-			}
-
-			superviser.RegisterLogPlugin(readerPlugin)
+		zlog.Info("preparing reader plugin")
+		_, oneBlockStoreURL, _, err := getCommonStoresURLs(runtime.AbsDataDir)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get common block store: %w", err)
 		}
 
+		blockStreamServer := blockstream.NewUnmanagedServer(blockstream.ServerOptionWithLogger(appLogger))
+		workingDir := MustReplaceDataDir(dataDir, viper.GetString(app+"-working-dir"))
+		batchStartBlockNum := viper.GetUint64(app + "-start-block-num")
+		batchStopBlockNum := viper.GetUint64(app + "-stop-block-num")
+		blocksChanCapacity := viper.GetInt(app + "-blocks-chan-capacity")
+		oneBlockFileSuffix := viper.GetString(app + "-one-block-suffix")
+		batchFilePath := viper.GetString("reader-node-firehose-batch-files-path")
+		purgeAccountChanges := viper.GetBool("reader-node-purge-account-data")
+		consoleReaderFactory := getConsoleReaderFactory(appLogger, batchFilePath, purgeAccountChanges)
+		readerPlugin, err := getReaderLogPlugin(
+			blockStreamServer,
+			oneBlockStoreURL,
+			workingDir,
+			batchStartBlockNum,
+			batchStopBlockNum,
+			blocksChanCapacity,
+			oneBlockFileSuffix,
+			chainOperator.Shutdown,
+			consoleReaderFactory,
+			metricsAndReadinessManager,
+			appLogger,
+			appTracer,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("new reader plugin: %w", err)
+		}
+
+		superviser.RegisterLogPlugin(readerPlugin)
 		return nodeManagerApp.New(&nodeManagerApp.Config{
 			HTTPAddr:     viper.GetString(app + "-http-listen-addr"),
 			GRPCAddr:     viper.GetString(app + "-grpc-listen-addr"),
@@ -261,7 +255,11 @@ func nodeFactoryFunc(app, kind string, appLogger *zap.Logger, appTracer logging.
 			Operator:                   chainOperator,
 			MindreaderPlugin:           readerPlugin,
 			MetricsAndReadinessManager: metricsAndReadinessManager,
-			RegisterGRPCService:        registerServices,
+			RegisterGRPCService: func(server grpc.ServiceRegistrar) error {
+				pbheadinfo.RegisterHeadInfoServer(server, blockStreamServer)
+				pbbstream.RegisterBlockStreamServer(server, blockStreamServer)
+				return nil
+			},
 		}, appLogger), nil
 	}
 }
@@ -326,17 +324,6 @@ func getExtraArguments(kind string) (out []string) {
 		}
 	}
 	return
-}
-
-func hasExtraArgument(arguments []string, flag string) bool {
-	for _, argument := range arguments {
-		parts := strings.Split(argument, "=")
-		if parts[0] == flag {
-			return true
-		}
-	}
-
-	return false
 }
 
 func setupNodeSysctl(logger *zap.Logger) error {
