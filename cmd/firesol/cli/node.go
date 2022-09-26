@@ -75,7 +75,6 @@ func registerCommonNodeFlags(cmd *cobra.Command, app string) {
 
 func nodeFactoryFunc(app string, appLogger *zap.Logger, appTracer logging.Tracer, nodeLogger *zap.Logger) func(*launcher.Runtime) (launcher.App, error) {
 	return func(runtime *launcher.Runtime) (launcher.App, error) {
-		fmt.Println("YOU ARE HEREHEREHEREHEREHEREHEREHEREHEREHERE")
 		if err := setupNodeSysctl(appLogger); err != nil {
 			return nil, fmt.Errorf("systcl configuration for %s failed: %w", app, err)
 		}

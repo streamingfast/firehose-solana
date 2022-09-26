@@ -45,7 +45,6 @@ func init() {
 			return nil
 		},
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
-			fmt.Println("YOU ARE 1111222223333311112222233333")
 			app := "reader-bt"
 			dataDir := runtime.AbsDataDir
 
