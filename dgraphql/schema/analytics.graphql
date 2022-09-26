@@ -1,4 +1,0 @@
-type DailyVolume {
-    date: Time!
-    value: Float64!
-}
