@@ -58,7 +58,7 @@ for instructions to keep up to date.
   * Flag `<path_to_dmlog.dmlog>` changed to `<path_to_firelog.firelog>`
 * Renamed `DMLOG` prefix to `FIRE`
 
-* Added/Removed `merge-*` flags
+* Added/Removed `merger-*` flags
   * Removed `merger-writers-leeway`
   * Removed `merger-one-block-deletion-threads`
   * Removed `merger-max-one-block-operations-batch-size`
