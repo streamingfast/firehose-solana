@@ -21,5 +21,10 @@ COPY tools/firesol/motd_node_manager /etc/
 COPY tools/firesol/99-firehose-solana.sh /etc/profile.d/
 COPY tools/firesol/scripts/* /usr/local/bin
 
+# On SSH connection, /root/.bashrc is invoked which invokes '/root/.bash_aliases' if existing,
+# so we hijack the file to "execute" our specialized bash script
+RUN echo ". /etc/profile.d/99-firehose-solana.sh" > /root/.bash_aliases
+
+ENV PATH "$PATH:/app"
 
 ENTRYPOINT ["/app/firesol"]
