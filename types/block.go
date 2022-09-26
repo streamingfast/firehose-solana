@@ -39,6 +39,7 @@ func BlockFromPBSolanaProto(blk *pbsolv1.Block) (*bstream.Block, error) {
 		Id:             blk.Blockhash,
 		Number:         blk.Slot,
 		PreviousId:     blk.PreviousBlockhash,
+		LibNum:         blk.ParentSlot,
 		Timestamp:      blockTime,
 		PayloadKind:    Protocol_SOL,
 		PayloadVersion: 1,
