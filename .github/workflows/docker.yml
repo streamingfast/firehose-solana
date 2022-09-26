@@ -85,3 +85,19 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  slack-notifications:
+    needs: [build]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Slack notification
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        uses: Ilshidur/action-slack@2.0.2
+        with:
+          args: |
+            :done: *${{ github.repository }}* Success building docker images from ${{ github.ref_type }} _${{ github.ref_name }}_ (${{ github.actor }}) :sparkling_heart: ```${{ join(needs.build-vanilla.outputs.tags, ' ') }}
+            ${{ needs.bundle-docker-versions.outputs.geth }}
+            ${{ needs.bundle-docker-versions.outputs.bsc }}
+            ${{ needs.bundle-docker-versions.outputs.polygon }}```
+
