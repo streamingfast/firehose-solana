@@ -831,8 +831,6 @@ github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839/go.mod h1:h
 github.com/streamingfast/firehose v0.1.1-0.20220629203325-f7498b95673d/go.mod h1:FR5VZzPMTFS7xeIiP2KyZ3DN859UcQljRbskaTmoLpg=
 github.com/streamingfast/firehose v0.1.1-0.20220909121738-2f3bc007ea2b h1:JaCuiQHc8UcSCoHP8aREaORlPDUVRM4QlZ+zgkerHEs=
 github.com/streamingfast/firehose v0.1.1-0.20220909121738-2f3bc007ea2b/go.mod h1:nHWbl6ULnLfNELooYfkhqIJ44Gg9vlpoDPtZPzGn2rc=
-github.com/streamingfast/firehose-solana/types v0.0.0-20220920143135-b897693e3032 h1:N1c/PLIT7WRHVFP7OfSN50h0Wfw8x8r71V6v8LuR9bo=
-github.com/streamingfast/firehose-solana/types v0.0.0-20220920143135-b897693e3032/go.mod h1:tE6sMS6bVtNKyFtfwpk0mVF5/mR98/pPCUiRPWBy9R0=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220926184743-3f4de63226b6 h1:/YEJw2H5/9Rwl55SX2czJ+NHSiggGFve3fQks2hTPlY=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220926184743-3f4de63226b6/go.mod h1:tE6sMS6bVtNKyFtfwpk0mVF5/mR98/pPCUiRPWBy9R0=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 h1:g8eEYbFSykyzIyuxNMmHEUGGUvJE0ivmqZagLDK42gw=
