@@ -69,7 +69,7 @@ func registerCommonNodeFlags(cmd *cobra.Command, app string) {
 	cmd.Flags().Duration(app+"-shutdown-delay", 0, "Delay before shutting manager when sigterm received")
 	cmd.Flags().String(app+"-working-dir", "{data-dir}/reader/work", "Path where reader will stores its files")
 	cmd.Flags().Int(app+"-blocks-chan-capacity", 100, "Capacity of the channel holding blocks read by the reader. Process will shutdown superviser/geth if the channel gets over 90% of that capacity to prevent horrible consequences. Raise this number when processing tiny blocks very quickly")
-	cmd.Flags().String(app+"-one-block-suffix", "", "If non-empty, the oneblock files will be appended with that suffix, so that readers can each write their file for a given block instead of competing for writes.")
+	cmd.Flags().String(app+"-one-block-suffix", "default", "If non-empty, the oneblock files will be appended with that suffix, so that readers can each write their file for a given block instead of competing for writes.")
 	cmd.Flags().Duration(app+"-startup-delay", 0, "[DEV] wait time before launching")
 	cmd.Flags().String(app+"-grpc-listen-addr", ReaderNodeGRPCAddr, "Address to listen for incoming gRPC requests")
 
