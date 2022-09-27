@@ -3,12 +3,28 @@ start:
     - reader-bt
   flags:
     common-one-block-store-url: "./localdata/blocks"
-    data-dir: "./firedata"
+    common-merged-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v1"
+    reader-bt-readiness-max-latency: "600s"
+    reader-bt-data-dir: "data"
+    reader-bt-debug-firehose-logs: "false"
+    reader-bt-log-to-zap: "false"
+    reader-bt-working-dir: "data/work"
+    reader-bt-blocks-chan-capacity: "1000"
+    reader-bt-grpc-listen-addr: ":9000"
     reader-bt-project-id: "mainnet-beta"
     reader-bt-instance-id: "solana-ledger"
-    reader-bt-start-block-num: "55065000"
-    reader-bt-stop-block-num: "55065300"
-    reader-bt-debug-firehose-logs: "false"
-    reader-bt-log-to-zap: "true"
-    reader-bt-one-block-suffix: "default"
-    reader-bt-path: "firesol"
+    reader-bt-start-block-num: "1634100"
+    reader-bt-stop-block-num: "1771400"
+
+
+
+
+
+
+
+
+
+
+
+
+
