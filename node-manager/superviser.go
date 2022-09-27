@@ -71,7 +71,7 @@ func NewSuperviser(supervisorName string, appLogger *zap.Logger, nodelogger *zap
 		s.RegisterLogPlugin(logplugin.NewToConsoleLogPlugin(options.DebugFirehoseLogs))
 	}
 
-	appLogger.Info("created geth superviser", zap.Object("superviser", s))
+	appLogger.Info("created solana  superviser", zap.Object("superviser", s))
 	return s, nil
 }
 
@@ -119,6 +119,8 @@ func (s *Superviser) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("binary", s.options.BinaryPath)
 	enc.AddArray("arguments", stringArray(s.options.Arguments))
 	enc.AddString("data_dir", s.options.DataDirPath)
+	enc.AddBool("log_to_zap", s.options.LogToZap)
+	enc.AddBool("debug_firehose_logs", s.options.DebugFirehoseLogs)
 
 	return nil
 }

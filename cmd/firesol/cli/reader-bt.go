@@ -60,10 +60,11 @@ func init() {
 
 			btProjectID := viper.GetString(app + "-project-id")
 			btInstanceID := viper.GetString(app + "-instance-id")
-			var startBlockNum, stopBlockNum uint64
-			providedStartBlockNum := viper.GetUint64(app + "-start-block-num")
-			providedStopBlockNum := viper.GetUint64(app + "-stop-block-num")
-			if providedStartBlockNum == 0 {
+			startBlockNum := viper.GetUint64(app + "-start-block-num")
+			stopBlockNum := viper.GetUint64(app + "-stop-block-num")
+			if startBlockNum == 0 {
+				providedStartBlockNum := startBlockNum
+				providedStopBlockNum := stopBlockNum
 				startBlockNum, stopBlockNum = findStartEndBlock(context.Background(), providedStartBlockNum, providedStopBlockNum, mergedBlocksStore)
 				(*appLogger).Info("resolved start block",
 					zap.Uint64("provided_start_block_num", providedStartBlockNum),
@@ -76,7 +77,10 @@ func init() {
 				// resolve start block based on store
 
 			} else {
-				(*appLogger).Info("start block num is provided no need to resolved")
+				(*appLogger).Info("start block num is provided no need to resolved",
+					zap.Uint64("start_block_num", startBlockNum),
+					zap.Uint64("stop_block_num", stopBlockNum),
+				)
 			}
 
 			(*appLogger).Info("configuring bigtable readers for syncing",
