@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1.2
 
+FROM ghcr.io/streamingfast/firehose-solana:solana-bigtable-decoder as chain
+
 FROM ubuntu:20.04
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
@@ -27,4 +29,7 @@ RUN echo ". /etc/profile.d/99-firehose-solana.sh" > /root/.bash_aliases
 
 ENV PATH "$PATH:/app"
 
+COPY --from=chain /app/solana-bigtable-decoder /app/solana-bigtable-decoder
+
 ENTRYPOINT ["/app/firesol"]
+
