@@ -175,9 +175,7 @@ func init() {
 
 func resolveStartBlockNum(ctx context.Context, start uint64, store dstore.Store) uint64 {
 	errDone := errors.New("done")
-
 	var seenStart *uint64
-	var seenEnd *uint64
 
 	err := store.WalkFrom(ctx, "", fmt.Sprintf("%010d", start), func(filename string) error {
 		num, err := strconv.ParseUint(filename, 10, 64)
@@ -196,7 +194,6 @@ func resolveStartBlockNum(ctx context.Context, start uint64, store dstore.Store)
 
 		// num > start
 		if seenStart == nil {
-			seenEnd = &num
 			return errDone // first block after a hole
 		}
 

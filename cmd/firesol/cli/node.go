@@ -35,27 +35,23 @@ var httpListenAddrByKind = map[string]string{
 }
 
 var rpcPortByKind = map[string]string{
-	"miner":   MinerNodeRPCPort,
-	"reader":  ReaderNodeRPCPort,
-	"peering": PeeringNodeRPCPort,
+	"miner":  MinerNodeRPCPort,
+	"reader": ReaderNodeRPCPort,
 }
 
 var gossipPortByKind = map[string]string{
-	"miner":   MinerNodeGossipPort,
-	"reader":  ReaderNodeGossipPort,
-	"peering": PeeringNodeGossipPort,
+	"miner":  MinerNodeGossipPort,
+	"reader": ReaderNodeGossipPort,
 }
 
 var p2pPortStartByKind = map[string]string{
-	"miner":   MinerNodeP2PPortStart,
-	"reader":  ReaderNodeP2PPortStart,
-	"peering": PeeringNodeP2PPortStart,
+	"miner":  MinerNodeP2PPortStart,
+	"reader": ReaderNodeP2PPortStart,
 }
 
 var p2pPortEndByKind = map[string]string{
-	"miner":   MinerNodeP2PPortEnd,
-	"reader":  ReaderNodeP2PPortEnd,
-	"peering": PeeringNodeP2PPortEnd,
+	"miner":  MinerNodeP2PPortEnd,
+	"reader": ReaderNodeP2PPortEnd,
 }
 
 // flags common to reader and regular node
