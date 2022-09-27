@@ -36,8 +36,6 @@ func init() {
 			registerCommonNodeFlags(cmd, "reader-bt")
 			cmd.Flags().String("reader-bt-project-id", "", "Solana Bigtable Project ID")
 			cmd.Flags().String("reader-bt-instance-id", "", "Solana Bigtable Instance ID")
-			cmd.Flags().Uint64("reader-bt-start-block-num", 0, "Blocks that were produced with smaller block number then the given block num are skipped")
-			cmd.Flags().Uint64("reader-bt-stop-block-num", 0, "Shutdown when we the following 'stop-block-num' has been reached, inclusively.")
 			cmd.Flags().String("reader-bt-path", "firesol", "command that will be launched by the node manager")
 			return nil
 		},
@@ -58,15 +56,15 @@ func init() {
 				return nil, fmt.Errorf("unable to create merged blocks store at path %q: %w", mergedBlocksStoreURL, err)
 			}
 
+			providedStartBlock := viper.GetUint64("common-first-streamable-block")
 			btProjectID := viper.GetString(app + "-project-id")
 			btInstanceID := viper.GetString(app + "-instance-id")
-			startBlockNum, stopBlockNum := findStartEndBlock(context.Background(), viper.GetUint64(app+"-start-block-num"), viper.GetUint64(app+"-stop-block-num"), mergedBlocksStore)
+			startBlockNum := resolveStartBlockNum(context.Background(), providedStartBlock, mergedBlocksStore)
+			stopBlockNum := uint64(0)
 			(*appLogger).Info("resolving start block",
-				zap.Uint64("provided_start_block_num", viper.GetUint64(app+"-start-block-num")),
-				zap.Uint64("provided_stop_block_num", viper.GetUint64(app+"-stop-block-num")),
+				zap.Uint64("provided_start_block_num", providedStartBlock),
 				zap.String("merged_block_store_url", mergedBlocksStoreURL),
 				zap.Uint64("resolved_start_block_num", startBlockNum),
-				zap.Uint64("resolved_stop_block_num", stopBlockNum),
 			)
 
 			// resolve start block based on store
@@ -175,27 +173,23 @@ func init() {
 	})
 }
 
-func findStartEndBlock(ctx context.Context, start, end uint64, store dstore.Store) (uint64, uint64) {
+func resolveStartBlockNum(ctx context.Context, start uint64, store dstore.Store) uint64 {
 	errDone := errors.New("done")
-	errComplete := errors.New("complete")
 
 	var seenStart *uint64
 	var seenEnd *uint64
-
-	hasEnd := end >= 100
 
 	err := store.WalkFrom(ctx, "", fmt.Sprintf("%010d", start), func(filename string) error {
 		num, err := strconv.ParseUint(filename, 10, 64)
 		if err != nil {
 			return err
 		}
-		fmt.Println("walking: ", num)
+
 		if num < start { // user has decided to start its merger in the 'future'
 			return nil
 		}
 
 		if num == start {
-			fmt.Println("seenStart")
 			seenStart = &num
 			return nil
 		}
@@ -208,38 +202,23 @@ func findStartEndBlock(ctx context.Context, start, end uint64, store dstore.Stor
 
 		// increment by 100
 		if num == *seenStart+100 {
-			if hasEnd && num == end-100 { // at end-100, we return immediately with errComplete, this will return (end, end)
-				return errComplete
-			}
-
 			seenStart = &num
 			return nil
 		}
 
-		seenEnd = &num
 		return errDone
 	})
 
 	if err != nil && !errors.Is(err, errDone) {
-		if errors.Is(err, errComplete) {
-			return end, end
-		}
 		zlog.Error("got error walking store", zap.Error(err))
-		return start, end
+		return start
 	}
 
 	switch {
-	case seenStart == nil && seenEnd == nil:
-		return start, end // nothing was found
 	case seenStart == nil:
-		if *seenEnd > end {
-			return start, end // blocks were found passed our range
-		}
-		return start, *seenEnd // we found some blocks mid-range
-	case seenEnd == nil:
-		return *seenStart + 100, end
+		return start // nothing was found
 	default:
-		return *seenStart + 100, *seenEnd
+		return *seenStart + 100
 	}
 
 }
