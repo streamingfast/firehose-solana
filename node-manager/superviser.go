@@ -48,14 +48,16 @@ type Options struct {
 	HeadBlockUpdateFunc nodeManager.HeadBlockUpdater
 }
 
-func NewSuperviser(appLogger *zap.Logger, nodelogger *zap.Logger, options *Options) (*Superviser, error) {
+func NewSuperviser(supervisorName string, appLogger *zap.Logger, nodelogger *zap.Logger, options *Options) (*Superviser, error) {
 	// Ensure process manager line buffer is large enough (50 MiB) for our Firehose instrumentation outputting lot's of text.
 	overseer.DEFAULT_LINE_BUFFER_SIZE = 50 * 1024 * 1024
 
 	client := rpc.NewClient(fmt.Sprintf("http://127.0.0.1:%s", options.RCPPort))
 	s := &Superviser{
+
 		// The arguments field is actually `nil` because arguments are re-computed upon each start
 		Superviser: superviser.New(appLogger, options.BinaryPath, nil),
+		name:       supervisorName,
 		options:    options,
 		logger:     appLogger,
 		client:     client,
@@ -110,7 +112,7 @@ func (s *Superviser) LastSeenBlockNum() uint64 {
 }
 
 func (s *Superviser) GetName() string {
-	return "solana-validator"
+	return s.name
 }
 
 func (s *Superviser) MarshalLogObject(enc zapcore.ObjectEncoder) error {

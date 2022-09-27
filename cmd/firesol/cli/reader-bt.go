@@ -60,16 +60,17 @@ func init() {
 
 			btProjectID := viper.GetString(app + "-project-id")
 			btInstanceID := viper.GetString(app + "-instance-id")
-			startBlockNum := viper.GetUint64(app + "-start-block-num")
-			stopBlockNum := viper.GetUint64(app + "-stop-block-num")
-			if startBlockNum == 0 {
-				provided := startBlockNum
-				startBlockNum, stopBlockNum = findStartEndBlock(context.Background(), startBlockNum, stopBlockNum, mergedBlocksStore)
+			var startBlockNum, stopBlockNum uint64
+			providedStartBlockNum := viper.GetUint64(app + "-start-block-num")
+			providedStopBlockNum := viper.GetUint64(app + "-stop-block-num")
+			if providedStartBlockNum == 0 {
+				startBlockNum, stopBlockNum = findStartEndBlock(context.Background(), providedStartBlockNum, providedStopBlockNum, mergedBlocksStore)
 				(*appLogger).Info("resolved start block",
+					zap.Uint64("provided_start_block_num", providedStartBlockNum),
+					zap.Uint64("provided_stop_block_num", providedStopBlockNum),
 					zap.String("merged_block_store_url", mergedBlocksStoreURL),
 					zap.Uint64("resolved_start_block_num", startBlockNum),
-					zap.Uint64("provided_start_block_num", provided),
-					zap.Uint64("stop_block_num", stopBlockNum),
+					zap.Uint64("resolved_stop_block_num", stopBlockNum),
 				)
 
 				// resolve start block based on store
@@ -108,11 +109,13 @@ func init() {
 				viper.GetDuration(app+"-readiness-max-latency"),
 			)
 
+			nodePath := viper.GetString(app + "-path")
 			superviser, err := nodeManagerSol.NewSuperviser(
+				nodePath,
 				appLogger,
 				nodeLogger,
 				&nodeManagerSol.Options{
-					BinaryPath:          viper.GetString(app + "-path"),
+					BinaryPath:          nodePath,
 					Arguments:           args,
 					DataDirPath:         MustReplaceDataDir(dataDir, viper.GetString(app+"-data-dir")),
 					DebugFirehoseLogs:   viper.GetBool(app + "-debug-firehose-logs"),
@@ -194,11 +197,13 @@ func findStartEndBlock(ctx context.Context, start, end uint64, store dstore.Stor
 		if err != nil {
 			return err
 		}
+		fmt.Println("walking: ", num)
 		if num < start { // user has decided to start its merger in the 'future'
 			return nil
 		}
 
 		if num == start {
+			fmt.Println("seenStart")
 			seenStart = &num
 			return nil
 		}

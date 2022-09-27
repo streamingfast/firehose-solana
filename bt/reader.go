@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math/big"
 	"os/exec"
 	"strings"
@@ -57,7 +56,7 @@ func processRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, *zap.Log
 	case RowTypeBin:
 		cnt, err = externalBinToProto(rowCnt, "solana-bigtable-decoder", "--hex")
 		if err != nil {
-			return nil, zlogger, fmt.Errorf("unable get external bin %s: %w", blockNum.String(), err)
+			return nil, zlogger, fmt.Errorf("unable get decode bin with external command 'solana-bigtable-decoder'  %s: %w", blockNum.String(), err)
 		}
 	default:
 		cnt, err = decompress(rowCnt)
@@ -116,7 +115,7 @@ func externalBinToProto(in []byte, command string, args ...string) ([]byte, erro
 	cmd := exec.Command(command, args...)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to run command: %w", err)
 	}
 
 	inString := hex.EncodeToString(in)
@@ -128,14 +127,18 @@ func externalBinToProto(in []byte, command string, args ...string) ([]byte, erro
 
 	outCntHex, err := cmd.Output()
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed get command output: %w", err)
 	}
 	outHex := string(outCntHex)
 	if strings.HasPrefix(outHex, "0x") {
 		outHex = outHex[2:]
 	}
 	outHex = strings.TrimRight(outHex, "\n")
-	return hex.DecodeString(outHex)
+	cnt, err := hex.DecodeString(outHex)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode output string %q: %w", outHex, err)
+	}
+	return cnt, nil
 }
 
 func decompress(in []byte) (out []byte, err error) {

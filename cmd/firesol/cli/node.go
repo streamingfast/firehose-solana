@@ -179,11 +179,13 @@ func nodeFactoryFunc(app string, appLogger *zap.Logger, appTracer logging.Tracer
 			viper.GetDuration(app+"-readiness-max-latency"),
 		)
 
+		solanaValidator := viper.GetString("global-validator-path")
 		superviser, err := nodeManagerSol.NewSuperviser(
+			solanaValidator,
 			appLogger,
 			nodeLogger,
 			&nodeManagerSol.Options{
-				BinaryPath:          viper.GetString("global-validator-path"),
+				BinaryPath:          solanaValidator,
 				Arguments:           args,
 				DataDirPath:         MustReplaceDataDir(dataDir, viper.GetString(app+"-data-dir")),
 				DebugFirehoseLogs:   viper.GetBool(app + "-debug-firehose-logs"),
