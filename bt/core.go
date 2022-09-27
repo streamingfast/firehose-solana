@@ -3,6 +3,7 @@ package bt
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"cloud.google.com/go/bigtable"
 	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
@@ -86,8 +87,17 @@ func (r *Client) ReadBlocks(ctx context.Context, startBlockNum, stopBlockNum uin
 			zlog.Error("error white reading rows", zap.Error(err), zap.Reflect("last_seen_block", lastSeenBlock), zap.Uint64("attempts", attempts))
 			continue
 		}
-		zlog.Info("read block finished", zap.Stringer("last_seen_block", lastSeenBlock.AsRef()))
-		return fatalError
+		if fatalError != nil {
+			zlog.Info("read blocks finished with a fatal error", zap.Error(err), zap.Stringer("last_seen_block", lastSeenBlock.AsRef()))
+			return fatalError
+		}
+		zlog.Debug("read block finished", zap.Stringer("last_seen_block", lastSeenBlock.AsRef()))
+		if stopBlockNum != 0 {
+			return nil
+		}
+		zlog.Debug("stop block is num will sleep for 5 seconds and retry")
+		time.Sleep(5 * time.Second)
+
 	}
 }
 
