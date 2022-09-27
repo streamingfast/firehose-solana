@@ -9,6 +9,7 @@ const (
 	FilteredBlocksStoreURL string = "file://{data-dir}/storage/filtered-merged-blocks"
 	IndicesStoreURL        string = "file://{data-dir}/storage/indexes"
 	OneBlockStoreURL       string = "file://{data-dir}/storage/one-blocks"
+	ForkedBlocksStoreURL   string = "file://{sf-data-dir}/storage/forked-blocks"
 	BlockDataStoreURL      string = "file://{data-dir}/storage/data-blocks"
 	SnapshotsURL           string = "file://{data-dir}/storage/snapshots"
 	BlocksCacheDirectory   string = "{data-dir}/blocks-cache"

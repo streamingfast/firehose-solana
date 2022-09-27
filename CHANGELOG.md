@@ -40,6 +40,7 @@ for instructions to keep up to date.
 * Renamed `common-oneblock-store-url` to `common-one-block-store-url`
 * Renamed `common-blockstream-addr` to `common-live-blocks-addr`
 * Renamed `common-protocol-first-streamable-block` to `common-first-streamable-block`
+* Added `common-forked-blocks-store-url`
 
 * Renamed the `mindreader` application to `reader`
   * Renamed `mindreaderPlugin` to `readerPlugin`
