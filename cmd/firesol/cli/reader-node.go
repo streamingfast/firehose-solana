@@ -35,7 +35,6 @@ func init() {
 			cmd.Flags().String("reader-node-gossip-port", gossipPortByKind["reader"], "TCP gossip listening port of Solana node")
 			cmd.Flags().String("reader-node-p2p-port-start", p2pPortStartByKind["reader"], "P2P dynamic range start listening port of Solana node")
 			cmd.Flags().String("reader-node-p2p-port-end", p2pPortEndByKind["reader"], "P2P dynamic range end of Solana node")
-			cmd.Flags().String("reader-node-http-listen-addr", httpListenAddrByKind["reader"], "Solana node manager HTTP address when operational command can be send to control the node")
 			cmd.Flags().String("reader-node-arguments", "", "If not empty, overrides the list of default node arguments (computed from node type and role). Start with '+' to append to default args instead of replacing. You can use the {public-ip} token, that will be matched against space-separated hostname:IP pairs in PUBLIC_IPS env var, taking hostname from HOSTNAME env var.")
 			cmd.Flags().String("reader-node-bootstrap-data-url", "", "URL where to find bootstrapping data for this node, the URL must point to a `.tar.zst` archive containing the full data directory to bootstrap from")
 			cmd.Flags().Bool("reader-node-rpc-enable-debug-apis", false, "[DEV] Enable some of the Solana validator RPC APIs that can be used for debugging purposes")

@@ -156,7 +156,7 @@ func init() {
 			superviser.RegisterLogPlugin(readerPlugin)
 			startupDelay := viper.GetDuration(app + "-startup-delay")
 			return nodeManagerApp.New(&nodeManagerApp.Config{
-				HTTPAddr:     viper.GetString(app + "-http-listen-addr"),
+				HTTPAddr:     viper.GetString(app + "-manager-listen-addr"),
 				GRPCAddr:     viper.GetString(app + "-grpc-listen-addr"),
 				StartupDelay: startupDelay,
 			}, &nodeManagerApp.Modules{

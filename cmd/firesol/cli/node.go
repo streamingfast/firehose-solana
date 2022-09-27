@@ -68,6 +68,7 @@ func registerCommonNodeFlags(cmd *cobra.Command, app string) {
 	cmd.Flags().String(app+"-one-block-suffix", "default", "If non-empty, the oneblock files will be appended with that suffix, so that readers can each write their file for a given block instead of competing for writes.")
 	cmd.Flags().Duration(app+"-startup-delay", 0, "[DEV] wait time before launching")
 	cmd.Flags().String(app+"-grpc-listen-addr", ReaderNodeGRPCAddr, "Address to listen for incoming gRPC requests")
+	cmd.Flags().String(app+"--manager-listen-addr", httpListenAddrByKind["reader"], "Solana node manager HTTP address when operational command can be send to control the node")
 
 }
 
@@ -247,7 +248,7 @@ func nodeFactoryFunc(app string, appLogger *zap.Logger, appTracer logging.Tracer
 
 		superviser.RegisterLogPlugin(readerPlugin)
 		return nodeManagerApp.New(&nodeManagerApp.Config{
-			HTTPAddr:     viper.GetString(app + "-http-listen-addr"),
+			HTTPAddr:     viper.GetString(app + "-manager-listen-addr"),
 			GRPCAddr:     viper.GetString(app + "-grpc-listen-addr"),
 			StartupDelay: startupDelay,
 		}, &nodeManagerApp.Modules{

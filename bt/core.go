@@ -40,7 +40,7 @@ func (r *Client) ReadBlocks(ctx context.Context, startBlockNum, stopBlockNum uin
 	for {
 		if lastSeenBlock != nil {
 			resolvedStartBlock := lastSeenBlock.Num()
-			zlog.Info("restarting read rows will retry last boundary",
+			zlog.Debug("restarting read rows will retry last boundary",
 				zap.Uint64("last_seen_block", lastSeenBlock.Num()),
 				zap.Uint64("resolved_block", resolvedStartBlock),
 			)
