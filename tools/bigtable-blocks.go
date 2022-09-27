@@ -27,14 +27,19 @@ func init() {
 	bigtableCmd.AddCommand(bigtableBlocksCmd)
 	bigtableBlocksCmd.Flags().Bool("firehose-enabled", false, "When enable the blocks read will output Firehose formated logs 'FIRE <block_num> <block_payload_in_hex>'")
 	bigtableBlocksCmd.Flags().Bool("compact", false, "When printing in JSON it will print compact instead of pretty-printed output")
+	bigtableBlocksCmd.Flags().Bool("linkable", false, "Ensure that no block is skipped they are linkeable")
 }
 
 func bigtableBlocksRunE(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
-	zlog.Info("retrieving from bigtable")
-
 	firehoseEnabled := viper.GetBool("firehose-enabled")
 	compact := viper.GetBool("compact")
+	linkable := viper.GetBool("linkable")
+	zlog.Info("retrieving from bigtable",
+		zap.Bool("firehose_enabled", firehoseEnabled),
+		zap.Bool("compact", compact),
+		zap.Bool("linkable", linkable),
+	)
 	client, err := bigtable.NewClient(ctx, mustGetString(cmd, "bt-project"), mustGetString(cmd, "bt-instance"))
 	if err != nil {
 		return err
@@ -55,7 +60,7 @@ func bigtableBlocksRunE(cmd *cobra.Command, args []string) error {
 	)
 	btClient := bt.New(client, 10)
 
-	return btClient.ReadBlocks(ctx, startBlockNum, stopBlockNum, func(block *pbsolv1.Block) error {
+	return btClient.ReadBlocks(ctx, startBlockNum, stopBlockNum, linkable, func(block *pbsolv1.Block) error {
 		if firehoseEnabled {
 			cnt, err := proto.Marshal(block)
 			if err != nil {

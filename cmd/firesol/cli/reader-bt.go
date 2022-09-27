@@ -87,6 +87,7 @@ func init() {
 				fmt.Sprintf("%d", startBlockNum),
 				fmt.Sprintf("%d", stopBlockNum),
 				"--firehose-enabled",
+				"--linkable",
 			}
 
 			headBlockTimeDrift := metrics.NewHeadBlockTimeDrift(app)

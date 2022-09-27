@@ -25,7 +25,13 @@ func New(bt *bigtable.Client, maxConnectionAttempt uint64) *Client {
 
 var PrintFreq = uint64(10)
 
-func (r *Client) ReadBlocks(ctx context.Context, startBlockNum, stopBlockNum uint64, writer func(block *pbsolv1.Block) error) error {
+func (r *Client) ReadBlocks(
+	ctx context.Context,
+	startBlockNum,
+	stopBlockNum uint64,
+	linkable bool,
+	writer func(block *pbsolv1.Block) error,
+) error {
 	var seenStartBlock bool
 	var lastSeenBlock *pbsolv1.Block
 	var fatalError error
@@ -49,6 +55,7 @@ func (r *Client) ReadBlocks(ctx context.Context, startBlockNum, stopBlockNum uin
 
 		btRange := bigtable.NewRange(fmt.Sprintf("%016x", startBlockNum), "")
 		err := table.ReadRows(ctx, btRange, func(row bigtable.Row) bool {
+
 			blk, zlogger, err := processRow(row, zlog)
 			if err != nil {
 				fatalError = fmt.Errorf("failed to read row: %w", err)
@@ -57,16 +64,34 @@ func (r *Client) ReadBlocks(ctx context.Context, startBlockNum, stopBlockNum uin
 
 			if !seenStartBlock {
 				if blk.Slot < startBlockNum {
-					zlogger.Warn("skipping blow below start block",
+					zlogger.Debug("skipping blow below start block",
 						zap.Uint64("expected_block", startBlockNum),
 					)
 					return true
 				}
 				seenStartBlock = true
 			}
-			lastSeenBlock = blk
-			progressLog(blk, zlogger)
 
+			if lastSeenBlock != nil && lastSeenBlock.Blockhash == blk.Blockhash {
+				zlogger.Debug("skipping block already seed",
+					zap.Stringer("blk", blk.AsRef()),
+				)
+				return true
+			}
+
+			if lastSeenBlock != nil && linkable && (lastSeenBlock.Blockhash != blk.PreviousBlockhash) {
+				// Weird cases where we do not receive the next linkeable block.
+				// we should try to reconnect
+				zlog.Warn("received unlikable block",
+					zap.Stringer("last_seen_blk", lastSeenBlock.AsRef()),
+					zap.Stringer("blk", blk.AsRef()),
+					zap.String("blk_previous_blockhash", blk.PreviousBlockhash),
+				)
+				return false
+			}
+
+			progressLog(blk, zlogger)
+			lastSeenBlock = blk
 			if err := writer(blk); err != nil {
 				fatalError = fmt.Errorf("failed to write blokc: %w", err)
 				return false
@@ -88,16 +113,22 @@ func (r *Client) ReadBlocks(ctx context.Context, startBlockNum, stopBlockNum uin
 			continue
 		}
 		if fatalError != nil {
-			zlog.Info("read blocks finished with a fatal error", zap.Error(err), zap.Stringer("last_seen_block", lastSeenBlock.AsRef()))
-			return fatalError
+			msg := "no blocks senn"
+			if lastSeenBlock != nil {
+				msg = fmt.Sprintf("last seen block %q", lastSeenBlock.AsRef().String())
+			}
+			return fmt.Errorf("read blocks finished with a fatal error, %s: %w", msg, fatalError)
 		}
-		zlog.Debug("read block finished", zap.Stringer("last_seen_block", lastSeenBlock.AsRef()))
+		opt := []zap.Field{}
+		if lastSeenBlock != nil {
+			opt = append(opt, zap.Stringer("last_seen_block", lastSeenBlock.AsRef()))
+		}
+		zlog.Debug("read block finished", opt...)
 		if stopBlockNum != 0 {
 			return nil
 		}
 		zlog.Debug("stop block is num will sleep for 5 seconds and retry")
 		time.Sleep(5 * time.Second)
-
 	}
 }
 

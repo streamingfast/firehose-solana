@@ -49,7 +49,12 @@ func bigtableBlockRunE(cmd *cobra.Command, args []string) error {
 	fmt.Println("Looking for block: ", startBlockNum)
 
 	foundBlock := false
-	if err = btClient.ReadBlocks(ctx, startBlockNum, endBlockNum, func(block *pbsolv1.Block) error {
+	if err = btClient.ReadBlocks(ctx, startBlockNum, endBlockNum, false, func(block *pbsolv1.Block) error {
+		// the block range may return the next block if it cannot find it
+		if block.Slot != startBlockNum {
+			return nil
+		}
+
 		foundBlock = true
 		fmt.Println("Found bigtable row")
 		cnt, err := json.MarshalIndent(block, "", " ")
@@ -59,7 +64,7 @@ func bigtableBlockRunE(cmd *cobra.Command, args []string) error {
 		fmt.Println(string(cnt))
 		return nil
 	}); err != nil {
-		return fmt.Errorf("failed to find block %q: %w", startBlockNum, err)
+		return fmt.Errorf("failed to find block %d: %w", startBlockNum, err)
 	}
 	if !foundBlock {
 		fmt.Printf("Could not find desired block %d\n", startBlockNum)

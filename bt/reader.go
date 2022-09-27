@@ -46,9 +46,6 @@ func processRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, *zap.Log
 		zap.String("row_key", row.Key()),
 	)
 
-	zlogger.Debug("found bigtable row",
-		zap.Int("uncompressed_length", len(rowCnt)),
-	)
 	var cnt []byte
 	var err error
 

@@ -69,7 +69,6 @@ func registerCommonNodeFlags(cmd *cobra.Command, app string) {
 	cmd.Flags().Duration(app+"-startup-delay", 0, "[DEV] wait time before launching")
 	cmd.Flags().String(app+"-grpc-listen-addr", ReaderNodeGRPCAddr, "Address to listen for incoming gRPC requests")
 	cmd.Flags().String(app+"-manager-listen-addr", httpListenAddrByKind["reader"], "Solana node manager HTTP address when operational command can be send to control the node")
-
 }
 
 func nodeFactoryFunc(app string, appLogger *zap.Logger, appTracer logging.Tracer, nodeLogger *zap.Logger) func(*launcher.Runtime) (launcher.App, error) {
