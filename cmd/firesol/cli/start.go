@@ -60,7 +60,8 @@ func Start(dataDir string, args []string) (err error) {
 		return err
 	}
 
-	bstream.GetProtocolFirstStreamableBlock = viper.GetUint64("common-protocol-first-streamable-block")
+	bstream.GetProtocolFirstStreamableBlock = viper.GetUint64("common-first-streamable-block")
+
 	modules := &launcher.Runtime{
 		AbsDataDir:              dataDirAbs,
 		ProtocolSpecificModules: map[string]interface{}{},

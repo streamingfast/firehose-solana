@@ -39,6 +39,7 @@ for instructions to keep up to date.
 * Renamed `common-blocks-store-url` to `common-merged-blocks-store-url`
 * Renamed `common-oneblock-store-url` to `common-one-block-store-url`
 * Renamed `common-blockstream-addr` to `common-live-blocks-addr`
+* Renamed `common-protocol-first-streamable-block` to `common-first-streamable-block`
 
 * Renamed the `mindreader` application to `reader`
   * Renamed `mindreaderPlugin` to `readerPlugin`
