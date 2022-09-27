@@ -103,8 +103,6 @@ func (cr *BigtableConsoleReader) formatError(line string, err error) error {
 
 //// BLOCK <SLOT_NUM> <COMPLETE BLOCK PROTO IN HEX>
 func (cr *BigtableConsoleReader) readBlock(line string) (out *bstream.Block, err error) {
-	cr.logger.Debug("reading block", zap.String("line", line))
-
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != BlockCompleteChunk {
 		return nil, fmt.Errorf("expected %d fields, got %d", BlockCompleteChunk, len(chunks))
