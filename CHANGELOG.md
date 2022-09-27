@@ -11,7 +11,18 @@ for instructions to keep up to date.
 * Added `tools bt blocks  --bt-project=<bigtable_project> --bt-instance=<bigtable_instance> <start-block-num> <stop-block-num>` command to scan bigtable rows
   * Added `--firehose-enabled` flag to output FIRE log
 
-* Added `reader-bt` application to sync directly from bigtable 
+* Added `reader-bt` application to sync directly from bigtable
+  * Added `--reader-bt-readiness-max-latency` flag
+  * Added `--reader-bt-data-dir` flag
+  * Added `--reader-bt-debug-firehose-logs` flag
+  * Added `--reader-bt-log-to-zap` flag
+  * Added `--reader-bt-shutdown-delay` flag
+  * Added `--reader-bt-working-dir` flag
+  * Added `--reader-bt-blocks-chan-capacity` flag
+  * Added `--reader-bt-one-block-suffix` flag
+  * Added `--reader-bt-startup-delay` flag
+  * Added `--reader-bt-grpc-listen-addr` flag
+
 
 ### Removed
 * Removed `dgraphql` application and all associated flags

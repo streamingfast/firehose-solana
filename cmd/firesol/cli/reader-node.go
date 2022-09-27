@@ -44,7 +44,6 @@ func init() {
 			cmd.Flags().String("reader-node-local-snapshot-folder", "", "where solana snapshots are stored by the node")
 			cmd.Flags().Int("reader-node-number-of-snapshots-to-keep", 0, "if non-zero, after a successful snapshot, older snapshots will be deleted to only keep that number of recent snapshots")
 			cmd.Flags().String("reader-node-genesis-url", "", "url to genesis.tar.bz2")
-			cmd.Flags().String("reader-node-grpc-listen-addr", ReaderNodeGRPCAddr, "Address to listen for incoming gRPC requests")
 			cmd.Flags().Bool("reader-node-start-failure-handler", true, "Enables the startup function handler, that gets called if reader fails on startup")
 			cmd.Flags().Bool("reader-node-fail-on-non-contiguous-block", false, "Enables the Continuity Checker that stops (or refuses to start) the superviser if a block was missed. It has a significant performance cost on reprocessing large segments of blocks")
 			cmd.Flags().Uint("reader-node-start-block-num", 0, "[BATCH] Blocks that were produced with smaller block number then the given block num are skipped")
