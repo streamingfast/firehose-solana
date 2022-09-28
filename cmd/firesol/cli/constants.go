@@ -3,7 +3,7 @@ package cli
 const (
 	MergedBlocksStoreURL string = "file://{data-dir}/storage/merged-blocks"
 	OneBlockStoreURL     string = "file://{data-dir}/storage/one-blocks"
-	ForkedBlocksStoreURL string = "file://{sf-data-dir}/storage/forked-blocks"
+	ForkedBlocksStoreURL string = "file://{data-dir}/storage/forked-blocks"
 	BlocksCacheDirectory string = "{data-dir}/blocks-cache"
 	NetworkID            string = "development"
 	SFNetworkID          string = "sol-local"
