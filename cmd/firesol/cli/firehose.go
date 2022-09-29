@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/streamingfast/bstream/transform"
@@ -105,7 +106,7 @@ func init() {
 
 				endpoint := viper.GetString("substreams-client-endpoint")
 				if endpoint == "" {
-					endpoint = viper.GetString("firehose-grpc-listen-addr")
+					endpoint = strings.TrimSuffix(viper.GetString("firehose-grpc-listen-addr"), "*")
 				}
 
 				substreamsClientConfig := client.NewSubstreamsClientConfig(
