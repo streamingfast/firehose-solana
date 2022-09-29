@@ -833,6 +833,8 @@ github.com/streamingfast/firehose v0.1.1-0.20220909121738-2f3bc007ea2b h1:JaCuiQ
 github.com/streamingfast/firehose v0.1.1-0.20220909121738-2f3bc007ea2b/go.mod h1:nHWbl6ULnLfNELooYfkhqIJ44Gg9vlpoDPtZPzGn2rc=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220926195012-7f96d6599e49 h1:JLF0ZBxmEtDjM3BBZFx9quEx3K68g1EndRWaQ/QILac=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220926195012-7f96d6599e49/go.mod h1:f4bKgAUN9p6O0sBtNZKhnPI5oORQYiapNDK6WQ0RStA=
+github.com/streamingfast/firehose-solana/types v0.0.0-20220929150741-eee89e5edc33 h1:yTt/1Xyhfp4kH5xv0j8wx+j9D+CGOGaSg0sQJgZd0QM=
+github.com/streamingfast/firehose-solana/types v0.0.0-20220929150741-eee89e5edc33/go.mod h1:f4bKgAUN9p6O0sBtNZKhnPI5oORQYiapNDK6WQ0RStA=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 h1:g8eEYbFSykyzIyuxNMmHEUGGUvJE0ivmqZagLDK42gw=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0/go.mod h1:cTNObq2Uofb330y05JbbZZ6RwE6QUXw5iVcHk1Fx3fk=
 github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3 h1:v1ux5D8Xm30wpFpbS6u6fKuZUx/5/UTzYlR4llYaxSM=
@@ -868,6 +870,8 @@ github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcI
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
 github.com/streamingfast/substreams v0.0.21-0.20220923142307-1e56438d2cfb h1:xx+XZgAUeYQ9FbJtPwdw8zvjqFBHBTeYksxxPa54giM=
 github.com/streamingfast/substreams v0.0.21-0.20220923142307-1e56438d2cfb/go.mod h1:cG05tgtk6Xh3K3uaPpirPIOTgneLWiysZb2ZRJJqMUc=
+github.com/streamingfast/substreams v0.0.21-0.20220929024034-fc3017230251 h1:AkIZ1DHMxe3THXjXc83kXlZwnnEM2C9o5Zmumc5kViQ=
+github.com/streamingfast/substreams v0.0.21-0.20220929024034-fc3017230251/go.mod h1:cG05tgtk6Xh3K3uaPpirPIOTgneLWiysZb2ZRJJqMUc=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0 h1:M2gUjqZET1qApGOWNSnZ49BAIMX4F/1plDv3+l31EJ4=

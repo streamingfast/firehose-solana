@@ -27,7 +27,7 @@ require (
 	github.com/streamingfast/dstore v0.1.1-0.20220921155016-7a52fdb3fe5f
 	github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839 // indirect
 	github.com/streamingfast/firehose v0.1.1-0.20220909121738-2f3bc007ea2b
-	github.com/streamingfast/firehose-solana/types v0.0.0-20220926195012-7f96d6599e49
+	github.com/streamingfast/firehose-solana/types v0.0.0-20220929150741-eee89e5edc33
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
 	github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3
 	github.com/streamingfast/logging v0.0.0-20220813175024-b4fbb0e893df
@@ -38,7 +38,7 @@ require (
 	github.com/streamingfast/sf-tools v0.0.0-20220830151952-184d6e9a6bb9
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
-	github.com/streamingfast/substreams v0.0.21-0.20220923142307-1e56438d2cfb
+	github.com/streamingfast/substreams v0.0.21-0.20220929024034-fc3017230251
 	github.com/stretchr/testify v1.8.0
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4
