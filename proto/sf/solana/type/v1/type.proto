@@ -34,12 +34,20 @@ message Message {
     repeated bytes account_keys = 2;
     bytes recent_blockhash = 3;
     repeated CompiledInstruction instructions = 4;
+    bool versioned = 5;
+    repeated MessageAddressTableLookup address_table_lookups = 6;
 }
 
 message MessageHeader {
     uint32 num_required_signatures = 1;
     uint32 num_readonly_signed_accounts = 2;
     uint32 num_readonly_unsigned_accounts = 3;
+}
+
+message MessageAddressTableLookup {
+    bytes account_key = 1;
+    bytes writable_indexes = 2;
+    bytes readonly_indexes = 3;
 }
 
 message TransactionStatusMeta {
@@ -54,6 +62,15 @@ message TransactionStatusMeta {
     repeated TokenBalance pre_token_balances = 7;
     repeated TokenBalance post_token_balances = 8;
     repeated Reward rewards = 9;
+    repeated bytes loaded_writable_addresses = 12;
+    repeated bytes loaded_readonly_addresses = 13;
+    ReturnData return_data = 14;
+    bool return_data_none = 15;
+
+    // Sum of compute units consumed by all instructions.
+    // Available since Solana v1.10.35 / v1.11.6.
+    // Set to `None` for txs executed on earlier versions.
+    optional uint64 compute_units_consumed = 16;
 }
 
 message TransactionError {
@@ -76,6 +93,7 @@ message TokenBalance {
     string mint = 2;
     UiTokenAmount ui_token_amount = 3;
     string owner = 4;
+    string program_id = 5;
 }
 
 message UiTokenAmount {
@@ -83,6 +101,11 @@ message UiTokenAmount {
     uint32 decimals = 2;
     string amount = 3;
     string ui_amount_string = 4;
+}
+
+message ReturnData {
+    bytes program_id = 1;
+    bytes data = 2;
 }
 
 enum RewardType {
