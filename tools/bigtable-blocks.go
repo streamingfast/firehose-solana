@@ -7,10 +7,9 @@ import (
 	"strconv"
 
 	"github.com/spf13/viper"
+	"github.com/streamingfast/firehose-solana/bt"
 	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/streamingfast/firehose-solana/bt"
 
 	"cloud.google.com/go/bigtable"
 	"github.com/spf13/cobra"
@@ -67,7 +66,10 @@ func bigtableBlocksRunE(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("failed to proto  marshal pb sol block: %w", err)
 			}
 
-			fmt.Printf("FIRE BLOCK %d %s\n", block.Slot, hex.EncodeToString(cnt))
+			lineCnt := fmt.Sprintf("FIRE BLOCK %d %s", block.Slot, hex.EncodeToString(cnt))
+			if _, err := fmt.Println(lineCnt); err != nil {
+				return fmt.Errorf("failed to write log line (char lenght %d): %w", len(lineCnt), err)
+			}
 			return nil
 		}
 

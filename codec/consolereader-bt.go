@@ -48,9 +48,9 @@ func (cr *BigtableConsoleReader) ProcessData(reader io.Reader) error {
 }
 
 func (cr *BigtableConsoleReader) buildScanner(reader io.Reader) *bufio.Scanner {
-	buf := make([]byte, 50*1024*1024)
+	buf := make([]byte, 100*1024*1024)
 	scanner := bufio.NewScanner(reader)
-	scanner.Buffer(buf, 50*1024*1024)
+	scanner.Buffer(buf, len(buf))
 
 	return scanner
 }

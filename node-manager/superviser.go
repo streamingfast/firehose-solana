@@ -49,8 +49,8 @@ type Options struct {
 }
 
 func NewSuperviser(supervisorName string, appLogger *zap.Logger, nodelogger *zap.Logger, options *Options) (*Superviser, error) {
-	// Ensure process manager line buffer is large enough (50 MiB) for our Firehose instrumentation outputting lot's of text.
-	overseer.DEFAULT_LINE_BUFFER_SIZE = 50 * 1024 * 1024
+	// Ensure process manager line buffer is large enough (100 MiB) for our Firehose instrumentation outputting lot's of text.
+	overseer.DEFAULT_LINE_BUFFER_SIZE = 100 * 1024 * 1024
 
 	client := rpc.NewClient(fmt.Sprintf("http://127.0.0.1:%s", options.RCPPort))
 	s := &Superviser{
