@@ -835,6 +835,8 @@ github.com/streamingfast/firehose-solana/types v0.0.0-20220926195012-7f96d6599e4
 github.com/streamingfast/firehose-solana/types v0.0.0-20220926195012-7f96d6599e49/go.mod h1:f4bKgAUN9p6O0sBtNZKhnPI5oORQYiapNDK6WQ0RStA=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220929150741-eee89e5edc33 h1:yTt/1Xyhfp4kH5xv0j8wx+j9D+CGOGaSg0sQJgZd0QM=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220929150741-eee89e5edc33/go.mod h1:f4bKgAUN9p6O0sBtNZKhnPI5oORQYiapNDK6WQ0RStA=
+github.com/streamingfast/firehose-solana/types v0.0.0-20220929150934-05c197eb27df h1:CNg4azcNXZzMUzFYE3s+bZYz3RpPP+koQgp5eGpnjUk=
+github.com/streamingfast/firehose-solana/types v0.0.0-20220929150934-05c197eb27df/go.mod h1:f4bKgAUN9p6O0sBtNZKhnPI5oORQYiapNDK6WQ0RStA=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 h1:g8eEYbFSykyzIyuxNMmHEUGGUvJE0ivmqZagLDK42gw=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0/go.mod h1:cTNObq2Uofb330y05JbbZZ6RwE6QUXw5iVcHk1Fx3fk=
 github.com/streamingfast/kvdb v0.0.2-0.20210811194032-09bf862bd2e3 h1:v1ux5D8Xm30wpFpbS6u6fKuZUx/5/UTzYlR4llYaxSM=
