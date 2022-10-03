@@ -39,7 +39,7 @@ require (
 	github.com/streamingfast/sf-tools v0.0.0-20220830151952-184d6e9a6bb9
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
-	github.com/streamingfast/substreams v0.0.21-0.20220929192626-2a36a44ef5f9
+	github.com/streamingfast/substreams v0.0.21-0.20221003160034-7324e5b802a3
 	github.com/stretchr/testify v1.8.0
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4
