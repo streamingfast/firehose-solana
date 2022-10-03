@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	dauthAuthenticator "github.com/streamingfast/dauth/authenticator"
+	discoveryservice "github.com/streamingfast/dgrpc/server/discovery-service"
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/dmetering"
 	"github.com/streamingfast/dmetrics"
@@ -36,7 +38,7 @@ func init() {
 		Description: "Provides on-demand filtered blocks, depends on common-merged-blocks-store-url and common-live-blocks-addr",
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("firehose-grpc-listen-addr", FirehoseGRPCServingAddr, "Address on which the Firehose will listen")
-
+			cmd.Flags().String("firehose-discovery-service-url", "", "url to configure the grpc discovery service") //traffic-director://xds?vpc_network=vpc-global&use_xds_reds=true
 			cmd.Flags().Bool("substreams-enabled", false, "Whether to enable substreams")
 			cmd.Flags().Bool("substreams-partial-mode-enabled", false, "Whether to enable partial stores generation support on this instance (usually for internal deployments only)")
 			cmd.Flags().String("substreams-state-store-url", "{data-dir}/localdata", "where substreams state data are stored")
@@ -82,6 +84,20 @@ func init() {
 			}
 
 			var registerServiceExt firehoseApp.RegisterServiceExtensionFunc
+
+			rawServiceDiscoveryURL := viper.GetString("firehose-discovery-service-url")
+			var serviceDiscoveryURL *url.URL
+			if rawServiceDiscoveryURL != "" {
+				serviceDiscoveryURL, err = url.Parse(rawServiceDiscoveryURL)
+				if err != nil {
+					return nil, fmt.Errorf("unable to parse discovery service url: %w", err)
+				}
+				err = discoveryservice.Bootstrap(serviceDiscoveryURL)
+				if err != nil {
+					return nil, fmt.Errorf("unable to bootstrap discovery service: %w", err)
+				}
+			}
+
 			if viper.GetBool("substreams-enabled") {
 
 				stateStore, err := dstore.NewStore(MustReplaceDataDir(dataDir, viper.GetString("substreams-state-store-url")), "", "", true)
@@ -139,8 +155,8 @@ func init() {
 				ForkedBlocksStoreURL:    forkedBlocksStoreURL,
 				BlockStreamAddr:         blockstreamAddr,
 				GRPCListenAddr:          viper.GetString("firehose-grpc-listen-addr"),
+				ServiceDiscoveryURL:     serviceDiscoveryURL,
 				GRPCShutdownGracePeriod: grcpShutdownGracePeriod,
-				ServiceDiscoveryURL:     nil,
 			}, &firehoseApp.Modules{
 				Authenticator:            authenticator,
 				HeadTimeDriftMetric:      headTimeDriftmetric,
