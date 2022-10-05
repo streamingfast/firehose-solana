@@ -831,6 +831,8 @@ github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839/go.mod h1:h
 github.com/streamingfast/firehose v0.1.1-0.20220629203325-f7498b95673d/go.mod h1:FR5VZzPMTFS7xeIiP2KyZ3DN859UcQljRbskaTmoLpg=
 github.com/streamingfast/firehose v0.1.1-0.20220909121738-2f3bc007ea2b h1:JaCuiQHc8UcSCoHP8aREaORlPDUVRM4QlZ+zgkerHEs=
 github.com/streamingfast/firehose v0.1.1-0.20220909121738-2f3bc007ea2b/go.mod h1:nHWbl6ULnLfNELooYfkhqIJ44Gg9vlpoDPtZPzGn2rc=
+github.com/streamingfast/firehose v0.1.1-0.20221005191206-4c5d3db2224f h1:SRVMJUs5AXuqsEWeZr+eYN704gncBFbkEbblIpdecyE=
+github.com/streamingfast/firehose v0.1.1-0.20221005191206-4c5d3db2224f/go.mod h1:nHWbl6ULnLfNELooYfkhqIJ44Gg9vlpoDPtZPzGn2rc=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220929150934-05c197eb27df h1:CNg4azcNXZzMUzFYE3s+bZYz3RpPP+koQgp5eGpnjUk=
 github.com/streamingfast/firehose-solana/types v0.0.0-20220929150934-05c197eb27df/go.mod h1:f4bKgAUN9p6O0sBtNZKhnPI5oORQYiapNDK6WQ0RStA=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 h1:g8eEYbFSykyzIyuxNMmHEUGGUvJE0ivmqZagLDK42gw=
@@ -868,6 +870,8 @@ github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcI
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
 github.com/streamingfast/substreams v0.0.21-0.20221005145626-05a1cecaee3e h1:IbwO6xcsJLkPtIxCF4glLw6oafuNnNjFc+Yb/P4PmZQ=
 github.com/streamingfast/substreams v0.0.21-0.20221005145626-05a1cecaee3e/go.mod h1:cG05tgtk6Xh3K3uaPpirPIOTgneLWiysZb2ZRJJqMUc=
+github.com/streamingfast/substreams v0.0.21-0.20221005191317-6c9299b1db1b h1:HP0t4CkWMOrv6Uh3C5xiiy7KN9LiKCIwg66Y2lP2nAY=
+github.com/streamingfast/substreams v0.0.21-0.20221005191317-6c9299b1db1b/go.mod h1:cG05tgtk6Xh3K3uaPpirPIOTgneLWiysZb2ZRJJqMUc=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0 h1:M2gUjqZET1qApGOWNSnZ49BAIMX4F/1plDv3+l31EJ4=
