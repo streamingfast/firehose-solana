@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/dlauncher/launcher"
+	"go.uber.org/zap"
 )
 
 func setupCmd(cmd *cobra.Command) error {
@@ -81,7 +82,7 @@ func setupCmd(cmd *cobra.Command) error {
 	launcher.SetupAnalyticsMetrics(zlog, viper.GetString("global-metrics-listen-addr"), viper.GetString("global-pprof-listen-addr"))
 
 	if err := launcher.SetMaxOpenFilesLimit(zlog, 1000000, 24576); err != nil {
-		return fmt.Errorf("sysctl setup: %w", err)
+		zlog.Info("cannot set max open files limit", zap.Error(err))
 	}
 
 	return nil
