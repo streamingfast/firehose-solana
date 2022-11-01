@@ -24,7 +24,7 @@ main() {
     rm -rf firedata &> /dev/null || true
   fi
 
-  exec DEBUG=".*" $firesol -c $(basename $ROOT).yaml start "$@"
+  exec $firesol -c $(basename $ROOT).yaml start "$@"
 }
 
 usage_error() {
