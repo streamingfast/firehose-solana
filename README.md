@@ -1,5 +1,5 @@
 <a href="https://www.streamingfast.io/">
-	<img width="100%" src="assets/firehose-banner.png" alt="StreamingFast Fireshose Banner" />
+	<img width="100%" src="https://github.com/streamingfast/firehose-ethereum/raw/develop/assets/firehose-banner.png" alt="StreamingFast Fireshose Banner" />
 </a>
 
 # Firehose for Solana
