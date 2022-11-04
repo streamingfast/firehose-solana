@@ -24,7 +24,7 @@ require (
 	github.com/streamingfast/dgrpc v0.0.0-20221103192945-4c5360bbc874
 	github.com/streamingfast/dlauncher v0.0.0-20220909121534-7a9aa91dbb32
 	github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9
-	github.com/streamingfast/dmetrics v0.0.0-20220811180000-3e513057d17c
+	github.com/streamingfast/dmetrics v0.0.0-20221103211044-2fc6478a3c23
 	github.com/streamingfast/dstore v0.1.1-0.20221025062403-36259703e97b
 	github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839 // indirect
 	github.com/streamingfast/firehose v0.1.1-0.20221101130227-3a0b1980aa0b
@@ -39,7 +39,7 @@ require (
 	github.com/streamingfast/sf-tools v0.0.0-20221020185155-d5fe94d7578e
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
-	github.com/streamingfast/substreams v0.0.22-0.20221101195424-65509b03cf60
+	github.com/streamingfast/substreams v0.0.22-0.20221103213220-86ed153afb86
 	github.com/stretchr/testify v1.8.0
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4

@@ -367,6 +367,7 @@ github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v0.0.0-20160512033002-935e0e8a636c/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
 github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385/go.mod h1:0vRUJqYpeSZifjYj7uP3BG/gKcuzL9xWVV/Y+cK33KM=
+github.com/emicklei/proto v1.11.0/go.mod h1:rn1FgRS/FANiZdD2djyH7TMA9jdRDcYQ9IEN9yvjX0A=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
@@ -935,8 +936,9 @@ github.com/streamingfast/dmetering v0.0.0-20220301165106-a642bb6a21bd/go.mod h1:
 github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9 h1:dy+xdXeyud8v6Zf3tUaZo57mAgpO33nUHlBxxypYhY0=
 github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9/go.mod h1:JwP515aKdtsbm8v4pRjd20Q+2u7GZ03jqIEpzTrtbMw=
 github.com/streamingfast/dmetrics v0.0.0-20210811180524-8494aeb34447/go.mod h1:VLdQY/FwczmC/flqWkcsBbqXO4BhU4zQDSK7GMrpcjY=
-github.com/streamingfast/dmetrics v0.0.0-20220811180000-3e513057d17c h1:ln4WzAU3kewbxeK2ygZXVx1cyHa9VdCPagasmu8hD1s=
 github.com/streamingfast/dmetrics v0.0.0-20220811180000-3e513057d17c/go.mod h1:fWoyaD76fE7mXZfkfcAfNeU/Hv/y6yJ/RgEcInQLwSw=
+github.com/streamingfast/dmetrics v0.0.0-20221103211044-2fc6478a3c23 h1:EU7Tt/0XcoelTNUUojmkChli931gehlokgg3tZpQ6Rs=
+github.com/streamingfast/dmetrics v0.0.0-20221103211044-2fc6478a3c23/go.mod h1:jc/U4gaLWSWhHWIW4on0tr8OkKr0U/yGK3f+I+YQIaU=
 github.com/streamingfast/dstore v0.1.1-0.20220304164644-696f9c5fc231/go.mod h1:aii8QXJg+2b5CXw+Y1SkTf5QJkJOu8ujq6+rw8J1OK0=
 github.com/streamingfast/dstore v0.1.1-0.20220607202639-35118aeaf648/go.mod h1:SHSEIPowGeE1TfNNmGeAUUnlO3dwevmX5kFOSazU60M=
 github.com/streamingfast/dstore v0.1.1-0.20220830184623-b0f0cc804743/go.mod h1:SHSEIPowGeE1TfNNmGeAUUnlO3dwevmX5kFOSazU60M=
@@ -989,8 +991,8 @@ github.com/streamingfast/shutter v1.5.0/go.mod h1:B/T6efqdeMGbGwjzPS1ToXzYZI4kDz
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcIwlbl7PipqrKPgNzfEWD9oxAA0mmjdRd2dTk9/4=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
 github.com/streamingfast/substreams v0.0.21-0.20221024145255-5adfd8369291/go.mod h1:y9DwvwtlLSYDKznY4lbXvo/CN7h1O9OsBCCc1d5pU7k=
-github.com/streamingfast/substreams v0.0.22-0.20221101195424-65509b03cf60 h1:61YEe2Ysc5sV8S8EHWj8tRkNywrsJeqvwi5te81cgbY=
-github.com/streamingfast/substreams v0.0.22-0.20221101195424-65509b03cf60/go.mod h1:N3OfzIYjH8RaDv+QjCWDD7rIBQs0EI2WEUnF4Neb5bc=
+github.com/streamingfast/substreams v0.0.22-0.20221103213220-86ed153afb86 h1:k1GSh8rK9WbJdqQxewxlDtChLHo1rgHyKwEAQq6bKUE=
+github.com/streamingfast/substreams v0.0.22-0.20221103213220-86ed153afb86/go.mod h1:1sCcOT60AHGAMdjEgDcnVQSk6iYhpADUwPf1/iihV4M=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0 h1:M2gUjqZET1qApGOWNSnZ49BAIMX4F/1plDv3+l31EJ4=

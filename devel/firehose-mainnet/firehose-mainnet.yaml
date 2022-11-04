@@ -2,6 +2,13 @@ start:
   args:
     - firehose
   flags:
-    firehose-blocks-store-urls: gs://dfuseio-global-blocks-us/sol-mainnet/v2
-    common-live-blocks-addr: ""
-    firehose-grpc-listen-addr: :9000*
+    log-to-file: false
+    common-live-blocks-addr:
+    common-merged-blocks-store-url: gs://dfuseio-global-blocks-us/sol-mainnet/v1
+    firehose-grpc-listen-addr: ":9000"
+    substreams-enabled: true
+    substreams-partial-mode-enabled: true
+    substreams-stores-save-interval: 100
+    substreams-sub-request-parallel-jobs: 5
+    substreams-sub-request-block-range-size: 1000
+    substreams-state-store-url: /tmp/substreams-states
