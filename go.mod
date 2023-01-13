@@ -26,7 +26,7 @@ require (
 	github.com/streamingfast/dauth v0.0.0-20221027185237-b209f25fa3ff
 	github.com/streamingfast/dbin v0.9.1-0.20220513054835-1abebbb944ad // indirect
 	github.com/streamingfast/derr v0.0.0-20221125175206-82e01d420d45
-	github.com/streamingfast/dgrpc v0.0.0-20221109140131-9c5cc4e02f12
+	github.com/streamingfast/dgrpc v0.0.0-20230113212008-1898f17e0ac7
 	github.com/streamingfast/dlauncher v0.0.0-20220909121534-7a9aa91dbb32
 	github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9
 	github.com/streamingfast/dmetrics v0.0.0-20221129121022-a1733eca1981
