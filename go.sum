@@ -270,6 +270,7 @@ github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj
 github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/aws/aws-sdk-go v1.22.1/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/aws/aws-sdk-go v1.25.43/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
+github.com/aws/aws-sdk-go v1.33.0/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/aws/aws-sdk-go v1.37.0 h1:GzFnhOIsrGyQ69s7VgqtrG2BG8v7X7vwB3Xpbd/DBBk=
 github.com/aws/aws-sdk-go v1.37.0/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/azer/is-terminal v1.0.0 h1:COvj8jmg2xMz0CqHn4Uu8X1m7Dmzmu0CpciBaLtJQBg=
@@ -290,6 +291,7 @@ github.com/bketelsen/crypt v0.0.4/go.mod h1:aI6NrJ0pMGgvZKL1iVgXLnfIFJtfV+bKCoqO
 github.com/blendle/zapdriver v1.3.1 h1:C3dydBOWYRiOk+B8X9IVZ5IOe+7cl+tGOexN4QqHfpE=
 github.com/blendle/zapdriver v1.3.1/go.mod h1:mdXfREi6u5MArG4j9fewC+FGnXaBR+T4Ox4J2u4eHCc=
 github.com/bufbuild/connect-go v1.0.0/go.mod h1:9iNvh/NOsfhNBUH5CtvXeVUskQO1xsrEviH7ZArwZ3I=
+github.com/bufbuild/connect-go v1.1.0/go.mod h1:9iNvh/NOsfhNBUH5CtvXeVUskQO1xsrEviH7ZArwZ3I=
 github.com/bufbuild/connect-grpcreflect-go v1.0.0/go.mod h1:825I20H8bfE9rLnBH/046JSpmm3uwpNYdG4duCARetc=
 github.com/cenkalti/backoff/v4 v4.1.3 h1:cFAlzYUlVYDysBEH2T5hyJZMh3+5+WCBvSnK6Q8UtC4=
 github.com/cenkalti/backoff/v4 v4.1.3/go.mod h1:scbssz8iZGpm3xbr14ovlUdkxfGXNInqkPWOWmG2CLw=
@@ -411,6 +413,7 @@ github.com/go-logr/logr v1.2.3 h1:2DntVwHkVopvECVRSlL5PSo9eG+cAkDCuckLubN+rq0=
 github.com/go-logr/logr v1.2.3/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/stdr v1.2.2 h1:hSWxHoqTgW2S2qGc0LTAI563KZ5YKYRhT3MFKZMbjag=
 github.com/go-logr/stdr v1.2.2/go.mod h1:mMo/vtBO5dYbehREoey6XUKy/eSumjCCveDpRre4VKE=
+github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0/go.mod h1:fyg7847qk6SyHyPtNmDHnmrv/HOrqktSC+C9fM+CJOE=
 github.com/go-test/deep v1.0.1 h1:UQhStjbkDClarlmv0am7OXXO4/GaPdCGiUiMTvi28sg=
@@ -625,6 +628,7 @@ github.com/jhump/protoreflect v1.11.0/go.mod h1:U7aMIjN0NWq9swDP7xDdoMfRHb35uiuT
 github.com/jhump/protoreflect v1.12.0 h1:1NQ4FpWMgn3by/n1X0fbeKEUxP1wBt7+Oitpv01HR10=
 github.com/jhump/protoreflect v1.12.0/go.mod h1:JytZfP5d0r8pVNLZvai7U/MCuTWITgrI4tTg7puQFKI=
 github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
+github.com/jmespath/go-jmespath v0.3.0/go.mod h1:9QtRXoHjLGCJ5IBSaohpXITPlowMeeYCZ7fLUTSywik=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1 h1:shLQSRRSCCPj3f2gpwzGwWFoC7ycTf1rcQZHOlsJ6N8=
@@ -863,6 +867,7 @@ github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6L
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.6.1 h1:/FiVV8dS/e+YqF2JvO3yXRFbBLTIuSDkuC7aBOAvL+k=
 github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
+github.com/rs/cors v1.8.2/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
 github.com/rs/cors v1.8.3 h1:O+qNyWn7Z+F9M0ILBHgMVPuB1xTOucVd5gtaYyXBpRo=
 github.com/rs/cors v1.8.3/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
@@ -924,10 +929,10 @@ github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5/go.mod h1:LEQ
 github.com/streamingfast/bstream v0.0.2-0.20220428192925-5d0312d274f0/go.mod h1:5uiGlDGmqMmjY5rz4uIet74NyAiv/YZRShjFftFJtDE=
 github.com/streamingfast/bstream v0.0.2-0.20220909121429-4647fd1522c9/go.mod h1:Njkx972HcZiz0djWBylxqO/eq686eDGr+egQ1lePj3Q=
 github.com/streamingfast/bstream v0.0.2-0.20221017131819-2a7e38be1047/go.mod h1:Njkx972HcZiz0djWBylxqO/eq686eDGr+egQ1lePj3Q=
-github.com/streamingfast/bstream v0.0.2-0.20221111183559-9c729a2945fd/go.mod h1:Njkx972HcZiz0djWBylxqO/eq686eDGr+egQ1lePj3Q=
 github.com/streamingfast/bstream v0.0.2-0.20221115101451-752234eb5e18/go.mod h1:Njkx972HcZiz0djWBylxqO/eq686eDGr+egQ1lePj3Q=
-github.com/streamingfast/bstream v0.0.2-0.20221117104246-5660c4ba5e8c h1:w4g9NuXJinQXA9V2B/lRpVuMYXr9zqiZJasBJjBKJcY=
-github.com/streamingfast/bstream v0.0.2-0.20221117104246-5660c4ba5e8c/go.mod h1:Njkx972HcZiz0djWBylxqO/eq686eDGr+egQ1lePj3Q=
+github.com/streamingfast/bstream v0.0.2-0.20221209144659-0fb1074db0f3/go.mod h1:Njkx972HcZiz0djWBylxqO/eq686eDGr+egQ1lePj3Q=
+github.com/streamingfast/bstream v0.0.2-0.20230120170832-6389e61e9d54 h1:EFj1MTFe9Sc2CnxA9IFYsHOIT/3ZGZA879g7QK7YROo=
+github.com/streamingfast/bstream v0.0.2-0.20230120170832-6389e61e9d54/go.mod h1:Njkx972HcZiz0djWBylxqO/eq686eDGr+egQ1lePj3Q=
 github.com/streamingfast/cli v0.0.4-0.20220630165922-bc58c6666fc8 h1:1W2VZY4jRTh7GJ6+PnydanRcr3Hj45SKDnb+kBQQwlc=
 github.com/streamingfast/cli v0.0.4-0.20220630165922-bc58c6666fc8/go.mod h1:Lmirl0ABgXzidX33syiUG6lX64mJMK5pDNTBFuz8xZI=
 github.com/streamingfast/dauth v0.0.0-20210812020920-1c83ba29add1/go.mod h1:FIYpVqt+ICVuNBoOH3ZIicIctpVoCq3393+RpfXsPEM=
@@ -960,9 +965,9 @@ github.com/streamingfast/dstore v0.1.1-0.20220304164644-696f9c5fc231/go.mod h1:a
 github.com/streamingfast/dstore v0.1.1-0.20220607202639-35118aeaf648/go.mod h1:SHSEIPowGeE1TfNNmGeAUUnlO3dwevmX5kFOSazU60M=
 github.com/streamingfast/dstore v0.1.1-0.20220830184623-b0f0cc804743/go.mod h1:SHSEIPowGeE1TfNNmGeAUUnlO3dwevmX5kFOSazU60M=
 github.com/streamingfast/dstore v0.1.1-0.20221021155138-4baa2d406146/go.mod h1:SHSEIPowGeE1TfNNmGeAUUnlO3dwevmX5kFOSazU60M=
-github.com/streamingfast/dstore v0.1.1-0.20221118114203-13f4092e3bf0/go.mod h1:FcQTVifHTEbQ63mptCdq8nAfTTiORmOhyDmKIyQMh+k=
-github.com/streamingfast/dstore v0.1.1-0.20221122154654-67d4f398642a h1:ZFH7AwaSZzizk+ElEDj/+H20W/cMNpRa5r1Z7MIOqs0=
-github.com/streamingfast/dstore v0.1.1-0.20221122154654-67d4f398642a/go.mod h1:FcQTVifHTEbQ63mptCdq8nAfTTiORmOhyDmKIyQMh+k=
+github.com/streamingfast/dstore v0.1.1-0.20221206141230-6d7bdda8687f/go.mod h1:FcQTVifHTEbQ63mptCdq8nAfTTiORmOhyDmKIyQMh+k=
+github.com/streamingfast/dstore v0.1.1-0.20230117140537-2c870a0d4523 h1:2bFWqeHiTEO5rN+TnRhoSWO3mH6BWW82M9jOt6nRXJg=
+github.com/streamingfast/dstore v0.1.1-0.20230117140537-2c870a0d4523/go.mod h1:zLx1yLoOmkv+UwdlzVD0Z2hH0skuELvaHgCpkbvXx8o=
 github.com/streamingfast/dtracing v0.0.0-20210811175635-d55665d3622a/go.mod h1:bqiYZaX6L/MoXNfFQeAdau6g9HLA3yKHkX8KzStt58Q=
 github.com/streamingfast/dtracing v0.0.0-20220301163030-15ce3f71dd1c/go.mod h1:Nu6Sb4T/fuETQ2eRcve4x8fygSD3oE5NY5foJ09xeBc=
 github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839 h1:K6mJPvh1jAL+/gBS7Bh9jyzWaTib6N47m06gZOTUPwQ=
@@ -1010,8 +1015,8 @@ github.com/streamingfast/shutter v1.5.0/go.mod h1:B/T6efqdeMGbGwjzPS1ToXzYZI4kDz
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcIwlbl7PipqrKPgNzfEWD9oxAA0mmjdRd2dTk9/4=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
 github.com/streamingfast/substreams v0.0.21-0.20221024145255-5adfd8369291/go.mod h1:y9DwvwtlLSYDKznY4lbXvo/CN7h1O9OsBCCc1d5pU7k=
-github.com/streamingfast/substreams v0.0.22-0.20221124163831-92cf80c3933a h1:G3u5pvYbsgFWrOdTdhhKaqpGMA0ymsgoO0Y/+ihMruM=
-github.com/streamingfast/substreams v0.0.22-0.20221124163831-92cf80c3933a/go.mod h1:6dNovv1UDtmASublixIAGbiTlYVsf42z9nt8/PqoLHE=
+github.com/streamingfast/substreams v0.1.0 h1:VXmAehAuOKpu1dNCm2qWBBWb1xW2bvchj63UuJ0Tac4=
+github.com/streamingfast/substreams v0.1.0/go.mod h1:LosNwJkqLxF1lDt6ZaPfHMMWlcBW/R/4tzPBIBo9Fpw=
 github.com/streamingfast/wasmtime-go v0.0.0-20221110162800-03b0c10e9b6a h1:RpsrFpfcGE4fgI8q+UQixUDmt914mVaDtP3T4uJBdNw=
 github.com/streamingfast/wasmtime-go v0.0.0-20221110162800-03b0c10e9b6a/go.mod h1:jjlqQbWUfVSbehpErw3UoWFndBXRRMvfikYH6KsCwOg=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

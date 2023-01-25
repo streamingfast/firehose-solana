@@ -21,7 +21,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.1.4 // indirect
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.10.1
-	github.com/streamingfast/bstream v0.0.2-0.20221117104246-5660c4ba5e8c
+	github.com/streamingfast/bstream v0.0.2-0.20230120170832-6389e61e9d54
 	github.com/streamingfast/cli v0.0.4-0.20220630165922-bc58c6666fc8
 	github.com/streamingfast/dauth v0.0.0-20221027185237-b209f25fa3ff
 	github.com/streamingfast/dbin v0.9.1-0.20220513054835-1abebbb944ad // indirect
@@ -30,7 +30,7 @@ require (
 	github.com/streamingfast/dlauncher v0.0.0-20220909121534-7a9aa91dbb32
 	github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9
 	github.com/streamingfast/dmetrics v0.0.0-20221129121022-a1733eca1981
-	github.com/streamingfast/dstore v0.1.1-0.20221122154654-67d4f398642a
+	github.com/streamingfast/dstore v0.1.1-0.20230117140537-2c870a0d4523
 	github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839 // indirect
 	github.com/streamingfast/firehose v0.1.1-0.20221101130227-3a0b1980aa0b
 	github.com/streamingfast/firehose-solana/types v0.0.0-20221011170650-8bd472e1dcc3
@@ -44,7 +44,7 @@ require (
 	github.com/streamingfast/sf-tools v0.0.0-20221129171534-a0708b599ce5
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
-	github.com/streamingfast/substreams v0.0.22-0.20221124163831-92cf80c3933a
+	github.com/streamingfast/substreams v0.1.0
 	github.com/stretchr/testify v1.8.0
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4
