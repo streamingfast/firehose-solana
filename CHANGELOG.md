@@ -5,6 +5,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). S
 for instructions to keep up to date.
 
 ## unreleased
+
 ### BREAKING CHANGES
 
 ### Added
@@ -25,6 +26,7 @@ for instructions to keep up to date.
 
 
 ### Removed
+
 * Removed `dgraphql` application and all associated flags
 * Removed `tools reproc` replaced with `tools bt blocks`
 
@@ -44,7 +46,7 @@ for instructions to keep up to date.
 
 * Renamed the `mindreader` application to `reader`
   * Renamed `mindreaderPlugin` to `readerPlugin`
-  
+
 * Renamed all the `mindreader-node-*` flags to `reader-node-*`
   * Renamed `mindreader-node-start-block-num` to `reader-node-start-block-num`
   * Renamed `mindreader-node-stop-block-num` to `reader-node-stop-block-num`
@@ -58,12 +60,12 @@ for instructions to keep up to date.
   * Removed `reader-node-block-data-working-dir`
   * Removed `reader-node-extra-arguments`
   * Removed `reader-node-merge-threshold-block-age`
-   
-  
+
+
 * Renamed all instances of `deepmind` to `firehose`
   * Renamed `path-to-deepmind-batch-files` to `path-to-firehose-batch-files`
   * Renamed `mindreader-node-deepmind-batch-files-path` to `reader-node-firehose-batch-files-path`
-  
+
 * Renamed `debug-deepmind` to `debug-firehose-logs`
   * Renamed `mindreader-node-debug-deep-mind` to `reader-node-debug-firehose-logs`
 
