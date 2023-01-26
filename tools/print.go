@@ -34,7 +34,7 @@ func init() {
 	printCmd.PersistentFlags().Uint64("transactions-for-block", 0, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("transactions", false, "Include transaction IDs in output")
 	printCmd.PersistentFlags().Bool("instructions", false, "Include instruction output")
-	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-us/sol-mainnet/v1", "block store")
+	printCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-uscentral/sol-mainnet/v1", "block store")
 }
 
 func printOneBlockE(cmd *cobra.Command, args []string) error {
@@ -54,7 +54,8 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 	}
 
 	var files []string
-	filePrefix := fmt.Sprintf("%010d", blockNum)
+	bundleFilename := blockNum - (blockNum % 100)
+	filePrefix := fmt.Sprintf("%010d", bundleFilename)
 	fmt.Println(filePrefix)
 	err = store.Walk(ctx, filePrefix, func(filename string) (err error) {
 		files = append(files, filename)
@@ -82,18 +83,22 @@ func printOneBlockE(cmd *cobra.Command, args []string) error {
 
 		fmt.Printf("One Block File: %s\n", store.ObjectURL(filepath))
 
-		block, err := readerFactory.Read()
-		if err != nil {
-			if err == io.EOF {
-				break
+		for {
+			block, err := readerFactory.Read()
+			if err != nil {
+				if err == io.EOF {
+					return fmt.Errorf("block not found: %q", blockNum)
+				}
+				return fmt.Errorf("reading block: %w", err)
 			}
-			return fmt.Errorf("reading block: %w", err)
-		}
 
-		if err = readBlock(block, augmentedStack); err != nil {
-			return err
+			if blockNum == block.Num() {
+				if err = readBlock(block, augmentedStack); err != nil {
+					return err
+				}
+				return nil
+			}
 		}
-
 	}
 	return nil
 }
