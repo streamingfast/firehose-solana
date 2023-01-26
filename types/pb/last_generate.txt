@@ -1,3 +1,3 @@
-generate.sh - Fri 27 May 2022 11:12:13 EDT - abourget
-streamingfast/proto revision: 34197c9b8fbf8ced2ad15e4b12f98d20727db8fd
-streamingfast/proto-solana revision: 302d4f459a2f77b83ad8c542c9ca8a8b3f53516c
+generate.sh - Thu Jan 26 15:18:21 EST 2023 - eduardvoiculescu
+streamingfast/proto revision: aace594d959fbd3952377cea25c92a92316c35a8
+streamingfast/proto-solana revision: 2bb9d52adb3f09f3ddfe636196ceb560307f1a1f
