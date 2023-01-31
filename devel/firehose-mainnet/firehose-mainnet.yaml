@@ -8,7 +8,7 @@ start:
     firehose-grpc-listen-addr: ":9000"
     substreams-enabled: true
     substreams-partial-mode-enabled: true
-    substreams-stores-save-interval: 100
+    substreams-cache-save-interval: 1000
     substreams-sub-request-parallel-jobs: 5
-    substreams-sub-request-block-range-size: 1000
+    substreams-sub-request-block-range-size: 25000
     substreams-state-store-url: /tmp/substreams-states
