@@ -6,6 +6,10 @@ for instructions to keep up to date.
 
 ## unreleased
 
+### Added
+
+* Added support for "requester pays" buckets on Google Storage in url, ex: `gs://my-bucket/path?project=my-project-id`
+
 ### Changed
 
 * Config value `substreams-stores-save-interval` and `substreams-output-cache-save-interval` have been merged together as a single value to avoid potential bugs that would arise when the value is different for those two. The new configuration value is called `substreams-cache-save-interval`.
