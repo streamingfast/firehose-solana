@@ -187,9 +187,17 @@ func readPBSolanaBlock(block *pbsolv1.Block, LibNum uint64) error {
 			}
 
 			fmt.Println(fmt.Sprintf("%s Trx [%d] %s: %d instructions ", trxStr, trxIdx, tid, len(t.Transaction.Message.Instructions)))
+			globalCounter := 0
 			for idx, acc := range t.Transaction.Message.AccountKeys {
-				fmt.Printf("           > Acc [%d]: %s\n", idx, base58.Encode(acc))
+				globalCounter++
+				fmt.Printf("           > Acc [%d] [%d]: %s\n", globalCounter, idx, base58.Encode(acc))
 			}
+
+			for idxAtl, atl := range t.Transaction.Message.AddressTableLookups {
+				globalCounter++
+				fmt.Printf("           > Atl [%d] [%d]: %s\n", globalCounter, idxAtl, base58.Encode(atl.AccountKey))
+			}
+
 			totalInstr += len(t.Transaction.Message.Instructions)
 			if viper.GetBool("instructions") {
 				for _, inst := range t.Transaction.Message.Instructions {
@@ -199,8 +207,8 @@ func readPBSolanaBlock(block *pbsolv1.Block, LibNum uint64) error {
 					fmt.Println(hex.EncodeToString(inst.Data))
 				}
 			}
-
 		}
+
 		fmt.Println("total instruction:", totalInstr)
 		fmt.Println()
 	}
