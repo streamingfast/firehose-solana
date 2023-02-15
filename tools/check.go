@@ -99,7 +99,15 @@ func checkMergedBlocksE(cmd *cobra.Command, args []string) error {
 		printDetails = sftools.PrintFull
 	}
 
-	return sftools.CheckMergedBlocks(cmd.Context(), zlog, storeURL, fileBlockSize, blockRange, blockPrinter, printDetails)
+	return sftools.CheckMergedBlocks(
+		cmd.Context(),
+		zlog,
+		storeURL,
+		fileBlockSize,
+		blockRange,
+		blockPrinter,
+		printDetails,
+	)
 }
 
 func blockPrinter(block *bstream.Block) {

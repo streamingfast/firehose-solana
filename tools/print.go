@@ -143,6 +143,7 @@ func readPBSolBlock(block *pbsolv2.Block, LibNum uint64) error {
 			for _, acc := range accs {
 				fmt.Println("account: ", acc)
 			}
+
 			totalInstr += len(t.Instructions)
 			if viper.GetBool("instructions") {
 				for _, inst := range t.Instructions {
