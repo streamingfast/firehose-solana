@@ -21,7 +21,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.1.4 // indirect
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.10.1
-	github.com/streamingfast/bstream v0.0.2-0.20230127184431-34ba0238ed00
+	github.com/streamingfast/bstream v0.0.2-0.20230228213106-2b6a3160e01e
 	github.com/streamingfast/cli v0.0.4-0.20220630165922-bc58c6666fc8
 	github.com/streamingfast/dauth v0.0.0-20221027185237-b209f25fa3ff
 	github.com/streamingfast/dbin v0.9.1-0.20220513054835-1abebbb944ad // indirect
@@ -60,5 +60,3 @@ replace (
 	github.com/bytecodealliance/wasmtime-go/v4 => github.com/streamingfast/wasmtime-go/v4 v4.0.0-freemem
 	github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
 )
-
-replace github.com/streamingfast/sf-tools => ../sf-tools
