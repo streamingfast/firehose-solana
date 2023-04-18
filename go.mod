@@ -15,13 +15,13 @@ require (
 	github.com/klauspost/compress v1.15.9
 	github.com/lithammer/dedent v1.1.0
 	github.com/lorenzosaino/go-sysctl v0.1.1
-	github.com/manifoldco/promptui v0.8.0
+	github.com/manifoldco/promptui v0.9.0
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/onsi/ginkgo/v2 v2.1.4 // indirect
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.10.1
-	github.com/streamingfast/bstream v0.0.2-0.20230228213106-2b6a3160e01e
+	github.com/streamingfast/bstream v0.0.2-0.20230407143220-06c919ae8476
 	github.com/streamingfast/cli v0.0.4-0.20220630165922-bc58c6666fc8
 	github.com/streamingfast/dauth v0.0.0-20221027185237-b209f25fa3ff
 	github.com/streamingfast/dbin v0.9.1-0.20220513054835-1abebbb944ad // indirect
@@ -31,7 +31,6 @@ require (
 	github.com/streamingfast/dmetering v0.0.0-20220307162406-37261b4b3de9
 	github.com/streamingfast/dmetrics v0.0.0-20221129121022-a1733eca1981
 	github.com/streamingfast/dstore v0.1.1-0.20230202164314-93694544e2ca
-	github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839 // indirect
 	github.com/streamingfast/firehose v0.1.1-0.20230128021313-216c8477ad22
 	github.com/streamingfast/firehose-solana/types v0.0.0-20230126211203-a2d17ce9f8b9
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
@@ -44,15 +43,15 @@ require (
 	github.com/streamingfast/sf-tools v0.0.0-20230217210059-2ab577f61e8e
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
-	github.com/streamingfast/substreams v0.2.1-0.20230131175521-d0a10f573831
-	github.com/stretchr/testify v1.8.0
+	github.com/streamingfast/substreams v1.0.2-0.20230418195519-fa17a36fd728
+	github.com/stretchr/testify v1.8.1
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4
 	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
+	golang.org/x/crypto v0.1.0
 	google.golang.org/api v0.99.0
 	google.golang.org/grpc v1.50.1
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.28.2-0.20230222093303-bc1253ad3743
 )
 
 replace (

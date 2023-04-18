@@ -108,10 +108,6 @@ func init() {
 					substreamsService.WithCacheSaveInterval(viper.GetUint64("substreams-cache-save-interval")),
 				}
 
-				if viper.GetBool("substreams-partial-mode-enabled") {
-					opts = append(opts, substreamsService.WithPartialMode())
-				}
-
 				ssClientInsecure := viper.GetBool("substreams-client-insecure")
 				ssClientPlaintext := viper.GetBool("substreams-client-plaintext")
 				if ssClientInsecure && ssClientPlaintext {
@@ -130,19 +126,30 @@ func init() {
 					viper.GetBool("substreams-client-plaintext"),
 				)
 
-				sss, err := substreamsService.New(
-					stateStore,
-					"sf.solana.type.v1.Block",
-					viper.GetUint64("substreams-sub-request-parallel-jobs"),
-					viper.GetUint64("substreams-sub-request-block-range-size"),
-					substreamsClientConfig,
-					opts...,
-				)
-				if err != nil {
-					return nil, fmt.Errorf("creating substreams service: %w", err)
-				}
+				if viper.GetBool("substreams-partial-mode-enabled") {
+					tier2 := substreamsService.NewTier2(
+						stateStore,
+						"sf.solana.type.v1.Block",
+						opts...,
+					)
 
-				registerServiceExt = sss.Register
+					registerServiceExt = tier2.Register
+				} else {
+
+					sss, err := substreamsService.NewTier1(
+						stateStore,
+						"sf.solana.type.v1.Block",
+						viper.GetUint64("substreams-sub-request-parallel-jobs"),
+						viper.GetUint64("substreams-sub-request-block-range-size"),
+						substreamsClientConfig,
+						opts...,
+					)
+					if err != nil {
+						return nil, fmt.Errorf("creating substreams service: %w", err)
+					}
+
+					registerServiceExt = sss.Register
+				}
 			}
 
 			registry := transform.NewRegistry()
