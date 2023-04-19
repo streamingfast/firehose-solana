@@ -4,7 +4,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
-## unreleased
+## Unreleased
 
 ### Added
 
@@ -22,6 +22,9 @@ interval: <number>`, if you had two different value before, pick the biggest of 
 * Updated `--substreams-output-cache-save-interval` default value to 1000.
 
 ### BREAKING CHANGES
+
+### Substreams protocol change
+* Bumps substreams from v1.0.x to v1.1.1 -> RPC protocol changed from sf.substreams.v1.Stream/Blocks to sf.substreams.rpc.v2.Stream/Blocks. See release notes from github.com/streamingfast/substreams for details.
 
 ### Added
 * Added `tools bt blocks  --bt-project=<bigtable_project> --bt-instance=<bigtable_instance> <start-block-num> <stop-block-num>` command to scan bigtable rows
