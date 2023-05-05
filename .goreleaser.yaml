@@ -19,8 +19,8 @@ builds:
       - -s -w -X main.version={{.Version}}
 
   - id: darwin-arm64
-    main: ./cmd/firehose-solana
-    binary: firehose-solana
+    main: ./cmd/firesol
+    binary: firesol
     goos:
       - darwin
     goarch:
@@ -35,8 +35,8 @@ builds:
       - -s -w -X main.version={{.Version}}
 
   - id: linux-amd64
-    main: ./cmd/firehose-solana
-    binary: firehose-solana
+    main: ./cmd/firesol
+    binary: firesol
     goos:
       - linux
     goarch:

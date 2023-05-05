@@ -1,3 +1,4 @@
 global:
+  binary: firesol
   language: golang
   variant: application
