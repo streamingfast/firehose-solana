@@ -18,3 +18,4 @@ venv
 *.auto.pkrvars.hcl
 /apc.json
 *~
+/build
