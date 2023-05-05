@@ -3,8 +3,8 @@ env_files:
 
 builds:
   - id: darwin-amd64
-    main: ./cmd/firehose-solana
-    binary: firehose-solana
+    main: ./cmd/firesol
+    binary: firesol
     goos:
       - darwin
     goarch:
