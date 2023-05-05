@@ -4,7 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
-## Unreleased
+## v0.2.0
+
+### BREAKING CHANGES
+
+#### Substreams protocol change
+* Bumps substreams from v1.0.x to v1.1.1 -> RPC protocol changed from sf.substreams.v1.Stream/Blocks to sf.substreams.rpc.v2.Stream/Blocks. See release notes from github.com/streamingfast/substreams for details.
 
 ### Added
 
@@ -20,11 +25,6 @@ interval: <number>`, if you had two different value before, pick the biggest of 
 * Updated to Substreams `v0.2.0`, please refer to [release page](https://github.com/streamingfast/substreams/releases/tag/v0.2.0) for further info about Substreams changes.
 
 * Updated `--substreams-output-cache-save-interval` default value to 1000.
-
-### BREAKING CHANGES
-
-### Substreams protocol change
-* Bumps substreams from v1.0.x to v1.1.1 -> RPC protocol changed from sf.substreams.v1.Stream/Blocks to sf.substreams.rpc.v2.Stream/Blocks. See release notes from github.com/streamingfast/substreams for details.
 
 ### Added
 * Added `tools bt blocks  --bt-project=<bigtable_project> --bt-instance=<bigtable_instance> <start-block-num> <stop-block-num>` command to scan bigtable rows
@@ -48,12 +48,12 @@ interval: <number>`, if you had two different value before, pick the biggest of 
 * Removed `dgraphql` application and all associated flags
 * Removed `tools reproc` replaced with `tools bt blocks`
 
-#### Project Rename
+### Project Rename
 
 * The repo name has changed from `sf-solana` to `firehose-solana`
 * The binary name has changed from `sfsol` to `firesol` (aligned with https://firehose.streamingfast.io/references/naming-conventions)
 
-#### Flags and environment variables
+### Flags and environment variables rename
 * All config via environment variables that started with `SFSOL_` now starts with `FIRESOL_`
 * Changed `config-file` default from `./sf.yaml` to `""`, preventing failure without this flag.
 * Renamed `common-blocks-store-url` to `common-merged-blocks-store-url`
