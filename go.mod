@@ -42,7 +42,7 @@ require (
 	github.com/streamingfast/relayer v0.0.2-0.20220909122435-e67fbc964fd9
 	github.com/streamingfast/sf-tools v0.0.0-20230217210059-2ab577f61e8e
 	github.com/streamingfast/shutter v1.5.0
-	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
+	github.com/streamingfast/solana-go v0.5.1-0.20230622180848-8faf68a7cb1d
 	github.com/streamingfast/substreams v1.1.1
 	github.com/stretchr/testify v1.8.1
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
