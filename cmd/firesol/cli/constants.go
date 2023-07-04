@@ -12,6 +12,9 @@ const (
 	DashboardHTTPListenAddr string = ":8081"
 	MetricsListenAddr       string = ":9102"
 
+	SubstreamsTier1GRPCServingAddr string = ":13044"
+	SubstreamsTier2GRPCServingAddr string = ":13045"
+
 	MinerNodeHTTPServingAddr   string = ":14001"
 	ReaderNodeHTTPServingAddr  string = ":14002"
 	ReaderNodeGRPCAddr         string = ":14003"

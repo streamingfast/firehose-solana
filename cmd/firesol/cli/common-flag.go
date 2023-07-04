@@ -7,8 +7,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/streamingfast/cli"
-	_ "github.com/streamingfast/dauth/authenticator/null" // register authenticator plugin
-	_ "github.com/streamingfast/dauth/ratelimiter/null"   // register ratelimiter plugin
 
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/dlauncher/launcher"
