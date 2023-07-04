@@ -16,12 +16,16 @@ package cli
 
 import (
 	"fmt"
+	"github.com/streamingfast/dmetering"
 	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
+	dauthgrpc "github.com/streamingfast/dauth/grpc"
+	dauthnull "github.com/streamingfast/dauth/null"
+	dauthtrust "github.com/streamingfast/dauth/trust"
 	"github.com/streamingfast/derr"
 	"github.com/streamingfast/dlauncher/launcher"
 	"go.uber.org/zap"
@@ -31,6 +35,10 @@ var StartCmd = &cobra.Command{Use: "start", Short: "Starts services all at once"
 
 func init() {
 	RootCmd.AddCommand(StartCmd)
+	dauthgrpc.Register()
+	dauthtrust.Register()
+	dauthnull.Register()
+	dmetering.RegisterDefault()
 }
 
 func sfStartE(cmd *cobra.Command, args []string) (err error) {

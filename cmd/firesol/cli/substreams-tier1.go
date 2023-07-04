@@ -27,7 +27,7 @@ import (
 	discoveryservice "github.com/streamingfast/dgrpc/server/discovery-service"
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/logging"
-	app "github.com/streamingfast/substreams/app"
+	"github.com/streamingfast/substreams/app"
 )
 
 var ss1HeadBlockNumMetric = metricset.NewHeadBlockNumber("substreams-tier1")

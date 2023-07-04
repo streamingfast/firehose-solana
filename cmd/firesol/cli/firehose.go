@@ -33,16 +33,6 @@ func init() {
 		RegisterFlags: func(cmd *cobra.Command) error {
 			cmd.Flags().String("firehose-grpc-listen-addr", FirehoseGRPCServingAddr, "Address on which the Firehose will listen")
 			cmd.Flags().String("firehose-discovery-service-url", "", "url to configure the grpc discovery service") //traffic-director://xds?vpc_network=vpc-global&use_xds_reds=true
-			cmd.Flags().Bool("substreams-enabled", false, "Whether to enable substreams")
-			cmd.Flags().Bool("substreams-partial-mode-enabled", false, "Whether to enable partial stores generation support on this instance (usually for internal deployments only)")
-			cmd.Flags().String("substreams-state-store-url", "{data-dir}/localdata", "where substreams state data are stored")
-			cmd.Flags().Uint64("substreams-cache-save-interval", uint64(1_000), "Interval in blocks at which to save module output & store snapshots")
-			cmd.Flags().String("substreams-client-endpoint", "", "Firehose endpoint for substreams client.  if left empty, will default to this current local Firehose.")
-			cmd.Flags().String("substreams-client-jwt", "", "jwt for substreams client authentication")
-			cmd.Flags().Bool("substreams-client-insecure", false, "substreams client in insecure mode")
-			cmd.Flags().Bool("substreams-client-plaintext", true, "substreams client in plaintext mode")
-			cmd.Flags().Uint64("substreams-sub-request-parallel-jobs", 5, "substreams subrequest parallel jobs for the scheduler")
-			cmd.Flags().Uint64("substreams-sub-request-block-range-size", 1000, "substreams subrequest block range size value for the scheduler")
 
 			return nil
 		},
