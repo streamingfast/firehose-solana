@@ -88,6 +88,7 @@ func init() {
 					Tracing:              tracing,
 					GRPCListenAddr:       grpcListenAddr,
 					ServiceDiscoveryURL:  serviceDiscoveryURL,
+					RequestStats:         true,
 				}, &app.Modules{
 					Authenticator:         authenticator,
 					HeadTimeDriftMetric:   ss2HeadTimeDriftmetric,

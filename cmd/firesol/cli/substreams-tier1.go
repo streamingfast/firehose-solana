@@ -132,6 +132,7 @@ func init() {
 					GRPCListenAddr:          grpcListenAddr,
 					GRPCShutdownGracePeriod: time.Second,
 					ServiceDiscoveryURL:     serviceDiscoveryURL,
+					RequestStats:            true,
 				}, &app.Modules{
 					Authenticator:         authenticator,
 					HeadTimeDriftMetric:   ss1HeadTimeDriftmetric,
