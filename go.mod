@@ -2,6 +2,8 @@ module github.com/streamingfast/firehose-solana
 
 go 1.15
 
+//replace github.com/streamingfast/substreams => ../substreams
+
 require (
 	cloud.google.com/go/bigtable v1.13.0
 	cloud.google.com/go/storage v1.30.1
@@ -42,7 +44,7 @@ require (
 	github.com/streamingfast/sf-tools v0.0.0-20230217210059-2ab577f61e8e
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
-	github.com/streamingfast/substreams v1.1.8-0.20230706150318-28ea9e50cd8e
+	github.com/streamingfast/substreams v1.1.8-0.20230706152959-4ef1dd33e8c1
 	github.com/stretchr/testify v1.8.3
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4
