@@ -60,8 +60,6 @@ func init() {
 			cmd.Flags().Int("substreams-tier1-max-subrequests", 4, "number of parallel subrequests that the tier1 can make to the tier2 per request")
 			cmd.Flags().Uint64("substreams-tier1-subrequests-size", 10000, "substreams subrequest block range size value for the scheduler")
 
-			cmd.Flags().Bool("substreams-tier1-debug-request-stats", false, "Enables stats per request, like block rate. Should only be enabled in debugging instance, not in production")
-
 			// all substreams
 			registerCommonSubstreamsFlags(cmd)
 			return nil
@@ -94,8 +92,6 @@ func init() {
 			maxSubrequests := viper.GetUint64("substreams-tier1-max-subrequests")
 			subrequestsSize := viper.GetUint64("substreams-tier1-subrequests-size")
 
-			debugRequestsStates := viper.GetBool("substreams-tier1-debug-request-stats")
-
 			tracing := os.Getenv("SUBSTREAMS_TRACING") == "modules_exec"
 
 			var serviceDiscoveryURL *url.URL
@@ -126,8 +122,7 @@ func init() {
 					SubrequestsInsecure:  subrequestsInsecure,
 					SubrequestsPlaintext: subrequestsPlaintext,
 
-					DebugRequestsStates: debugRequestsStates,
-					Tracing:             tracing,
+					Tracing: tracing,
 
 					GRPCListenAddr:          grpcListenAddr,
 					GRPCShutdownGracePeriod: time.Second,
