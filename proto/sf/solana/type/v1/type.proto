@@ -29,14 +29,14 @@ message Transaction {
     Message message = 2;
 }
 
-    message Message {
-        MessageHeader header = 1;
-        repeated bytes account_keys = 2;
-        bytes recent_blockhash = 3;
-        repeated CompiledInstruction instructions = 4;
-        bool versioned = 5;
-        repeated MessageAddressTableLookup address_table_lookups = 6;
-    }
+message Message {
+    MessageHeader header = 1;
+    repeated bytes account_keys = 2;
+    bytes recent_blockhash = 3;
+    repeated CompiledInstruction instructions = 4;
+    bool versioned = 5;
+    repeated MessageAddressTableLookup address_table_lookups = 6;
+}
 
 message MessageHeader {
     uint32 num_required_signatures = 1;

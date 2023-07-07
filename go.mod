@@ -2,8 +2,6 @@ module github.com/streamingfast/firehose-solana
 
 go 1.15
 
-//replace github.com/streamingfast/substreams => ../substreams
-
 require (
 	cloud.google.com/go/bigtable v1.13.0
 	cloud.google.com/go/storage v1.30.1
