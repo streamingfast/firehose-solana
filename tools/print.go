@@ -7,6 +7,7 @@ import (
 	"github.com/streamingfast/solana-go/programs/token"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"
@@ -207,6 +208,8 @@ func readTransaction(blk *bstream.Block, transactionId string) error {
 		}
 
 		fmt.Printf("Found transaction #%d: %s\n\n", i, trxId)
+		fmt.Printf("Header: %s\n\n", trx.Transaction.Message.Header.String())
+
 		fmt.Println("Accounts involved:")
 		var accountMetas []*solana.AccountMeta
 		for accI, acc := range trx.Transaction.Message.AccountKeys {
@@ -214,29 +217,65 @@ func readTransaction(blk *bstream.Block, transactionId string) error {
 			accountMetas = append(accountMetas, solana.NewAccountMeta(solana.PublicKeyFromBytes(acc), false, false))
 		}
 
+		fmt.Println("\nRecent BlockHash:", base58.Encode(trx.Transaction.Message.RecentBlockhash))
+
+		if len(trx.Transaction.Message.Instructions) > 0 {
+			fmt.Println("\nCompiled Instructions:")
+		}
+
+		for i, compiledInstruction := range trx.Transaction.Message.Instructions {
+			acc := trx.Transaction.Message.AccountKeys[compiledInstruction.ProgramIdIndex]
+			if len(acc) == 0 {
+				panic(fmt.Sprintf("account isn't part of the transaction accounts, program id index %d", compiledInstruction.ProgramIdIndex))
+			}
+
+			programAcc := base58.Encode(acc)
+
+			fmt.Printf("\t> Compiled Instruction [%d]:\n %s\n", i, printCompiledInstructionContent(compiledInstruction, accountMetas))
+
+			if programAcc == token.PROGRAM_ID.String() && viper.GetBool("decode-token-program") {
+				fmt.Printf("\nDecoding %s compiled instruction... \n", token.PROGRAM_ID)
+				decodedInstruction, err := token.DecodeInstruction(accountMetas, compiledInstruction.Data)
+				if err != nil {
+					return fmt.Errorf("decoding token instruction: %w", err)
+				}
+
+				switch val := decodedInstruction.Impl.(type) {
+				case *token.MintTo:
+					fmt.Println("\tMintTo - Amount: ", val.Amount)
+				case *token.Transfer:
+					fmt.Println("\tTransfer Amount: ", val.Amount)
+				}
+			}
+		}
+
 		if trx.Meta.InnerInstructionsNone {
 			fmt.Println("No inner instructions")
 			break
 		}
 
-		for _, innerInstruction := range trx.Meta.InnerInstructions {
-			for _, instruction := range innerInstruction.Instructions {
-				acc := trx.Transaction.Message.AccountKeys[instruction.ProgramIdIndex]
+		for i, innerInstruction := range trx.Meta.InnerInstructions {
+			fmt.Printf("\nInner Instruction [%d]:\n", i)
+			for j, compiledInstruction := range innerInstruction.Instructions {
+				acc := trx.Transaction.Message.AccountKeys[compiledInstruction.ProgramIdIndex]
 				if len(acc) == 0 {
-					panic(fmt.Sprintf("account isn't part of the transaction accounts, program id index %d", instruction.ProgramIdIndex))
+					panic(fmt.Sprintf("account isn't part of the transaction accounts, program id index %d", compiledInstruction.ProgramIdIndex))
 				}
+				fmt.Printf("\t> Instruction [%d]:\n %s\n", j, printCompiledInstructionContent(compiledInstruction, accountMetas))
 
 				programAcc := base58.Encode(acc)
 				if programAcc == token.PROGRAM_ID.String() && viper.GetBool("decode-token-program") {
-					fmt.Printf("\nDecoding %s instruction... \n", token.PROGRAM_ID)
-					decodedInstruction, err := token.DecodeInstruction(accountMetas, instruction.Data)
+					fmt.Printf("\nDecoding %s inner instruction... \n", token.PROGRAM_ID)
+					decodedInstruction, err := token.DecodeInstruction(accountMetas, compiledInstruction.Data)
 					if err != nil {
-						return fmt.Errorf("decoding token instruction: %w", err)
+						return fmt.Errorf("decoding token compiledInstruction: %w", err)
 					}
 
 					switch val := decodedInstruction.Impl.(type) {
 					case *token.MintTo:
-						fmt.Println("\tAmount: ", val.Amount)
+						fmt.Println("\tMintTo - Amount: ", val.Amount)
+					case *token.Transfer:
+						fmt.Println("\tTransfer Amount: ", val.Amount)
 					}
 				}
 			}
@@ -244,6 +283,17 @@ func readTransaction(blk *bstream.Block, transactionId string) error {
 	}
 
 	return nil
+}
+
+func printCompiledInstructionContent(compiledInstruction *pbsolv1.CompiledInstruction, accounts []*solana.AccountMeta) string {
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf("\t\tProgram id index: %d\n", compiledInstruction.ProgramIdIndex))
+	sb.WriteString(fmt.Sprintf("\t\tAccounts:\n"))
+	for i, accIdx := range compiledInstruction.Accounts {
+		sb.WriteString(fmt.Sprintf("\t\t\t> Acc [pos: %d, accIdx: %d]: %s\n", i, accIdx, accounts[accIdx].PublicKey.String()))
+	}
+	sb.WriteString(fmt.Sprintf("\t\tData: %v\n", compiledInstruction.Data))
+	return sb.String()
 }
 
 func readBlock(blk *bstream.Block, augmentedData bool) error {
