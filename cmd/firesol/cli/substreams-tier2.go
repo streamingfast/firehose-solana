@@ -21,7 +21,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	dauthAuthenticator "github.com/streamingfast/dauth"
 	discoveryservice "github.com/streamingfast/dgrpc/server/discovery-service"
 	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/logging"
@@ -48,11 +47,6 @@ func init() {
 		},
 
 		FactoryFunc: func(runtime *launcher.Runtime) (launcher.App, error) {
-			authenticator, err := dauthAuthenticator.New(viper.GetString("common-auth-plugin"))
-			if err != nil {
-				return nil, fmt.Errorf("unable to initialize dauth: %w", err)
-			}
-
 			mergedBlocksStoreURL, _, _, err := getCommonStoresURLs(runtime.AbsDataDir)
 			if err != nil {
 				return nil, err
@@ -63,6 +57,7 @@ func init() {
 			rawServiceDiscoveryURL := viper.GetString("substreams-tier2-discovery-service-url")
 			grpcListenAddr := viper.GetString("substreams-tier2-grpc-listen-addr")
 			stateStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("substreams-state-store-url"))
+			stateStoreDefaultTag := viper.GetString("substreams-state-store-default-tag")
 			stateBundleSize := viper.GetUint64("substreams-state-bundle-size")
 
 			tracing := os.Getenv("SUBSTREAMS_TRACING") == "modules_exec"
@@ -83,16 +78,13 @@ func init() {
 				&app.Tier2Config{
 					MergedBlocksStoreURL: mergedBlocksStoreURL,
 					StateStoreURL:        stateStoreURL,
+					StateStoreDefaultTag: stateStoreDefaultTag,
 					StateBundleSize:      stateBundleSize,
 					BlockType:            "sf.solana.type.v1.Block",
 					Tracing:              tracing,
 					GRPCListenAddr:       grpcListenAddr,
 					ServiceDiscoveryURL:  serviceDiscoveryURL,
 					RequestStats:         true,
-				}, &app.Modules{
-					Authenticator:         authenticator,
-					HeadTimeDriftMetric:   ss2HeadTimeDriftmetric,
-					HeadBlockNumberMetric: ss2HeadBlockNumMetric,
 				}), nil
 		},
 	})

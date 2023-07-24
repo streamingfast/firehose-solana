@@ -39,6 +39,8 @@ func registerCommonSubstreamsFlags(cmd *cobra.Command) {
 	registerSSOnce.Do(func() {
 		cmd.Flags().Uint64("substreams-state-bundle-size", uint64(1_000), "Interval in blocks at which to save store snapshots and output caches")
 		cmd.Flags().String("substreams-state-store-url", "{sf-data-dir}/localdata", "where substreams state data are stored")
+		cmd.Flags().String("substreams-state-store-default-tag", "", "If non-empty, will be appended to {substreams-state-store-url} (ex: 'v1'). Can be overriden per-request with 'X-Sf-Substreams-Cache-Tag' header")
+
 	})
 }
 
@@ -84,6 +86,8 @@ func init() {
 			grpcListenAddr := viper.GetString("substreams-tier1-grpc-listen-addr")
 
 			stateStoreURL := MustReplaceDataDir(sfDataDir, viper.GetString("substreams-state-store-url"))
+			stateStoreDefaultTag := viper.GetString("substreams-state-store-default-tag")
+
 			stateBundleSize := viper.GetUint64("substreams-state-bundle-size")
 
 			subrequestsEndpoint := viper.GetString("substreams-tier1-subrequests-endpoint")
@@ -114,6 +118,7 @@ func init() {
 					BlockStreamAddr:      blockstreamAddr,
 
 					StateStoreURL:        stateStoreURL,
+					StateStoreDefaultTag: stateStoreDefaultTag,
 					StateBundleSize:      stateBundleSize,
 					BlockType:            "sf.solana.type.v1.Block",
 					MaxSubrequests:       maxSubrequests,
@@ -128,7 +133,7 @@ func init() {
 					GRPCShutdownGracePeriod: time.Second,
 					ServiceDiscoveryURL:     serviceDiscoveryURL,
 					RequestStats:            true,
-				}, &app.Modules{
+				}, &app.Tier1Modules{
 					Authenticator:         authenticator,
 					HeadTimeDriftMetric:   ss1HeadTimeDriftmetric,
 					HeadBlockNumberMetric: ss1HeadBlockNumMetric,
