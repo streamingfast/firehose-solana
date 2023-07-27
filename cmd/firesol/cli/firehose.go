@@ -41,7 +41,7 @@ func init() {
 			blockstreamAddr := viper.GetString("common-live-blocks-addr")
 
 			// FIXME: That should be a shared dependencies across `EOSIO on StreamingFast`
-			authenticator, err := dauth.New(viper.GetString("common-auth-plugin"))
+			authenticator, err := dauth.New(viper.GetString("common-auth-plugin"), appLogger)
 			if err != nil {
 				return nil, fmt.Errorf("unable to initialize dauth: %w", err)
 			}

@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper v1.10.1
 	github.com/streamingfast/bstream v0.0.2-0.20230510131449-6b591d74130d
 	github.com/streamingfast/cli v0.0.4-0.20220630165922-bc58c6666fc8
-	github.com/streamingfast/dauth v0.0.0-20230719201351-ed7e87520891
+	github.com/streamingfast/dauth v0.0.0-20230726175303-fc1d7198cb33
 	github.com/streamingfast/dbin v0.9.1-0.20220513054835-1abebbb944ad // indirect
 	github.com/streamingfast/derr v0.0.0-20230515163924-8570aaa43fe1
 	github.com/streamingfast/dgrpc v0.0.0-20230621153617-bc715cdb9fd1
@@ -42,7 +42,7 @@ require (
 	github.com/streamingfast/sf-tools v0.0.0-20230217210059-2ab577f61e8e
 	github.com/streamingfast/shutter v1.5.0
 	github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8
-	github.com/streamingfast/substreams v1.1.9
+	github.com/streamingfast/substreams v1.1.10
 	github.com/stretchr/testify v1.8.3
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/test-go/testify v1.1.4
