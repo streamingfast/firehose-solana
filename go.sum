@@ -2340,8 +2340,8 @@ github.com/streamingfast/shutter v1.5.0 h1:NpzDYzj0HVpSiDJVO/FFSL6QIK/YKOxY0gJAt
 github.com/streamingfast/shutter v1.5.0/go.mod h1:B/T6efqdeMGbGwjzPS1ToXzYZI4kDzI5/u4I+7qbjY8=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcIwlbl7PipqrKPgNzfEWD9oxAA0mmjdRd2dTk9/4=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
-github.com/streamingfast/substreams v1.1.10 h1:ov/qmVmhvpRKEBRgxpmNzyKexJkZMKVX4xJ8kb205ho=
-github.com/streamingfast/substreams v1.1.10/go.mod h1:9usbgylKcAAYUS+ADhvw05xTbzF9XqB/C+en3Na8r1Y=
+github.com/streamingfast/substreams v1.1.11-0.20230727201625-837a63b339ef h1:rJPxOc1ztPQGIa3oEEoiO5sNolE5angQp4gzqzvJrWg=
+github.com/streamingfast/substreams v1.1.11-0.20230727201625-837a63b339ef/go.mod h1:9usbgylKcAAYUS+ADhvw05xTbzF9XqB/C+en3Na8r1Y=
 github.com/streamingfast/validator v0.0.0-20210812013448-b9da5752ce14/go.mod h1:t4h97mWfTs6v0zjEFuGDOoW5wLtu9+ttegIx99i7gsM=
 github.com/streamingfast/wasmtime-go/v4 v4.0.0-freemem3/go.mod h1:rOffzhrBM87FuXgj23Ss35uFDahjAauERq60QpyCzpE=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
