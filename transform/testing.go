@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/streamingfast/bstream"
-	"github.com/streamingfast/firehose-solana/types"
-	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
+	pbsolv2 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v2"
+	pbbstream "github.com/streamingfast/pbgo/sf/bstream/v1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
@@ -23,7 +23,7 @@ func testBlock(t *testing.T) *bstream.Block {
 		Number:         b.Number,
 		PreviousId:     string(b.PreviousId),
 		LibNum:         1,
-		PayloadKind:    types.Protocol_SOL,
+		PayloadKind:    pbbstream.Protocol_SOLANA,
 		PayloadVersion: 1,
 	}
 

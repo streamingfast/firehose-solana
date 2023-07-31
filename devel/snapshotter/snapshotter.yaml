@@ -1,8 +1,0 @@
-start:
-  args:
-  - snapshotter
-  flags:
-    snapshotter-source-bucket: "mainnet-beta-ledger-us-west1"
-    snapshotter-source-prefix: ""
-    snapshotter-destination-bucket: "sf-developement-random"
-    snapshotter-destination-prefix: "sol-mainnet/snapshots-blocks-logs-test"

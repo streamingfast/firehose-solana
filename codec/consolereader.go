@@ -14,12 +14,14 @@ import (
 	"sync"
 	"time"
 
+	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
+
+	firecore "github.com/streamingfast/firehose-core"
+
 	"github.com/abourget/llerrgroup"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
-	"github.com/streamingfast/firehose-solana/types"
-	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
-	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
+	pbsolv2 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v2"
 	"github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -54,24 +56,6 @@ func WithBatchFilesPath(batchFilesPath string) ConsoleReaderOption {
 	}
 }
 
-func NewConsoleReader(logger *zap.Logger, lines chan string, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
-	l := &ConsoleReader{
-		lines:  lines,
-		close:  func() {},
-		done:   make(chan interface{}),
-		logger: logger,
-	}
-
-	crOptions := newDefaultOptions()
-
-	for _, opt := range opts {
-		crOptions = opt(crOptions)
-	}
-
-	l.ctx = newParseCtx(logger, crOptions)
-	return l, nil
-}
-
 type ConsoleReader struct {
 	ver *version
 	ctx *parseCtx
@@ -82,6 +66,26 @@ type ConsoleReader struct {
 
 	augmentedMode bool
 	logger        *zap.Logger
+	blockEncoder  firecore.BlockEncoder
+}
+
+func NewConsoleReader(blockEncoder firecore.BlockEncoder, lines chan string, logger *zap.Logger, opts ...ConsoleReaderOption) (*ConsoleReader, error) {
+	l := &ConsoleReader{
+		lines:        lines,
+		blockEncoder: blockEncoder,
+		close:        func() {},
+		done:         make(chan interface{}),
+		logger:       logger,
+	}
+
+	crOptions := newDefaultOptions()
+
+	for _, opt := range opts {
+		crOptions = opt(crOptions)
+	}
+
+	l.ctx = newParseCtx(logger, crOptions)
+	return l, nil
 }
 
 type version struct {
@@ -156,30 +160,41 @@ func (s *parsingStats) inc(key string) {
 }
 
 type parseCtx struct {
-	activeBank  *bank
-	banks       map[uint64]*bank
-	blockBuffer chan *bstream.Block
-	rootBlock   uint64
-
-	stats  *parsingStats
-	opts   *options
-	logger *zap.Logger
+	activeBank   *bank
+	banks        map[uint64]*bank
+	blockBuffer  chan firecore.Block
+	rootBlock    uint64
+	blockEncoder firecore.BlockEncoder
+	stats        *parsingStats
+	opts         *options
+	logger       *zap.Logger
 }
 
 func newParseCtx(logger *zap.Logger, opts *options) *parseCtx {
 	return &parseCtx{
 		banks:       map[uint64]*bank{},
-		blockBuffer: make(chan *bstream.Block, 10000),
+		blockBuffer: make(chan firecore.Block, 10000),
 		logger:      logger,
 		opts:        opts,
 	}
 }
 
 func (cr *ConsoleReader) ReadBlock() (out *bstream.Block, err error) {
-	return cr.next()
+
+	block, err := cr.next()
+	if err != nil {
+		return nil, err
+	}
+
+	bstreamBlk, err := cr.blockEncoder.Encode(block)
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert solana proto block to bstream block: %w", err)
+	}
+	bstreamBlk.LibNum = cr.ctx.rootBlock
+	return bstreamBlk, nil
 }
 
-func (cr *ConsoleReader) next() (out *bstream.Block, err error) {
+func (cr *ConsoleReader) next() (out firecore.Block, err error) {
 	ctx := cr.ctx
 	select {
 	case b := <-ctx.blockBuffer:
@@ -475,7 +490,7 @@ var supportedVariant = map[string]bool{
 	"vanilla-augmented": true,
 }
 
-//INIT 1.829.23 (src:9f47ac9c; feat:378846963) DM 1
+// INIT 1.829.23 (src:9f47ac9c; feat:378846963) DM 1
 func (cr *ConsoleReader) readInit(line string) (err error) {
 	cr.logger.Debug("reading init", zap.String("line", line))
 	chunks := strings.SplitN(line, " ", 4)
@@ -505,7 +520,9 @@ func (cr *ConsoleReader) readInit(line string) (err error) {
 			return fmt.Errorf("attempting to run console reader in augmented mode, without specifying a batch files path")
 		}
 
-		if cr.ver.variant[8:] == "augmented" && !types.IsSfSolAugmented() {
+		//todo: we temporarily remove support for augmented block when we move to firecore
+		//if cr.ver.variant[8:] == "augmented" && !types.IsSfSolAugmented() {
+		if cr.ver.variant[8:] == "augmented" && false {
 			return fmt.Errorf("attempting to run console reader in augmented mode, when firesol is not configured for augmented mode")
 		}
 	}
@@ -573,20 +590,21 @@ func (ctx *parseCtx) readBlockWork(line string) (err error) {
 
 // COMPLETE_BLOCK 0a2c47426f4....
 // COMPLETE_BLOCK <SLOT_NUM> <COMPLETE BLOCK PROTO IN HEX>
-func (ctx *parseCtx) readCompleteBlock(line string) (err error) {
+func (ctx *parseCtx) readCompleteBlock(line string) error {
 	ctx.logger.Debug("reading complete block", zap.String("line", line))
 
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != BlockCompleteChunk {
 		return fmt.Errorf("expected %d fields, got %d", BlockCompleteChunk, len(chunks))
 	}
-	var slotNum uint64
-	if slotNum, err = strconv.ParseUint(chunks[1], 10, 64); err != nil {
+
+	slotNum, err := strconv.ParseUint(chunks[1], 10, 64)
+	if err != nil {
 		return fmt.Errorf("slotNumber to int: %w", err)
 	}
 
-	var cnt []byte
-	if cnt, err = hex.DecodeString(chunks[2]); err != nil {
+	cnt, err := hex.DecodeString(chunks[2])
+	if err != nil {
 		return fmt.Errorf("unable to hex decode content: %w", err)
 	}
 
@@ -596,14 +614,8 @@ func (ctx *parseCtx) readCompleteBlock(line string) (err error) {
 	}
 	blk.Slot = slotNum
 
-	bstreamBlk, err := types.BlockFromPBSolanaProto(blk)
-	if err != nil {
-		return fmt.Errorf("unable to convert solana proto block to bstream block: %w", err)
-	}
-	bstreamBlk.LibNum = ctx.rootBlock
-	ctx.blockBuffer <- bstreamBlk
+	ctx.blockBuffer <- blk
 
-	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	return nil
 }
 
@@ -655,12 +667,7 @@ func (ctx *parseCtx) readBlockEnd(line string) (err error) {
 		return fmt.Errorf("sorting: %w", err)
 	}
 
-	bstreamBlk, err := types.BlockFromPBSolProto(ctx.activeBank.blk)
-	if err != nil {
-		return fmt.Errorf("unable to convert solana proto block to bstream block: %w", err)
-	}
-	bstreamBlk.LibNum = ctx.rootBlock
-	ctx.blockBuffer <- bstreamBlk
+	ctx.blockBuffer <- ctx.activeBank.blk
 
 	// TODO: it'd be cleaner if this was `nil`, we need to update the tests.
 	ctx.activeBank = nil

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1;pbsol";
+option go_package = "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1;pbsol";
 
 package sf.solana.type.v1;
 

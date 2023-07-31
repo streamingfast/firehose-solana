@@ -8,28 +8,31 @@ import (
 	"strconv"
 	"strings"
 
+	firecore "github.com/streamingfast/firehose-core"
+
 	"github.com/streamingfast/bstream"
-	"github.com/streamingfast/firehose-solana/types"
-	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
+	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
-func NewBigtableConsoleReader(logger *zap.Logger, lines chan string) (*BigtableConsoleReader, error) {
-	l := &BigtableConsoleReader{
-		lines:  lines,
-		close:  func() {},
-		done:   make(chan interface{}),
-		logger: logger,
-	}
-	return l, nil
+type BigtableConsoleReader struct {
+	lines        chan string
+	blockEncoder firecore.BlockEncoder
+	close        func()
+	done         chan interface{}
+	logger       *zap.Logger
 }
 
-type BigtableConsoleReader struct {
-	lines  chan string
-	close  func()
-	done   chan interface{}
-	logger *zap.Logger
+func NewBigtableConsoleReader(lines chan string, blockEncoder firecore.BlockEncoder, logger *zap.Logger) (*BigtableConsoleReader, error) {
+	l := &BigtableConsoleReader{
+		lines:        lines,
+		blockEncoder: blockEncoder,
+		close:        func() {},
+		done:         make(chan interface{}),
+		logger:       logger,
+	}
+	return l, nil
 }
 
 func (cr *BigtableConsoleReader) ProcessData(reader io.Reader) error {
@@ -101,7 +104,7 @@ func (cr *BigtableConsoleReader) formatError(line string, err error) error {
 	return fmt.Errorf("%s: %s (line %q)", chunks[0], err, line)
 }
 
-//// BLOCK <SLOT_NUM> <COMPLETE BLOCK PROTO IN HEX>
+// // BLOCK <SLOT_NUM> <COMPLETE BLOCK PROTO IN HEX>
 func (cr *BigtableConsoleReader) readBlock(line string) (out *bstream.Block, err error) {
 	chunks := strings.SplitN(line, " ", -1)
 	if len(chunks) != BlockCompleteChunk {
@@ -124,7 +127,7 @@ func (cr *BigtableConsoleReader) readBlock(line string) (out *bstream.Block, err
 	}
 	blk.Slot = slotNum
 
-	bstreamBlk, err := types.BlockFromPBSolanaProto(blk)
+	bstreamBlk, err := cr.blockEncoder.Encode(blk)
 	if err != nil {
 		return nil, fmt.Errorf("unable to convert solana proto block to bstream block: %w", err)
 	}

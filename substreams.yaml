@@ -1,0 +1,15 @@
+specVersion: v0.1.0
+package:
+  name: solana
+  version: v0.1.1
+  url: https://github.com/streamingfast/firehose-solana
+  doc: |
+    Protobuf definitions for Substreams modules on Solana.
+    
+    This package does not include any modules.
+
+protobuf:
+  files:
+    - sf/solana/type/v1/type.proto
+  importPaths:
+    - ./proto

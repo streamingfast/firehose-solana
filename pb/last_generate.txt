@@ -1,0 +1,3 @@
+generate.sh - Mon 31 Jul 2023 14:45:22 EDT - julien
+streamingfast/proto revision: c72d870e1203d70e95230b781cff0b5ac40372e8
+streamingfast/firehose-solana/proto revision: 5d11c69

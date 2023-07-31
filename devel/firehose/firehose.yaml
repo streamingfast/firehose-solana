@@ -1,7 +1,0 @@
-start:
-  args:
-  - firehose
-  flags:
-    common-live-blocks-addr: ":9001"
-    common-merged-blocks-store-url: "gs://dfuseio-global-blocks-us/sol-mainnet/v1"
-    firehose-grpc-listen-addr: ":9000"

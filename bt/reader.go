@@ -15,7 +15,7 @@ import (
 	"cloud.google.com/go/bigtable"
 	"github.com/golang/protobuf/proto"
 	"github.com/klauspost/compress/zstd"
-	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
+	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"go.uber.org/zap"
 )
 
@@ -38,9 +38,9 @@ func explodeRow(row bigtable.Row) (*big.Int, RowType, []byte) {
 	return blockNum, rowType, el.Value
 }
 
-func processRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, *zap.Logger, error) {
+func (r *Client) processRow(row bigtable.Row) (*pbsolv1.Block, *zap.Logger, error) {
 	blockNum, rowType, rowCnt := explodeRow(row)
-	zlogger = zlog.With(
+	zlogger := r.logger.With(
 		zap.Uint64("block_num", blockNum.Uint64()),
 		zap.String("row_type", string(rowType)),
 		zap.String("row_key", row.Key()),
@@ -56,7 +56,7 @@ func processRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, *zap.Log
 			return nil, zlogger, fmt.Errorf("unable get decode bin with external command 'solana-bigtable-decoder'  %s: %w", blockNum.String(), err)
 		}
 	default:
-		cnt, err = decompress(rowCnt)
+		cnt, err = r.decompress(rowCnt)
 		if err != nil {
 			return nil, zlogger, fmt.Errorf("unable to decompress block %s (uncompresse length %d): %w", blockNum.String(), len(rowCnt), err)
 		}
@@ -79,27 +79,27 @@ func processRow(row bigtable.Row, zlogger *zap.Logger) (*pbsolv1.Block, *zap.Log
 	// horrible tweaks
 	switch blk.Blockhash {
 	case "Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v":
-		zlog.Warn("applying horrible tweak to block Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v")
+		zlogger.Warn("applying horrible tweak to block Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v")
 		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
 			blk.PreviousBlockhash = "HQEr9qcbUVBt2okfu755FdJvJrPYTSpzzmmyeWTj5oau"
 		}
 	case "6UFQveZ94DUKGbcLFoyayn1QwthVfD3ZqvrM2916pHCR":
-		zlog.Warn("applying horrible tweak to block 63,072,071")
+		zlogger.Warn("applying horrible tweak to block 63,072,071")
 		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
 			blk.PreviousBlockhash = "7cLQx2cZvyKbGoMuutXEZ3peg3D21D5qbX19T5V1XEiK"
 		}
 	case "Fqbm7QvCTYnToXWcCw6nbkWhMmXx2Nv91LsXBrKraB43":
-		zlog.Warn("applying horrible tweak to block 53,135,959")
+		zlogger.Warn("applying horrible tweak to block 53,135,959")
 		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
 			blk.PreviousBlockhash = "RfXUrekgajPSb1R4CGFJWNaHTnB6p53Tzert4gouj2u"
 		}
 	case "ABp9G2NaPzM6kQbeyZYCYgdzL8JN9AxSSbCQG2X1K9UF":
-		zlog.Warn("applying horrible tweak to block 46,223,993")
+		zlogger.Warn("applying horrible tweak to block 46,223,993")
 		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
 			blk.PreviousBlockhash = "9F2C7TGqUpFu6krd8vQbUv64BskrneBSgY7U2QfrGx96"
 		}
 	case "ByUxmGuaT7iQS9qGS8on5xHRjiHXcGxvwPPaTGZXQyz7":
-		zlog.Warn("applying horrible tweak to block 61,328,766")
+		zlogger.Warn("applying horrible tweak to block 61,328,766")
 		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
 			blk.PreviousBlockhash = "J6rRToKMK5DQDzVLqo7ibL3snwBYtqkYnRnQ7vXoUSEc"
 		}
@@ -138,20 +138,20 @@ func externalBinToProto(in []byte, command string, args ...string) ([]byte, erro
 	return cnt, nil
 }
 
-func decompress(in []byte) (out []byte, err error) {
+func (r *Client) decompress(in []byte) (out []byte, err error) {
 	switch in[0] {
 	case 0:
-		zlog.Debug("no compression found")
+		r.logger.Debug("no compression found")
 		out = in[4:]
 	case 1:
-		zlog.Debug("bzip2 compression")
+		r.logger.Debug("bzip2 compression")
 		// bzip2
 		out, err = ioutil.ReadAll(bzip2.NewReader(bytes.NewBuffer(in[4:])))
 		if err != nil {
 			return nil, fmt.Errorf("bzip2 decompress: %w", err)
 		}
 	case 2:
-		zlog.Debug("gzip compression")
+		r.logger.Debug("gzip compression")
 		// gzip
 		reader, err := gzip.NewReader(bytes.NewBuffer(in[4:]))
 		if err != nil {
@@ -162,7 +162,7 @@ func decompress(in []byte) (out []byte, err error) {
 			return nil, fmt.Errorf("gzip decompress: %w", err)
 		}
 	case 3:
-		zlog.Debug("zstd compression")
+		r.logger.Debug("zstd compression")
 		// zstd
 		var dec *zstd.Decoder
 		dec, err = zstd.NewReader(nil)
