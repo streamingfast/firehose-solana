@@ -2,17 +2,14 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strconv"
-
-	"github.com/streamingfast/cli/sflags"
-
-	"github.com/streamingfast/dlauncher/launcher"
-	firecore "github.com/streamingfast/firehose-core"
+	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/streamingfast/cli/sflags"
+	"github.com/streamingfast/dlauncher/launcher"
 	"github.com/streamingfast/dstore"
+	firecore "github.com/streamingfast/firehose-core"
 	"go.uber.org/zap"
 )
 
@@ -29,56 +26,16 @@ func readerNodeStartBlockResolver(ctx context.Context, command *cobra.Command, r
 
 	firstStreamableBlock := sflags.MustGetUint64(command, "common-first-streamable-block")
 
+	t0 := time.Now()
 	rootLog.Info("resolving reader node start block",
 		zap.Uint64("first_streamable_block", firstStreamableBlock),
 		zap.String("merged_block_store_url", mergedBlocksStoreURL),
 	)
-	return resolveStartBlockNum(ctx, firstStreamableBlock, mergedBlocksStore, rootLog), nil
-}
 
-func resolveStartBlockNum(ctx context.Context, start uint64, store dstore.Store, logger *zap.Logger) uint64 {
-	errDone := errors.New("done")
-	var seenStart *uint64
-
-	err := store.WalkFrom(ctx, "", fmt.Sprintf("%010d", start), func(filename string) error {
-		num, err := strconv.ParseUint(filename, 10, 64)
-		if err != nil {
-			return err
-		}
-
-		if num < start { // user has decided to start its merger in the 'future'
-			return nil
-		}
-
-		if num == start {
-			seenStart = &num
-			return nil
-		}
-
-		// num > start
-		if seenStart == nil {
-			return errDone // first block after a hole
-		}
-
-		// increment by 100
-		if num == *seenStart+100 {
-			seenStart = &num
-			return nil
-		}
-
-		return errDone
-	})
-
-	if err != nil && !errors.Is(err, errDone) {
-		logger.Error("got error walking store", zap.Error(err))
-		return start
-	}
-
-	switch {
-	case seenStart == nil:
-		return start // nothing was found
-	default:
-		return *seenStart + 100
-	}
-
+	startBlock := firecore.LastMergedBlockNum(ctx, firstStreamableBlock, mergedBlocksStore, rootLog)
+	rootLog.Info("start block resolved",
+		zap.Duration("elapsed", time.Since(t0)),
+		zap.Uint64("start_block", startBlock),
+	)
+	return startBlock, nil
 }
