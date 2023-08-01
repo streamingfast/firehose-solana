@@ -26,15 +26,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/streamingfast/firehose-solana/types"
+	"go.uber.org/zap"
+
+	firecore "github.com/streamingfast/firehose-core"
 
 	"github.com/abourget/llerrgroup"
 	"github.com/golang/protobuf/proto"
 	"github.com/mr-tron/base58"
-	"github.com/streamingfast/bstream"
-	_ "github.com/streamingfast/firehose-solana/types"
-	pbsolv1 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v1"
-	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
+	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
+	pbsolv2 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v2"
 	"github.com/streamingfast/jsonpb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -69,20 +69,24 @@ func TestParseFromFile(t *testing.T) {
 			first := true
 
 			var reader ObjectReader = func() (interface{}, error) {
-				out, err := cr.ReadBlock()
+				out, err := cr.next()
 				if err != nil {
 					return nil, err
 				}
 
 				if test.augmented {
-					return out.ToProtocol().(*pbsolv2.Block), nil
+					return out.(*pbsolv2.Block), nil
 				}
-				return out.ToProtocol().(*pbsolv1.Block), nil
+				return out.(*pbsolv1.Block), nil
 			}
 
-			if test.augmented {
-				types.SetupSfSolAugmented()
-			}
+			//if test.augmented {
+			//
+			//
+			//
+			//
+			//	types.SetupSfSolAugmented()
+			//}
 			for {
 				out, err := reader()
 				if v, ok := out.(proto.Message); ok && !isNil(v) {
@@ -244,7 +248,7 @@ func Test_readBlockEnd(t *testing.T) {
 					},
 					errGroup: llerrgroup.New(10),
 				},
-				blockBuffer: make(chan *bstream.Block, 1),
+				blockBuffer: make(chan firecore.Block, 1),
 				stats:       newParsingStats(55295941, zlog),
 			},
 			line:           "BLOCK_END 55295941 3HfUeXfBt8XFHRiyrfhh5EXvFnJTjMHxzemy8DueaUFz 1606487316 1606487316",
@@ -265,8 +269,8 @@ func Test_readBlockEnd(t *testing.T) {
 				}
 			case block := <-test.ctx.blockBuffer:
 				{
-					assert.Equal(t, test.expectBlockNum, block.Number)
-					assert.Equal(t, test.expectBlockID, block.ID())
+					assert.Equal(t, test.expectBlockNum, block.GetFirehoseBlockNumber())
+					assert.Equal(t, test.expectBlockID, block.GetFirehoseBlockID())
 				}
 			}
 			fmt.Println("Done!")
@@ -320,7 +324,7 @@ func Test_readBlockRoot(t *testing.T) {
 						},
 					},
 				},
-				blockBuffer: make(chan *bstream.Block, 100),
+				blockBuffer: make(chan firecore.Block, 100),
 				stats:       newParsingStats(55295941, zlog),
 			},
 			line: "BANK_ROOT 55295921",
@@ -391,11 +395,28 @@ func testReaderConsoleReader(t *testing.T, lines chan string, closer func(), bat
 		opts = append(opts, WithBatchFilesPath(batchFilesPath))
 	}
 
-	cr, err := NewConsoleReader(zlog, lines, opts...)
-	require.NoError(t, err)
+	crOptions := newDefaultOptions()
+	for _, opt := range opts {
+		crOptions = opt(crOptions)
+	}
 
-	cr.close = closer
-	return cr
+	l := &ConsoleReader{
+		lines:  lines,
+		close:  closer,
+		logger: zap.NewNop(),
+		ctx: &parseCtx{
+			logger:      zap.NewNop(),
+			banks:       map[uint64]*bank{},
+			blockBuffer: make(chan firecore.Block, 10000),
+			opts:        crOptions,
+		},
+	}
+
+	//cr, err := NewConsoleReader( lines,zlog,, opts...)
+	//require.NoError(t, err)
+
+	l.close = closer
+	return l
 }
 
 func blockId(t *testing.T, input string) []byte {

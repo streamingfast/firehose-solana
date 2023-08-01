@@ -1,0 +1,16 @@
+start:
+  args:
+  - reader-node
+  flags:
+    reader-node-arguments:
+      tools
+      bt
+      blocks
+      --bt-project
+      mainnet-beta
+      --bt-instance
+      solana-ledger
+      {start-block-num}
+      0
+      --firehose-enabled
+      --linkable

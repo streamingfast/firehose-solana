@@ -1,6 +1,0 @@
-start:
-  args:
-  - miner-node
-  - peering-node
-  flags:
-    miner-node-bootstrap-data-url: ./miner/bootstrap.tar.zst

@@ -1,0 +1,10 @@
+version: v1
+name: buf.build/streamingfast/firehose-solana
+
+lint:
+  use:
+    - DEFAULT
+
+breaking:
+  use:
+    - FILE

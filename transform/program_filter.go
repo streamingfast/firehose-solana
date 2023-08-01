@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"fmt"
 
-	pbsolv2 "github.com/streamingfast/firehose-solana/types/pb/sf/solana/type/v2"
-
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/bstream/transform"
-	pbtransforms "github.com/streamingfast/firehose-solana/types/pb/sf/solana/transforms/v1"
+	pbtransforms "github.com/streamingfast/firehose-solana/pb/sf/solana/transforms/v1"
+	pbsolv2 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v2"
 	"github.com/streamingfast/solana-go"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
