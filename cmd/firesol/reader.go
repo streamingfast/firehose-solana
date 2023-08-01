@@ -14,6 +14,11 @@ import (
 )
 
 func readerNodeStartBlockResolver(ctx context.Context, command *cobra.Command, runtime *launcher.Runtime, rootLog *zap.Logger) (uint64, error) {
+	startBlockNum, userDefined := sflags.MustGetUint64Provided(command, "reader-node-start-block-num")
+	if userDefined {
+		return startBlockNum, nil
+	}
+
 	mergedBlocksStoreURL, _, _, err := firecore.GetCommonStoresURLs(runtime.AbsDataDir)
 	if err != nil {
 		return 0, err
@@ -32,10 +37,12 @@ func readerNodeStartBlockResolver(ctx context.Context, command *cobra.Command, r
 		zap.String("merged_block_store_url", mergedBlocksStoreURL),
 	)
 
-	startBlock := firecore.LastMergedBlockNum(ctx, firstStreamableBlock, mergedBlocksStore, rootLog)
+	lastMergedBlockNum := firecore.LastMergedBlockNum(ctx, firstStreamableBlock, mergedBlocksStore, rootLog)
+	startBlockNum = lastMergedBlockNum + 100
 	rootLog.Info("start block resolved",
 		zap.Duration("elapsed", time.Since(t0)),
-		zap.Uint64("start_block", startBlock),
+		zap.Uint64("start_block", startBlockNum),
+		zap.Uint64("last_merged_block_num", lastMergedBlockNum),
 	)
-	return startBlock, nil
+	return startBlockNum, nil
 }
