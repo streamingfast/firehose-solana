@@ -13,7 +13,7 @@ require (
 	github.com/streamingfast/cli v0.0.4-0.20230608140431-f501fec4f1ce
 	github.com/streamingfast/dlauncher v0.0.0-20230607184145-76399faad89e
 	github.com/streamingfast/dstore v0.1.1-0.20230620124109-3924b3b36c77
-	github.com/streamingfast/firehose-core v0.1.7-0.20230801191843-3fb4368c70e7
+	github.com/streamingfast/firehose-core v0.1.7-0.20230801203914-74cb1d9688b4
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/node-manager v0.0.2-0.20230406142433-692298a8b8d2
