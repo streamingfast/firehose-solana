@@ -29,6 +29,10 @@ func readerNodeStartBlockResolver(ctx context.Context, command *cobra.Command, r
 
 	firstStreamableBlock := sflags.MustGetUint64(command, "common-first-streamable-block")
 
+	rootLog.Info("resolving reader node start block",
+		zap.Uint64("first_streamable_block", firstStreamableBlock),
+		zap.String("merged_block_store_url", mergedBlocksStoreURL),
+	)
 	return resolveStartBlockNum(ctx, firstStreamableBlock, mergedBlocksStore, rootLog), nil
 }
 
