@@ -30,14 +30,9 @@ func main() {
 
 		BlockFactory: func() firecore.Block { return new(pbsol.Block) },
 
-		BlockIndexerFactories: map[string]firecore.BlockIndexerFactory[*pbsol.Block]{
-			//transform.ReceiptAddressIndexShortName: transform.NewNearBlockIndexer,
-		},
+		BlockIndexerFactories: map[string]firecore.BlockIndexerFactory[*pbsol.Block]{},
 
-		BlockTransformerFactories: map[protoreflect.FullName]firecore.BlockTransformerFactory{
-			//transform.HeaderOnlyMessageName:    transform.NewHeaderOnlyTransformFactory,
-			//transform.ReceiptFilterMessageName: transform.BasicReceiptFilterFactory,
-		},
+		BlockTransformerFactories: map[protoreflect.FullName]firecore.BlockTransformerFactory{},
 
 		ConsoleReaderFactory: func(lines chan string, blockEncoder firecore.BlockEncoder, logger *zap.Logger, tracer logging.Tracer) (mindreader.ConsolerReader, error) {
 			return codec.NewBigtableConsoleReader(lines, blockEncoder, logger)
