@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -25,7 +25,7 @@ func newToolsBigTableBlocksCmd(logger *zap.Logger, tracer logging.Tracer) *cobra
 		RunE:  bigtableBlocksRunE(logger, tracer),
 	}
 
-	cmd.Flags().Bool("firehose-enabled", false, "When enable the blocks read will output Firehose formated logs 'FIRE <block_num> <block_payload_in_hex>'")
+	cmd.Flags().Bool("firehose-enabled", false, "When enable the blocks read will output Firehose formatted logs 'FIRE <block_num> <block_payload_in_hex>'")
 	cmd.Flags().Bool("compact", false, "When printing in JSON it will print compact instead of pretty-printed output")
 	cmd.Flags().Bool("linkable", false, "Ensure that no block is skipped they are linkeable")
 	return cmd
@@ -75,8 +75,8 @@ func bigtableBlocksRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comm
 				if err != nil {
 					return fmt.Errorf("failed to proto  marshal pb sol block: %w", err)
 				}
-
-				lineCnt := fmt.Sprintf("FIRE BLOCK %d %s", block.Slot, hex.EncodeToString(cnt))
+				b64Cnt := base64.StdEncoding.EncodeToString(cnt)
+				lineCnt := fmt.Sprintf("FIRE BLOCK %d %s", block.Slot, b64Cnt)
 				if _, err := fmt.Println(lineCnt); err != nil {
 					return fmt.Errorf("failed to write log line (char lenght %d): %w", len(lineCnt), err)
 				}

@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+### Changed
+
+* Migrated to firehose-core
+* change block reader-node block encoding from hex to base64
+
+
 ## v0.2.2-rc1
 
 This release candidate is a hotfix for an issue introduced at v0.2.1 and affecting `production-mode` where the stream will hang and some `map_outputs` will not be produced over some specific ranges of the chains.

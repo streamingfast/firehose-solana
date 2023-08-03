@@ -2,7 +2,7 @@ package codec
 
 import (
 	"bufio"
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"strconv"
@@ -117,7 +117,7 @@ func (cr *BigtableConsoleReader) readBlock(line string) (out *bstream.Block, err
 	}
 
 	var cnt []byte
-	if cnt, err = hex.DecodeString(chunks[2]); err != nil {
+	if cnt, err = base64.StdEncoding.DecodeString(chunks[2]); err != nil {
 		return nil, fmt.Errorf("unable to hex decode content: %w", err)
 	}
 
