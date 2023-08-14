@@ -670,8 +670,8 @@ github.com/streamingfast/snapshotter v0.0.0-20230316190750-5bcadfde44d0 h1:Y15G1
 github.com/streamingfast/snapshotter v0.0.0-20230316190750-5bcadfde44d0/go.mod h1:/Rnz2TJvaShjUct0scZ9kKV2Jr9/+KBAoWy4UMYxgv4=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8 h1:M9HcIwlbl7PipqrKPgNzfEWD9oxAA0mmjdRd2dTk9/4=
 github.com/streamingfast/solana-go v0.5.1-0.20220502224452-432fbe84aee8/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
-github.com/streamingfast/substreams v1.1.12-0.20230814194116-c4dd81211baa h1:LJsZ3wVBhsexYXyj9DCe5otCvHzALjIP60vo91W+pVk=
-github.com/streamingfast/substreams v1.1.12-0.20230814194116-c4dd81211baa/go.mod h1:Thcw2blrOD8uwRMGKhjD4BXwy1Fp9UADxIRHRme+raQ=
+github.com/streamingfast/substreams v1.1.12-0.20230814194809-4e3c676c77d9 h1:qQuawuqCiEmfcuIQL3PiE3r1AFzlss9jVjj/7evxElo=
+github.com/streamingfast/substreams v1.1.12-0.20230814194809-4e3c676c77d9/go.mod h1:Thcw2blrOD8uwRMGKhjD4BXwy1Fp9UADxIRHRme+raQ=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
