@@ -40,3 +40,29 @@ func (x *Block) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
 func (x *ConfirmedTransaction) AsBase58String() string {
 	return base58.Encode(x.Transaction.Signatures[0])
 }
+
+type Instructionable interface {
+	ToInstruction() *Instruction
+}
+
+type Instruction struct {
+	ProgramIdIndex uint32
+	Accounts       []byte
+	Data           []byte
+}
+
+func New(ProgramIdIndex uint32, Accounts []byte, Data []byte) *Instruction {
+	return &Instruction{
+		ProgramIdIndex: ProgramIdIndex,
+		Accounts:       Accounts,
+		Data:           Data,
+	}
+}
+
+func (x *CompiledInstruction) ToInstruction() *Instruction {
+	return New(x.ProgramIdIndex, x.Accounts, x.Data)
+}
+
+func (x *InnerInstruction) ToInstruction() *Instruction {
+	return New(x.ProgramIdIndex, x.Accounts, x.Data)
+}
