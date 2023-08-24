@@ -15,6 +15,7 @@ require (
 	github.com/streamingfast/dstore v0.1.1-0.20230620124109-3924b3b36c77
 	github.com/streamingfast/firehose-core v0.1.7-0.20230803185901-18849126b832
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0
+	github.com/streamingfast/kvdb v0.1.0
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/node-manager v0.0.2-0.20230406142433-692298a8b8d2
 	github.com/streamingfast/pbgo v0.0.6-0.20221020131607-255008258d28

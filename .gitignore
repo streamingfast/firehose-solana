@@ -19,3 +19,4 @@ venv
 /apc.json
 *~
 /build
+accountresolver/devel
