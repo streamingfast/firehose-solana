@@ -30,13 +30,29 @@ func (k *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, ke
 
 	payload := encodeAccounts(append(currentAccounts, accounts...))
 	err = k.store.Put(ctx, Keys.extendedKeyBytes(key, blockNum), payload)
+	if err != nil {
+		return fmt.Errorf("writing extended accounts for key %q: %w", key, err)
+	}
+	err = k.store.FlushPuts(ctx)
+	if err != nil {
+		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
+	}
 
 	return nil
 }
 
 func (k *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, error) {
-	keyBytes := Keys.lookupKeyBytes(key)
-	iter := k.store.Prefix(ctx, keyBytes, 0)
+	//	iter := db.Prefix(context.Background(), Keys.lookupPrefixBytes(testAccountFromBase58(a1)), store.Unlimited)
+	//	require.NoError(t, iter.Err())
+	//	for iter.Next() {
+	//		fmt.Println("fuck!", iter.Item().Key)
+	//		fmt.Println("fuck value", iter.Item().Value)
+	//	}
+	keyBytes := Keys.lookupPrefixBytes(key)
+	iter := k.store.Prefix(ctx, keyBytes, store.Unlimited)
+	if iter.Err() != nil {
+		return nil, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
+	}
 	for iter.Next() {
 		item := iter.Item()
 		_, keyBlockNum := Keys.unpack(item.Key)
@@ -105,5 +121,5 @@ func (m *mockAccountsResolver) Resolve(blockNum int64, key Account) (Accounts, e
 			return ab.accounts, nil
 		}
 	}
-	return nil, AccountNotFound
+	return nil, nil
 }
