@@ -1,0 +1,12 @@
+start:
+  args:
+    - substreams-tier2
+  flags:
+    config-file:
+    common-live-blocks-addr:
+    common-merged-blocks-store-url: $COMMON_MERGED_BLOCKS # replace with common merged blocks url
+    common-one-block-store-url: $ONE_BLOCK_STORE_URL # replace with one block url
+    common-first-streamable-block: 1690600
+    substreams-tier2-grpc-listen-addr: ":9001*"
+    substreams-state-store-url: $STATE_STORE_URL # replace with state store url
+    substreams-state-bundle-size: 1000

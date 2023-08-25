@@ -8,8 +8,8 @@ import (
 )
 
 type AccountsResolver interface {
-	Extended(ctx context.Context, blockNum uint64, key Account, accounts []Account) error
-	Resolve(ctx context.Context, blockNum uint64, key Account) ([]Account, error)
+	Extended(ctx context.Context, blockNum uint64, key Account, accounts Accounts) error
+	Resolve(ctx context.Context, blockNum uint64, key Account) (Accounts, error)
 }
 
 type KVDBAccountsResolver struct {
@@ -22,7 +22,7 @@ func NewKVDBAccountsResolver(store store.KVStore) *KVDBAccountsResolver {
 	}
 }
 
-func (k *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, key Account, accounts []Account) error {
+func (k *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, key Account, accounts Accounts) error {
 	currentAccounts, err := k.Resolve(ctx, blockNum, key)
 	if err != nil {
 		return fmt.Errorf("retreiving last accounts for key %q: %w", key, err)
@@ -34,7 +34,7 @@ func (k *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, ke
 	return nil
 }
 
-func (k *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) ([]Account, error) {
+func (k *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, error) {
 	keyBytes := Keys.lookupKeyBytes(key)
 	iter := k.store.Prefix(ctx, keyBytes, 0)
 	for iter.Next() {
@@ -49,15 +49,15 @@ func (k *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 	return nil, nil
 }
 
-func decodeAccounts(payload []byte) []Account {
-	var accounts []Account
+func decodeAccounts(payload []byte) Accounts {
+	var accounts Accounts
 	for i := 0; i < len(payload); i += 32 {
 		accounts = append(accounts, payload[i:i+32])
 	}
 	return accounts
 }
 
-func encodeAccounts(accounts []Account) []byte {
+func encodeAccounts(accounts Accounts) []byte {
 	var payload []byte
 
 	for _, account := range accounts {
@@ -68,7 +68,7 @@ func encodeAccounts(accounts []Account) []byte {
 
 type mockBlockAccount struct {
 	blockNum int64
-	accounts []Account
+	accounts Accounts
 }
 
 type mockAccountsStore struct {
@@ -86,7 +86,7 @@ func newMockAccountsStore() *mockAccountsStore {
 	}
 }
 
-func (m *mockAccountsResolver) Extended(blockNum int64, key Account, accounts []Account) error {
+func (m *mockAccountsResolver) Extended(blockNum int64, key Account, accounts Accounts) error {
 	if accountBlocks, found := m.accountsStore.tables[key.base58()]; found {
 		ab := accountBlocks[len(accountBlocks)-1]
 		newAccountBlock := &mockBlockAccount{
@@ -98,7 +98,7 @@ func (m *mockAccountsResolver) Extended(blockNum int64, key Account, accounts []
 	return nil
 }
 
-func (m *mockAccountsResolver) Resolve(blockNum int64, key Account) ([]Account, error) {
+func (m *mockAccountsResolver) Resolve(blockNum int64, key Account) (Accounts, error) {
 	accountBlocks := m.accountsStore.tables[key.base58()]
 	for _, ab := range accountBlocks {
 		if ab.blockNum >= blockNum {

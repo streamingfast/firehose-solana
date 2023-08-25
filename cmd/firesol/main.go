@@ -44,6 +44,7 @@ func main() {
 			RegisterExtraCmd: func(chain *firecore.Chain[*pbsol.Block], toolsCmd *cobra.Command, zlog *zap.Logger, tracer logging.Tracer) error {
 				toolsCmd.AddCommand(newToolsBigtableCmd(zlog, tracer))
 				toolsCmd.AddCommand(newToolsBatchFileCmd(zlog))
+				toolsCmd.AddCommand(newPrintTransactionCmd(nil))
 				return nil
 			},
 		},
