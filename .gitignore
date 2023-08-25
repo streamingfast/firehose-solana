@@ -20,3 +20,4 @@ venv
 *~
 /build
 accountresolver/devel
+/accountresolver/tmp/

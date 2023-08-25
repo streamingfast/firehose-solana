@@ -2,7 +2,6 @@ package solana_accounts_resolver
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 
@@ -36,11 +35,67 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	err = resolver.Extended(context.Background(), 1, testAccountFromBase58(a1), []Account{testAccountFromBase58(a2), testAccountFromBase58(a3)})
 	require.NoError(t, err)
 
-	v, err := db.Get(context.Background(), Keys.extendedKeyBytes(testAccountFromBase58(a1), 1))
-	require.NoError(t, err)
-	fmt.Println("Grrrrr", v)
-
 	accounts, err := resolver.Resolve(context.Background(), 1, testAccountFromBase58(a1))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(accounts))
+	require.Equal(t, testAccountFromBase58(a2), accounts[0])
+	require.Equal(t, testAccountFromBase58(a3), accounts[1])
+
+	err = resolver.Extended(context.Background(), 100, testAccountFromBase58(a1), []Account{testAccountFromBase58(a4)})
+	require.NoError(t, err)
+
+	accounts, err = resolver.Resolve(context.Background(), 1, testAccountFromBase58(a1))
+	require.NoError(t, err)
+	require.Equal(t, 2, len(accounts))
+	require.Equal(t, testAccountFromBase58(a2), accounts[0])
+	require.Equal(t, testAccountFromBase58(a3), accounts[1])
+
+	accounts, err = resolver.Resolve(context.Background(), 100, testAccountFromBase58(a1))
+	require.NoError(t, err)
+	require.Equal(t, 3, len(accounts))
+	require.Equal(t, testAccountFromBase58(a2), accounts[0])
+	require.Equal(t, testAccountFromBase58(a3), accounts[1])
+	require.Equal(t, testAccountFromBase58(a4), accounts[2])
+
+	accounts, err = resolver.Resolve(context.Background(), 1000, testAccountFromBase58(a1))
+	require.NoError(t, err)
+	require.Equal(t, 3, len(accounts))
+	require.Equal(t, testAccountFromBase58(a2), accounts[0])
+	require.Equal(t, testAccountFromBase58(a3), accounts[1])
+	require.Equal(t, testAccountFromBase58(a4), accounts[2])
+}
+
+func TestKVDBAccountsResolver_StoreCursor(t *testing.T) {
+	err := os.RemoveAll("/tmp/my-badger.db")
+	require.NoError(t, err)
+
+	db, err := store.New("badger3:///tmp/my-badger.db")
+	require.NoError(t, err)
+
+	resolver := NewKVDBAccountsResolver(db)
+	expectedBlockHash, err := base58.Decode("8cv9oNupqL1wKogVHcQpqxC7QPy4SiaRghBiP5U2YYLp")
+	require.NoError(t, err)
+
+	err = resolver.StoreCursor(context.Background(), 1, expectedBlockHash)
+	require.NoError(t, err)
+
+	blockNum, blockHash, err := resolver.GetCursor(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), blockNum)
+	require.Equal(t, expectedBlockHash, blockHash)
+}
+
+func TestKVDBAccountsResolver_StoreCursor_None(t *testing.T) {
+	err := os.RemoveAll("/tmp/my-badger.db")
+	require.NoError(t, err)
+
+	db, err := store.New("badger3:///tmp/my-badger.db")
+	require.NoError(t, err)
+
+	resolver := NewKVDBAccountsResolver(db)
+
+	blockNum, blockHash, err := resolver.GetCursor(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, uint64(0), blockNum)
+	require.Equal(t, 0, len(blockHash))
 }
