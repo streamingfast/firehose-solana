@@ -7,4 +7,4 @@ release:
   pre-build-hooks:
     #- substreams pack -o "{{ .buildDir }}/substreams-solana-{{ .release.Version }}.spkg" substreams.yaml
   upload-extra-assets:
-    - "{{ .buildDir }}/substreams-solana-{{ .release.Version }}.spkg"
+    #- "{{ .buildDir }}/substreams-solana-{{ .release.Version }}.spkg"
