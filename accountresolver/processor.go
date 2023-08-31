@@ -99,7 +99,6 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 }
 
 func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error {
-	fmt.Println("Processing block", block.Slot)
 	if p.cursor == nil {
 		return fmt.Errorf("cursor is nil")
 	}
@@ -132,7 +131,7 @@ func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error 
 }
 
 func (p *Processor) manageAddressLookup(ctx context.Context, blockNum uint64, err error, trx *pbsol.ConfirmedTransaction) error {
-	err = p.ProcessTransaction(ctx, blockNum, trx.Transaction)
+	err = p.ProcessTransaction(ctx, blockNum, trx)
 	if err != nil {
 		return fmt.Errorf("processing transactions: %w", err)
 	}
@@ -141,30 +140,35 @@ func (p *Processor) manageAddressLookup(ctx context.Context, blockNum uint64, er
 
 func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *pbsol.ConfirmedTransaction) error {
 	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
-		fmt.Println("Applying address table lookup for :", base58.Encode(addressTableLookup.AccountKey))
 		accs, _, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
+		fmt.Println("Applying address table lookup for :", base58.Encode(addressTableLookup.AccountKey), "count", len(accs))
 		if err != nil {
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
 		}
+		//todo: should fail if accs is nil
 		trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs.ToBytesArray()...)
 	}
 	return nil
 }
 
-func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, trx *pbsol.Transaction) error {
-	accountKeys := trx.Message.AccountKeys
-	for _, compiledInstruction := range trx.Message.Instructions {
+func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, confirmedTransaction *pbsol.ConfirmedTransaction) error {
+	accountKeys := confirmedTransaction.Transaction.Message.AccountKeys
+	for compileIndex, compiledInstruction := range confirmedTransaction.Transaction.Message.Instructions {
 		idx := compiledInstruction.ProgramIdIndex
-		err := p.ProcessInstruction(ctx, blockNum, base58.Encode(trx.Message.AccountKeys[idx]), accountKeys, compiledInstruction)
+		err := p.ProcessInstruction(ctx, blockNum, base58.Encode(confirmedTransaction.Transaction.Message.AccountKeys[idx]), accountKeys, compiledInstruction)
 		if err != nil {
-			return fmt.Errorf("trx %s processing compiled instruction: %w", getTransactionHash(trx.Signatures), err)
+			return fmt.Errorf("confirmedTransaction %s processing compiled instruction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
 		}
-	}
-
-	for _, instruction := range trx.Message.Instructions {
-		err := p.ProcessInstruction(ctx, blockNum, base58.Encode(trx.Message.AccountKeys[instruction.ProgramIdIndex]), accountKeys, instruction)
-		if err != nil {
-			return fmt.Errorf("trx %s processing instruxction: %w", getTransactionHash(trx.Signatures), err)
+		//todo; only inner instructions of compiled instructions
+		if compileIndex+1 > len(confirmedTransaction.Meta.InnerInstructions) {
+			continue
+		}
+		inner := confirmedTransaction.Meta.InnerInstructions[compileIndex]
+		for _, instruction := range inner.Instructions {
+			err := p.ProcessInstruction(ctx, blockNum, base58.Encode(confirmedTransaction.Transaction.Message.AccountKeys[instruction.ProgramIdIndex]), accountKeys, instruction)
+			if err != nil {
+				return fmt.Errorf("confirmedTransaction %s processing instruxction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
+			}
 		}
 	}
 
@@ -179,8 +183,11 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, pro
 	instruction := instructionable.ToInstruction()
 	if addresstablelookup.ExtendAddressTableLookupInstruction(instruction.Data) {
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
-		fmt.Println("Extending address table lookup for:", tableLookupAccount)
 		newAccounts := addresstablelookup.ParseNewAccounts(instruction.Data[12:])
+		fmt.Println("Extending address table lookup for:", base58.Encode(tableLookupAccount))
+		for _, account := range newAccounts {
+			fmt.Println("\t", base58.Encode(account))
+		}
 		err := p.accountsResolver.Extended(ctx, blockNum, tableLookupAccount, NewAccounts(newAccounts))
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)

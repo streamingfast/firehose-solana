@@ -2,6 +2,10 @@ module github.com/streamingfast/firehose-solana
 
 go 1.20
 
+replace (
+	github.com/streamingfast/solana-go => ../solana-go
+)
+
 require (
 	cloud.google.com/go/bigtable v1.13.0
 	github.com/abourget/llerrgroup v0.2.0
