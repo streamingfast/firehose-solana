@@ -1,10 +1,16 @@
-package solana_accounts_resolver
+package accountsresolver
 
 import (
 	"context"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+
+	"github.com/streamingfast/bstream"
 
 	"github.com/mr-tron/base58"
+	"github.com/streamingfast/dstore"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go/programs/addresstablelookup"
 )
@@ -12,13 +18,13 @@ import (
 const AddressTableLookupAccountProgram = "AddressLookupTab1e1111111111111111111111111"
 
 type Cursor struct {
-	blockNum  uint64
+	slotNum   uint64
 	blockHash []byte
 }
 
-func newCursor(blockNum uint64, blockHash []byte) *Cursor {
+func NewCursor(blockNum uint64, blockHash []byte) *Cursor {
 	return &Cursor{
-		blockNum:  blockNum,
+		slotNum:   blockNum,
 		blockHash: blockHash,
 	}
 }
@@ -37,12 +43,69 @@ func NewProcessor(readerName string, cursor *Cursor, accountsResolver AccountsRe
 	}
 }
 
+func (p *Processor) ProcessMergeBlocks(ctx context.Context, store dstore.Store) error {
+	startBlockNum := p.cursor.slotNum - p.cursor.slotNum%100
+	paddedBlockNum := fmt.Sprintf("%010d", startBlockNum)
+
+	err := store.WalkFrom(ctx, "", paddedBlockNum, func(filename string) error {
+		return p.processMergeBlocksFile(ctx, filename, store)
+	})
+
+	if err != nil {
+		return fmt.Errorf("walking merge block store: %w", err)
+	}
+	return nil
+}
+
+func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string, store dstore.Store) error {
+	fmt.Println("Processing merge block file", filename)
+	firstBlockOfFile, err := strconv.Atoi(strings.TrimLeft(filename, "0"))
+	if err != nil {
+		return fmt.Errorf("converting filename to block number: %w", err)
+	}
+	reader, err := store.OpenObject(ctx, filename)
+	if err != nil {
+		return fmt.Errorf("opening merge block file %s: %w", filename, err)
+	}
+	defer reader.Close()
+
+	blockReader, err := bstream.GetBlockReaderFactory.New(reader)
+	if err != nil {
+		return fmt.Errorf("creating block reader for file %s: %w", filename, err)
+	}
+
+	for {
+		block, err := blockReader.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return fmt.Errorf("reading block: %w", err)
+		}
+
+		blk := block.ToProtocol().(*pbsol.Block)
+		if blk.Slot < uint64(firstBlockOfFile) || blk.Slot <= p.cursor.slotNum {
+			fmt.Println("skip block", blk.Slot)
+			continue
+		}
+		err = p.ProcessBlock(context.Background(), blk)
+		if err != nil {
+			return fmt.Errorf("processing block: %w", err)
+		}
+
+		//todo: store new block to new merge file
+	}
+	return nil
+}
+
 func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error {
+	fmt.Println("Processing block", block.Slot)
 	if p.cursor == nil {
 		return fmt.Errorf("cursor is nil")
 	}
-	if p.cursor.blockNum != block.Slot {
-		return fmt.Errorf("cursor block num %d is not the same as block num %d", p.cursor.blockNum, block.Slot)
+
+	if p.cursor.slotNum != block.ParentSlot {
+		return fmt.Errorf("cursor block num %d is not the same as parent slot num %d of block %d", p.cursor.slotNum, block.ParentSlot, block.Slot)
 	}
 
 	for _, trx := range block.Transactions {
@@ -55,13 +118,13 @@ func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error 
 			return fmt.Errorf("applying table lookup at block %d: %w", block.Slot, err)
 		}
 
-		err2 := p.manageAddressLookup(ctx, block.Slot, err, trx)
-		if err2 != nil {
-			return err2
+		err = p.manageAddressLookup(ctx, block.Slot, err, trx)
+		if err != nil {
+			return fmt.Errorf("managing address lookup at block %d: %w", block.Slot, err)
 		}
 	}
-	p.cursor = newCursor(block.Slot, []byte(block.Blockhash))
-	err := p.accountsResolver.StoreCursor(ctx, p.cursor)
+	p.cursor = NewCursor(block.Slot, []byte(block.Blockhash))
+	err := p.accountsResolver.StoreCursor(ctx, p.readerName, p.cursor)
 	if err != nil {
 		return fmt.Errorf("storing cursor at block %d: %w", block.Slot, err)
 	}
@@ -71,13 +134,14 @@ func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error 
 func (p *Processor) manageAddressLookup(ctx context.Context, blockNum uint64, err error, trx *pbsol.ConfirmedTransaction) error {
 	err = p.ProcessTransaction(ctx, blockNum, trx.Transaction)
 	if err != nil {
-		return fmt.Errorf("managing address lookup: %w", err)
+		return fmt.Errorf("processing transactions: %w", err)
 	}
 	return nil
 }
 
 func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *pbsol.ConfirmedTransaction) error {
 	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
+		fmt.Println("Applying address table lookup for :", base58.Encode(addressTableLookup.AccountKey))
 		accs, _, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
 		if err != nil {
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
@@ -115,6 +179,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, pro
 	instruction := instructionable.ToInstruction()
 	if addresstablelookup.ExtendAddressTableLookupInstruction(instruction.Data) {
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
+		fmt.Println("Extending address table lookup for:", tableLookupAccount)
 		newAccounts := addresstablelookup.ParseNewAccounts(instruction.Data[12:])
 		err := p.accountsResolver.Extended(ctx, blockNum, tableLookupAccount, NewAccounts(newAccounts))
 		if err != nil {

@@ -1,4 +1,4 @@
-package solana_accounts_resolver
+package accountsresolver
 
 import (
 	"context"

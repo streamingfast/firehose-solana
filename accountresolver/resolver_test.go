@@ -1,4 +1,4 @@
-package solana_accounts_resolver
+package accountsresolver
 
 import (
 	"context"
@@ -76,12 +76,12 @@ func TestKVDBAccountsResolver_StoreCursor(t *testing.T) {
 	expectedBlockHash, err := base58.Decode("8cv9oNupqL1wKogVHcQpqxC7QPy4SiaRghBiP5U2YYLp")
 	require.NoError(t, err)
 
-	err = resolver.StoreCursor(context.Background(), "r1", newCursor(1, expectedBlockHash))
+	err = resolver.StoreCursor(context.Background(), "r1", NewCursor(1, expectedBlockHash))
 	require.NoError(t, err)
 
 	c, err := resolver.GetCursor(context.Background(), "r1")
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), c.blockNum)
+	require.Equal(t, uint64(1), c.slotNum)
 	require.Equal(t, expectedBlockHash, c.blockHash)
 }
 

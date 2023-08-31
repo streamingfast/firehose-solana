@@ -2,6 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -9,9 +13,6 @@ import (
 	"github.com/streamingfast/solana-go"
 	"github.com/streamingfast/solana-go/programs/token"
 	"go.uber.org/zap"
-	"io"
-	"strconv"
-	"strings"
 
 	"github.com/streamingfast/bstream"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"

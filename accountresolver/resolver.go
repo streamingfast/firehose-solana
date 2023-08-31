@@ -1,4 +1,4 @@
-package solana_accounts_resolver
+package accountsresolver
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 
 type AccountsResolver interface {
 	Extended(ctx context.Context, blockNum uint64, key Account, accounts Accounts) error
-	Resolve(ctx context.Context, blockNum uint64, key Account) (Accounts, int64, error)
-	StoreCursor(ctx context.Context, cursor *Cursor) error
-	GetCursor(ctx context.Context) (uint64, []byte, error)
+	Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, uint64, error)
+	StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error
+	GetCursor(ctx context.Context, readerName string) (*Cursor, error)
 }
 
 type KVDBAccountsResolver struct {
@@ -70,7 +70,7 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 
 func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error {
 	payload := make([]byte, 8+32)
-	binary.BigEndian.PutUint64(payload[:8], cursor.blockNum)
+	binary.BigEndian.PutUint64(payload[:8], cursor.slotNum)
 	copy(payload[8:], cursor.blockHash)
 	err := r.store.Put(ctx, Keys.cursor(readerName), payload)
 	if err != nil {
@@ -97,7 +97,7 @@ func (r *KVDBAccountsResolver) GetCursor(ctx context.Context, readerName string)
 	}
 	blockNum := binary.BigEndian.Uint64(payload[:8])
 	blockHash := payload[8:]
-	return newCursor(blockNum, blockHash), nil
+	return NewCursor(blockNum, blockHash), nil
 }
 
 func decodeAccounts(payload []byte) Accounts {
