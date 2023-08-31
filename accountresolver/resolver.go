@@ -11,8 +11,8 @@ import (
 
 type AccountsResolver interface {
 	Extended(ctx context.Context, blockNum uint64, key Account, accounts Accounts) error
-	Resolve(ctx context.Context, blockNum uint64, key Account) (Accounts, error)
-	StoreCursor(ctx context.Context, blockNum uint64, blockHash []byte) error
+	Resolve(ctx context.Context, blockNum uint64, key Account) (Accounts, int64, error)
+	StoreCursor(ctx context.Context, cursor *Cursor) error
 	GetCursor(ctx context.Context) (uint64, []byte, error)
 }
 
@@ -68,10 +68,10 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 	return nil, 0, nil
 }
 
-func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, readerName string, blockNum uint64, blockHash []byte) error {
+func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error {
 	payload := make([]byte, 8+32)
-	binary.BigEndian.PutUint64(payload[:8], blockNum)
-	copy(payload[8:], blockHash)
+	binary.BigEndian.PutUint64(payload[:8], cursor.blockNum)
+	copy(payload[8:], cursor.blockHash)
 	err := r.store.Put(ctx, Keys.cursor(readerName), payload)
 	if err != nil {
 		return fmt.Errorf("writing cursor: %w", err)
@@ -84,20 +84,20 @@ func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, readerName strin
 	return nil
 }
 
-func (r *KVDBAccountsResolver) GetCursor(ctx context.Context, readerName string) (uint64, []byte, error) {
+func (r *KVDBAccountsResolver) GetCursor(ctx context.Context, readerName string) (*Cursor, error) {
 	payload, err := r.store.Get(ctx, Keys.cursor(readerName))
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
-			return 0, nil, nil
+			return nil, nil
 		}
-		return 0, nil, fmt.Errorf("getting cursor: %w", err)
+		return nil, fmt.Errorf("getting cursor: %w", err)
 	}
 	if payload == nil {
-		return 0, nil, nil
+		return nil, nil
 	}
 	blockNum := binary.BigEndian.Uint64(payload[:8])
 	blockHash := payload[8:]
-	return blockNum, blockHash, nil
+	return newCursor(blockNum, blockHash), nil
 }
 
 func decodeAccounts(payload []byte) Accounts {

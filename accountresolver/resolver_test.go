@@ -76,13 +76,13 @@ func TestKVDBAccountsResolver_StoreCursor(t *testing.T) {
 	expectedBlockHash, err := base58.Decode("8cv9oNupqL1wKogVHcQpqxC7QPy4SiaRghBiP5U2YYLp")
 	require.NoError(t, err)
 
-	err = resolver.StoreCursor(context.Background(), "r1", 1, expectedBlockHash)
+	err = resolver.StoreCursor(context.Background(), "r1", newCursor(1, expectedBlockHash))
 	require.NoError(t, err)
 
-	blockNum, blockHash, err := resolver.GetCursor(context.Background(), "r1")
+	c, err := resolver.GetCursor(context.Background(), "r1")
 	require.NoError(t, err)
-	require.Equal(t, uint64(1), blockNum)
-	require.Equal(t, expectedBlockHash, blockHash)
+	require.Equal(t, uint64(1), c.blockNum)
+	require.Equal(t, expectedBlockHash, c.blockHash)
 }
 
 func TestKVDBAccountsResolver_StoreCursor_None(t *testing.T) {
@@ -94,8 +94,7 @@ func TestKVDBAccountsResolver_StoreCursor_None(t *testing.T) {
 
 	resolver := NewKVDBAccountsResolver(db)
 
-	blockNum, blockHash, err := resolver.GetCursor(context.Background(), "r1")
+	c, err := resolver.GetCursor(context.Background(), "r1")
 	require.NoError(t, err)
-	require.Equal(t, uint64(0), blockNum)
-	require.Equal(t, 0, len(blockHash))
+	require.Nil(t, c)
 }

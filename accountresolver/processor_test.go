@@ -3,12 +3,13 @@ package solana_accounts_resolver
 import (
 	"context"
 	"fmt"
+	"io"
+	"testing"
+
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	firehose_solana "github.com/streamingfast/firehose-solana"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
-	"io"
-	"testing"
 )
 
 func init() {
@@ -51,7 +52,7 @@ func Test_ProcessBlock(t *testing.T) {
 
 			blk := block.ToProtocol().(*pbsol.Block)
 			processor := &Processor{}
-			err = processor.ProcessBlock(blk)
+			err = processor.ProcessBlock(context.Background(), blk)
 			if err != nil {
 				t.Fatal(fmt.Errorf("processing block %d: %w", blk.Slot, err))
 			}
