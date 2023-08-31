@@ -50,23 +50,39 @@ func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error 
 			continue
 		}
 
-		for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
-			accs, _, err := p.accountsResolver.Resolve(ctx, block.Slot, addressTableLookup.AccountKey)
-			if err != nil {
-				return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), block.Slot, err)
-			}
-			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs.ToBytesArray()...)
+		err := p.applyTableLookup(ctx, block.Slot, trx)
+		if err != nil {
+			return fmt.Errorf("applying table lookup at block %d: %w", block.Slot, err)
 		}
 
-		err := p.ProcessTransaction(ctx, block.Slot, trx.Transaction)
-		if err != nil {
-			return fmt.Errorf("processing transaction %s at block %d: %w", getTransactionHash(trx.Transaction.Signatures), block.Slot, err)
+		err2 := p.manageAddressLookup(ctx, block.Slot, err, trx)
+		if err2 != nil {
+			return err2
 		}
 	}
 	p.cursor = newCursor(block.Slot, []byte(block.Blockhash))
 	err := p.accountsResolver.StoreCursor(ctx, p.cursor)
 	if err != nil {
 		return fmt.Errorf("storing cursor at block %d: %w", block.Slot, err)
+	}
+	return nil
+}
+
+func (p *Processor) manageAddressLookup(ctx context.Context, blockNum uint64, err error, trx *pbsol.ConfirmedTransaction) error {
+	err = p.ProcessTransaction(ctx, blockNum, trx.Transaction)
+	if err != nil {
+		return fmt.Errorf("managing address lookup: %w", err)
+	}
+	return nil
+}
+
+func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *pbsol.ConfirmedTransaction) error {
+	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
+		accs, _, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
+		if err != nil {
+			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
+		}
+		trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs.ToBytesArray()...)
 	}
 	return nil
 }
