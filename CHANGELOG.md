@@ -17,6 +17,10 @@ for instructions to keep up to date.
 * Migrated to firehose-core
 * change block reader-node block encoding from hex to base64
 
+### Removed
+
+*  Removed --substreams-tier1-request-stats and --substreams-tier1-request-stats (substreams request-stats are now always sent to clients)
+
 ### Fixed
 
 * More tolerant retry/timeouts on filesource (prevent "Context Deadline Exceeded")
