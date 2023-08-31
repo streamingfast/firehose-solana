@@ -8,9 +8,9 @@ import (
 
 type Accounts []Account
 
-func NewAccounts(accs [][]byte) Accounts {
+func NewAccounts(accountHasBytes [][]byte) Accounts {
 	var accounts Accounts
-	for _, acc := range accs {
+	for _, acc := range accountHasBytes {
 		accounts = append(accounts, acc)
 	}
 	return accounts
