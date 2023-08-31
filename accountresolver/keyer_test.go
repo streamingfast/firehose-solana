@@ -15,3 +15,10 @@ func Test_Keyer_ExtendTableLookup(t *testing.T) {
 	expectedKey = append(expectedKey, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe}...)
 	require.Equal(t, expectedKey, key)
 }
+
+func Test_Keyer_Cusor(t *testing.T) {
+	key := Keys.cursor("reader_1")
+	expectedKey := []byte{tableCursor}
+	expectedKey = append(expectedKey, []byte("reader_1")...)
+	require.Equal(t, expectedKey, key)
+}

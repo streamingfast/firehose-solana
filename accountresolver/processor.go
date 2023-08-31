@@ -3,6 +3,7 @@ package solana_accounts_resolver
 import (
 	"context"
 	"fmt"
+
 	"github.com/mr-tron/base58"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go/programs/addresstablelookup"
@@ -21,13 +22,15 @@ func NewProcessor(kvdbAccountsResolver *KVDBAccountsResolver) *Processor {
 }
 
 func (p *Processor) ProcessBlock(block *pbsol.Block) error {
+	//todo: handle cursor
+	//todo: should panic of block num is out of sync with cursor
 	for _, trx := range block.Transactions {
 		if trx.Meta.Err != nil {
 			continue
 		}
 
 		for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
-			accs, err := p.KVDBAccountsResolver.Resolve(context.Background(), block.Slot, addressTableLookup.AccountKey)
+			accs, _, err := p.KVDBAccountsResolver.Resolve(context.Background(), block.Slot, addressTableLookup.AccountKey)
 			if err != nil {
 				return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), block.Slot, err)
 			}

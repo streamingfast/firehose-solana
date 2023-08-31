@@ -27,9 +27,14 @@ func NewKVDBAccountsResolver(store store.KVStore) *KVDBAccountsResolver {
 }
 
 func (r *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, key Account, accounts Accounts) error {
-	currentAccounts, err := r.Resolve(ctx, blockNum, key)
+	currentAccounts, resolveAtBlockNum, err := r.Resolve(ctx, blockNum, key)
 	if err != nil {
 		return fmt.Errorf("retreiving last accounts for key %q: %w", key, err)
+	}
+
+	if resolveAtBlockNum == blockNum {
+		// already extended at this block, nothing to do
+		return nil
 	}
 
 	payload := encodeAccounts(append(currentAccounts, accounts...))
@@ -45,29 +50,29 @@ func (r *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, ke
 	return nil
 }
 
-func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, error) {
+func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, uint64, error) {
 	keyBytes := Keys.tableLookupPrefix(key)
 	iter := r.store.Prefix(ctx, keyBytes, store.Unlimited)
 	if iter.Err() != nil {
-		return nil, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
+		return nil, 0, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
 	}
 	for iter.Next() {
 		item := iter.Item()
 		_, keyBlockNum := Keys.unpackTableLookup(item.Key)
 		if keyBlockNum <= atBlockNum {
 			accounts := decodeAccounts(item.Value)
-			return accounts, nil
+			return accounts, keyBlockNum, nil
 		}
 	}
 
-	return nil, nil
+	return nil, 0, nil
 }
 
-func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, blockNum uint64, blockHash []byte) error {
+func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, readerName string, blockNum uint64, blockHash []byte) error {
 	payload := make([]byte, 8+32)
 	binary.BigEndian.PutUint64(payload[:8], blockNum)
 	copy(payload[8:], blockHash)
-	err := r.store.Put(ctx, Keys.cursor(), payload)
+	err := r.store.Put(ctx, Keys.cursor(readerName), payload)
 	if err != nil {
 		return fmt.Errorf("writing cursor: %w", err)
 	}
@@ -79,8 +84,8 @@ func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, blockNum uint64,
 	return nil
 }
 
-func (r *KVDBAccountsResolver) GetCursor(ctx context.Context) (uint64, []byte, error) {
-	payload, err := r.store.Get(ctx, Keys.cursor())
+func (r *KVDBAccountsResolver) GetCursor(ctx context.Context, readerName string) (uint64, []byte, error) {
+	payload, err := r.store.Get(ctx, Keys.cursor(readerName))
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			return 0, nil, nil

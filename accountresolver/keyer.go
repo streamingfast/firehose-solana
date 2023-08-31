@@ -5,6 +5,11 @@ import (
 	"math"
 )
 
+// al:table_address:reader_1:block = []
+// al:table_address:block = accounts
+
+// cur:reader_1:block = []
+
 const tableAccountLookup = 0x0
 const tableCursor = 0x1
 
@@ -31,8 +36,10 @@ func (keyer) unpackTableLookup(key []byte) (Account, uint64) {
 	return key[1:33], math.MaxUint64 - binary.BigEndian.Uint64(key[33:])
 }
 
-func (keyer) cursor() (out []byte) {
-	out = make([]byte, 1)
+func (keyer) cursor(readerName string) (out []byte) {
+	out = make([]byte, len(readerName)+1)
 	out[0] = tableCursor
+	copy(out[1:], readerName)
+
 	return out
 }
