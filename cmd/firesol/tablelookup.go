@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/streamingfast/cli/sflags"
 	"github.com/streamingfast/dstore"
 	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
 	kvstore "github.com/streamingfast/kvdb/store"
@@ -13,30 +12,28 @@ import (
 )
 
 func newProcessAddressLookupCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
-	var processAddressLookupCmd = &cobra.Command{
-		Use:   "process-address-lookup",
+	return &cobra.Command{
+		Use:   "process-address-lookup {store} {destination-store} {badger-db}",
 		Short: "scan the blocks and process and extract the address lookup data",
 		RunE:  processAddressLookupE(logger, tracer),
+		Args:  cobra.ExactArgs(3),
 	}
-	processAddressLookupCmd.PersistentFlags().String("store", "", "block store")
-	return processAddressLookupCmd
 }
 
 func processAddressLookupE(logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		sourceStore, err := dstore.NewDBinStore(sflags.MustGetString(cmd, "store"))
+		sourceStore, err := dstore.NewDBinStore(args[0])
 		if err != nil {
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}
 
-		//destinationStore, err := dstore.NewDBinStore("gs://dfuseio-global-blocks-uscentral/sol-mainnet/v1-resolved?project=dfuseio-global")
-		destinationStore, err := dstore.NewDBinStore("file:///tmp/resolved/blocks")
+		destinationStore, err := dstore.NewDBinStore(args[1])
 		if err != nil {
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}
 
-		db, err := kvstore.New("badger3:///tmp/my-badger.db")
+		db, err := kvstore.New(args[2])
 		if err != nil {
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}
