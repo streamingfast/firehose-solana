@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/streamingfast/dstore"
 	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
 	kvstore "github.com/streamingfast/kvdb/store"
@@ -23,6 +25,11 @@ func newProcessAddressLookupCmd(logger *zap.Logger, tracer logging.Tracer) *cobr
 func processAddressLookupE(logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
+
+		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+			logger.Info("flag", zap.String("flag", flag.Name), zap.Reflect("value", flag.Value))
+		})
+
 		sourceStore, err := dstore.NewDBinStore(args[0])
 		if err != nil {
 			return fmt.Errorf("unable to create sourceStore: %w", err)
@@ -38,17 +45,25 @@ func processAddressLookupE(logger *zap.Logger, tracer logging.Tracer) func(cmd *
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}
 
-		//todo: discover cursor from kv
-		cursor := accountsresolver.NewCursor(154655004, nil)
-		fmt.Println("Default Cursor", cursor)
-		processor := accountsresolver.NewProcessor("reproc", cursor, accountsresolver.NewKVDBAccountsResolver(db), logger)
+		resolver := accountsresolver.NewKVDBAccountsResolver(db)
+		cursor, err := resolver.GetCursor(ctx, "reproc")
+		if err != nil {
+			return fmt.Errorf("unable to get cursor: %w", err)
+		}
 
-		//todo: needs a destination sourceStore to write the merge blocks with the address lookup resolved
+		if cursor == nil {
+			logger.Info("No cursor found, starting from beginning")
+			cursor = accountsresolver.NewCursor(154655004, nil)
+		}
+
+		fmt.Println("Cursor", cursor)
+		processor := accountsresolver.NewProcessor("reproc", cursor, resolver, logger)
+
 		err = processor.ProcessMergeBlocks(ctx, sourceStore, destinationStore)
 		if err != nil {
 			return fmt.Errorf("unable to process merge blocks: %w", err)
 		}
-
+		logger.Info("All done. Goodbye!")
 		return nil
 	}
 }

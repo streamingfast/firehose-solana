@@ -51,13 +51,19 @@ func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.S
 	startBlockNum := p.cursor.slotNum - p.cursor.slotNum%100
 	paddedBlockNum := fmt.Sprintf("%010d", startBlockNum)
 
+	p.logger.Info("Processing merge blocks", zap.Uint64("cursor_block_num", p.cursor.slotNum), zap.String("first_merge_filename", paddedBlockNum))
+
 	err := sourceStore.WalkFrom(ctx, "", paddedBlockNum, func(filename string) error {
+		p.logger.Debug("processing merge block file", zap.String("filename", filename))
 		return p.processMergeBlocksFile(ctx, filename, sourceStore, destinationStore)
 	})
 
 	if err != nil {
 		return fmt.Errorf("walking merge block sourceStore: %w", err)
 	}
+
+	p.logger.Info("Done processing merge blocks")
+
 	return nil
 }
 
@@ -67,6 +73,7 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 	if err != nil {
 		return fmt.Errorf("converting filename to block number: %w", err)
 	}
+
 	reader, err := sourceStore.OpenObject(ctx, filename)
 	if err != nil {
 		return fmt.Errorf("opening merge block file %s: %w", filename, err)
