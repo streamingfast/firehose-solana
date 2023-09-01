@@ -11,6 +11,7 @@ require (
 	github.com/klauspost/compress v1.15.12
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.6.1
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
 	github.com/streamingfast/bstream v0.0.2-0.20230731165201-639b4f347707
 	github.com/streamingfast/cli v0.0.4-0.20230608140431-f501fec4f1ce
@@ -170,7 +171,6 @@ require (
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/streamingfast/atm v0.0.0-20220131151839-18c87005e680 // indirect
 	github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5 // indirect
 	github.com/streamingfast/dauth v0.0.0-20230726175303-fc1d7198cb33 // indirect

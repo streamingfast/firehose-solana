@@ -9,6 +9,7 @@ import (
 	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
 	kvstore "github.com/streamingfast/kvdb/store"
 	_ "github.com/streamingfast/kvdb/store/badger3"
+	_ "github.com/streamingfast/kvdb/store/bigkv"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 )
