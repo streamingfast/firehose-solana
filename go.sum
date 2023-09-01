@@ -701,8 +701,8 @@ github.com/streamingfast/shutter v1.5.0 h1:NpzDYzj0HVpSiDJVO/FFSL6QIK/YKOxY0gJAt
 github.com/streamingfast/shutter v1.5.0/go.mod h1:B/T6efqdeMGbGwjzPS1ToXzYZI4kDzI5/u4I+7qbjY8=
 github.com/streamingfast/snapshotter v0.0.0-20230316190750-5bcadfde44d0 h1:Y15G1Z4fpEdm2b+/70owI7TLuXadlqBtGM7rk4Hxrzk=
 github.com/streamingfast/snapshotter v0.0.0-20230316190750-5bcadfde44d0/go.mod h1:/Rnz2TJvaShjUct0scZ9kKV2Jr9/+KBAoWy4UMYxgv4=
-github.com/streamingfast/solana-go v0.5.1-0.20230825014144-d109b36f2548 h1:brlyaiiTQ5jOb/vu7BleZlG2lLgN1Q87CoYuxsJZeO0=
-github.com/streamingfast/solana-go v0.5.1-0.20230825014144-d109b36f2548/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
+github.com/streamingfast/solana-go v0.5.1-0.20230831190518-20e3d532a2b2 h1:yf//b0qIVi8TKpEYhqo4HZBBRUEaTPJrysyJMGeIqyk=
+github.com/streamingfast/solana-go v0.5.1-0.20230831190518-20e3d532a2b2/go.mod h1:9NfZWSK0zqA+M1YU2pTI8sr1BfijCpqBFceLQARQiNw=
 github.com/streamingfast/substreams v1.1.12-0.20230814194809-4e3c676c77d9 h1:qQuawuqCiEmfcuIQL3PiE3r1AFzlss9jVjj/7evxElo=
 github.com/streamingfast/substreams v1.1.12-0.20230814194809-4e3c676c77d9/go.mod h1:Thcw2blrOD8uwRMGKhjD4BXwy1Fp9UADxIRHRme+raQ=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

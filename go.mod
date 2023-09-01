@@ -2,9 +2,7 @@ module github.com/streamingfast/firehose-solana
 
 go 1.20
 
-replace (
-	github.com/streamingfast/solana-go => ../solana-go
-)
+//replace github.com/streamingfast/solana-go => ../solana-go
 
 require (
 	cloud.google.com/go/bigtable v1.13.0
@@ -24,7 +22,7 @@ require (
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/node-manager v0.0.2-0.20230406142433-692298a8b8d2
 	github.com/streamingfast/pbgo v0.0.6-0.20221020131607-255008258d28
-	github.com/streamingfast/solana-go v0.5.1-0.20230825014144-d109b36f2548
+	github.com/streamingfast/solana-go v0.5.1-0.20230831190518-20e3d532a2b2
 	github.com/stretchr/testify v1.8.3
 	go.uber.org/zap v1.24.0
 	google.golang.org/protobuf v1.30.0
