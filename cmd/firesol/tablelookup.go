@@ -39,6 +39,7 @@ func processAddressLookupE(logger *zap.Logger, tracer logging.Tracer) func(cmd *
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}
 
+		//todo: discover cursor from kv
 		cursor := accountsresolver.NewCursor(154655004, nil)
 		fmt.Println("Default Cursor", cursor)
 		processor := accountsresolver.NewProcessor("reproc", cursor, accountsresolver.NewKVDBAccountsResolver(db), logger)
