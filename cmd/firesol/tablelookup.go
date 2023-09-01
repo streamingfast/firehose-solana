@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/spf13/cobra"
+	"github.com/streamingfast/cli/sflags"
 	"github.com/streamingfast/dstore"
 	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
 	kvstore "github.com/streamingfast/kvdb/store"
@@ -13,17 +13,19 @@ import (
 )
 
 func newProcessAddressLookupCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
-	return &cobra.Command{
+	var processAddressLookupCmd = &cobra.Command{
 		Use:   "process-address-lookup",
 		Short: "scan the blocks and process and extract the address lookup data",
 		RunE:  processAddressLookupE(logger, tracer),
 	}
+	processAddressLookupCmd.PersistentFlags().String("store", "", "block store")
+	return processAddressLookupCmd
 }
 
 func processAddressLookupE(logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		sourceStore, err := dstore.NewDBinStore("gs://dfuseio-global-blocks-uscentral/sol-mainnet/v1?project=dfuseio-global")
+		sourceStore, err := dstore.NewDBinStore(sflags.MustGetString(cmd, "store"))
 		if err != nil {
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}

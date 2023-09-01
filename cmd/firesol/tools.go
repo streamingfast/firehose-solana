@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/streamingfast/cli/sflags"
 	"io"
 	"strconv"
 	"strings"
@@ -9,13 +10,11 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
+	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go"
 	"github.com/streamingfast/solana-go/programs/token"
-	"go.uber.org/zap"
-
-	"github.com/streamingfast/bstream"
-	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 )
 
 func printBlock(blk *bstream.Block, alsoPrintTransactions bool, out io.Writer) error {
@@ -48,9 +47,10 @@ func printBlock(blk *bstream.Block, alsoPrintTransactions bool, out io.Writer) e
 	return nil
 }
 
-func newPrintTransactionCmd(logger *zap.Logger) *cobra.Command {
-	transactionCmd.PersistentFlags().String("store", "gs://dfuseio-global-blocks-uscentral/sol-mainnet/v1", "block store")
+func newPrintTransactionCmd() *cobra.Command {
+	transactionCmd.PersistentFlags().String("store", "", "block store")
 	transactionCmd.PersistentFlags().Bool("decode-token-program", false, "decode token mint to program instruction")
+	transactionCmd.PersistentFlags().Bool("bytes-only", false, "print addresses as bytes only")
 	return transactionCmd
 }
 
@@ -70,8 +70,10 @@ func printTransactionE(cmd *cobra.Command, args []string) error {
 	}
 
 	transactionId := args[1]
-	str := ""
+	str := sflags.MustGetString(cmd, "store")
 	fmt.Println("Using store", str)
+
+	bytesOnly := sflags.MustGetBool(cmd, "bytes-only")
 
 	store, err := dstore.NewDBinStore(str)
 	if err != nil {
@@ -91,7 +93,6 @@ func printTransactionE(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("Found %d oneblock files for block number %d\n", len(files), blockNum)
-
 	for _, filepath := range files {
 		reader, err := store.OpenObject(ctx, filepath)
 		if err != nil {
@@ -107,7 +108,6 @@ func printTransactionE(cmd *cobra.Command, args []string) error {
 		}
 
 		fmt.Printf("One Block File: %s\n", store.ObjectURL(filepath))
-
 		for {
 			block, err := readerFactory.Read()
 			if err != nil {
@@ -118,7 +118,7 @@ func printTransactionE(cmd *cobra.Command, args []string) error {
 			}
 
 			if blockNum == block.Num() {
-				if err = readTransaction(block, transactionId); err != nil {
+				if err = readTransaction(block, bytesOnly, transactionId); err != nil {
 					return err
 				}
 				return nil
@@ -129,7 +129,7 @@ func printTransactionE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func readTransaction(blk *bstream.Block, transactionId string) error {
+func readTransaction(blk *bstream.Block, bytesOnly bool, transactionId string) error {
 	libNum := blk.LibNum
 	block := blk.ToProtocol().(*pbsol.Block)
 	blockId := block.Blockhash
@@ -150,17 +150,30 @@ func readTransaction(blk *bstream.Block, transactionId string) error {
 			continue
 		}
 
-		fmt.Printf("Found transaction #%d: %s\n\n", i, trxId)
+		if bytesOnly {
+			fmt.Printf("Found transaction #%d: %v\n\n", i, trx.Transaction.Signatures[0])
+		} else {
+			fmt.Printf("Found transaction #%d: %s\n\n", i, trxId)
+		}
+
 		fmt.Printf("Header: %s\n\n", trx.Transaction.Message.Header.String())
 
 		fmt.Println("Accounts involved:")
 		var accountMetas []*solana.AccountMeta
 		for accI, acc := range trx.Transaction.Message.AccountKeys {
-			fmt.Printf("\t> Acc [%d]: %s\n", accI, base58.Encode(acc))
+			if bytesOnly {
+				fmt.Printf("\t> Acc [%d]: %v\n", accI, acc)
+			} else {
+				fmt.Printf("\t> Acc [%d]: %s\n", accI, base58.Encode(acc))
+			}
 			accountMetas = append(accountMetas, solana.NewAccountMeta(solana.PublicKeyFromBytes(acc), false, false))
 		}
 
-		fmt.Println("\nRecent BlockHash:", base58.Encode(trx.Transaction.Message.RecentBlockhash))
+		if bytesOnly {
+			fmt.Printf("\nRecent BlockHash: %v\n", trx.Transaction.Message.RecentBlockhash)
+		} else {
+			fmt.Println("\nRecent BlockHash:", base58.Encode(trx.Transaction.Message.RecentBlockhash))
+		}
 
 		if len(trx.Transaction.Message.Instructions) > 0 {
 			fmt.Println("\nCompiled Instructions:")
