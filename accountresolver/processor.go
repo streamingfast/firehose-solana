@@ -147,6 +147,9 @@ func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error 
 			return fmt.Errorf("managing address lookup at block %d: %w", block.Slot, err)
 		}
 	}
+
+	p.cursor.slotNum = block.Slot
+
 	return nil
 }
 
