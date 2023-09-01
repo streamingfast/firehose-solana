@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/streamingfast/bstream"
-
 	"github.com/mr-tron/base58"
+	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go/programs/addresstablelookup"
+	"go.uber.org/zap"
 )
 
 const AddressTableLookupAccountProgram = "AddressLookupTab1e1111111111111111111111111"
@@ -33,37 +33,39 @@ type Processor struct {
 	accountsResolver AccountsResolver
 	cursor           *Cursor
 	readerName       string
+	logger           *zap.Logger
 }
 
-func NewProcessor(readerName string, cursor *Cursor, accountsResolver AccountsResolver) *Processor {
+func NewProcessor(readerName string, cursor *Cursor, accountsResolver AccountsResolver, logger *zap.Logger) *Processor {
 	return &Processor{
 		readerName:       readerName,
 		accountsResolver: accountsResolver,
 		cursor:           cursor,
+		logger:           logger,
 	}
 }
 
-func (p *Processor) ProcessMergeBlocks(ctx context.Context, store dstore.Store) error {
+func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.Store, destinationStore dstore.Store) error {
 	startBlockNum := p.cursor.slotNum - p.cursor.slotNum%100
 	paddedBlockNum := fmt.Sprintf("%010d", startBlockNum)
 
-	err := store.WalkFrom(ctx, "", paddedBlockNum, func(filename string) error {
-		return p.processMergeBlocksFile(ctx, filename, store)
+	err := sourceStore.WalkFrom(ctx, "", paddedBlockNum, func(filename string) error {
+		return p.processMergeBlocksFile(ctx, filename, sourceStore, destinationStore)
 	})
 
 	if err != nil {
-		return fmt.Errorf("walking merge block store: %w", err)
+		return fmt.Errorf("walking merge block sourceStore: %w", err)
 	}
 	return nil
 }
 
-func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string, store dstore.Store) error {
-	fmt.Println("Processing merge block file", filename)
+func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string, sourceStore dstore.Store, destinationStore dstore.Store) error {
+	p.logger.Info("Processing merge block file", zap.String("filename", filename))
 	firstBlockOfFile, err := strconv.Atoi(strings.TrimLeft(filename, "0"))
 	if err != nil {
 		return fmt.Errorf("converting filename to block number: %w", err)
 	}
-	reader, err := store.OpenObject(ctx, filename)
+	reader, err := sourceStore.OpenObject(ctx, filename)
 	if err != nil {
 		return fmt.Errorf("opening merge block file %s: %w", filename, err)
 	}
@@ -74,27 +76,44 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 		return fmt.Errorf("creating block reader for file %s: %w", filename, err)
 	}
 
-	for {
-		block, err := blockReader.Read()
-		if err != nil {
-			if err == io.EOF {
-				break
+	bundleReader := NewBundleReader(ctx, p.logger)
+
+	go func() {
+		for {
+			block, err := blockReader.Read()
+			if err != nil {
+				if err == io.EOF {
+					bundleReader.PushError(io.EOF)
+					return
+				}
+				bundleReader.PushError(fmt.Errorf("reading block: %w", err))
+				return
 			}
-			return fmt.Errorf("reading block: %w", err)
-		}
 
-		blk := block.ToProtocol().(*pbsol.Block)
-		if blk.Slot < uint64(firstBlockOfFile) || blk.Slot <= p.cursor.slotNum {
-			fmt.Println("skip block", blk.Slot)
-			continue
+			blk := block.ToProtocol().(*pbsol.Block)
+			if blk.Slot < uint64(firstBlockOfFile) || blk.Slot <= p.cursor.slotNum {
+				p.logger.Debug("skip block", zap.Uint64("slot", blk.Slot))
+				continue
+			}
+			err = p.ProcessBlock(context.Background(), blk)
+			if err != nil {
+				bundleReader.PushError(fmt.Errorf("processing block: %w", err))
+				return
+			}
+			err = bundleReader.PushBlock(block)
+			if err != nil {
+				bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
+				return
+			}
 		}
-		err = p.ProcessBlock(context.Background(), blk)
-		if err != nil {
-			return fmt.Errorf("processing block: %w", err)
-		}
+	}()
 
-		//todo: store new block to new merge file
+	err = destinationStore.WriteObject(ctx, filename, bundleReader)
+	if err != nil {
+		return fmt.Errorf("writing bundle file: %w", err)
 	}
+	p.logger.Info("new merge blocks file written:", zap.String("filename", filename))
+
 	return nil
 }
 
@@ -141,7 +160,7 @@ func (p *Processor) manageAddressLookup(ctx context.Context, blockNum uint64, er
 func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *pbsol.ConfirmedTransaction) error {
 	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
 		accs, _, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
-		fmt.Println("Applying address table lookup for :", base58.Encode(addressTableLookup.AccountKey), "count", len(accs))
+		p.logger.Info("Applying address table lookup", zap.String("account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("count", len(accs)))
 		if err != nil {
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
 		}
@@ -184,9 +203,9 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, pro
 	if addresstablelookup.ExtendAddressTableLookupInstruction(instruction.Data) {
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
 		newAccounts := addresstablelookup.ParseNewAccounts(instruction.Data[12:])
-		fmt.Println("Extending address table lookup for:", base58.Encode(tableLookupAccount))
+		p.logger.Info("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
 		for _, account := range newAccounts {
-			fmt.Println("\t", base58.Encode(account))
+			p.logger.Debug("\t new account", zap.String("account", base58.Encode(account)))
 		}
 		err := p.accountsResolver.Extended(ctx, blockNum, tableLookupAccount, NewAccounts(newAccounts))
 		if err != nil {

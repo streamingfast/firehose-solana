@@ -45,7 +45,7 @@ func main() {
 				toolsCmd.AddCommand(newToolsBigtableCmd(zlog, tracer))
 				toolsCmd.AddCommand(newToolsBatchFileCmd(zlog))
 				toolsCmd.AddCommand(newPrintTransactionCmd(nil))
-				toolsCmd.AddCommand(processAddressLookupCmd)
+				toolsCmd.AddCommand(newProcessAddressLookupCmd(zlog, tracer))
 				return nil
 			},
 		},
