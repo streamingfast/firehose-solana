@@ -1,6 +1,7 @@
 package accountsresolver
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -15,7 +16,8 @@ import (
 	"go.uber.org/zap"
 )
 
-const AddressTableLookupAccountProgram = "AddressLookupTab1e1111111111111111111111111"
+var AddressTableLookupAccountProgram = mustFromBase58("AddressLookupTab1e1111111111111111111111111")
+var SystemProgram = mustFromBase58("11111111111111111111111111111111")
 
 type Cursor struct {
 	slotNum   uint64
@@ -174,7 +176,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, con
 	accountKeys := confirmedTransaction.Transaction.Message.AccountKeys
 	for compileIndex, compiledInstruction := range confirmedTransaction.Transaction.Message.Instructions {
 		idx := compiledInstruction.ProgramIdIndex
-		err := p.ProcessInstruction(ctx, blockNum, base58.Encode(confirmedTransaction.Transaction.Message.AccountKeys[idx]), accountKeys, compiledInstruction)
+		err := p.ProcessInstruction(ctx, blockNum, confirmedTransaction.Transaction.Message.AccountKeys[idx], accountKeys, compiledInstruction)
 		if err != nil {
 			return fmt.Errorf("confirmedTransaction %s processing compiled instruction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
 		}
@@ -184,7 +186,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, con
 		}
 		inner := confirmedTransaction.Meta.InnerInstructions[compileIndex]
 		for _, instruction := range inner.Instructions {
-			err := p.ProcessInstruction(ctx, blockNum, base58.Encode(confirmedTransaction.Transaction.Message.AccountKeys[instruction.ProgramIdIndex]), accountKeys, instruction)
+			err := p.ProcessInstruction(ctx, blockNum, confirmedTransaction.Transaction.Message.AccountKeys[instruction.ProgramIdIndex], accountKeys, instruction)
 			if err != nil {
 				return fmt.Errorf("confirmedTransaction %s processing instruxction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
 			}
@@ -194,8 +196,8 @@ func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, con
 	return nil
 }
 
-func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, programAccount string, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
-	if programAccount != AddressTableLookupAccountProgram {
+func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, programAccount Account, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
+	if !bytes.Equal(programAccount, AddressTableLookupAccountProgram) {
 		return nil
 	}
 
