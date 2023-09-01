@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/streamingfast/bstream"
 	"go.uber.org/zap"
@@ -20,6 +21,8 @@ type BundleReader struct {
 	errChan          chan error
 	logger           *zap.Logger
 	headerWritten    bool
+
+	lastRead time.Time
 }
 
 func NewBundleReader(ctx context.Context, logger *zap.Logger) *BundleReader {
@@ -29,6 +32,7 @@ func NewBundleReader(ctx context.Context, logger *zap.Logger) *BundleReader {
 		blockData:     make(chan []byte, 1),
 		errChan:       make(chan error, 1),
 		logger:        logger,
+		lastRead:      time.Now(),
 	}
 }
 
@@ -62,7 +66,7 @@ func (r *BundleReader) PushBlock(block *bstream.Block) error {
 }
 
 func (r *BundleReader) Read(p []byte) (bytesRead int, err error) {
-
+	r.logger.Debug("read called", zap.Duration("since_last_read", time.Since(r.lastRead)))
 	if r.readBuffer == nil {
 		if err := r.fillBuffer(); err != nil {
 			return 0, err
@@ -75,6 +79,7 @@ func (r *BundleReader) Read(p []byte) (bytesRead int, err error) {
 		r.readBuffer = nil
 	}
 
+	r.lastRead = time.Now()
 	return bytesRead, nil
 }
 

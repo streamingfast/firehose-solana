@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mr-tron/base58"
 	"github.com/streamingfast/kvdb/store"
 	_ "github.com/streamingfast/kvdb/store/badger3"
 	"github.com/stretchr/testify/require"
@@ -26,6 +25,8 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	resolver := NewKVDBAccountsResolver(db)
 	err = resolver.Extended(context.Background(), 1, accountFromBase58(t, a1), []Account{accountFromBase58(t, a2), accountFromBase58(t, a3)})
 	require.NoError(t, err)
+	err = resolver.store.FlushPuts(context.Background())
+	require.NoError(t, err)
 
 	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
@@ -34,6 +35,8 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
 
 	err = resolver.Extended(context.Background(), 100, accountFromBase58(t, a1), []Account{accountFromBase58(t, a4)})
+	require.NoError(t, err)
+	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
 	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
@@ -65,16 +68,14 @@ func TestKVDBAccountsResolver_StoreCursor(t *testing.T) {
 	require.NoError(t, err)
 
 	resolver := NewKVDBAccountsResolver(db)
-	expectedBlockHash, err := base58.Decode("8cv9oNupqL1wKogVHcQpqxC7QPy4SiaRghBiP5U2YYLp")
 	require.NoError(t, err)
 
-	err = resolver.StoreCursor(context.Background(), "r1", NewCursor(1, expectedBlockHash))
+	err = resolver.StoreCursor(context.Background(), "r1", NewCursor(1))
 	require.NoError(t, err)
 
 	c, err := resolver.GetCursor(context.Background(), "r1")
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), c.slotNum)
-	require.Equal(t, expectedBlockHash, c.blockHash)
 }
 
 func TestKVDBAccountsResolver_StoreCursor_None(t *testing.T) {

@@ -42,7 +42,6 @@ func (r *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, ke
 	if err != nil {
 		return fmt.Errorf("writing extended accounts for key %q: %w", key, err)
 	}
-	err = r.store.FlushPuts(ctx)
 	if err != nil {
 		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
 	}
@@ -70,8 +69,7 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 
 func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error {
 	payload := make([]byte, 8+32)
-	binary.BigEndian.PutUint64(payload[:8], cursor.slotNum)
-	copy(payload[8:], cursor.blockHash)
+	binary.BigEndian.PutUint64(payload, cursor.slotNum)
 	err := r.store.Put(ctx, Keys.cursor(readerName), payload)
 	if err != nil {
 		return fmt.Errorf("writing cursor: %w", err)
@@ -95,9 +93,8 @@ func (r *KVDBAccountsResolver) GetCursor(ctx context.Context, readerName string)
 	if payload == nil {
 		return nil, nil
 	}
-	blockNum := binary.BigEndian.Uint64(payload[:8])
-	blockHash := payload[8:]
-	return NewCursor(blockNum, blockHash), nil
+	blockNum := binary.BigEndian.Uint64(payload)
+	return NewCursor(blockNum), nil
 }
 
 func decodeAccounts(payload []byte) Accounts {

@@ -54,7 +54,7 @@ func processAddressLookupE(logger *zap.Logger, tracer logging.Tracer) func(cmd *
 
 		if cursor == nil {
 			logger.Info("No cursor found, starting from beginning")
-			cursor = accountsresolver.NewCursor(154655004, nil)
+			cursor = accountsresolver.NewCursor(154655004)
 		}
 
 		fmt.Println("Cursor", cursor)

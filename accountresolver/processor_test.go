@@ -64,7 +64,7 @@ func Test_ExtendTableLookupInCompiledInstruction(t *testing.T) {
 	db, err := kvstore.New("badger3:///tmp/my-badger.db")
 	require.NoError(t, err)
 
-	cursor := NewCursor(185_914_861, nil)
+	cursor := NewCursor(185_914_861)
 	resolver := NewKVDBAccountsResolver(db)
 	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
 	err = p.ProcessBlock(context.Background(), solBlock)
@@ -143,7 +143,7 @@ func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
 	db, err := kvstore.New("badger3:///tmp/my-badger.db")
 	require.NoError(t, err)
 
-	cursor := NewCursor(157_564_919, nil)
+	cursor := NewCursor(157_564_919)
 	resolver := NewKVDBAccountsResolver(db)
 	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
 	err = p.ProcessBlock(context.Background(), solBlock)
@@ -218,11 +218,13 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	db, err := kvstore.New("badger3:///tmp/my-badger.db")
 	require.NoError(t, err)
 
-	cursor := NewCursor(185_914_861, nil)
+	cursor := NewCursor(185_914_861)
 	resolver := NewKVDBAccountsResolver(db)
 	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
 
 	err = p.accountsResolver.Extended(context.Background(), 185_914_860, tableLookupAccountInTransaction, Accounts{AddressTableLookupAccountProgram})
+	require.NoError(t, err)
+	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
 	err = p.ProcessBlock(context.Background(), solBlock)
@@ -301,11 +303,13 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	db, err := kvstore.New("badger3:///tmp/my-badger.db")
 	require.NoError(t, err)
 
-	cursor := NewCursor(185_914_861, nil)
+	cursor := NewCursor(185_914_861)
 	resolver := NewKVDBAccountsResolver(db)
 	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
 
 	err = p.accountsResolver.Extended(context.Background(), 185_914_860, tableLookupAccountInTransaction, Accounts{tableAccountToExtend})
+	require.NoError(t, err)
+	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
 	err = p.ProcessBlock(context.Background(), solBlock)

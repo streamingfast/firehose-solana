@@ -4,30 +4,27 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"strconv"
-	"strings"
-
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go/programs/addresstablelookup"
 	"go.uber.org/zap"
+	"io"
+	"strconv"
+	"strings"
 )
 
 var AddressTableLookupAccountProgram = mustFromBase58("AddressLookupTab1e1111111111111111111111111")
 var SystemProgram = mustFromBase58("11111111111111111111111111111111")
 
 type Cursor struct {
-	slotNum   uint64
-	blockHash []byte
+	slotNum uint64
 }
 
-func NewCursor(blockNum uint64, blockHash []byte) *Cursor {
+func NewCursor(blockNum uint64) *Cursor {
 	return &Cursor{
-		slotNum:   blockNum,
-		blockHash: blockHash,
+		slotNum: blockNum,
 	}
 }
 
@@ -150,11 +147,6 @@ func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error 
 			return fmt.Errorf("managing address lookup at block %d: %w", block.Slot, err)
 		}
 	}
-	p.cursor = NewCursor(block.Slot, []byte(block.Blockhash))
-	err := p.accountsResolver.StoreCursor(ctx, p.readerName, p.cursor)
-	if err != nil {
-		return fmt.Errorf("storing cursor at block %d: %w", block.Slot, err)
-	}
 	return nil
 }
 
@@ -219,6 +211,11 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, pro
 		err := p.accountsResolver.Extended(ctx, blockNum, tableLookupAccount, NewAccounts(newAccounts))
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
+		}
+		p.cursor = NewCursor(blockNum)
+		err = p.accountsResolver.StoreCursor(ctx, p.readerName, p.cursor)
+		if err != nil {
+			return fmt.Errorf("storing cursor at block %d: %w", blockNum, err)
 		}
 	}
 
