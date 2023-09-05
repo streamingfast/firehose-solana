@@ -14,6 +14,7 @@ var a1 = "2iMPmzAgkUWRjq1E5C4gAFA7bDKCBUrUbogGd8dau5XP"
 var a2 = "4YTppbHxaNfZdYjJq9iXvT5T2xnVywqN2FfDX9p7f7MG"
 var a3 = "5J7HHVuLb1kUn9q4PZgGYsLm4DNRg1dcmB5FENuM7wQz"
 var a4 = "9hT5nqawMAn4xgCcjCmiPDXzVqECQTap3c3wHk6dxyFx"
+var a5 = "A8YFwAca6hSp9Xw1RcqUcdXuVgMvQbT2yYLmArCFKxfD"
 
 func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	err := os.RemoveAll("/tmp/my-badger.db")
@@ -90,4 +91,37 @@ func TestKVDBAccountsResolver_StoreCursor_None(t *testing.T) {
 	c, err := resolver.GetCursor(context.Background(), "r1")
 	require.NoError(t, err)
 	require.Nil(t, c)
+}
+
+func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
+	err := os.RemoveAll("/tmp/my-badger.db")
+	require.NoError(t, err)
+
+	db, err := store.New("badger3:///tmp/my-badger.db")
+	require.NoError(t, err)
+
+	resolver := NewKVDBAccountsResolver(db)
+	err = resolver.Extended(context.Background(), 1, accountFromBase58(t, a1), []Account{accountFromBase58(t, a2), accountFromBase58(t, a3)})
+	require.NoError(t, err)
+	err = resolver.store.FlushPuts(context.Background())
+	require.NoError(t, err)
+
+	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	require.NoError(t, err)
+	require.Equal(t, 2, len(accounts))
+	require.Equal(t, accountFromBase58(t, a2), accounts[0])
+	require.Equal(t, accountFromBase58(t, a3), accounts[1])
+
+	err = resolver.Extended(context.Background(), 1, accountFromBase58(t, a1), []Account{accountFromBase58(t, a4), accountFromBase58(t, a5)})
+	require.NoError(t, err)
+	err = resolver.store.FlushPuts(context.Background())
+	require.NoError(t, err)
+
+	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	require.NoError(t, err)
+	require.Equal(t, 4, len(accounts))
+	require.Equal(t, accountFromBase58(t, a2), accounts[0])
+	require.Equal(t, accountFromBase58(t, a3), accounts[1])
+	require.Equal(t, accountFromBase58(t, a4), accounts[2])
+	require.Equal(t, accountFromBase58(t, a5), accounts[3])
 }

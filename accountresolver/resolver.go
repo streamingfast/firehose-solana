@@ -27,15 +27,15 @@ func NewKVDBAccountsResolver(store store.KVStore) *KVDBAccountsResolver {
 }
 
 func (r *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, key Account, accounts Accounts) error {
-	currentAccounts, resolveAtBlockNum, err := r.Resolve(ctx, blockNum, key)
+	currentAccounts, _, err := r.Resolve(ctx, blockNum, key)
 	if err != nil {
 		return fmt.Errorf("retreiving last accounts for key %q: %w", key, err)
 	}
 
-	if resolveAtBlockNum == blockNum {
-		// already extended at this block, nothing to do
-		return nil
-	}
+	//if resolveAtBlockNum == blockNum {
+	//	// already extended at this block, nothing to do
+	//	return nil
+	//}
 
 	payload := encodeAccounts(append(currentAccounts, accounts...))
 	err = r.store.Put(ctx, Keys.extendTableLookup(key, blockNum), payload)
