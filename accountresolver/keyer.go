@@ -12,6 +12,7 @@ import (
 
 const tableAccountLookup = 0x0
 const tableCursor = 0x1
+const tableKnownTransaction = 0x3
 
 var Keys keyer
 
@@ -41,6 +42,24 @@ func (keyer) cursor(readerName string) (out []byte) {
 	out = make([]byte, len(readerName)+1)
 	out[0] = tableCursor
 	copy(out[1:], readerName)
-
 	return out
+}
+
+func (keyer) transactionSeenPrefix(blockNum uint64) []byte {
+	out := make([]byte, 1+9)
+	out[0] = tableKnownTransaction
+	binary.BigEndian.PutUint64(out[1:], math.MaxUint64-blockNum)
+	return out
+}
+
+func (keyer) transactionSeen(blockNum uint64, trxHash []byte) []byte {
+	out := make([]byte, 1+8+64)
+	out[0] = tableKnownTransaction
+	binary.BigEndian.PutUint64(out[1:9], math.MaxUint64-blockNum)
+	copy(out[9:], trxHash)
+	return out
+}
+
+func (keyer) unpackTransactionSeen(key []byte) (blockNum uint64, trxHash []byte) {
+	return binary.BigEndian.Uint64(key[1:9]), key[9:]
 }

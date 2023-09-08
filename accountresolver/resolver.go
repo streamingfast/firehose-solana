@@ -11,8 +11,10 @@ import (
 )
 
 type AccountsResolver interface {
-	Extended(ctx context.Context, blockNum uint64, trxHash []byte, key Account, accounts Accounts) error
+	Extend(ctx context.Context, blockNum uint64, trxHash []byte, key Account, accounts Accounts) error
 	Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, uint64, []byte, error)
+	ResolveSeenTransaction(ctx context.Context, atBlockNum uint64, trxHash []byte) ([]byte, error)
+	SeenTransaction(ctx context.Context, atBlockNum uint64, trxHash []byte) error
 	StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error
 	GetCursor(ctx context.Context, readerName string) (*Cursor, error)
 }
@@ -27,7 +29,7 @@ func NewKVDBAccountsResolver(store store.KVStore) *KVDBAccountsResolver {
 	}
 }
 
-func (r *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, trxHash []byte, key Account, accounts Accounts) error {
+func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxHash []byte, key Account, accounts Accounts) error {
 	currentAccounts, resolveAtBlockNum, keyTrxHash, err := r.Resolve(ctx, blockNum, key)
 	if err != nil {
 		return fmt.Errorf("retreiving last accounts for key %q: %w", key, err)
@@ -57,10 +59,6 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		return nil, 0, nil, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
 	}
 
-	var accounts Accounts
-	var blockNum uint64
-	var trxHash []byte
-
 	for iter.Next() {
 		item := iter.Item()
 		_, keyBlockNum, hash := Keys.unpackTableLookup(item.Key)
@@ -69,7 +67,25 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		}
 	}
 
-	return accounts, blockNum, trxHash, nil
+	return nil, 0, nil, nil
+}
+
+func (r *KVDBAccountsResolver) ResolveSeenTransaction(ctx context.Context, atBlockNum uint64, trxHash []byte) ([]byte, error) {
+	val, err := r.store.Get(ctx, Keys.transactionSeen(atBlockNum, trxHash))
+	if err != nil {
+
+	}
+	if val != nil {
+
+	}
+}
+
+func (r *KVDBAccountsResolver) SeenTransaction(ctx context.Context, atBlockNum uint64, trxHash []byte) error {
+
+	return nil
+	//err := r.store.Put()
+	//
+	//return nil, nil
 }
 
 func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error {

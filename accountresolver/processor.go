@@ -211,7 +211,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, trx
 		for _, account := range newAccounts {
 			p.logger.Debug("\t new account", zap.String("account", base58.Encode(account)))
 		}
-		err := p.accountsResolver.Extended(ctx, blockNum, trxHash, tableLookupAccount, NewAccounts(newAccounts))
+		err := p.accountsResolver.Extend(ctx, blockNum, trxHash, tableLookupAccount, NewAccounts(newAccounts))
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
 		}
