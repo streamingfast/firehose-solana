@@ -70,7 +70,7 @@ func Test_ExtendTableLookupInCompiledInstruction(t *testing.T) {
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAccount)
+	accounts, _, _, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAccount)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
@@ -149,7 +149,7 @@ func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	accounts, _, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
@@ -222,7 +222,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	resolver := NewKVDBAccountsResolver(db)
 	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
 
-	err = p.accountsResolver.Extended(context.Background(), 185_914_860, tableLookupAccountInTransaction, Accounts{AddressTableLookupAccountProgram})
+	err = p.accountsResolver.Extended(context.Background(), 185_914_860, []byte{0x00}, tableLookupAccountInTransaction, Accounts{AddressTableLookupAccountProgram})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
@@ -230,7 +230,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
+	accounts, _, _, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
@@ -307,7 +307,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	resolver := NewKVDBAccountsResolver(db)
 	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
 
-	err = p.accountsResolver.Extended(context.Background(), 185_914_860, tableLookupAccountInTransaction, Accounts{tableAccountToExtend})
+	err = p.accountsResolver.Extended(context.Background(), 185_914_860, []byte{0x00}, tableLookupAccountInTransaction, Accounts{tableAccountToExtend})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
@@ -315,6 +315,6 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
+	accounts, _, _, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }

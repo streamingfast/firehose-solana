@@ -1,8 +1,6 @@
 package accountsresolver
 
 import (
-	"errors"
-
 	"github.com/mr-tron/base58"
 )
 
@@ -24,8 +22,6 @@ func (a *Accounts) ToBytesArray() (out [][]byte) {
 }
 
 type Account []byte
-
-var AccountNotFound = errors.New("account not found")
 
 func (a Account) base58() string {
 	return base58.Encode(a)

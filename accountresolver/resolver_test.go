@@ -24,36 +24,36 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	require.NoError(t, err)
 
 	resolver := NewKVDBAccountsResolver(db)
-	err = resolver.Extended(context.Background(), 1, accountFromBase58(t, a1), []Account{accountFromBase58(t, a2), accountFromBase58(t, a3)})
+	err = resolver.Extended(context.Background(), 1, []byte{0x00}, accountFromBase58(t, a1), []Account{accountFromBase58(t, a2), accountFromBase58(t, a3)})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, _, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
 
-	err = resolver.Extended(context.Background(), 100, accountFromBase58(t, a1), []Account{accountFromBase58(t, a4)})
+	err = resolver.Extended(context.Background(), 100, []byte{0x01}, accountFromBase58(t, a1), []Account{accountFromBase58(t, a4)})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
-	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, _, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
 
-	accounts, _, err = resolver.Resolve(context.Background(), 100, accountFromBase58(t, a1))
+	accounts, _, _, err = resolver.Resolve(context.Background(), 100, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 3, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
 	require.Equal(t, accountFromBase58(t, a4), accounts[2])
 
-	accounts, _, err = resolver.Resolve(context.Background(), 1000, accountFromBase58(t, a1))
+	accounts, _, _, err = resolver.Resolve(context.Background(), 1000, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 3, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
@@ -94,6 +94,8 @@ func TestKVDBAccountsResolver_StoreCursor_None(t *testing.T) {
 }
 
 func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
+	trxHash1 := []byte{0x01}
+	trxHash2 := []byte{0x02}
 	err := os.RemoveAll("/tmp/my-badger.db")
 	require.NoError(t, err)
 
@@ -101,23 +103,23 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 	require.NoError(t, err)
 
 	resolver := NewKVDBAccountsResolver(db)
-	err = resolver.Extended(context.Background(), 1, accountFromBase58(t, a1), []Account{accountFromBase58(t, a2), accountFromBase58(t, a3)})
+	err = resolver.Extended(context.Background(), 1, trxHash1, accountFromBase58(t, a1), []Account{accountFromBase58(t, a2), accountFromBase58(t, a3)})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, _, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
 
-	err = resolver.Extended(context.Background(), 1, accountFromBase58(t, a1), []Account{accountFromBase58(t, a4), accountFromBase58(t, a5)})
+	err = resolver.Extended(context.Background(), 1, trxHash2, accountFromBase58(t, a1), []Account{accountFromBase58(t, a4), accountFromBase58(t, a5)})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
-	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, _, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 4, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])

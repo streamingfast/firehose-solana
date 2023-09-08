@@ -163,7 +163,7 @@ func (p *Processor) manageAddressLookup(ctx context.Context, blockNum uint64, er
 
 func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *pbsol.ConfirmedTransaction) error {
 	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
-		accs, _, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
+		accs, _, _, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
 		p.logger.Info("Resolve address table lookup", zap.String("account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("count", len(accs)))
 		if err != nil {
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
@@ -178,7 +178,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, con
 	accountKeys := confirmedTransaction.Transaction.Message.AccountKeys
 	for compileIndex, compiledInstruction := range confirmedTransaction.Transaction.Message.Instructions {
 		idx := compiledInstruction.ProgramIdIndex
-		err := p.ProcessInstruction(ctx, blockNum, confirmedTransaction.Transaction.Message.AccountKeys[idx], accountKeys, compiledInstruction)
+		err := p.ProcessInstruction(ctx, blockNum, confirmedTransaction.Transaction.Signatures[0], confirmedTransaction.Transaction.Message.AccountKeys[idx], accountKeys, compiledInstruction)
 		if err != nil {
 			return fmt.Errorf("confirmedTransaction %s processing compiled instruction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
 		}
@@ -188,7 +188,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, con
 		}
 		inner := confirmedTransaction.Meta.InnerInstructions[compileIndex]
 		for _, instruction := range inner.Instructions {
-			err := p.ProcessInstruction(ctx, blockNum, accountKeys[instruction.ProgramIdIndex], accountKeys, instruction)
+			err := p.ProcessInstruction(ctx, blockNum, confirmedTransaction.Transaction.Signatures[0], accountKeys[instruction.ProgramIdIndex], accountKeys, instruction)
 			if err != nil {
 				return fmt.Errorf("confirmedTransaction %s processing instruxction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
 			}
@@ -198,7 +198,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, con
 	return nil
 }
 
-func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, programAccount Account, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
+func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, trxHash []byte, programAccount Account, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
 	if !bytes.Equal(programAccount, AddressTableLookupAccountProgram) {
 		return nil
 	}
@@ -211,7 +211,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, pro
 		for _, account := range newAccounts {
 			p.logger.Debug("\t new account", zap.String("account", base58.Encode(account)))
 		}
-		err := p.accountsResolver.Extended(ctx, blockNum, tableLookupAccount, NewAccounts(newAccounts))
+		err := p.accountsResolver.Extended(ctx, blockNum, trxHash, tableLookupAccount, NewAccounts(newAccounts))
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
 		}

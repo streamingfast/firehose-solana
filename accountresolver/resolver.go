@@ -1,6 +1,7 @@
 package accountsresolver
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -10,8 +11,8 @@ import (
 )
 
 type AccountsResolver interface {
-	Extended(ctx context.Context, blockNum uint64, key Account, accounts Accounts) error
-	Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, uint64, error)
+	Extended(ctx context.Context, blockNum uint64, trxHash []byte, key Account, accounts Accounts) error
+	Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, uint64, []byte, error)
 	StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error
 	GetCursor(ctx context.Context, readerName string) (*Cursor, error)
 }
@@ -26,19 +27,19 @@ func NewKVDBAccountsResolver(store store.KVStore) *KVDBAccountsResolver {
 	}
 }
 
-func (r *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, key Account, accounts Accounts) error {
-	currentAccounts, _, err := r.Resolve(ctx, blockNum, key)
+func (r *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, trxHash []byte, key Account, accounts Accounts) error {
+	currentAccounts, resolveAtBlockNum, keyTrxHash, err := r.Resolve(ctx, blockNum, key)
 	if err != nil {
 		return fmt.Errorf("retreiving last accounts for key %q: %w", key, err)
 	}
 
-	//if resolveAtBlockNum == blockNum {
-	//	// already extended at this block, nothing to do
-	//	return nil
-	//}
+	if resolveAtBlockNum == blockNum && bytes.Equal(trxHash, keyTrxHash) {
+		// already extended at this block, nothing to do
+		return nil
+	}
 
 	payload := encodeAccounts(append(currentAccounts, accounts...))
-	err = r.store.Put(ctx, Keys.extendTableLookup(key, blockNum), payload)
+	err = r.store.Put(ctx, Keys.extendTableLookup(key, blockNum, trxHash), payload)
 	if err != nil {
 		return fmt.Errorf("writing extended accounts for key %q: %w", key, err)
 	}
@@ -49,22 +50,26 @@ func (r *KVDBAccountsResolver) Extended(ctx context.Context, blockNum uint64, ke
 	return nil
 }
 
-func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, uint64, error) {
+func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, uint64, []byte, error) {
 	keyBytes := Keys.tableLookupPrefix(key)
 	iter := r.store.Prefix(ctx, keyBytes, store.Unlimited)
 	if iter.Err() != nil {
-		return nil, 0, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
+		return nil, 0, nil, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
 	}
+
+	var accounts Accounts
+	var blockNum uint64
+	var trxHash []byte
+
 	for iter.Next() {
 		item := iter.Item()
-		_, keyBlockNum := Keys.unpackTableLookup(item.Key)
+		_, keyBlockNum, hash := Keys.unpackTableLookup(item.Key)
 		if keyBlockNum <= atBlockNum {
-			accounts := decodeAccounts(item.Value)
-			return accounts, keyBlockNum, nil
+			return decodeAccounts(item.Value), keyBlockNum, hash, nil
 		}
 	}
 
-	return nil, 0, nil
+	return accounts, blockNum, trxHash, nil
 }
 
 func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error {
@@ -107,7 +112,6 @@ func decodeAccounts(payload []byte) Accounts {
 
 func encodeAccounts(accounts Accounts) []byte {
 	var payload []byte
-
 	for _, account := range accounts {
 		payload = append(payload, []byte(account)...)
 	}
