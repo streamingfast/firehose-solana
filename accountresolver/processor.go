@@ -137,7 +137,7 @@ func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error 
 		if trx.Meta.Err != nil {
 			continue
 		}
-		p.logger.Debug("processing transaction", zap.Uint64("block_num", block.Slot), zap.String("trx_id", base58.Encode(trx.Transaction.Signatures[0])))
+		//p.logger.Debug("processing transaction", zap.Uint64("block_num", block.Slot), zap.String("trx_id", base58.Encode(trx.Transaction.Signatures[0])))
 		err := p.applyTableLookup(ctx, block.Slot, trx)
 		if err != nil {
 			return fmt.Errorf("applying table lookup at block %d: %w", block.Slot, err)
@@ -209,9 +209,9 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, trx
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
 		newAccounts := addresstablelookup.ParseNewAccounts(instruction.Data[12:])
 		p.logger.Info("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
-		for _, account := range newAccounts {
-			p.logger.Debug("\t new account", zap.String("account", base58.Encode(account)))
-		}
+		//for _, account := range newAccounts {
+		//	p.logger.Debug("\t new account", zap.String("account", base58.Encode(account)))
+		//}
 		err := p.accountsResolver.Extend(ctx, blockNum, trxHash, tableLookupAccount, NewAccounts(newAccounts))
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
