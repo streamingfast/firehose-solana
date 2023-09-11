@@ -18,12 +18,11 @@ var Keys keyer
 
 type keyer struct{}
 
-func (keyer) extendTableLookup(key Account, blockNum uint64, trxHash []byte) (out []byte) {
-	out = make([]byte, 1+32+8+64)
+func (keyer) extendTableLookup(key Account, blockNum uint64) (out []byte) {
+	out = make([]byte, 1+32+8)
 	out[0] = tableAccountLookup
 	copy(out[1:33], key)
 	binary.BigEndian.PutUint64(out[33:41], math.MaxUint64-blockNum)
-	copy(out[41:], trxHash)
 	return out
 }
 
@@ -34,8 +33,8 @@ func (keyer) tableLookupPrefix(key Account) (out []byte) {
 	return out
 }
 
-func (keyer) unpackTableLookup(key []byte) (Account, uint64, []byte) {
-	return key[1:33], math.MaxUint64 - binary.BigEndian.Uint64(key[33:41]), key[41:]
+func (keyer) unpackTableLookup(key []byte) (Account, uint64) {
+	return key[1:33], math.MaxUint64 - binary.BigEndian.Uint64(key[33:])
 }
 
 func (keyer) cursor(readerName string) (out []byte) {
@@ -52,14 +51,13 @@ func (keyer) transactionSeenPrefix(blockNum uint64) []byte {
 	return out
 }
 
-func (keyer) transactionSeen(blockNum uint64, trxHash []byte) []byte {
-	out := make([]byte, 1+8+64)
+func (keyer) knownTransaction(trxHash []byte) []byte {
+	out := make([]byte, 1+64)
 	out[0] = tableKnownTransaction
-	binary.BigEndian.PutUint64(out[1:9], math.MaxUint64-blockNum)
-	copy(out[9:], trxHash)
+	copy(out[1:], trxHash)
 	return out
 }
 
-func (keyer) unpackTransactionSeen(key []byte) (blockNum uint64, trxHash []byte) {
-	return binary.BigEndian.Uint64(key[1:9]), key[9:]
+func (keyer) unpackKnownTransaction(key []byte) (trxHash []byte) {
+	return key[1:]
 }

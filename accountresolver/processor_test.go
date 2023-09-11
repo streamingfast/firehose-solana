@@ -2,12 +2,13 @@ package accountsresolver
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	kvstore "github.com/streamingfast/kvdb/store"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"os"
-	"testing"
 )
 
 func Test_ExtendTableLookupInCompiledInstruction(t *testing.T) {
@@ -70,13 +71,13 @@ func Test_ExtendTableLookupInCompiledInstruction(t *testing.T) {
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, _, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAccount)
+	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAccount)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
 func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
 	tableLookupAccount := accountFromBase58(t, "6pyNrJXyGdDDA3esoLEHJ2uoohcdf2xGT11acfmfyA7Q")
-	tableLookupToExtendIndexFromAccountKeys := byte(2)
+	tableLookupToExtendIndex := byte(2)
 
 	expectedCreatedAccounts := fromBase58Strings(t,
 		"He3iAEV5rYjv6Xf7PxKro19eVrC3QAcdic5CF2D2obPt",
@@ -124,7 +125,7 @@ func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
 							Instructions: []*pbsol.InnerInstruction{
 								{
 									ProgramIdIndex: 4,
-									Accounts:       []byte{tableLookupToExtendIndexFromAccountKeys, 15, 0, 3},
+									Accounts:       []byte{tableLookupToExtendIndex, 15, 0, 3},
 									Data:           append([]byte{2, 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 0}, encodeAccounts(expectedCreatedAccounts)...),
 								},
 							},
@@ -149,15 +150,15 @@ func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	accounts, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
 func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLookupTableProgramID(t *testing.T) {
-	tableAccountToExtend := accountFromBase58(t, "GcjJQhD7L7esCrjNmkPM8oitsFXRpbWo11LMWfLH89u3")
-	tableLookupToExtendIndexFromAccountKeys := byte(0)
+	tableLookupAddressToExtend := accountFromBase58(t, "GcjJQhD7L7esCrjNmkPM8oitsFXRpbWo11LMWfLH89u3")
+	tableLookupAddressToExtendIndex := byte(0)
+	tableLookupAddressToResolve := accountFromBase58(t, "6pyNrJXyGdDDA3esoLEHJ2uoohcdf2xGT11acfmfyA7Q")
 
-	tableLookupAccountInTransaction := accountFromBase58(t, "6pyNrJXyGdDDA3esoLEHJ2uoohcdf2xGT11acfmfyA7Q")
 	expectedCreatedAccounts := fromBase58Strings(t,
 		"PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY",
 		"7aDTsspkQNGKmrexAN7FLx9oxU3iPczSSvHNggyuqYkR",
@@ -173,10 +174,10 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 		Transactions: []*pbsol.ConfirmedTransaction{
 			{
 				Transaction: &pbsol.Transaction{
-					Signatures: [][]byte{{0}},
+					Signatures: [][]byte{{0x01}},
 					Message: &pbsol.Message{
 						AccountKeys: [][]byte{
-							tableAccountToExtend,
+							tableLookupAddressToExtend,
 							SystemProgram,
 						},
 						Instructions: []*pbsol.CompiledInstruction{
@@ -186,7 +187,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 						},
 						AddressTableLookups: []*pbsol.MessageAddressTableLookup{
 							{
-								AccountKey:      tableLookupAccountInTransaction,
+								AccountKey:      tableLookupAddressToResolve,
 								WritableIndexes: []byte{0},
 							},
 						},
@@ -199,7 +200,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 							Instructions: []*pbsol.InnerInstruction{
 								{
 									ProgramIdIndex: 2,
-									Accounts:       []byte{tableLookupToExtendIndexFromAccountKeys, 0, 0, 2},
+									Accounts:       []byte{tableLookupAddressToExtendIndex, 0, 0, 2},
 									Data:           append([]byte{2, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0}, encodeAccounts(expectedCreatedAccounts)...),
 								},
 							},
@@ -222,7 +223,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	resolver := NewKVDBAccountsResolver(db)
 	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
 
-	err = p.accountsResolver.Extend(context.Background(), 185_914_860, []byte{0x00}, tableLookupAccountInTransaction, Accounts{AddressTableLookupAccountProgram})
+	err = p.accountsResolver.Extend(context.Background(), 185_914_860, []byte{0x00}, tableLookupAddressToResolve, Accounts{AddressTableLookupAccountProgram})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
@@ -230,13 +231,13 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, _, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
+	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAddressToExtend)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
 func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTableLookup(t *testing.T) {
 	tableAccountToExtend := accountFromBase58(t, "GcjJQhD7L7esCrjNmkPM8oitsFXRpbWo11LMWfLH89u3")
-	tableLookupToExtendIndexFromAccountKeys := byte(3)
+	tableLookupToExtendIndex := byte(3)
 
 	tableLookupAccountInTransaction := accountFromBase58(t, "6pyNrJXyGdDDA3esoLEHJ2uoohcdf2xGT11acfmfyA7Q")
 	expectedCreatedAccounts := fromBase58Strings(t,
@@ -254,7 +255,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 		Transactions: []*pbsol.ConfirmedTransaction{
 			{
 				Transaction: &pbsol.Transaction{
-					Signatures: [][]byte{{0}},
+					Signatures: [][]byte{{0x01}},
 					Message: &pbsol.Message{
 						AccountKeys: [][]byte{
 							accountFromBase58(t, "DEM7JJFjemWE5tjt3aC9eeTsGtTnyAs95EWhY2bM6n1o"),
@@ -283,7 +284,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 							Instructions: []*pbsol.InnerInstruction{
 								{
 									ProgramIdIndex: 2,
-									Accounts:       []byte{tableLookupToExtendIndexFromAccountKeys, 0, 0, 0},
+									Accounts:       []byte{tableLookupToExtendIndex, 0, 0, 0},
 									Data:           append([]byte{2, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0}, encodeAccounts(expectedCreatedAccounts)...),
 								},
 							},
@@ -307,6 +308,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	resolver := NewKVDBAccountsResolver(db)
 	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
 
+	// Pre populate the table lookup account with the address table lookup program
 	err = p.accountsResolver.Extend(context.Background(), 185_914_860, []byte{0x00}, tableLookupAccountInTransaction, Accounts{tableAccountToExtend})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
@@ -315,6 +317,6 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, _, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
+	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
