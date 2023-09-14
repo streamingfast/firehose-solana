@@ -7,6 +7,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
@@ -67,6 +68,7 @@ func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.S
 
 func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string, sourceStore dstore.Store, destinationStore dstore.Store) error {
 	p.logger.Info("Processing merge block file", zap.String("filename", filename))
+	start := time.Now()
 	firstBlockOfFile, err := strconv.Atoi(strings.TrimLeft(filename, "0"))
 	if err != nil {
 		return fmt.Errorf("converting filename to block number: %w", err)
@@ -119,7 +121,7 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 	if err != nil {
 		return fmt.Errorf("writing bundle file: %w", err)
 	}
-	p.logger.Info("new merge blocks file written:", zap.String("filename", filename))
+	p.logger.Info("new merge blocks file written:", zap.String("filename", filename), zap.Duration("duration", time.Since(start)))
 
 	return nil
 }
@@ -163,15 +165,20 @@ func (p *Processor) manageAddressLookup(ctx context.Context, blockNum uint64, er
 }
 
 func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *pbsol.ConfirmedTransaction) error {
+	start := time.Now()
 	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
 		accs, _, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
-		p.logger.Info("Resolve address table lookup", zap.String("account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("count", len(accs)))
 		if err != nil {
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
 		}
-		//todo: should fail if accs is nil
+		p.logger.Debug("Resolve address table lookup", zap.String("account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("count", len(accs)))
 		trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs.ToBytesArray()...)
 	}
+	totalDuration := time.Since(start)
+	p.logger.Info(
+		"applyTableLookup",
+		zap.Duration("duration", totalDuration),
+		zap.Int64("average_lookup_time", totalDuration.Milliseconds()/int64(len(trx.Transaction.Message.AddressTableLookups))))
 	return nil
 }
 
@@ -209,10 +216,8 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, trx
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
 		newAccounts := addresstablelookup.ParseNewAccounts(instruction.Data[12:])
 		p.logger.Info("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
-		//for _, account := range newAccounts {
-		//	p.logger.Debug("\t new account", zap.String("account", base58.Encode(account)))
-		//}
 		err := p.accountsResolver.Extend(ctx, blockNum, trxHash, tableLookupAccount, NewAccounts(newAccounts))
+
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
 		}
