@@ -36,6 +36,10 @@ func NewBundleReader(ctx context.Context, logger *zap.Logger) *BundleReader {
 	}
 }
 
+func (r *BundleReader) Close() {
+	close(r.blockData)
+}
+
 func (r *BundleReader) PushError(err error) {
 	r.errChan <- err
 }
@@ -87,10 +91,13 @@ func (r *BundleReader) fillBuffer() error {
 	var data []byte
 	select {
 	case d, ok := <-r.blockData:
-		if !ok {
+		if !ok && d == nil {
 			return io.EOF
 		}
 		data = d
+		if !ok {
+			return io.EOF
+		}
 	case err := <-r.errChan:
 		return err
 	case <-r.ctx.Done():
