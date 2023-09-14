@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	firecore "github.com/streamingfast/firehose-core"
-
+	"github.com/hako/durafmt"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
+	firecore "github.com/streamingfast/firehose-core"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go/programs/addresstablelookup"
 	"go.uber.org/zap"
@@ -47,19 +47,19 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.Int("transaction_count", s.transactionCount),
 		zap.Int("lookup_count", s.lookupCount),
 		zap.Int("extend_count", s.extendCount),
-		zap.Duration("total_block_handling_duration", s.totalBlockHandlingDuration),
-		zap.Duration("total_block_processing_duration", s.totalBlockProcessingDuration),
-		zap.Duration("total_block_storage_duration", s.totalBlockStorageDuration),
-		zap.Duration("total_transaction_processing_duration", s.totalTransactionProcessingDuration),
-		zap.Duration("total_lookup_duration", s.totalLookupDuration),
-		zap.Duration("total_extend_duration", s.totalExtendDuration),
-		zap.Duration("total_duration", time.Since(s.startProcessing)),
-		zap.Duration("average_block_handling_duration", s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)),
-		zap.Duration("average_block_processing_duration", s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)),
-		zap.Duration("average_block_storage_duration", s.totalBlockStorageDuration/time.Duration(s.totalBlockCount)),
-		zap.Duration("average_transaction_processing_duration", s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)),
-		zap.Duration("average_lookup_duration", lookupAvg),
-		zap.Duration("average_extend_duration", extendAvg),
+		zap.String("total_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration).String()),
+		zap.String("total_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration).String()),
+		zap.String("total_block_storage_duration", durafmt.Parse(s.totalBlockStorageDuration).String()),
+		zap.String("total_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration).String()),
+		zap.String("total_lookup_duration", durafmt.Parse(s.totalLookupDuration).String()),
+		zap.String("total_extend_duration", durafmt.Parse(s.totalExtendDuration).String()),
+		zap.String("total_duration", durafmt.Parse(time.Since(s.startProcessing)).String()),
+		zap.String("average_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)).String()),
+		zap.String("average_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)).String()),
+		zap.String("average_block_storage_duration", durafmt.Parse(s.totalBlockStorageDuration/time.Duration(s.totalBlockCount)).String()),
+		zap.String("average_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)).String()),
+		zap.String("average_lookup_duration", durafmt.Parse(lookupAvg).String()),
+		zap.String("average_extend_duration", durafmt.Parse(extendAvg).String()),
 	)
 }
 
@@ -197,6 +197,11 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 		return fmt.Errorf("writing bundle file: %w", err)
 	}
 	//p.logger.Info("new merge blocks file written:", zap.String("filename", filename), zap.Duration("duration", time.Since(start)))
+	err = p.accountsResolver.StoreCursor(ctx, p.readerName, p.cursor)
+	if err != nil {
+		return fmt.Errorf("storing cursor at block %d: %w", p.cursor.slotNum, err)
+	}
+
 	p.stats.log(p.logger)
 	return nil
 }
@@ -308,11 +313,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, trx
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
 		}
-		p.cursor = NewCursor(blockNum)
-		err = p.accountsResolver.StoreCursor(ctx, p.readerName, p.cursor)
-		if err != nil {
-			return fmt.Errorf("storing cursor at block %d: %w", blockNum, err)
-		}
+
 		p.stats.totalExtendDuration += time.Since(start)
 		p.stats.extendCount += 1
 	}

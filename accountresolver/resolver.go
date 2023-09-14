@@ -46,6 +46,10 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 	if err != nil {
 		return fmt.Errorf("writing known transaction %x: %w", trxHash, err)
 	}
+	err = r.store.FlushPuts(ctx) //todo: move that up in call stack
+	if err != nil {
+		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
+	}
 
 	return nil
 }
