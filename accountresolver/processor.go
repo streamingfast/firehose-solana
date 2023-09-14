@@ -209,9 +209,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, filename string
 				return
 			}
 		}
-		panic("block channel closed, received block")
 		bundleReader.Close()
-
 	}()
 
 	err = destinationStore.WriteObject(ctx, filename, bundleReader)
