@@ -173,7 +173,7 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 			case <-ctx.Done():
 				return
 			case blk, ok := <-blockChan:
-				if !ok {
+				if !ok && blk == nil {
 					bundleReader.PushError(io.EOF)
 					return
 				}
@@ -199,6 +199,10 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 				p.stats.totalBlockStorageDuration += time.Since(pushStart)
 				p.stats.totalBlockCount += 1
 				p.stats.totalBlockHandlingDuration += time.Since(start)
+				if !ok {
+					bundleReader.PushError(io.EOF)
+					return
+				}
 			}
 		}
 	}()
