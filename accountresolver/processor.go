@@ -32,6 +32,14 @@ type stats struct {
 }
 
 func (s *stats) log(logger *zap.Logger) {
+	lookupAvg := time.Duration(0)
+	if s.lookupCount > 0 {
+		lookupAvg = s.totalLookupDuration / time.Duration(s.lookupCount)
+	}
+	extendAvg := time.Duration(0)
+	if s.extendCount > 0 {
+		lookupAvg = s.totalExtendDuration / time.Duration(s.extendCount)
+	}
 	logger.Info("stats",
 		zap.Int("block_count", s.totalBlockCount),
 		zap.Int("transaction_count", s.transactionCount),
@@ -48,8 +56,8 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.Duration("average_block_processing_duration", s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)),
 		zap.Duration("average_block_storage_duration", s.totalBlockStorageDuration/time.Duration(s.totalBlockCount)),
 		zap.Duration("average_transaction_processing_duration", s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)),
-		zap.Duration("average_lookup_duration", s.totalLookupDuration/time.Duration(s.lookupCount)),
-		zap.Duration("average_extend_duration", s.totalExtendDuration/time.Duration(s.extendCount)),
+		zap.Duration("average_lookup_duration", lookupAvg),
+		zap.Duration("average_extend_duration", extendAvg),
 	)
 }
 
