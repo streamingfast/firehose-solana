@@ -165,7 +165,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, filename string
 		}
 	}()
 
-	nailer := dhammer.NewNailer(2, func(ctx context.Context, blk *pbsol.Block) (*bstream.Block, error) {
+	nailer := dhammer.NewNailer(50, func(ctx context.Context, blk *pbsol.Block) (*bstream.Block, error) {
 		b, err := encoder.Encode(blk)
 		if err != nil {
 			return nil, fmt.Errorf("encoding block: %w", err)
@@ -173,6 +173,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, filename string
 
 		return b, nil
 	})
+	nailer.Start(ctx)
 
 	go func() {
 		for {
