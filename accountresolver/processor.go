@@ -17,6 +17,42 @@ import (
 	"go.uber.org/zap"
 )
 
+type stats struct {
+	startProcessing                    time.Time
+	transactionCount                   int
+	lookupCount                        int
+	extendCount                        int
+	totalBlockCount                    int
+	totalLookupDuration                time.Duration
+	totalTransactionProcessingDuration time.Duration
+	totalExtendDuration                time.Duration
+	totalBlockProcessingDuration       time.Duration
+	totalBlockStorageDuration          time.Duration
+	totalBlockHandlingDuration         time.Duration
+}
+
+func (s *stats) log(logger *zap.Logger) {
+	logger.Info("stats",
+		zap.Int("block_count", s.totalBlockCount),
+		zap.Int("transaction_count", s.transactionCount),
+		zap.Int("lookup_count", s.lookupCount),
+		zap.Int("extend_count", s.extendCount),
+		zap.Duration("total_block_handling_duration", s.totalBlockHandlingDuration),
+		zap.Duration("total_block_processing_duration", s.totalBlockProcessingDuration),
+		zap.Duration("total_block_storage_duration", s.totalBlockStorageDuration),
+		zap.Duration("total_transaction_processing_duration", s.totalTransactionProcessingDuration),
+		zap.Duration("total_lookup_duration", s.totalLookupDuration),
+		zap.Duration("total_extend_duration", s.totalExtendDuration),
+		zap.Duration("total_duration", time.Since(s.startProcessing)),
+		zap.Float64("average_block_handling_duration", float64(s.totalBlockHandlingDuration)/float64(s.totalBlockCount)),
+		zap.Float64("average_block_processing_duration", float64(s.totalBlockProcessingDuration)/float64(s.totalBlockCount)),
+		zap.Float64("average_block_storage_duration", float64(s.totalBlockStorageDuration)/float64(s.totalBlockCount)),
+		zap.Float64("average_transaction_processing_duration", float64(s.totalTransactionProcessingDuration)/float64(s.transactionCount)),
+		zap.Float64("average_lookup_duration", float64(s.totalLookupDuration)/float64(s.lookupCount)),
+		zap.Float64("average_extend_duration", float64(s.totalExtendDuration)/float64(s.extendCount)),
+	)
+}
+
 var AddressTableLookupAccountProgram = mustFromBase58("AddressLookupTab1e1111111111111111111111111")
 var SystemProgram = mustFromBase58("11111111111111111111111111111111")
 
@@ -35,6 +71,7 @@ type Processor struct {
 	cursor           *Cursor
 	readerName       string
 	logger           *zap.Logger
+	stats            *stats
 }
 
 func NewProcessor(readerName string, cursor *Cursor, accountsResolver AccountsResolver, logger *zap.Logger) *Processor {
@@ -43,6 +80,7 @@ func NewProcessor(readerName string, cursor *Cursor, accountsResolver AccountsRe
 		accountsResolver: accountsResolver,
 		cursor:           cursor,
 		logger:           logger,
+		stats:            &stats{},
 	}
 }
 
@@ -68,7 +106,10 @@ func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.S
 
 func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string, sourceStore dstore.Store, destinationStore dstore.Store) error {
 	p.logger.Info("Processing merge block file", zap.String("filename", filename))
-	start := time.Now()
+	p.stats = &stats{
+		startProcessing: time.Now(),
+	}
+
 	firstBlockOfFile, err := strconv.Atoi(strings.TrimLeft(filename, "0"))
 	if err != nil {
 		return fmt.Errorf("converting filename to block number: %w", err)
@@ -104,16 +145,23 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 				p.logger.Debug("skip block", zap.Uint64("slot", blk.Slot))
 				continue
 			}
+
+			start := time.Now()
 			err = p.ProcessBlock(context.Background(), blk)
 			if err != nil {
 				bundleReader.PushError(fmt.Errorf("processing block: %w", err))
 				return
 			}
+			p.stats.totalBlockProcessingDuration += time.Since(start)
+			pushStart := time.Now()
 			err = bundleReader.PushBlock(block)
 			if err != nil {
 				bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
 				return
 			}
+			p.stats.totalBlockStorageDuration += time.Since(pushStart)
+			p.stats.totalBlockCount += 1
+			p.stats.totalBlockHandlingDuration += time.Since(start)
 		}
 	}()
 
@@ -121,8 +169,8 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 	if err != nil {
 		return fmt.Errorf("writing bundle file: %w", err)
 	}
-	p.logger.Info("new merge blocks file written:", zap.String("filename", filename), zap.Duration("duration", time.Since(start)))
-
+	//p.logger.Info("new merge blocks file written:", zap.String("filename", filename), zap.Duration("duration", time.Since(start)))
+	p.stats.log(p.logger)
 	return nil
 }
 
@@ -134,7 +182,7 @@ func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error 
 	if p.cursor.slotNum != block.ParentSlot {
 		return fmt.Errorf("cursor block num %d is not the same as parent slot num %d of block %d", p.cursor.slotNum, block.ParentSlot, block.Slot)
 	}
-
+	p.stats.transactionCount += len(block.Transactions)
 	for _, trx := range block.Transactions {
 		if trx.Meta.Err != nil {
 			continue
@@ -176,10 +224,14 @@ func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *
 	}
 	totalDuration := time.Since(start)
 	lookupCount := len(trx.Transaction.Message.AddressTableLookups)
+
 	if lookupCount > 0 {
-		p.logger.Info(
+		p.stats.lookupCount += lookupCount
+		p.stats.totalLookupDuration += totalDuration
+		p.logger.Debug(
 			"applyTableLookup",
 			zap.Duration("duration", totalDuration),
+			zap.Int("lookup_count", lookupCount),
 			zap.Int64("average_lookup_time", totalDuration.Milliseconds()/int64(lookupCount)),
 		)
 
@@ -188,6 +240,7 @@ func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *
 }
 
 func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, confirmedTransaction *pbsol.ConfirmedTransaction) error {
+	start := time.Now()
 	accountKeys := confirmedTransaction.Transaction.Message.AccountKeys
 	for compileIndex, compiledInstruction := range confirmedTransaction.Transaction.Message.Instructions {
 		idx := compiledInstruction.ProgramIdIndex
@@ -207,7 +260,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, con
 			}
 		}
 	}
-
+	p.stats.totalTransactionProcessingDuration += time.Since(start)
 	return nil
 }
 
@@ -218,9 +271,11 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, trx
 
 	instruction := instructionable.ToInstruction()
 	if addresstablelookup.ExtendAddressTableLookupInstruction(instruction.Data) {
+		start := time.Now()
+
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
 		newAccounts := addresstablelookup.ParseNewAccounts(instruction.Data[12:])
-		p.logger.Info("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
+		//p.logger.Info("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
 		err := p.accountsResolver.Extend(ctx, blockNum, trxHash, tableLookupAccount, NewAccounts(newAccounts))
 
 		if err != nil {
@@ -231,6 +286,8 @@ func (p *Processor) ProcessInstruction(ctx context.Context, blockNum uint64, trx
 		if err != nil {
 			return fmt.Errorf("storing cursor at block %d: %w", blockNum, err)
 		}
+		p.stats.totalExtendDuration += time.Since(start)
+		p.stats.extendCount += 1
 	}
 
 	return nil
