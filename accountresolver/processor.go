@@ -175,10 +175,15 @@ func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *
 		trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs.ToBytesArray()...)
 	}
 	totalDuration := time.Since(start)
-	p.logger.Info(
-		"applyTableLookup",
-		zap.Duration("duration", totalDuration),
-		zap.Int64("average_lookup_time", totalDuration.Milliseconds()/int64(len(trx.Transaction.Message.AddressTableLookups))))
+	lookupCount := len(trx.Transaction.Message.AddressTableLookups)
+	if lookupCount > 0 {
+		p.logger.Info(
+			"applyTableLookup",
+			zap.Duration("duration", totalDuration),
+			zap.Int64("average_lookup_time", totalDuration.Milliseconds()/int64(lookupCount)),
+		)
+
+	}
 	return nil
 }
 
