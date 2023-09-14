@@ -31,6 +31,7 @@ type stats struct {
 	totalBlockProcessingDuration       time.Duration
 	totalBlockStorageDuration          time.Duration
 	totalBlockHandlingDuration         time.Duration
+	totalBlockEncodingDuration         time.Duration
 }
 
 func (s *stats) log(logger *zap.Logger) {
@@ -55,6 +56,7 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.Int("extend_count", s.extendCount),
 		zap.String("total_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration).String()),
 		zap.String("total_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration).String()),
+		zap.String("total_block_encoding_duration", durafmt.Parse(s.totalBlockEncodingDuration).String()),
 		zap.String("total_block_storage_duration", durafmt.Parse(s.totalBlockStorageDuration).String()),
 		zap.String("total_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration).String()),
 		zap.String("total_lookup_duration", durafmt.Parse(s.totalLookupDuration).String()),
@@ -62,6 +64,7 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.String("total_duration", durafmt.Parse(time.Since(s.startProcessing)).String()),
 		zap.String("average_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)).String()),
+		zap.String("average_block_encoding_duration", durafmt.Parse(s.totalBlockEncodingDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_block_storage_duration", durafmt.Parse(s.totalBlockStorageDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)).String()),
 		zap.String("average_lookup_duration", durafmt.Parse(lookupAvg).String()),
@@ -191,6 +194,8 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 					bundleReader.PushError(fmt.Errorf("encoding block: %w", err))
 					return
 				}
+				p.stats.totalBlockEncodingDuration += time.Since(pushStart)
+
 				err = bundleReader.PushBlock(b)
 				if err != nil {
 					bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
