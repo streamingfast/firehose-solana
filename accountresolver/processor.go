@@ -42,6 +42,12 @@ func (s *stats) log(logger *zap.Logger) {
 	if s.extendCount > 0 {
 		lookupAvg = s.totalExtendDuration / time.Duration(s.extendCount)
 	}
+
+	if s.totalBlockCount == 0 {
+		logger.Info("no stats")
+		return
+	}
+
 	logger.Info("stats",
 		zap.Int("block_count", s.totalBlockCount),
 		zap.Int("transaction_count", s.transactionCount),
