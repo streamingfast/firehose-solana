@@ -31,6 +31,7 @@ type stats struct {
 	totalExtendDuration                time.Duration
 	totalBlockProcessingDuration       time.Duration
 	totalBlockHandlingDuration         time.Duration
+	totalBlockReadingDuration          time.Duration
 }
 
 func (s *stats) log(logger *zap.Logger) {
@@ -59,6 +60,7 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.String("total_lookup_duration", durafmt.Parse(s.totalLookupDuration).String()),
 		zap.String("total_extend_duration", durafmt.Parse(s.totalExtendDuration).String()),
 		zap.String("total_duration", durafmt.Parse(time.Since(s.startProcessing)).String()),
+		zap.String("total_block_reading_duration", durafmt.Parse(s.totalBlockReadingDuration).String()),
 		zap.String("average_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)).String()),
@@ -144,6 +146,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, filename string
 	blockChan := make(chan *pbsol.Block, 100)
 
 	go func() {
+		start := time.Now()
 		for {
 			block, err := blockReader.Read()
 			if err != nil {
@@ -163,6 +166,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, filename string
 
 			blockChan <- blk
 		}
+		p.stats.totalBlockReadingDuration += time.Since(start)
 	}()
 
 	nailer := dhammer.NewNailer(50, func(ctx context.Context, blk *pbsol.Block) (*bstream.Block, error) {
