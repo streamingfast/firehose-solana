@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 
+	firecore "github.com/streamingfast/firehose-core"
+	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/streamingfast/dstore"
@@ -14,16 +17,16 @@ import (
 	"go.uber.org/zap"
 )
 
-func newProcessAddressLookupCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
+func newProcessAddressLookupCmd(logger *zap.Logger, tracer logging.Tracer, chain *firecore.Chain[*pbsolv1.Block]) *cobra.Command {
 	return &cobra.Command{
 		Use:   "process-address-lookup {store} {destination-store} {badger-db}",
 		Short: "scan the blocks and process and extract the address lookup data",
-		RunE:  processAddressLookupE(logger, tracer),
+		RunE:  processAddressLookupE(chain, logger, tracer),
 		Args:  cobra.ExactArgs(3),
 	}
 }
 
-func processAddressLookupE(logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
+func processAddressLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
@@ -60,7 +63,7 @@ func processAddressLookupE(logger *zap.Logger, tracer logging.Tracer) func(cmd *
 		fmt.Println("Cursor", cursor)
 		processor := accountsresolver.NewProcessor("reproc", cursor, resolver, logger)
 
-		err = processor.ProcessMergeBlocks(ctx, sourceStore, destinationStore)
+		err = processor.ProcessMergeBlocks(ctx, sourceStore, destinationStore, chain.BlockEncoder)
 		if err != nil {
 			return fmt.Errorf("unable to process merge blocks: %w", err)
 		}

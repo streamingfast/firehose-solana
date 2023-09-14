@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	firecore "github.com/streamingfast/firehose-core"
+
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
@@ -92,7 +94,7 @@ func NewProcessor(readerName string, cursor *Cursor, accountsResolver AccountsRe
 	}
 }
 
-func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.Store, destinationStore dstore.Store) error {
+func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.Store, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
 	startBlockNum := p.cursor.slotNum - p.cursor.slotNum%100
 	paddedBlockNum := fmt.Sprintf("%010d", startBlockNum)
 
@@ -100,7 +102,7 @@ func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.S
 
 	err := sourceStore.WalkFrom(ctx, "", paddedBlockNum, func(filename string) error {
 		p.logger.Debug("processing merge block file", zap.String("filename", filename))
-		return p.processMergeBlocksFile(ctx, filename, sourceStore, destinationStore)
+		return p.processMergeBlocksFile(ctx, filename, sourceStore, destinationStore, encoder)
 	})
 
 	if err != nil {
@@ -112,7 +114,7 @@ func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.S
 	return nil
 }
 
-func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string, sourceStore dstore.Store, destinationStore dstore.Store) error {
+func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string, sourceStore dstore.Store, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
 	p.logger.Info("Processing merge block file", zap.String("filename", filename))
 	p.stats = &stats{
 		startProcessing: time.Now(),
@@ -135,6 +137,7 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 	}
 
 	bundleReader := NewBundleReader(ctx, p.logger)
+	blockChan := make(chan *pbsol.Block, 10)
 
 	go func() {
 		for {
@@ -154,22 +157,38 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 				continue
 			}
 
-			start := time.Now()
-			err = p.ProcessBlock(context.Background(), blk)
-			if err != nil {
-				bundleReader.PushError(fmt.Errorf("processing block: %w", err))
+			blockChan <- blk
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
 				return
+			case blk := <-blockChan:
+				start := time.Now()
+				err := p.ProcessBlock(context.Background(), blk)
+				if err != nil {
+					bundleReader.PushError(fmt.Errorf("processing block: %w", err))
+					return
+				}
+				p.stats.totalBlockProcessingDuration += time.Since(start)
+				pushStart := time.Now()
+				b, err := encoder.Encode(blk)
+				if err != nil {
+					bundleReader.PushError(fmt.Errorf("encoding block: %w", err))
+					return
+				}
+				err = bundleReader.PushBlock(b)
+				if err != nil {
+					bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
+					return
+				}
+				p.stats.totalBlockStorageDuration += time.Since(pushStart)
+				p.stats.totalBlockCount += 1
+				p.stats.totalBlockHandlingDuration += time.Since(start)
 			}
-			p.stats.totalBlockProcessingDuration += time.Since(start)
-			pushStart := time.Now()
-			err = bundleReader.PushBlock(block)
-			if err != nil {
-				bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
-				return
-			}
-			p.stats.totalBlockStorageDuration += time.Since(pushStart)
-			p.stats.totalBlockCount += 1
-			p.stats.totalBlockHandlingDuration += time.Since(start)
 		}
 	}()
 
