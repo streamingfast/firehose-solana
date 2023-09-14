@@ -44,12 +44,12 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.Duration("total_lookup_duration", s.totalLookupDuration),
 		zap.Duration("total_extend_duration", s.totalExtendDuration),
 		zap.Duration("total_duration", time.Since(s.startProcessing)),
-		zap.Float64("average_block_handling_duration", float64(s.totalBlockHandlingDuration)/float64(s.totalBlockCount)),
-		zap.Float64("average_block_processing_duration", float64(s.totalBlockProcessingDuration)/float64(s.totalBlockCount)),
-		zap.Float64("average_block_storage_duration", float64(s.totalBlockStorageDuration)/float64(s.totalBlockCount)),
-		zap.Float64("average_transaction_processing_duration", float64(s.totalTransactionProcessingDuration)/float64(s.transactionCount)),
-		zap.Float64("average_lookup_duration", float64(s.totalLookupDuration)/float64(s.lookupCount)),
-		zap.Float64("average_extend_duration", float64(s.totalExtendDuration)/float64(s.extendCount)),
+		zap.Duration("average_block_handling_duration", s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)),
+		zap.Duration("average_block_processing_duration", s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)),
+		zap.Duration("average_block_storage_duration", s.totalBlockStorageDuration/time.Duration(s.totalBlockCount)),
+		zap.Duration("average_transaction_processing_duration", s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)),
+		zap.Duration("average_lookup_duration", s.totalLookupDuration/time.Duration(s.lookupCount)),
+		zap.Duration("average_extend_duration", s.totalExtendDuration/time.Duration(s.extendCount)),
 	)
 }
 
