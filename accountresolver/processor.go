@@ -150,7 +150,7 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 			block, err := blockReader.Read()
 			if err != nil {
 				if err == io.EOF {
-					bundleReader.PushError(io.EOF)
+					close(blockChan)
 					return
 				}
 				bundleReader.PushError(fmt.Errorf("reading block: %w", err))
@@ -172,7 +172,12 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 			select {
 			case <-ctx.Done():
 				return
-			case blk := <-blockChan:
+			case blk, ok := <-blockChan:
+				if !ok {
+					bundleReader.PushError(io.EOF)
+					return
+				}
+
 				start := time.Now()
 				err := p.ProcessBlock(context.Background(), blk)
 				if err != nil {
