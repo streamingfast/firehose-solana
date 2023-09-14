@@ -141,7 +141,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, filename string
 	}
 
 	bundleReader := NewBundleReader(ctx, p.logger)
-	blockChan := make(chan *pbsol.Block, 10)
+	blockChan := make(chan *pbsol.Block, 100)
 
 	go func() {
 		for {
