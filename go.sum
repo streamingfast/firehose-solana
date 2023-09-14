@@ -661,6 +661,8 @@ github.com/streamingfast/derr v0.0.0-20230515163924-8570aaa43fe1 h1:xJB7rXnOHLes
 github.com/streamingfast/derr v0.0.0-20230515163924-8570aaa43fe1/go.mod h1:QSm/AfaDsE0k1xBYi0lW580YJ/WDV/FKZI628tkZR0Y=
 github.com/streamingfast/dgrpc v0.0.0-20230623191332-4ed02c06bc6f h1:qiIHzYZpnHdQHwOvsUaPc7DQkeyRptDS+8DN1FCfBcQ=
 github.com/streamingfast/dgrpc v0.0.0-20230623191332-4ed02c06bc6f/go.mod h1:0tXk90PNAgFur+u/W6bQPdgfOGPGSwUqHILZKacqJj4=
+github.com/streamingfast/dhammer v0.0.0-20230125192823-c34bbd561bd4 h1:HKi8AIkLBzxZWmbCRUo1RxoOLK33iXO6gZprfsE9rf4=
+github.com/streamingfast/dhammer v0.0.0-20230125192823-c34bbd561bd4/go.mod h1:ehPytv7E4rI65iLcrwTes4rNGGqPPiugnH+20nDQyp4=
 github.com/streamingfast/dlauncher v0.0.0-20230607184145-76399faad89e h1:Nh/gLDv8rOMIidb/gpO4rZOYVe09k+tof/trezkpku4=
 github.com/streamingfast/dlauncher v0.0.0-20230607184145-76399faad89e/go.mod h1:xErlHEDd5+4NlR+Mg3ZtW7BTTLB0yZBxZAjHPrkk8X4=
 github.com/streamingfast/dmetering v0.0.0-20230731155453-e1df53e362aa h1:bM6iy5X7Gtw1oh1bMxFmtroouKZu4K4BHXaFvR96jNw=

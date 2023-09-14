@@ -12,6 +12,7 @@ import (
 	"github.com/hako/durafmt"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
+	"github.com/streamingfast/dhammer"
 	"github.com/streamingfast/dstore"
 	firecore "github.com/streamingfast/firehose-core"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
@@ -29,9 +30,7 @@ type stats struct {
 	totalTransactionProcessingDuration time.Duration
 	totalExtendDuration                time.Duration
 	totalBlockProcessingDuration       time.Duration
-	totalBlockStorageDuration          time.Duration
 	totalBlockHandlingDuration         time.Duration
-	totalBlockEncodingDuration         time.Duration
 }
 
 func (s *stats) log(logger *zap.Logger) {
@@ -56,16 +55,12 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.Int("extend_count", s.extendCount),
 		zap.String("total_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration).String()),
 		zap.String("total_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration).String()),
-		zap.String("total_block_encoding_duration", durafmt.Parse(s.totalBlockEncodingDuration).String()),
-		zap.String("total_block_storage_duration", durafmt.Parse(s.totalBlockStorageDuration).String()),
 		zap.String("total_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration).String()),
 		zap.String("total_lookup_duration", durafmt.Parse(s.totalLookupDuration).String()),
 		zap.String("total_extend_duration", durafmt.Parse(s.totalExtendDuration).String()),
 		zap.String("total_duration", durafmt.Parse(time.Since(s.startProcessing)).String()),
 		zap.String("average_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)).String()),
-		zap.String("average_block_encoding_duration", durafmt.Parse(s.totalBlockEncodingDuration/time.Duration(s.totalBlockCount)).String()),
-		zap.String("average_block_storage_duration", durafmt.Parse(s.totalBlockStorageDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)).String()),
 		zap.String("average_lookup_duration", durafmt.Parse(lookupAvg).String()),
 		zap.String("average_extend_duration", durafmt.Parse(extendAvg).String()),
@@ -111,7 +106,7 @@ func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.S
 
 	err := sourceStore.WalkFrom(ctx, "", paddedBlockNum, func(filename string) error {
 		p.logger.Debug("processing merge block file", zap.String("filename", filename))
-		return p.processMergeBlocksFile(ctx, filename, sourceStore, destinationStore, encoder)
+		return p.processMergeBlocksFiles(ctx, filename, sourceStore, destinationStore, encoder)
 	})
 
 	if err != nil {
@@ -123,7 +118,7 @@ func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.S
 	return nil
 }
 
-func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string, sourceStore dstore.Store, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
+func (p *Processor) processMergeBlocksFiles(ctx context.Context, filename string, sourceStore dstore.Store, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
 	p.logger.Info("Processing merge block file", zap.String("filename", filename))
 	p.stats = &stats{
 		startProcessing: time.Now(),
@@ -170,14 +165,23 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 		}
 	}()
 
+	nailer := dhammer.NewNailer(2, func(ctx context.Context, blk *pbsol.Block) (*bstream.Block, error) {
+		b, err := encoder.Encode(blk)
+		if err != nil {
+			return nil, fmt.Errorf("encoding block: %w", err)
+		}
+
+		return b, nil
+	})
+
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case blk, ok := <-blockChan:
-				if !ok && blk == nil {
-					bundleReader.Close()
+				if !ok {
+					nailer.Close()
 					return
 				}
 
@@ -188,29 +192,25 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 					return
 				}
 				p.stats.totalBlockProcessingDuration += time.Since(start)
-				pushStart := time.Now()
-				b, err := encoder.Encode(blk)
-				if err != nil {
-					bundleReader.PushError(fmt.Errorf("encoding block: %w", err))
-					return
-				}
-				p.stats.totalBlockEncodingDuration += time.Since(pushStart)
 
-				err = bundleReader.PushBlock(b)
-				if err != nil {
-					bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
-					return
-				}
-				p.stats.totalBlockStorageDuration += time.Since(pushStart)
+				nailer.Push(ctx, blk)
 				p.stats.totalBlockCount += 1
 				p.stats.totalBlockHandlingDuration += time.Since(start)
-				if !ok {
-					panic("block channel closed, received block")
-					bundleReader.Close()
-					return
-				}
 			}
 		}
+	}()
+
+	go func() {
+		for bb := range nailer.Out {
+			err = bundleReader.PushBlock(bb)
+			if err != nil {
+				bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
+				return
+			}
+		}
+		panic("block channel closed, received block")
+		bundleReader.Close()
+
 	}()
 
 	err = destinationStore.WriteObject(ctx, filename, bundleReader)

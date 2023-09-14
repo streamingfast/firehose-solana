@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/bigtable v1.13.0
 	github.com/abourget/llerrgroup v0.2.0
 	github.com/golang/protobuf v1.5.3
+	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/klauspost/compress v1.15.12
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.6.1
@@ -15,6 +16,7 @@ require (
 	github.com/spf13/viper v1.15.0
 	github.com/streamingfast/bstream v0.0.2-0.20230731165201-639b4f347707
 	github.com/streamingfast/cli v0.0.4-0.20230608140431-f501fec4f1ce
+	github.com/streamingfast/dhammer v0.0.0-20230125192823-c34bbd561bd4
 	github.com/streamingfast/dlauncher v0.0.0-20230607184145-76399faad89e
 	github.com/streamingfast/dstore v0.1.1-0.20230620124109-3924b3b36c77
 	github.com/streamingfast/firehose-core v0.1.7-0.20230803185901-18849126b832
@@ -110,7 +112,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3 // indirect
-	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/ipfs/boxo v0.8.0 // indirect
