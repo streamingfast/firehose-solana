@@ -205,6 +205,7 @@ func (p *Processor) processMergeBlocksFile(ctx context.Context, filename string,
 				p.stats.totalBlockCount += 1
 				p.stats.totalBlockHandlingDuration += time.Since(start)
 				if !ok {
+					panic("block channel closed, received block")
 					bundleReader.Close()
 					return
 				}
