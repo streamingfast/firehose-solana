@@ -271,7 +271,7 @@ func (p *Processor) manageAddressLookup(ctx context.Context, blockNum uint64, er
 func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *pbsol.ConfirmedTransaction) error {
 	start := time.Now()
 	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
-		accs, _, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
+		accs, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
 		if err != nil {
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
 		}

@@ -71,7 +71,7 @@ func Test_ExtendTableLookupInCompiledInstruction(t *testing.T) {
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAccount)
+	accounts, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAccount)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
@@ -150,7 +150,7 @@ func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	accounts, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
@@ -228,10 +228,17 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
+	accounts := NewAccounts(solBlock.Transactions[0].Transaction.Message.AccountKeys)
+	require.Equal(t, 2, len(accounts))
+
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAddressToExtend)
+	accounts = NewAccounts(solBlock.Transactions[0].Transaction.Message.AccountKeys)
+	require.Equal(t, 3, len(accounts))
+	require.Equal(t, accounts[2], AddressTableLookupAccountProgram)
+
+	accounts, err = resolver.Resolve(context.Background(), 185_914_862, tableLookupAddressToExtend)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
@@ -317,6 +324,6 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
+	accounts, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }

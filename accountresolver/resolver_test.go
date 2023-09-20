@@ -29,7 +29,7 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
@@ -40,20 +40,20 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
-	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
 
-	accounts, _, err = resolver.Resolve(context.Background(), 100, accountFromBase58(t, a1))
+	accounts, err = resolver.Resolve(context.Background(), 100, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 3, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
 	require.Equal(t, accountFromBase58(t, a4), accounts[2])
 
-	accounts, _, err = resolver.Resolve(context.Background(), 1000, accountFromBase58(t, a1))
+	accounts, err = resolver.Resolve(context.Background(), 1000, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 3, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
@@ -116,7 +116,7 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
-	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 2, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
@@ -134,7 +134,7 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
-	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 4, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])

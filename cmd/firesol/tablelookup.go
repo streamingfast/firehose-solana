@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 
-	firecore "github.com/streamingfast/firehose-core"
-	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/streamingfast/dstore"
+	firecore "github.com/streamingfast/firehose-core"
 	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
+	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	kvstore "github.com/streamingfast/kvdb/store"
 	_ "github.com/streamingfast/kvdb/store/badger3"
 	_ "github.com/streamingfast/kvdb/store/bigkv"
