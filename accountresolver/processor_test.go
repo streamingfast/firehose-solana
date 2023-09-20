@@ -71,7 +71,7 @@ func Test_ExtendTableLookupInCompiledInstruction(t *testing.T) {
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAccount)
+	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableLookupAccount)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
@@ -150,7 +150,7 @@ func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	accounts, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
@@ -238,7 +238,7 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	require.Equal(t, 3, len(accounts))
 	require.Equal(t, accounts[2], AddressTableLookupAccountProgram)
 
-	accounts, err = resolver.Resolve(context.Background(), 185_914_862, tableLookupAddressToExtend)
+	accounts, _, err = resolver.Resolve(context.Background(), 185_914_862, tableLookupAddressToExtend)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }
 
@@ -324,6 +324,6 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
-	accounts, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
+	accounts, _, err := resolver.Resolve(context.Background(), 185_914_862, tableAccountToExtend)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 }

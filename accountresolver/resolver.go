@@ -58,22 +58,22 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
 	}
 
-	r.cache[key.base58()] = append([]*cacheItem{{
-		blockNum: blockNum,
-		accounts: extendedAccount,
-	}}, r.cache[key.base58()]...)
+	//r.cache[key.base58()] = append([]*cacheItem{{
+	//	blockNum: blockNum,
+	//	accounts: extendedAccount,
+	//}}, r.cache[key.base58()]...)
 
 	return nil
 }
 
 func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error) {
-	if cacheItems, ok := r.cache[key.base58()]; ok {
-		for _, cacheItem := range cacheItems {
-			if cacheItem.blockNum <= atBlockNum {
-				return cacheItem.accounts, true, nil
-			}
-		}
-	}
+	//if cacheItems, ok := r.cache[key.base58()]; ok {
+	//	for _, cacheItem := range cacheItems {
+	//		if cacheItem.blockNum <= atBlockNum {
+	//			return cacheItem.accounts, true, nil
+	//		}
+	//	}
+	//}
 
 	keyBytes := Keys.tableLookupPrefix(key)
 	iter := r.store.Prefix(ctx, keyBytes, store.Unlimited)
