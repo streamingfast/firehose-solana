@@ -11,7 +11,7 @@ import (
 
 type AccountsResolver interface {
 	Extend(ctx context.Context, blockNum uint64, trxHash []byte, key Account, accounts Accounts) error
-	Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, error)
+	Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error)
 	StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error
 	GetCursor(ctx context.Context, readerName string) (*Cursor, error)
 }
@@ -38,7 +38,7 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 		return nil
 	}
 
-	currentAccounts, err := r.Resolve(ctx, blockNum, key)
+	currentAccounts, _, err := r.Resolve(ctx, blockNum, key)
 	if err != nil {
 		return fmt.Errorf("retreiving last accounts for key %q: %w", key, err)
 	}
@@ -66,30 +66,30 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 	return nil
 }
 
-func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, error) {
+func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error) {
 	if cacheItems, ok := r.cache[key.base58()]; ok {
 		for _, cacheItem := range cacheItems {
 			if cacheItem.blockNum <= atBlockNum {
-				return cacheItem.accounts, nil
+				return cacheItem.accounts, true, nil
 			}
 		}
-		return nil, nil
 	}
+
 	keyBytes := Keys.tableLookupPrefix(key)
 	iter := r.store.Prefix(ctx, keyBytes, store.Unlimited)
 	if iter.Err() != nil {
-		return nil, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
+		return nil, false, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
 	}
 
 	for iter.Next() {
 		item := iter.Item()
 		_, keyBlockNum := Keys.unpackTableLookup(item.Key)
 		if keyBlockNum <= atBlockNum {
-			return decodeAccounts(item.Value), nil
+			return decodeAccounts(item.Value), false, nil
 		}
 	}
 
-	return nil, nil
+	return nil, false, nil
 }
 
 func (r *KVDBAccountsResolver) isKnownTransaction(ctx context.Context, transactionHash []byte) bool {

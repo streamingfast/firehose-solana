@@ -32,6 +32,7 @@ type stats struct {
 	totalBlockProcessingDuration       time.Duration
 	totalBlockHandlingDuration         time.Duration
 	totalBlockReadingDuration          time.Duration
+	cacheHit                           int
 }
 
 func (s *stats) log(logger *zap.Logger) {
@@ -53,6 +54,7 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.Int("block_count", s.totalBlockCount),
 		zap.Int("transaction_count", s.transactionCount),
 		zap.Int("lookup_count", s.lookupCount),
+		zap.Int("cache_hit", s.cacheHit),
 		zap.Int("extend_count", s.extendCount),
 		zap.String("total_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration).String()),
 		zap.String("total_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration).String()),
@@ -271,9 +273,12 @@ func (p *Processor) manageAddressLookup(ctx context.Context, blockNum uint64, er
 func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *pbsol.ConfirmedTransaction) error {
 	start := time.Now()
 	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
-		accs, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
+		accs, cached, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
 		if err != nil {
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
+		}
+		if cached {
+			p.stats.cacheHit += 1
 		}
 		p.logger.Debug("Resolve address table lookup", zap.String("account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("count", len(accs)))
 		trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs.ToBytesArray()...)
