@@ -280,7 +280,7 @@ func (p *Processor) applyTableLookup(ctx context.Context, blockNum uint64, trx *
 		if cached {
 			p.stats.cacheHit += 1
 		}
-		p.logger.Debug("Resolve address table lookup", zap.String("account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("count", len(accs)))
+		p.logger.Debug("Resolve address table lookup", zap.String("trx", base58.Encode(getTransactionHash(trx.Transaction.Signatures))), zap.String("account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("count", len(accs)))
 		trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs.ToBytesArray()...)
 	}
 	totalDuration := time.Since(start)

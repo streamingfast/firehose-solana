@@ -70,7 +70,7 @@ func (r *BundleReader) PushBlock(block *bstream.Block) error {
 }
 
 func (r *BundleReader) Read(p []byte) (bytesRead int, err error) {
-	r.logger.Debug("read called", zap.Duration("since_last_read", time.Since(r.lastRead)))
+	//r.logger.Debug("read called", zap.Duration("since_last_read", time.Since(r.lastRead)))
 	if r.readBuffer == nil {
 		if err := r.fillBuffer(); err != nil {
 			return 0, err
