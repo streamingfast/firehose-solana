@@ -48,7 +48,7 @@ func processAddressLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Lo
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}
 
-		resolver := accountsresolver.NewKVDBAccountsResolver(db)
+		resolver := accountsresolver.NewKVDBAccountsResolver(db, logger)
 		cursor, err := resolver.GetCursor(ctx, "reproc")
 		if err != nil {
 			return fmt.Errorf("unable to get cursor: %w", err)

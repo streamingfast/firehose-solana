@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"go.uber.org/zap"
+
 	"github.com/streamingfast/kvdb/store"
 	_ "github.com/streamingfast/kvdb/store/badger3"
 	"github.com/stretchr/testify/require"
@@ -23,7 +25,7 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	db, err := store.New("badger3:///tmp/my-badger.db")
 	require.NoError(t, err)
 
-	resolver := NewKVDBAccountsResolver(db)
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
 	err = resolver.Extend(context.Background(), 1, []byte{0x00}, accountFromBase58(t, a1), []Account{accountFromBase58(t, a2), accountFromBase58(t, a3)})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
@@ -68,7 +70,7 @@ func TestKVDBAccountsResolver_StoreCursor(t *testing.T) {
 	db, err := store.New("badger3:///tmp/my-badger.db")
 	require.NoError(t, err)
 
-	resolver := NewKVDBAccountsResolver(db)
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
 	require.NoError(t, err)
 
 	err = resolver.StoreCursor(context.Background(), "r1", NewCursor(1))
@@ -86,7 +88,7 @@ func TestKVDBAccountsResolver_StoreCursor_None(t *testing.T) {
 	db, err := store.New("badger3:///tmp/my-badger.db")
 	require.NoError(t, err)
 
-	resolver := NewKVDBAccountsResolver(db)
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
 
 	c, err := resolver.GetCursor(context.Background(), "r1")
 	require.NoError(t, err)
@@ -102,7 +104,7 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 	db, err := store.New("badger3:///tmp/my-badger.db")
 	require.NoError(t, err)
 
-	resolver := NewKVDBAccountsResolver(db)
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
 	err = resolver.Extend(
 		context.Background(),
 		1,

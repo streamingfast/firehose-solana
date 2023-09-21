@@ -66,8 +66,8 @@ func Test_ExtendTableLookupInCompiledInstruction(t *testing.T) {
 	require.NoError(t, err)
 
 	cursor := NewCursor(185_914_861)
-	resolver := NewKVDBAccountsResolver(db)
-	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
+	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db, zap.NewNop()), zap.NewNop())
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
@@ -145,8 +145,8 @@ func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
 	require.NoError(t, err)
 
 	cursor := NewCursor(157_564_919)
-	resolver := NewKVDBAccountsResolver(db)
-	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
+	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db, zap.NewNop()), zap.NewNop())
 	err = p.ProcessBlock(context.Background(), solBlock)
 	require.NoError(t, err)
 
@@ -220,8 +220,8 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	require.NoError(t, err)
 
 	cursor := NewCursor(185_914_861)
-	resolver := NewKVDBAccountsResolver(db)
-	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
+	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db, zap.NewNop()), zap.NewNop())
 
 	err = p.accountsResolver.Extend(context.Background(), 185_914_860, []byte{0x00}, tableLookupAddressToResolve, Accounts{AddressTableLookupAccountProgram})
 	require.NoError(t, err)
@@ -312,8 +312,8 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	require.NoError(t, err)
 
 	cursor := NewCursor(185_914_861)
-	resolver := NewKVDBAccountsResolver(db)
-	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db), zap.NewNop())
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
+	p := NewProcessor("test", cursor, NewKVDBAccountsResolver(db, zap.NewNop()), zap.NewNop())
 
 	// Pre populate the table lookup account with the address table lookup program
 	err = p.accountsResolver.Extend(context.Background(), 185_914_860, []byte{0x00}, tableLookupAccountInTransaction, Accounts{tableAccountToExtend})
