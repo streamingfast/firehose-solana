@@ -316,7 +316,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, blockNum uint64, con
 		inner := confirmedTransaction.Meta.InnerInstructions[compileIndex]
 		for _, instruction := range inner.Instructions {
 			if len(accountKeys) < int(instruction.ProgramIdIndex) {
-				return fmt.Errorf("missing account key at index %d for transaction %s", instruction.ProgramIdIndex, getTransactionHash(confirmedTransaction.Transaction.Signatures))
+				return fmt.Errorf("missing account key at index %d for transaction %s with account keys count of %d", instruction.ProgramIdIndex, getTransactionHash(confirmedTransaction.Transaction.Signatures), len(accountKeys))
 			}
 
 			err := p.ProcessInstruction(ctx, blockNum, confirmedTransaction.Transaction.Signatures[0], accountKeys[instruction.ProgramIdIndex], accountKeys, instruction)
