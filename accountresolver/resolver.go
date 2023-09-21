@@ -90,7 +90,7 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		r.cache[key.base58()] = append([]*cacheItem{{
 			blockNum: keyBlockNum,
 			accounts: accounts,
-		}})
+		}}, r.cache[key.base58()]...)
 
 		if keyBlockNum <= atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
