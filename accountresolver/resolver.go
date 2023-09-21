@@ -95,10 +95,10 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		_, keyBlockNum := Keys.unpackTableLookup(item.Key)
 		accounts := decodeAccounts(item.Value)
 
-		r.cache[key.base58()] = append([]*cacheItem{{
+		r.cache[key.base58()] = append(r.cache[key.base58()], &cacheItem{
 			blockNum: keyBlockNum,
 			accounts: accounts,
-		}}, r.cache[key.base58()]...)
+		})
 		r.logger.Debug("caching item", zap.Uint64("key_block_num", keyBlockNum), zap.String("key", key.base58()))
 
 		if keyBlockNum <= atBlockNum && resolvedAccounts == nil {
