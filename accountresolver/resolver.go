@@ -73,11 +73,11 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error) {
 	if cacheItems, ok := r.cache[key.base58()]; ok {
 		for _, cacheItem := range cacheItems {
-			r.logger.Debug("cache item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum))
+			r.logger.Debug("cached item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum), zap.String("key", key.base58()))
 		}
 		for _, cacheItem := range cacheItems {
 			if cacheItem.blockNum <= atBlockNum {
-				r.logger.Debug("match cache item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum))
+				r.logger.Debug("match cache item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum), zap.String("key", key.base58()))
 				return cacheItem.accounts, true, nil
 			}
 		}
@@ -99,7 +99,7 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 			blockNum: keyBlockNum,
 			accounts: accounts,
 		}}, r.cache[key.base58()]...)
-		r.logger.Debug("caching item", zap.Uint64("block_num", keyBlockNum), zap.Uint64("at_block_num", atBlockNum))
+		r.logger.Debug("caching item", zap.Uint64("key_block_num", keyBlockNum), zap.String("key", key.base58()))
 
 		if keyBlockNum <= atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
