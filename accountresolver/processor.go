@@ -34,6 +34,7 @@ type stats struct {
 	totalBlockReadingDuration          time.Duration
 	cacheHit                           int
 	totalBlockPushDuration             time.Duration
+	writeDurationAfterLastPush         time.Duration
 }
 
 func (s *stats) log(logger *zap.Logger) {
@@ -70,6 +71,7 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.String("average_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)).String()),
 		zap.String("average_lookup_duration", durafmt.Parse(lookupAvg).String()),
 		zap.String("average_extend_duration", durafmt.Parse(extendAvg).String()),
+		zap.String("write_duration_after_last_push", durafmt.Parse(s.writeDurationAfterLastPush).String()),
 	)
 }
 
@@ -237,6 +239,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, mergeBlocksFile
 				}
 			}
 		}()
+		lastPushTime := time.Now()
 		go func() {
 			for bb := range nailer.Out {
 				err := bundleReader.PushBlock(bb)
@@ -253,6 +256,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, mergeBlocksFile
 		if err != nil {
 			return fmt.Errorf("writing bundle file: %w", err)
 		}
+		p.stats.writeDurationAfterLastPush = time.Since(lastPushTime)
 		//p.logger.Info("new merge blocks file written:", zap.String("filename", filename), zap.Duration("duration", time.Since(start)))
 		err = p.accountsResolver.StoreCursor(ctx, p.readerName, p.cursor)
 		if err != nil {
