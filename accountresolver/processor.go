@@ -192,11 +192,10 @@ func (f *mergeBlocksFile) process(ctx context.Context, sourceStore dstore.Store,
 
 func (p *Processor) processMergeBlocksFiles(ctx context.Context, mergeBlocksFileChan chan *mergeBlocksFile, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
 
-	p.stats = &stats{
-		startProcessing: time.Now(),
-	}
-
 	for mbf := range mergeBlocksFileChan {
+		p.stats = &stats{
+			startProcessing: time.Now(),
+		}
 		p.logger.Info("Receive merge block file", zap.String("filename", mbf.filename))
 		bundleReader := NewBundleReader(ctx, p.logger)
 
