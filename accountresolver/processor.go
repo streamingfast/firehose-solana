@@ -33,6 +33,7 @@ type stats struct {
 	totalBlockHandlingDuration         time.Duration
 	totalBlockReadingDuration          time.Duration
 	cacheHit                           int
+	totalBlockPushDuration             time.Duration
 }
 
 func (s *stats) log(logger *zap.Logger) {
@@ -59,6 +60,7 @@ func (s *stats) log(logger *zap.Logger) {
 		zap.String("total_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration).String()),
 		zap.String("total_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration).String()),
 		zap.String("total_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration).String()),
+		zap.String("total_push_duration", durafmt.Parse(s.totalBlockPushDuration).String()),
 		zap.String("total_lookup_duration", durafmt.Parse(s.totalLookupDuration).String()),
 		zap.String("total_extend_duration", durafmt.Parse(s.totalExtendDuration).String()),
 		zap.String("total_duration", durafmt.Parse(time.Since(s.startProcessing)).String()),
@@ -238,10 +240,12 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, mergeBlocksFile
 		go func() {
 			for bb := range nailer.Out {
 				err := bundleReader.PushBlock(bb)
+				pushStart := time.Now()
 				if err != nil {
 					bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
 					return
 				}
+				p.stats.totalBlockPushDuration += time.Since(pushStart)
 			}
 			bundleReader.Close()
 		}()
