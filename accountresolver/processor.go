@@ -143,6 +143,7 @@ type mergeBlocksFile struct {
 
 func newMergeBlocksFile(fileName string, logger *zap.Logger) *mergeBlocksFile {
 	return &mergeBlocksFile{
+		filename:  fileName,
 		blockChan: make(chan *pbsol.Block),
 		logger:    logger,
 	}
