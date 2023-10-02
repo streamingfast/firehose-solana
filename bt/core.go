@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/streamingfast/logging"
-
 	"cloud.google.com/go/bigtable"
 	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
+	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 )
 
