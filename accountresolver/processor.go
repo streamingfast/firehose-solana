@@ -185,7 +185,7 @@ func (f *mergeBlocksFile) process(ctx context.Context, sourceStore dstore.Store,
 			f.logger.Info("skip block", zap.Uint64("slot", blk.Slot))
 			continue
 		}
-		fmt.Println("mergeBlocksFile : pushing block", blk.Slot)
+
 		f.blockChan <- blk
 	}
 }
