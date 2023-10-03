@@ -112,7 +112,8 @@ func (r *BundleReader) fillBuffer() error {
 	if len(data) < bstream.GetBlockWriterHeaderLen {
 		return fmt.Errorf("one-block-file corrupt: expected header size of %d, but file size is only %d bytes", bstream.GetBlockWriterHeaderLen, len(data))
 	}
-	data = data[bstream.GetBlockWriterHeaderLen:]
+	//data = data[bstream.GetBlockWriterHeaderLen:]
+	data = data[:bstream.GetBlockWriterHeaderLen]
 	r.readBuffer = data
 	r.readBufferOffset = 0
 	return nil
