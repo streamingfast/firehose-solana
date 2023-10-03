@@ -250,6 +250,8 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 
 					p.stats.totalBlockProcessingDuration += time.Since(start)
 
+					cursor.slotNum = blk.Slot
+
 					nailer.Push(ctx, blk)
 					p.stats.totalBlockHandlingDuration += time.Since(start)
 				}
@@ -264,7 +266,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 					bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
 					return
 				}
-				cursor.slotNum = bb.Num()
+
 				p.stats.totalBlockPushDuration += time.Since(pushStart)
 			}
 			bundleReader.Close()
