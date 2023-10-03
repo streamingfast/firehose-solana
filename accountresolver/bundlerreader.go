@@ -105,7 +105,7 @@ func (r *BundleReader) fillBuffer() error {
 
 	if !r.headerWritten {
 		fmt.Println("writing header")
-		header := []byte{'d', 'b', 'i', 'n', byte(0), 's', 'o', 'l', 0, 1}
+		header := []byte{'d', 'b', 'i', 'n', byte(0), 's', 'o', 'l', '0', '1'}
 
 		r.headerWritten = true
 		r.readBuffer = append(header, data...)
