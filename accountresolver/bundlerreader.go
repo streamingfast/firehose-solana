@@ -109,6 +109,7 @@ func (r *BundleReader) fillBuffer() error {
 
 		r.headerWritten = true
 		r.readBuffer = append(header, data...)
+		r.readBufferOffset = 0
 		return nil
 	}
 
