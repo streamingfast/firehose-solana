@@ -56,7 +56,7 @@ func processAddressLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Lo
 
 		if cursor == nil {
 			logger.Info("No cursor found, starting from beginning")
-			cursor = accountsresolver.NewCursor(154655004)
+			cursor = accountsresolver.NewCursor(154_654_999)
 		}
 
 		fmt.Println("Cursor", cursor)
