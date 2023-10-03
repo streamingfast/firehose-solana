@@ -20,19 +20,21 @@ type BundleReader struct {
 	blockData        chan []byte
 	errChan          chan error
 	logger           *zap.Logger
-	headerWritten    bool
 
 	lastRead time.Time
 }
 
 func NewBundleReader(ctx context.Context, logger *zap.Logger) *BundleReader {
+	cntType := []byte("sol")
+	ver := []byte{'0', '1'}
 	return &BundleReader{
-		ctx:           ctx,
-		headerWritten: false,
-		blockData:     make(chan []byte, 1),
-		errChan:       make(chan error, 1),
-		logger:        logger,
-		lastRead:      time.Now(),
+		ctx:       ctx,
+		blockData: make(chan []byte, 1),
+		errChan:   make(chan error, 1),
+		logger:    logger,
+		lastRead:  time.Now(),
+
+		readBuffer: []byte{'d', 'b', 'i', 'n', byte(0), cntType[0], cntType[1], cntType[2], ver[0], ver[1]},
 	}
 }
 
@@ -101,16 +103,6 @@ func (r *BundleReader) fillBuffer() error {
 	if len(data) == 0 {
 		r.readBuffer = nil
 		return fmt.Errorf("one-block-file corrupt: empty data")
-	}
-
-	if !r.headerWritten {
-		fmt.Println("writing header")
-		header := []byte{'d', 'b', 'i', 'n', byte(0), 's', 'o', 'l', '0', '1'}
-
-		r.headerWritten = true
-		r.readBuffer = append(header, data...)
-		r.readBufferOffset = 0
-		return nil
 	}
 
 	//data = data[bstream.GetBlockWriterHeaderLen:]
