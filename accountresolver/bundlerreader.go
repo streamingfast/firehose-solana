@@ -60,7 +60,7 @@ func (r *BundleReader) PushBlock(block *bstream.Block) error {
 	select {
 	case <-r.ctx.Done():
 		return nil
-	case r.blockData <- data[bstream.GetBlockWriterHeaderLen:]:
+	case r.blockData <- data:
 		return nil
 	}
 }
