@@ -55,13 +55,6 @@ func (r *BundleReader) PushBlock(block *bstream.Block) error {
 		return fmt.Errorf("unable to marshal proto block: %w", err)
 	}
 
-	if !r.headerWritten {
-		fmt.Println("writing header")
-		header := []byte{'d', 'b', 'i', 'n', byte(0), 's', 'o', 'l', 0, 1}
-		r.readBuffer = header
-		r.headerWritten = true
-	}
-
 	select {
 	case <-r.ctx.Done():
 		return nil
@@ -110,11 +103,16 @@ func (r *BundleReader) fillBuffer() error {
 		return fmt.Errorf("one-block-file corrupt: empty data")
 	}
 
-	if len(data) < bstream.GetBlockWriterHeaderLen {
-		return fmt.Errorf("one-block-file corrupt: expected header size of %d, but file size is only %d bytes", bstream.GetBlockWriterHeaderLen, len(data))
+	if !r.headerWritten {
+		fmt.Println("writing header")
+		header := []byte{'d', 'b', 'i', 'n', byte(0), 's', 'o', 'l', 0, 1}
+
+		r.headerWritten = true
+		r.readBuffer = append(header, data...)
+		return nil
 	}
 
-	data = data[bstream.GetBlockWriterHeaderLen:]
+	//data = data[bstream.GetBlockWriterHeaderLen:]
 	r.readBuffer = data
 	r.readBufferOffset = 0
 	return nil
