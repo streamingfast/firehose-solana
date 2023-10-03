@@ -97,6 +97,9 @@ func (r *Client) ReadBlocks(
 
 			r.progressLog(blk, zlogger)
 			lastSeenBlock = blk
+
+			//todo: resolve address lookup
+
 			if err := writer(blk); err != nil {
 				fatalError = fmt.Errorf("failed to write blokc: %w", err)
 				return false

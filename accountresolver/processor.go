@@ -90,40 +90,46 @@ func NewCursor(blockNum uint64) *Cursor {
 
 type Processor struct {
 	accountsResolver AccountsResolver
-	cursor           *Cursor
 	readerName       string
 	logger           *zap.Logger
 	stats            *stats
 }
 
-func NewProcessor(readerName string, cursor *Cursor, accountsResolver AccountsResolver, logger *zap.Logger) *Processor {
+func NewProcessor(readerName string, accountsResolver AccountsResolver, logger *zap.Logger) *Processor {
 	return &Processor{
 		readerName:       readerName,
 		accountsResolver: accountsResolver,
-		cursor:           cursor,
 		logger:           logger,
 		stats:            &stats{},
 	}
 }
 
-func (p *Processor) ProcessMergeBlocks(ctx context.Context, sourceStore dstore.Store, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
-	startBlockNum := p.cursor.slotNum - p.cursor.slotNum%100 //This is the first block slot of the last merge block file
-	startBlockNum += 100                                     //This is the first block slot of the next merge block file
+func (p *Processor) ResetStats() {
+	p.stats = &stats{}
+}
+
+func (p *Processor) LogStats() {
+	p.stats.log(p.logger)
+}
+
+func (p *Processor) ProcessMergeBlocks(ctx context.Context, cursor *Cursor, sourceStore dstore.Store, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
+	startBlockNum := cursor.slotNum - cursor.slotNum%100 //This is the first block slot of the last merge block file
+	startBlockNum += 100                                 //This is the first block slot of the next merge block file
 	paddedBlockNum := fmt.Sprintf("%010d", startBlockNum)
 
-	p.logger.Info("Processing merge blocks", zap.Uint64("cursor_block_num", p.cursor.slotNum), zap.String("first_merge_filename", paddedBlockNum))
+	p.logger.Info("Processing merge blocks", zap.Uint64("cursor_block_num", cursor.slotNum), zap.String("first_merge_filename", paddedBlockNum))
 
 	mergeBlocksFileChan := make(chan *mergeBlocksFile, 10)
 
 	go func() {
-		err := p.processMergeBlocksFiles(ctx, mergeBlocksFileChan, destinationStore, encoder)
+		err := p.processMergeBlocksFiles(ctx, cursor, mergeBlocksFileChan, destinationStore, encoder)
 		panic(fmt.Errorf("processing merge blocks files: %w", err))
 	}()
 
 	err := sourceStore.WalkFrom(ctx, "", paddedBlockNum, func(filename string) error {
 		mbf := newMergeBlocksFile(filename, p.logger)
 		go func() {
-			err := mbf.process(ctx, sourceStore, p.cursor)
+			err := mbf.process(ctx, sourceStore, cursor)
 			if err != nil {
 				panic(fmt.Errorf("processing merge block file %s: %w", mbf.filename, err))
 			}
@@ -185,8 +191,8 @@ func (f *mergeBlocksFile) process(ctx context.Context, sourceStore dstore.Store,
 		}
 
 		blk := block.ToProtocol().(*pbsol.Block)
-		if blk.Slot < uint64(firstBlockOfFile) || blk.Slot <= cursor.slotNum {
-			f.logger.Info("skip block", zap.Uint64("slot", blk.Slot))
+		if blk.Slot < uint64(firstBlockOfFile) {
+			f.logger.Info("skip block process in previous file", zap.Uint64("slot", blk.Slot))
 			continue
 		}
 
@@ -194,7 +200,7 @@ func (f *mergeBlocksFile) process(ctx context.Context, sourceStore dstore.Store,
 	}
 }
 
-func (p *Processor) processMergeBlocksFiles(ctx context.Context, mergeBlocksFileChan chan *mergeBlocksFile, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
+func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor, mergeBlocksFileChan chan *mergeBlocksFile, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
 
 	for mbf := range mergeBlocksFileChan {
 		p.stats = &stats{
@@ -225,16 +231,26 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, mergeBlocksFile
 						return
 					}
 
+					if blk.Slot <= cursor.slotNum {
+						p.logger.Info("skip block", zap.Uint64("slot", blk.Slot))
+						continue
+					}
+
+					if cursor.slotNum != blk.ParentSlot {
+						bundleReader.PushError(fmt.Errorf("cursor block num %d is not the same as parent slot num %d of block %d", cursor.slotNum, blk.ParentSlot, blk.Slot))
+						return
+					}
+
 					start := time.Now()
 					err := p.ProcessBlock(context.Background(), blk)
 					if err != nil {
 						bundleReader.PushError(fmt.Errorf("processing block: %w", err))
 						return
 					}
+
 					p.stats.totalBlockProcessingDuration += time.Since(start)
 
 					nailer.Push(ctx, blk)
-					p.stats.totalBlockCount += 1
 					p.stats.totalBlockHandlingDuration += time.Since(start)
 				}
 			}
@@ -248,6 +264,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, mergeBlocksFile
 					bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
 					return
 				}
+				cursor.slotNum = bb.Num()
 				p.stats.totalBlockPushDuration += time.Since(pushStart)
 			}
 			bundleReader.Close()
@@ -258,9 +275,9 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, mergeBlocksFile
 		}
 		p.stats.writeDurationAfterLastPush = time.Since(lastPushTime)
 		//p.logger.Info("new merge blocks file written:", zap.String("filename", filename), zap.Duration("duration", time.Since(start)))
-		err = p.accountsResolver.StoreCursor(ctx, p.readerName, p.cursor)
+		err = p.accountsResolver.StoreCursor(ctx, p.readerName, cursor)
 		if err != nil {
-			return fmt.Errorf("storing cursor at block %d: %w", p.cursor.slotNum, err)
+			return fmt.Errorf("storing cursor at block %d: %w", cursor.slotNum, err)
 		}
 
 		p.stats.log(p.logger)
@@ -270,13 +287,6 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, mergeBlocksFile
 }
 
 func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error {
-	if p.cursor == nil {
-		return fmt.Errorf("cursor is nil")
-	}
-
-	if p.cursor.slotNum != block.ParentSlot {
-		return fmt.Errorf("cursor block num %d is not the same as parent slot num %d of block %d", p.cursor.slotNum, block.ParentSlot, block.Slot)
-	}
 	p.stats.transactionCount += len(block.Transactions)
 	for _, trx := range block.Transactions {
 		if trx.Meta.Err != nil {
@@ -293,8 +303,7 @@ func (p *Processor) ProcessBlock(ctx context.Context, block *pbsol.Block) error 
 			return fmt.Errorf("managing address lookup at block %d: %w", block.Slot, err)
 		}
 	}
-
-	p.cursor.slotNum = block.Slot
+	p.stats.totalBlockCount += 1
 
 	return nil
 }

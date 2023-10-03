@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"strconv"
 
+	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
+	kvstore "github.com/streamingfast/kvdb/store"
+
 	"cloud.google.com/go/bigtable"
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/cli/sflags"
@@ -28,6 +31,7 @@ func newToolsBigTableBlocksCmd(logger *zap.Logger, tracer logging.Tracer) *cobra
 	cmd.Flags().Bool("firehose-enabled", false, "When enable the blocks read will output Firehose formatted logs 'FIRE <block_num> <block_payload_in_hex>'")
 	cmd.Flags().Bool("compact", false, "When printing in JSON it will print compact instead of pretty-printed output")
 	cmd.Flags().Bool("linkable", false, "Ensure that no block is skipped they are linkeable")
+	cmd.Flags().String("table-lookup-dsn", "", "DSN to the table lookup kv db")
 	return cmd
 }
 
@@ -43,6 +47,7 @@ func bigtableBlocksRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comm
 		linkable := sflags.MustGetBool(cmd, "linkable")
 		btProject := sflags.MustGetString(cmd, "bt-project")
 		btInstance := sflags.MustGetString(cmd, "bt-instance")
+		tableLookupDSN := sflags.MustGetString(cmd, "table-lookup-dsn")
 
 		logger.Info("retrieving from bigtable",
 			zap.Bool("firehose_enabled", firehoseEnabled),
@@ -52,6 +57,7 @@ func bigtableBlocksRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comm
 			zap.String("stop_block_num", stopBlockNumStr),
 			zap.String("bt_project", btProject),
 			zap.String("bt_instance", btInstance),
+			zap.String("table_lookup_dsn", tableLookupDSN),
 		)
 		client, err := bigtable.NewClient(ctx, btProject, btInstance)
 		if err != nil {
@@ -69,8 +75,23 @@ func bigtableBlocksRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comm
 
 		btClient := bt.New(client, 10, logger, tracer)
 
+		db, err := kvstore.New(tableLookupDSN)
+		if err != nil {
+			return fmt.Errorf("unable to create kv store: %w", err)
+		}
+
+		resolver := accountsresolver.NewKVDBAccountsResolver(db, logger)
+		processor := accountsresolver.NewProcessor("reader", resolver, logger)
+
 		return btClient.ReadBlocks(ctx, startBlockNum, stopBlockNum, linkable, func(block *pbsolv1.Block) error {
 			if firehoseEnabled {
+				processor.ResetStats()
+				err := processor.ProcessBlock(ctx, block)
+				if err != nil {
+					return fmt.Errorf("unable to process table lookup for block: %w", err)
+				}
+				processor.LogStats()
+
 				cnt, err := proto.Marshal(block)
 				if err != nil {
 					return fmt.Errorf("failed to proto  marshal pb sol block: %w", err)

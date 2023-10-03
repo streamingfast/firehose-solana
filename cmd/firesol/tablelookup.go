@@ -60,9 +60,9 @@ func processAddressLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Lo
 		}
 
 		fmt.Println("Cursor", cursor)
-		processor := accountsresolver.NewProcessor("reproc", cursor, resolver, logger)
+		processor := accountsresolver.NewProcessor("reproc", resolver, logger)
 
-		err = processor.ProcessMergeBlocks(ctx, sourceStore, destinationStore, chain.BlockEncoder)
+		err = processor.ProcessMergeBlocks(ctx, cursor, sourceStore, destinationStore, chain.BlockEncoder)
 		if err != nil {
 			return fmt.Errorf("unable to process merge blocks: %w", err)
 		}
