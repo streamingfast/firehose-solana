@@ -56,7 +56,7 @@ func (r *BundleReader) PushBlock(block *bstream.Block) error {
 	}
 
 	if !r.headerWritten {
-		header := data[:bstream.GetBlockWriterHeaderLen]
+		header := []byte{'d', 'b', 'i', 'n', byte(0), 's', 'o', 'l', 0, 1}
 		r.blockData <- header
 		r.headerWritten = true
 	}
@@ -113,7 +113,7 @@ func (r *BundleReader) fillBuffer() error {
 		return fmt.Errorf("one-block-file corrupt: expected header size of %d, but file size is only %d bytes", bstream.GetBlockWriterHeaderLen, len(data))
 	}
 
-	data = data[:bstream.GetBlockWriterHeaderLen]
+	data = data[bstream.GetBlockWriterHeaderLen:]
 	r.readBuffer = data
 	r.readBufferOffset = 0
 	return nil
