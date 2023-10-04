@@ -305,6 +305,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 			}
 			stats.totalBlockPushDuration += time.Since(pushStart)
 		}
+		bundleReader.Close()
 		stats.lastBlockPushedAt = time.Now()
 	}
 
