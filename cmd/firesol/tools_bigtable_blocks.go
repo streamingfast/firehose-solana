@@ -85,12 +85,12 @@ func bigtableBlocksRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comm
 
 		return btClient.ReadBlocks(ctx, startBlockNum, stopBlockNum, linkable, func(block *pbsolv1.Block) error {
 			if firehoseEnabled {
-				processor.ResetStats()
-				err := processor.ProcessBlock(ctx, block)
+				stats := &accountsresolver.Stats{}
+				err := processor.ProcessBlock(ctx, stats, block)
 				if err != nil {
 					return fmt.Errorf("unable to process table lookup for block: %w", err)
 				}
-				processor.LogStats()
+				stats.Log(logger)
 
 				cnt, err := proto.Marshal(block)
 				if err != nil {
