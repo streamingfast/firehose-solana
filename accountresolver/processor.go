@@ -302,8 +302,8 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		decoderStart := time.Now()
 		for bb := range decoderNailer.Out {
 			p.logger.Debug("pushing block", zap.Uint64("slot", bb.Num()))
-			err := bundleReader.PushBlock(bb)
 			pushStart := time.Now()
+			err := bundleReader.PushBlock(bb)
 			if err != nil {
 				bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
 				return fmt.Errorf("pushing block to bundle reader: %w", err)
