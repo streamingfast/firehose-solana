@@ -59,7 +59,6 @@ func processAddressLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Lo
 			cursor = accountsresolver.NewCursor(154_654_999)
 		}
 
-		fmt.Println("Cursor", cursor)
 		processor := accountsresolver.NewProcessor("reproc", resolver, logger)
 
 		err = processor.ProcessMergeBlocks(ctx, cursor, sourceStore, destinationStore, chain.BlockEncoder)

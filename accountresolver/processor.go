@@ -249,12 +249,13 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		})
 		decoderNailer.Start(ctx)
 
-		writerNailer.Push(ctx, &bundleJob{
+		job := &bundleJob{
 			mbf.filename,
-			cursor,
+			NewCursor(cursor.slotNum),
 			stats,
 			bundleReader,
-		})
+		}
+		writerNailer.Push(ctx, job)
 
 		mbf := mbf
 		go func() {
@@ -287,7 +288,8 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 
 					stats.totalBlockProcessingDuration += time.Since(start)
 
-					cursor.slotNum = blk.Slot
+					cursor.slotNum = blk.Slot //this is global cursor
+					job.cursor.slotNum = blk.Slot
 					decoderNailer.Push(ctx, blk)
 
 					stats.totalBlockHandlingDuration += time.Since(start)
