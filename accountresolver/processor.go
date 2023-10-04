@@ -38,6 +38,7 @@ type Stats struct {
 	lastBlockPushedAt                  time.Time
 	totalDecodingDuration              time.Duration
 	timeToFirstDecodedBlock            time.Duration
+	totalTimeWaitingForBlock           time.Duration
 }
 
 func (s *Stats) Log(logger *zap.Logger) {
@@ -70,6 +71,7 @@ func (s *Stats) Log(logger *zap.Logger) {
 		zap.String("total_duration", durafmt.Parse(time.Since(s.startProcessing)).String()),
 		zap.String("total_block_reading_duration", durafmt.Parse(s.totalBlockReadingDuration).String()),
 		zap.String("total_decoding_duration", durafmt.Parse(s.totalDecodingDuration).String()),
+		zap.String("total_time_waiting_for_block", durafmt.Parse(s.totalTimeWaitingForBlock).String()),
 		zap.String("average_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)).String()),
@@ -267,6 +269,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		mbf := mbf
 		go func() {
 			for {
+				startWaiting := time.Now()
 				select {
 				case <-ctx.Done():
 					return
@@ -275,7 +278,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 						decoderNailer.Close()
 						return
 					}
-
+					stats.totalTimeWaitingForBlock += time.Since(startWaiting)
 					if blk.Slot <= cursor.slotNum {
 						p.logger.Info("skip block", zap.Uint64("slot", blk.Slot))
 						continue
@@ -305,7 +308,9 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		}()
 		decoderStart := time.Now()
 		for bb := range decoderNailer.Out {
-			stats.timeToFirstDecodedBlock = time.Since(decoderStart)
+			if stats.timeToFirstDecodedBlock == 0 {
+				stats.timeToFirstDecodedBlock = time.Since(decoderStart)
+			}
 			p.logger.Debug("pushing block", zap.Uint64("slot", bb.Num()))
 			pushStart := time.Now()
 			err := bundleReader.PushBlock(bb)
