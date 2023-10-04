@@ -2,6 +2,7 @@ package accountsresolver
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"time"
@@ -57,10 +58,13 @@ func (r *BundleReader) PushBlock(block *bstream.Block) error {
 		return fmt.Errorf("unable to marshal proto block: %w", err)
 	}
 
+	length := make([]byte, 4)
+	binary.BigEndian.PutUint32(length, uint32(len(data)))
+
 	select {
 	case <-r.ctx.Done():
 		return nil
-	case r.blockData <- data:
+	case r.blockData <- append(length, data...):
 		return nil
 	}
 }
