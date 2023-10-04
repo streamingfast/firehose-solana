@@ -242,7 +242,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 			return b, nil
 		})
 		decoderNailer.OnTerminating(func(err error) {
-			if err == nil {
+			if err != nil {
 				panic(fmt.Errorf("encoding block: %w", err))
 			}
 		})
