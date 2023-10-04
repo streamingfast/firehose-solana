@@ -36,6 +36,7 @@ type Stats struct {
 	totalBlockPushDuration             time.Duration
 	writeDurationAfterLastPush         time.Duration
 	lastBlockPushedAt                  time.Time
+	totalDecodingDuration              time.Duration
 }
 
 func (s *Stats) Log(logger *zap.Logger) {
@@ -67,6 +68,7 @@ func (s *Stats) Log(logger *zap.Logger) {
 		zap.String("total_extend_duration", durafmt.Parse(s.totalExtendDuration).String()),
 		zap.String("total_duration", durafmt.Parse(time.Since(s.startProcessing)).String()),
 		zap.String("total_block_reading_duration", durafmt.Parse(s.totalBlockReadingDuration).String()),
+		zap.String("total_decoding_duration", durafmt.Parse(s.totalDecodingDuration).String()),
 		zap.String("average_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)).String()),
 		zap.String("average_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)).String()),
@@ -297,6 +299,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 				}
 			}
 		}()
+		decoderStart := time.Now()
 		for bb := range decoderNailer.Out {
 			p.logger.Debug("pushing block", zap.Uint64("slot", bb.Num()))
 			err := bundleReader.PushBlock(bb)
@@ -307,6 +310,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 			}
 			stats.totalBlockPushDuration += time.Since(pushStart)
 		}
+		stats.totalDecodingDuration += time.Since(decoderStart)
 		bundleReader.Close()
 		timeOfLastPush = time.Now()
 		stats.lastBlockPushedAt = time.Now()
