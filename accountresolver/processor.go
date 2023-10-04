@@ -208,7 +208,9 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		return br, nil
 	})
 	writerNailer.OnTerminating(func(err error) {
-		panic(fmt.Errorf("writing bundle file: %w", err))
+		if err != nil {
+			panic(fmt.Errorf("writing bundle file: %w", err))
+		}
 	})
 	writerNailer.Start(ctx)
 
@@ -240,7 +242,9 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 			return b, nil
 		})
 		decoderNailer.OnTerminating(func(err error) {
-			panic(fmt.Errorf("encoding block: %w", err))
+			if err == nil {
+				panic(fmt.Errorf("encoding block: %w", err))
+			}
 		})
 		decoderNailer.Start(ctx)
 
