@@ -37,6 +37,7 @@ type Stats struct {
 	writeDurationAfterLastPush         time.Duration
 	lastBlockPushedAt                  time.Time
 	totalDecodingDuration              time.Duration
+	timeToFirstDecodedBlock            time.Duration
 }
 
 func (s *Stats) Log(logger *zap.Logger) {
@@ -75,6 +76,7 @@ func (s *Stats) Log(logger *zap.Logger) {
 		zap.String("average_lookup_duration", durafmt.Parse(lookupAvg).String()),
 		zap.String("average_extend_duration", durafmt.Parse(extendAvg).String()),
 		zap.String("write_duration_after_last_push", durafmt.Parse(time.Since(s.lastBlockPushedAt)).String()),
+		zap.String("time_to_first_decoded_block", durafmt.Parse(s.timeToFirstDecodedBlock).String()),
 	)
 }
 
@@ -238,9 +240,9 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		bundleReader := NewBundleReader(ctx, p.logger)
 
 		decoderNailer := dhammer.NewNailer(100, func(ctx context.Context, blk *pbsol.Block) (*bstream.Block, error) {
-			start := time.Now()
+			//start := time.Now()
 			b, err := encoder.Encode(blk)
-			fmt.Println("encoding block", time.Since(start), blk.Slot)
+			//fmt.Println("encoding block", time.Since(start), blk.Slot)
 			if err != nil {
 				return nil, fmt.Errorf("encoding block: %w", err)
 			}
@@ -303,6 +305,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		}()
 		decoderStart := time.Now()
 		for bb := range decoderNailer.Out {
+			stats.timeToFirstDecodedBlock = time.Since(decoderStart)
 			p.logger.Debug("pushing block", zap.Uint64("slot", bb.Num()))
 			pushStart := time.Now()
 			err := bundleReader.PushBlock(bb)
@@ -312,7 +315,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 			}
 			stats.totalBlockPushDuration += time.Since(pushStart)
 		}
-		stats.totalDecodingDuration += time.Since(decoderStart)
+		stats.totalDecodingDuration = time.Since(decoderStart)
 		bundleReader.Close()
 		timeOfLastPush = time.Now()
 		stats.lastBlockPushedAt = time.Now()
