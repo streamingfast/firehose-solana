@@ -272,7 +272,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 						p.logger.Info("skip block", zap.Uint64("slot", blk.Slot))
 						continue
 					}
-
+					p.logger.Info("handling block", zap.Uint64("slot", blk.Slot), zap.Uint64("parent_slot", blk.ParentSlot))
 					if cursor.slotNum != blk.ParentSlot {
 						bundleReader.PushError(fmt.Errorf("cursor block num %d is not the same as parent slot num %d of block %d", cursor.slotNum, blk.ParentSlot, blk.Slot))
 						return
