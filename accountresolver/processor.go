@@ -227,11 +227,12 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		}
 	}()
 
+	timeOfLastPush := time.Now()
 	for mbf := range mergeBlocksFileChan {
+		p.logger.Info("Receive merge block file", zap.String("filename", mbf.filename), zap.String("time_since_last push", durafmt.Parse(time.Since(timeOfLastPush)).String()))
 		stats := &Stats{
 			startProcessing: time.Now(),
 		}
-		p.logger.Info("Receive merge block file", zap.String("filename", mbf.filename))
 		bundleReader := NewBundleReader(ctx, p.logger)
 
 		decoderNailer := dhammer.NewNailer(100, func(ctx context.Context, blk *pbsol.Block) (*bstream.Block, error) {
@@ -307,7 +308,9 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 			stats.totalBlockPushDuration += time.Since(pushStart)
 		}
 		bundleReader.Close()
+		timeOfLastPush = time.Now()
 		stats.lastBlockPushedAt = time.Now()
+
 	}
 
 	return nil
