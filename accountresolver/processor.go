@@ -224,7 +224,6 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 				panic(fmt.Errorf("storing cursor at block %d: %w", out.cursor.slotNum, err))
 			}
 			out.stats.Log(p.logger)
-			out.bundleReader.Close()
 		}
 	}()
 
