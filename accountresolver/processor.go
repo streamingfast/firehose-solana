@@ -238,7 +238,9 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		bundleReader := NewBundleReader(ctx, p.logger)
 
 		decoderNailer := dhammer.NewNailer(100, func(ctx context.Context, blk *pbsol.Block) (*bstream.Block, error) {
+			start := time.Now()
 			b, err := encoder.Encode(blk)
+			fmt.Println("encoding block", time.Since(start), blk.Slot)
 			if err != nil {
 				return nil, fmt.Errorf("encoding block: %w", err)
 			}
