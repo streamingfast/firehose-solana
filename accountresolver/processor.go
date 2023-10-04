@@ -199,7 +199,7 @@ type bundleJob struct {
 
 func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor, mergeBlocksFileChan chan *mergeBlocksFile, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
 
-	writerNailer := dhammer.NewNailer(50, func(ctx context.Context, br *bundleJob) (*bundleJob, error) {
+	writerNailer := dhammer.NewNailer(100, func(ctx context.Context, br *bundleJob) (*bundleJob, error) {
 		p.logger.Info("nailing writing bundle file", zap.String("filename", br.filename))
 		err := destinationStore.WriteObject(ctx, br.filename, br.bundleReader)
 		if err != nil {
@@ -273,7 +273,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 						p.logger.Info("skip block", zap.Uint64("slot", blk.Slot))
 						continue
 					}
-					p.logger.Info("handling block", zap.Uint64("slot", blk.Slot), zap.Uint64("parent_slot", blk.ParentSlot))
+					p.logger.Debug("handling block", zap.Uint64("slot", blk.Slot), zap.Uint64("parent_slot", blk.ParentSlot))
 					if cursor.slotNum != blk.ParentSlot {
 						bundleReader.PushError(fmt.Errorf("cursor block num %d is not the same as parent slot num %d of block %d", cursor.slotNum, blk.ParentSlot, blk.Slot))
 						return
@@ -297,7 +297,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 			}
 		}()
 		for bb := range decoderNailer.Out {
-			p.logger.Info("pushing block", zap.Uint64("slot", bb.Num()))
+			p.logger.Debug("pushing block", zap.Uint64("slot", bb.Num()))
 			err := bundleReader.PushBlock(bb)
 			pushStart := time.Now()
 			if err != nil {
