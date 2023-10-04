@@ -30,7 +30,7 @@ func NewBundleReader(ctx context.Context, logger *zap.Logger) *BundleReader {
 	ver := []byte{'0', '1'}
 	return &BundleReader{
 		ctx:       ctx,
-		blockData: make(chan []byte, 1),
+		blockData: make(chan []byte, 100),
 		errChan:   make(chan error, 1),
 		logger:    logger,
 		lastRead:  time.Now(),
