@@ -200,11 +200,13 @@ type bundleJob struct {
 func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor, mergeBlocksFileChan chan *mergeBlocksFile, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
 
 	writerNailer := dhammer.NewNailer(50, func(ctx context.Context, br *bundleJob) (*bundleJob, error) {
+		p.logger.Info("nailing writing bundle file", zap.String("filename", br.filename))
 		err := destinationStore.WriteObject(ctx, br.filename, br.bundleReader)
 		if err != nil {
 			return br, fmt.Errorf("writing bundle file: %w", err)
 		}
 
+		p.logger.Info("nailed writing bundle file", zap.String("filename", br.filename))
 		return br, nil
 	})
 	writerNailer.OnTerminating(func(err error) {
@@ -294,6 +296,7 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 			}
 		}()
 		for bb := range decoderNailer.Out {
+			p.logger.Info("pushing block", zap.Uint64("slot", bb.Num()))
 			err := bundleReader.PushBlock(bb)
 			pushStart := time.Now()
 			if err != nil {
