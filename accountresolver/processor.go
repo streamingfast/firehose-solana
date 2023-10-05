@@ -82,8 +82,8 @@ func (s *Stats) Log(logger *zap.Logger) {
 	)
 }
 
-var AddressTableLookupAccountProgram = mustFromBase58("AddressLookupTab1e1111111111111111111111111")
-var SystemProgram = mustFromBase58("11111111111111111111111111111111")
+var AddressTableLookupAccountProgram = MustFromBase58("AddressLookupTab1e1111111111111111111111111")
+var SystemProgram = MustFromBase58("11111111111111111111111111111111")
 
 type Cursor struct {
 	slotNum uint64
@@ -370,8 +370,14 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 		if cached {
 			stats.cacheHit += 1
 		}
-		//p.logger.Debug("Resolve address table lookup", zap.String("trx", getTransactionHash(trx.Transaction.Signatures)), zap.String("account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("count", len(accs)), zap.Bool("cached", cached))
-		trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs.ToBytesArray()...)
+
+		for _, index := range addressTableLookup.WritableIndexes {
+			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
+		}
+
+		for _, index := range addressTableLookup.ReadonlyIndexes {
+			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
+		}
 	}
 	totalDuration := time.Since(start)
 	lookupCount := len(trx.Transaction.Message.AddressTableLookups)

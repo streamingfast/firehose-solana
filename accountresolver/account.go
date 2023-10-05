@@ -23,11 +23,11 @@ func (a *Accounts) ToBytesArray() (out [][]byte) {
 
 type Account []byte
 
-func (a Account) base58() string {
+func (a Account) Base58() string {
 	return base58.Encode(a)
 }
 
-func mustFromBase58(a string) Account {
+func MustFromBase58(a string) Account {
 	acc, err := fromBase58(a)
 	if err != nil {
 		panic(err)

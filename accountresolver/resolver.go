@@ -62,16 +62,16 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
 	}
 
-	r.cache[key.base58()] = append([]*cacheItem{{
+	r.cache[key.Base58()] = append([]*cacheItem{{
 		blockNum: blockNum,
 		accounts: extendedAccount,
-	}}, r.cache[key.base58()]...)
+	}}, r.cache[key.Base58()]...)
 
 	return nil
 }
 
 func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error) {
-	if cacheItems, ok := r.cache[key.base58()]; ok {
+	if cacheItems, ok := r.cache[key.Base58()]; ok {
 		//for _, cacheItem := range cacheItems {
 		//	r.logger.Debug("cached item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum), zap.String("key", key.base58()))
 		//}
@@ -95,7 +95,7 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		_, keyBlockNum := Keys.unpackTableLookup(item.Key)
 		accounts := decodeAccounts(item.Value)
 
-		r.cache[key.base58()] = append(r.cache[key.base58()], &cacheItem{
+		r.cache[key.Base58()] = append(r.cache[key.Base58()], &cacheItem{
 			blockNum: keyBlockNum,
 			accounts: accounts,
 		})
