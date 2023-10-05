@@ -372,10 +372,16 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 		}
 
 		for _, index := range addressTableLookup.WritableIndexes {
+			if int(index) >= len(accs) {
+				return fmt.Errorf("missing writable account key at index %d for transaction %s with account keys count of %d at block %d", index, getTransactionHash(trx.Transaction.Signatures), len(trx.Transaction.Message.AccountKeys), blockNum)
+			}
 			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
 		}
 
 		for _, index := range addressTableLookup.ReadonlyIndexes {
+			if int(index) >= len(accs) {
+				return fmt.Errorf("missing readonly account key at index %d for transaction %s with account keys count of %d at block %d", index, getTransactionHash(trx.Transaction.Signatures), len(trx.Transaction.Message.AccountKeys), blockNum)
+			}
 			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
 		}
 	}
