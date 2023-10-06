@@ -103,11 +103,10 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 
 		if keyBlockNum <= atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
+			if atBlockNum == 158450912 && key.Base58() == "C4oaUfCxJVtVztqKmkNWRgMd1jqYjC8sCzG8PDcRk84u" {
+				fmt.Println("resolvedAccounts count:", len(resolvedAccounts), "atBlockNum:", atBlockNum)
+			}
 		}
-	}
-
-	if atBlockNum == 158450912 && key.Base58() == "C4oaUfCxJVtVztqKmkNWRgMd1jqYjC8sCzG8PDcRk84u" {
-		fmt.Println("resolvedAccounts count:", len(resolvedAccounts))
 	}
 
 	return resolvedAccounts, false, nil
