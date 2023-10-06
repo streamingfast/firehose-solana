@@ -21,16 +21,16 @@ import (
 	"go.uber.org/zap"
 )
 
-func newAddressesLookupCmd(logger *zap.Logger, tracer logging.Tracer, chain *firecore.Chain[*pbsolv1.Block]) *cobra.Command {
+func newTrxAddressesLookupCmd(logger *zap.Logger, tracer logging.Tracer, chain *firecore.Chain[*pbsolv1.Block]) *cobra.Command {
 	return &cobra.Command{
-		Use:   "lookup {slot} {transaction} {blocks-store} {kv-dsn}",
+		Use:   "lookup-transaction {slot} {transaction} {blocks-store} {kv-dsn}",
 		Short: "",
-		RunE:  processAddressesLookupE(chain, logger, tracer),
+		RunE:  processTrxAddressesLookupE(chain, logger, tracer),
 		Args:  cobra.ExactArgs(4),
 	}
 }
 
-func processAddressesLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
+func processTrxAddressesLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
@@ -98,6 +98,48 @@ func processAddressesLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.
 				}
 				break
 			}
+		}
+
+		fmt.Println("All done: Goodbye!")
+		return nil
+	}
+}
+
+func newAddressesLookupCmd(logger *zap.Logger, tracer logging.Tracer, chain *firecore.Chain[*pbsolv1.Block]) *cobra.Command {
+	return &cobra.Command{
+		Use:   "lookup {block} {table-address} {kv-dsn}",
+		Short: "",
+		RunE:  processAddressesLookupE(chain, logger, tracer),
+		Args:  cobra.ExactArgs(3),
+	}
+}
+
+func processAddressesLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+
+		blockNum, err := strconv.ParseUint(args[0], 10, 64)
+		if err != nil {
+			return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
+		}
+
+		db, err := kvstore.New(args[2])
+		if err != nil {
+			return fmt.Errorf("unable to create sourceStore: %w", err)
+		}
+
+		resolver := accountsresolver.NewKVDBAccountsResolver(db, logger)
+		if err != nil {
+			return fmt.Errorf("unable to parse start block number %s: %w", args[0], err)
+		}
+
+		accs, _, err := resolver.Resolve(ctx, blockNum, accountsresolver.MustFromBase58(args[1]))
+		if err != nil {
+			return fmt.Errorf("unable to resolve account %s: %w", args[1], err)
+		}
+
+		for _, acc := range accs {
+			fmt.Println(acc.Base58())
 		}
 
 		fmt.Println("All done: Goodbye!")

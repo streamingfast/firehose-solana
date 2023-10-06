@@ -373,14 +373,14 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 
 		for _, index := range addressTableLookup.WritableIndexes {
 			if int(index) >= len(accs) {
-				return fmt.Errorf("missing writable account key from %s at index %d for transaction %s with account keys count of %d at block %d", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(trx.Transaction.Message.AccountKeys), blockNum)
+				return fmt.Errorf("missing writable account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(trx.Transaction.Message.AccountKeys), blockNum, cached)
 			}
 			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
 		}
 
 		for _, index := range addressTableLookup.ReadonlyIndexes {
 			if int(index) >= len(accs) {
-				return fmt.Errorf("missing readable account key from %s at index %d for transaction %s with account keys count of %d at block %d", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(trx.Transaction.Message.AccountKeys), blockNum)
+				return fmt.Errorf("missing readonly account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(trx.Transaction.Message.AccountKeys), blockNum, cached)
 			}
 			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
 		}
