@@ -34,3 +34,15 @@ func Test_Keyer_UnpackTableLookup(t *testing.T) {
 	require.Equal(t, expectedAccount, base58.Encode(acc))
 	require.Equal(t, expectedBlockNum, blockNum)
 }
+
+func Test_Keyer_Instruction(t *testing.T) {
+	expectedTrxHash := "3jEHL7aiPPgUReL3uyPAn8FU4G417rnJGGfjq5uyD1uumxCXGDPLi3dCw9PVB7FN1nL3dbtLAQ6tks1cmJ76FYrM"
+	hash, err := base58.Decode(expectedTrxHash)
+	require.NoError(t, err)
+	expectedInstructionIndex := 2
+
+	key := Keys.knownInstruction(hash, expectedInstructionIndex)
+	unpackHash, unpackIndex := Keys.unpackKnowInstruction(key)
+	require.Equal(t, hash, unpackHash)
+	require.Equal(t, expectedInstructionIndex, unpackIndex)
+}

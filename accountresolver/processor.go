@@ -373,14 +373,14 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 
 		for _, index := range addressTableLookup.WritableIndexes {
 			if int(index) >= len(accs) {
-				return fmt.Errorf("missing writable account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(trx.Transaction.Message.AccountKeys), blockNum, cached)
+				return fmt.Errorf("missing writable account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(accs), blockNum, cached)
 			}
 			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
 		}
 
 		for _, index := range addressTableLookup.ReadonlyIndexes {
 			if int(index) >= len(accs) {
-				return fmt.Errorf("missing readonly account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(trx.Transaction.Message.AccountKeys), blockNum, cached)
+				return fmt.Errorf("missing readonly account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(accs), blockNum, cached)
 			}
 			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
 		}
@@ -407,7 +407,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, stats *Stats, blockN
 	accountKeys := confirmedTransaction.Transaction.Message.AccountKeys
 	for compileIndex, compiledInstruction := range confirmedTransaction.Transaction.Message.Instructions {
 		idx := compiledInstruction.ProgramIdIndex
-		err := p.ProcessInstruction(ctx, stats, blockNum, confirmedTransaction.Transaction.Signatures[0], confirmedTransaction.Transaction.Message.AccountKeys[idx], accountKeys, compiledInstruction)
+		err := p.ProcessInstruction(ctx, stats, blockNum, confirmedTransaction.Transaction.Signatures[0], int(idx), confirmedTransaction.Transaction.Message.AccountKeys[idx], accountKeys, compiledInstruction)
 		if err != nil {
 			return fmt.Errorf("confirmedTransaction %s processing compiled instruction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
 		}
@@ -416,12 +416,12 @@ func (p *Processor) ProcessTransaction(ctx context.Context, stats *Stats, blockN
 			continue
 		}
 		inner := confirmedTransaction.Meta.InnerInstructions[compileIndex]
-		for _, instruction := range inner.Instructions {
+		for index, instruction := range inner.Instructions {
 			if len(accountKeys) < int(instruction.ProgramIdIndex) {
 				return fmt.Errorf("missing account key at index %d for transaction %s with account keys count of %d", instruction.ProgramIdIndex, getTransactionHash(confirmedTransaction.Transaction.Signatures), len(accountKeys))
 			}
 
-			err := p.ProcessInstruction(ctx, stats, blockNum, confirmedTransaction.Transaction.Signatures[0], accountKeys[instruction.ProgramIdIndex], accountKeys, instruction)
+			err := p.ProcessInstruction(ctx, stats, blockNum, confirmedTransaction.Transaction.Signatures[0], index, accountKeys[instruction.ProgramIdIndex], accountKeys, instruction)
 			if err != nil {
 				return fmt.Errorf("confirmedTransaction %s processing instruxction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
 			}
@@ -431,7 +431,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, stats *Stats, blockN
 	return nil
 }
 
-func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockNum uint64, trxHash []byte, programAccount Account, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
+func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockNum uint64, trxHash []byte, instructionIndex int, programAccount Account, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
 	if !bytes.Equal(programAccount, AddressTableLookupAccountProgram) {
 		return nil
 	}
@@ -443,7 +443,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
 		newAccounts := addresstablelookup.ParseNewAccounts(instruction.Data[12:])
 		p.logger.Debug("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
-		err := p.accountsResolver.Extend(ctx, blockNum, trxHash, tableLookupAccount, NewAccounts(newAccounts))
+		err := p.accountsResolver.Extend(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount, NewAccounts(newAccounts))
 
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)

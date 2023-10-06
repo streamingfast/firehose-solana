@@ -12,7 +12,7 @@ import (
 )
 
 type AccountsResolver interface {
-	Extend(ctx context.Context, blockNum uint64, trxHash []byte, key Account, accounts Accounts) error
+	Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex int, key Account, accounts Accounts) error
 	Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error)
 	StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error
 	GetCursor(ctx context.Context, readerName string) (*Cursor, error)
@@ -37,8 +37,8 @@ func NewKVDBAccountsResolver(store store.KVStore, logger *zap.Logger) *KVDBAccou
 	}
 }
 
-func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxHash []byte, key Account, accounts Accounts) error {
-	if !r.isKnownTransaction(ctx, trxHash) {
+func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex int, key Account, accounts Accounts) error {
+	if !r.isKnownInstruction(ctx, trxHash, instructionIndex) {
 		return nil
 	}
 
@@ -53,13 +53,22 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 		return fmt.Errorf("writing extended accounts for key %q: %w", key, err)
 	}
 
-	err = r.store.Put(ctx, Keys.knownTransaction(trxHash), []byte{})
+	err = r.store.Put(ctx, Keys.knownInstruction(trxHash, instructionIndex), []byte{})
 	if err != nil {
 		return fmt.Errorf("writing known transaction %x: %w", trxHash, err)
 	}
 	err = r.store.FlushPuts(ctx) //todo: move that up in call stack
 	if err != nil {
 		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
+	}
+
+	if cacheItems, ok := r.cache[key.Base58()]; ok {
+		for _, cacheItem := range cacheItems {
+			if cacheItem.blockNum == blockNum {
+				cacheItem.accounts = extendedAccount
+				return nil
+			}
+		}
 	}
 
 	r.cache[key.Base58()] = append([]*cacheItem{{
@@ -112,9 +121,9 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 	return resolvedAccounts, false, nil
 }
 
-func (r *KVDBAccountsResolver) isKnownTransaction(ctx context.Context, transactionHash []byte) bool {
-	trxKey := Keys.knownTransaction(transactionHash)
-	_, err := r.store.Get(ctx, trxKey)
+func (r *KVDBAccountsResolver) isKnownInstruction(ctx context.Context, transactionHash []byte, instructionIndex int) bool {
+	instructionKey := Keys.knownInstruction(transactionHash, instructionIndex)
+	_, err := r.store.Get(ctx, instructionKey)
 	return errors.Is(err, store.ErrNotFound)
 }
 
