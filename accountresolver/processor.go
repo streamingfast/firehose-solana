@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -405,20 +406,21 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 func (p *Processor) ProcessTransaction(ctx context.Context, stats *Stats, blockNum uint64, confirmedTransaction *pbsol.ConfirmedTransaction) error {
 	start := time.Now()
 	accountKeys := confirmedTransaction.Transaction.Message.AccountKeys
-	for compileIndex, compiledInstruction := range confirmedTransaction.Transaction.Message.Instructions {
+	for instructionIndex, compiledInstruction := range confirmedTransaction.Transaction.Message.Instructions {
 		idx := compiledInstruction.ProgramIdIndex
-		err := p.ProcessInstruction(ctx, stats, blockNum, confirmedTransaction.Transaction.Signatures[0], int(idx), confirmedTransaction.Transaction.Message.AccountKeys[idx], accountKeys, compiledInstruction)
+		err := p.ProcessInstruction(ctx, stats, blockNum, confirmedTransaction.Transaction.Signatures[0], uint64(instructionIndex), confirmedTransaction.Transaction.Message.AccountKeys[idx], accountKeys, compiledInstruction)
 		if err != nil {
 			return fmt.Errorf("confirmedTransaction %s processing compiled instruction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
 		}
 		//todo; only inner instructions of compiled instructions
-		if compileIndex+1 > len(confirmedTransaction.Meta.InnerInstructions) {
+		if instructionIndex+1 > len(confirmedTransaction.Meta.InnerInstructions) {
 			continue
 		}
-		inner := confirmedTransaction.Meta.InnerInstructions[compileIndex]
-		for index, instruction := range inner.Instructions {
+		inner := confirmedTransaction.Meta.InnerInstructions[instructionIndex]
+		for instructionIndex, instruction := range inner.Instructions {
+			index := math.MaxUint64 - uint64(instructionIndex)
 			if len(accountKeys) < int(instruction.ProgramIdIndex) {
-				return fmt.Errorf("missing account key at index %d for transaction %s with account keys count of %d", instruction.ProgramIdIndex, getTransactionHash(confirmedTransaction.Transaction.Signatures), len(accountKeys))
+				return fmt.Errorf("missing account key at instructionIndex %d for transaction %s with account keys count of %d", instruction.ProgramIdIndex, getTransactionHash(confirmedTransaction.Transaction.Signatures), len(accountKeys))
 			}
 
 			err := p.ProcessInstruction(ctx, stats, blockNum, confirmedTransaction.Transaction.Signatures[0], index, accountKeys[instruction.ProgramIdIndex], accountKeys, instruction)
@@ -431,7 +433,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, stats *Stats, blockN
 	return nil
 }
 
-func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockNum uint64, trxHash []byte, instructionIndex int, programAccount Account, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
+func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockNum uint64, trxHash []byte, instructionIndex uint64, programAccount Account, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
 	if !bytes.Equal(programAccount, AddressTableLookupAccountProgram) {
 		return nil
 	}

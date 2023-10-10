@@ -146,3 +146,51 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 	require.Equal(t, accountFromBase58(t, a4), accounts[2])
 	require.Equal(t, accountFromBase58(t, a5), accounts[3])
 }
+func Test_Extend_Multiple_Accounts_Same_Trx(t *testing.T) {
+	trxHash1 := []byte{0x01}
+	err := os.RemoveAll("/tmp/my-badger.db")
+	require.NoError(t, err)
+
+	db, err := store.New("badger3:///tmp/my-badger.db")
+	require.NoError(t, err)
+
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
+	err = resolver.Extend(
+		context.Background(),
+		1, trxHash1,
+		0,
+		accountFromBase58(t, a1),
+		[]Account{
+			accountFromBase58(t, a2),
+			accountFromBase58(t, a3)})
+	require.NoError(t, err)
+	err = resolver.store.FlushPuts(context.Background())
+	require.NoError(t, err)
+
+	err = resolver.Extend(
+		context.Background(),
+		1, trxHash1,
+		1,
+		accountFromBase58(t, a1),
+		[]Account{
+			accountFromBase58(t, a4),
+			accountFromBase58(t, a5),
+		})
+	require.NoError(t, err)
+	err = resolver.store.FlushPuts(context.Background())
+	require.NoError(t, err)
+
+	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	require.NoError(t, err)
+	require.Equal(t, 4, len(accounts))
+	require.Equal(t, accountFromBase58(t, a2), accounts[0])
+	require.Equal(t, accountFromBase58(t, a3), accounts[1])
+
+	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	require.NoError(t, err)
+	require.Equal(t, 4, len(accounts))
+	require.Equal(t, accountFromBase58(t, a2), accounts[0])
+	require.Equal(t, accountFromBase58(t, a3), accounts[1])
+	require.Equal(t, accountFromBase58(t, a4), accounts[2])
+	require.Equal(t, accountFromBase58(t, a5), accounts[3])
+}

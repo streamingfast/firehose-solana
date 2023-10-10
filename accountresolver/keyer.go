@@ -51,14 +51,14 @@ func (keyer) transactionSeenPrefix(blockNum uint64) []byte {
 	return out
 }
 
-func (keyer) knownInstruction(trxHash []byte, instructionIndex int) []byte {
+func (keyer) knownInstruction(trxHash []byte, instructionIndex uint64) []byte {
 	out := make([]byte, 1+64+8)
 	out[0] = tableKnownInstruction
 	copy(out[1:], trxHash)
-	binary.BigEndian.PutUint64(out[65:73], uint64(instructionIndex))
+	binary.BigEndian.PutUint64(out[65:73], instructionIndex)
 	return out
 }
 
-func (keyer) unpackKnowInstruction(key []byte) (trxHash []byte, instructionIndex int) {
-	return key[1:65], int(binary.BigEndian.Uint64(key[65:73]))
+func (keyer) unpackKnowInstruction(key []byte) (trxHash []byte, instructionIndex uint64) {
+	return key[1:65], binary.BigEndian.Uint64(key[65:73])
 }
