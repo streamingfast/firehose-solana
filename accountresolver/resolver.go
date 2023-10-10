@@ -108,13 +108,9 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 			blockNum: keyBlockNum,
 			accounts: accounts,
 		})
-		//r.logger.Debug("caching item", zap.Uint64("key_block_num", keyBlockNum), zap.String("key", key.base58()))
 
 		if keyBlockNum <= atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
-			if atBlockNum == 158450912 && key.Base58() == "C4oaUfCxJVtVztqKmkNWRgMd1jqYjC8sCzG8PDcRk84u" {
-				fmt.Println("resolvedAccounts count:", len(resolvedAccounts), "keyBlockNum:", keyBlockNum)
-			}
 		}
 	}
 
