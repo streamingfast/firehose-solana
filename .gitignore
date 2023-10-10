@@ -19,3 +19,16 @@ venv
 /apc.json
 *~
 /build
+/dist/darwin-amd64_darwin_amd64_v1/firesol
+/dist/darwin-arm64_darwin_arm64/firesol
+/dist/homebrew/firehose-solana.rb
+/dist/linux-amd64_linux_amd64_v1/firesol
+/dist/linux-arm64_linux_arm64/firesol
+/dist/artifacts.json
+/dist/checksums.txt
+/dist/config.yaml
+/dist/firehose-solana_darwin_arm64.tar.gz
+/dist/firehose-solana_darwin_x86_64.tar.gz
+/dist/firehose-solana_linux_arm64.tar.gz
+/dist/firehose-solana_linux_x86_64.tar.gz
+/dist/metadata.json
