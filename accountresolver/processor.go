@@ -369,35 +369,35 @@ func (p *Processor) manageAddressLookup(ctx context.Context, stats *Stats, block
 func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum uint64, trx *pbsol.ConfirmedTransaction) error {
 	start := time.Now()
 	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
-		accs, cached, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
+		resolvedAccounts, cached, err := p.accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
 		if err != nil {
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
 		}
 
-		if len(accs) == 0 {
-			p.logger.Warn("Resolved accounts is empty", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Bool("cached", cached), zap.Int("account_count", len(accs)))
+		if len(resolvedAccounts) == 0 {
+			p.logger.Warn("Resolved accounts is empty", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Bool("cached", cached), zap.Int("account_count", len(resolvedAccounts)))
 		}
 
 		if cached {
 			stats.cacheHit += 1
-			stats.totalAccountsResolvedByCache += len(accs)
+			stats.totalAccountsResolvedByCache += len(resolvedAccounts)
 		}
-		stats.totalAccountsResolved += len(accs)
+		stats.totalAccountsResolved += len(resolvedAccounts)
 
-		//p.logger.Info("resolved accounts", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("account_count", len(accs)))
+		//p.logger.Info("resolved accounts", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("account_count", len(resolvedAccounts)))
 
 		for _, index := range addressTableLookup.WritableIndexes {
-			if int(index) >= len(accs) {
-				return fmt.Errorf("missing writable account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(accs), blockNum, cached)
+			if int(index) >= len(resolvedAccounts) {
+				return fmt.Errorf("missing writable account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(resolvedAccounts), blockNum, cached)
 			}
-			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
+			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, resolvedAccounts[index])
 		}
 
 		for _, index := range addressTableLookup.ReadonlyIndexes {
-			if int(index) >= len(accs) {
-				return fmt.Errorf("missing readonly account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(accs), blockNum, cached)
+			if int(index) >= len(resolvedAccounts) {
+				return fmt.Errorf("missing readonly account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(resolvedAccounts), blockNum, cached)
 			}
-			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, accs[index])
+			trx.Transaction.Message.AccountKeys = append(trx.Transaction.Message.AccountKeys, resolvedAccounts[index])
 		}
 	}
 	totalDuration := time.Since(start)

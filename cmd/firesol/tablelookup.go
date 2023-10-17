@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 
+	"github.com/streamingfast/cli/sflags"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/streamingfast/dstore"
@@ -17,12 +19,15 @@ import (
 )
 
 func newProcessAddressLookupCmd(logger *zap.Logger, tracer logging.Tracer, chain *firecore.Chain[*pbsolv1.Block]) *cobra.Command {
-	return &cobra.Command{
+
+	cmd := &cobra.Command{
 		Use:   "process-address-lookup {store} {destination-store} {badger-db}",
 		Short: "scan the blocks and process and extract the address lookup data",
 		RunE:  processAddressLookupE(chain, logger, tracer),
 		Args:  cobra.ExactArgs(3),
 	}
+	cmd.PersistentFlags().Uint64("start-block", 0, "override the cursor")
+	return cmd
 }
 
 func processAddressLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
@@ -52,6 +57,11 @@ func processAddressLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Lo
 		cursor, err := resolver.GetCursor(ctx, "reproc")
 		if err != nil {
 			return fmt.Errorf("unable to get cursor: %w", err)
+		}
+
+		startBlockOverride := sflags.MustGetUint64(cmd, "start-block")
+		if startBlockOverride > 0 {
+			cursor = accountsresolver.NewCursor(startBlockOverride)
 		}
 
 		if cursor == nil {
