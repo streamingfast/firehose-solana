@@ -372,6 +372,8 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 			stats.cacheHit += 1
 		}
 
+		p.logger.Info("resolved accounts", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("account_count", len(accs)))
+
 		for _, index := range addressTableLookup.WritableIndexes {
 			if int(index) >= len(accs) {
 				return fmt.Errorf("missing writable account key from %s at index %d for transaction %s with account keys count of %d at block %d cached: %t", base58.Encode(addressTableLookup.AccountKey), index, getTransactionHash(trx.Transaction.Signatures), len(accs), blockNum, cached)

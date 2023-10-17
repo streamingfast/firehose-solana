@@ -6,15 +6,14 @@ import (
 	"fmt"
 	"strconv"
 
-	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
-	kvstore "github.com/streamingfast/kvdb/store"
-
 	"cloud.google.com/go/bigtable"
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/cli/sflags"
 	firecore "github.com/streamingfast/firehose-core"
+	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
 	"github.com/streamingfast/firehose-solana/bt"
 	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
+	kvstore "github.com/streamingfast/kvdb/store"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
