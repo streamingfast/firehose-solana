@@ -94,12 +94,12 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 
 	keyBytes := Keys.tableLookupPrefix(key)
 	iter := r.store.Prefix(ctx, keyBytes, store.Unlimited)
-	if iter.Err() != nil {
-		return nil, false, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
-	}
 
 	var resolvedAccounts Accounts
 	for iter.Next() {
+		if iter.Err() != nil {
+			return nil, false, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
+		}
 		item := iter.Item()
 		_, keyBlockNum := Keys.unpackTableLookup(item.Key)
 		accounts := decodeAccounts(item.Value)
