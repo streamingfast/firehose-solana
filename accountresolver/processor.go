@@ -373,6 +373,11 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 		if err != nil {
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
 		}
+
+		if len(accs) == 0 {
+			p.logger.Warn("Resolved accounts is empty", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Bool("cached", cached), zap.Int("account_count", len(accs)))
+		}
+
 		if cached {
 			stats.cacheHit += 1
 			stats.totalAccountsResolvedByCache += len(accs)
