@@ -40,6 +40,8 @@ type Stats struct {
 	totalDecodingDuration              time.Duration
 	timeToFirstDecodedBlock            time.Duration
 	totalTimeWaitingForBlock           time.Duration
+	totalAccountsResolved              int
+	totalAccountsResolvedByCache       int
 }
 
 func (s *Stats) Log(logger *zap.Logger) {
@@ -63,6 +65,8 @@ func (s *Stats) Log(logger *zap.Logger) {
 		zap.Int("lookup_count", s.lookupCount),
 		zap.Int("cache_hit", s.cacheHit),
 		zap.Int("extend_count", s.extendCount),
+		zap.Int("total_accounts_resolved", s.totalAccountsResolved),
+		zap.Int("total_accounts_resolved_by_cache", s.totalAccountsResolvedByCache),
 		zap.String("total_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration).String()),
 		zap.String("total_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration).String()),
 		zap.String("total_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration).String()),
@@ -72,6 +76,7 @@ func (s *Stats) Log(logger *zap.Logger) {
 		zap.String("total_duration", durafmt.Parse(time.Since(s.startProcessing)).String()),
 		zap.String("total_block_reading_duration", durafmt.Parse(s.totalBlockReadingDuration).String()),
 		zap.String("total_decoding_duration", durafmt.Parse(s.totalDecodingDuration).String()),
+		zap.String("total_time_waiting_for_block", durafmt.Parse(s.totalTimeWaitingForBlock).String()),
 		zap.String("total_time_waiting_for_block", durafmt.Parse(s.totalTimeWaitingForBlock).String()),
 		//zap.String("average_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)).String()),
 		//zap.String("average_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)).String()),
@@ -370,7 +375,9 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 		}
 		if cached {
 			stats.cacheHit += 1
+			stats.totalAccountsResolvedByCache += len(accs)
 		}
+		stats.totalAccountsResolved += len(accs)
 
 		//p.logger.Info("resolved accounts", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("account_count", len(accs)))
 
