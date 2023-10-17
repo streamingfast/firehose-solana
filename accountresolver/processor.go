@@ -372,7 +372,7 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 			stats.cacheHit += 1
 		}
 
-		p.logger.Info("resolved accounts", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("account_count", len(accs)))
+		//p.logger.Info("resolved accounts", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("account_count", len(accs)))
 
 		for _, index := range addressTableLookup.WritableIndexes {
 			if int(index) >= len(accs) {
