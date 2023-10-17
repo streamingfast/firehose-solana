@@ -6,9 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"go.uber.org/zap"
-
 	"github.com/streamingfast/kvdb/store"
+	"go.uber.org/zap"
 )
 
 type AccountsResolver interface {
@@ -97,9 +96,6 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 
 	var resolvedAccounts Accounts
 	for iter.Next() {
-		if iter.Err() != nil {
-			return nil, false, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
-		}
 		item := iter.Item()
 		_, keyBlockNum := Keys.unpackTableLookup(item.Key)
 		accounts := decodeAccounts(item.Value)
@@ -112,6 +108,10 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		if keyBlockNum <= atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
 		}
+	}
+
+	if iter.Err() != nil {
+		return nil, false, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
 	}
 
 	return resolvedAccounts, false, nil
