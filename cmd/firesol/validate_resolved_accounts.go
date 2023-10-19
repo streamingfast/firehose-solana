@@ -154,6 +154,11 @@ func processValidateAllResolvedAddressesE(chain *firecore.Chain[*pbsolv1.Block],
 			return fmt.Errorf("querying accounts: %w", iter.Err())
 		}
 
+		err = SaveState(vs)
+		fmt.Println("Saved validation state file", keyCount, notFoundCount)
+		if err != nil {
+			return fmt.Errorf("saving validation state: %w", err)
+		}
 		fmt.Println("All done: Goodbye!")
 		return nil
 	}
