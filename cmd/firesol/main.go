@@ -48,6 +48,8 @@ func main() {
 				toolsCmd.AddCommand(newProcessAddressLookupCmd(zlog, tracer, chain))
 				toolsCmd.AddCommand(newTrxAddressesLookupCmd(zlog, tracer, chain))
 				toolsCmd.AddCommand(newAddressesLookupCmd(zlog, tracer, chain))
+				toolsCmd.AddCommand(newValidateResolvedAddresses(zlog, tracer, chain))
+				toolsCmd.AddCommand(newValidateAllResolvedAddresses(zlog, tracer, chain))
 				return nil
 			},
 		},

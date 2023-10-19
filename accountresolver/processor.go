@@ -419,6 +419,10 @@ func (p *Processor) applyTableLookup(ctx context.Context, stats *Stats, blockNum
 
 func (p *Processor) ProcessTransaction(ctx context.Context, stats *Stats, blockNum uint64, confirmedTransaction *pbsol.ConfirmedTransaction) error {
 	start := time.Now()
+	if confirmedTransaction.Meta.Err != nil {
+		p.logger.Info("skipping transaction with error", zap.Uint64("block_num", blockNum), zap.String("trx_id", base58.Encode(confirmedTransaction.Transaction.Signatures[0])))
+		return nil
+	}
 	accountKeys := confirmedTransaction.Transaction.Message.AccountKeys
 	for instructionIndex, compiledInstruction := range confirmedTransaction.Transaction.Message.Instructions {
 		idx := compiledInstruction.ProgramIdIndex

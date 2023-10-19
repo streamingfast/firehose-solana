@@ -6,11 +6,9 @@ import (
 	"strconv"
 
 	"github.com/mr-tron/base58"
-
+	"github.com/spf13/cobra"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/dstore"
-
-	"github.com/spf13/cobra"
 	firecore "github.com/streamingfast/firehose-core"
 	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
 	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"

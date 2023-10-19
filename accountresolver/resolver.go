@@ -97,8 +97,8 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 	var resolvedAccounts Accounts
 	for iter.Next() {
 		item := iter.Item()
-		_, keyBlockNum := Keys.unpackTableLookup(item.Key)
-		accounts := decodeAccounts(item.Value)
+		_, keyBlockNum := Keys.UnpackTableLookup(item.Key)
+		accounts := DecodeAccounts(item.Value)
 
 		r.cache[key.Base58()] = append(r.cache[key.Base58()], &cacheItem{
 			blockNum: keyBlockNum,
@@ -115,6 +115,46 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 	}
 
 	return resolvedAccounts, false, nil
+}
+
+func (r *KVDBAccountsResolver) ResolveWithBlock(ctx context.Context, atBlockNum uint64, key Account) (Accounts, uint64, bool, error) {
+	if cacheItems, ok := r.cache[key.Base58()]; ok {
+		//for _, cacheItem := range cacheItems {
+		//	r.logger.Debug("cached item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum), zap.String("key", key.base58()))
+		//}
+		for _, cacheItem := range cacheItems {
+			if cacheItem.blockNum <= atBlockNum {
+				//r.logger.Debug("match cache item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum), zap.String("key", key.base58()))
+				return cacheItem.accounts, cacheItem.blockNum, true, nil
+			}
+		}
+	}
+
+	keyBytes := Keys.tableLookupPrefix(key)
+	iter := r.store.Prefix(ctx, keyBytes, store.Unlimited)
+
+	var resolvedAccounts Accounts
+	keyBlockNum := uint64(0)
+	for iter.Next() {
+		item := iter.Item()
+		_, keyBlockNum = Keys.UnpackTableLookup(item.Key)
+		accounts := DecodeAccounts(item.Value)
+
+		r.cache[key.Base58()] = append(r.cache[key.Base58()], &cacheItem{
+			blockNum: keyBlockNum,
+			accounts: accounts,
+		})
+
+		if keyBlockNum <= atBlockNum && resolvedAccounts == nil {
+			resolvedAccounts = accounts
+		}
+	}
+
+	if iter.Err() != nil {
+		return nil, 0, false, fmt.Errorf("querying accounts for key %q: %w", key, iter.Err())
+	}
+
+	return resolvedAccounts, keyBlockNum, false, nil
 }
 
 func (r *KVDBAccountsResolver) isKnownInstruction(ctx context.Context, transactionHash []byte, instructionIndex uint64) bool {
@@ -153,7 +193,7 @@ func (r *KVDBAccountsResolver) GetCursor(ctx context.Context, readerName string)
 	return NewCursor(blockNum), nil
 }
 
-func decodeAccounts(payload []byte) Accounts {
+func DecodeAccounts(payload []byte) Accounts {
 	var accounts Accounts
 	for i := 0; i < len(payload); i += 32 {
 		accounts = append(accounts, payload[i:i+32])
