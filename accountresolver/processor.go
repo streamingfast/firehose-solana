@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	bin "github.com/streamingfast/binary"
+
 	"github.com/hako/durafmt"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
@@ -461,14 +463,12 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 		start := time.Now()
 
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
-		newAccounts := addresstablelookup.ParseNewAccounts(instruction.Data[12:])
-		//p.logger.Debug("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
-		for _, a := range newAccounts {
-			if base58.Encode(a) == "6JZgMYqqNTnZ9aVA8oLZjtfq94REguvjsLGhtdwp6Spr" {
-				panic(fmt.Sprintf("WTF: 6JZgMYqqNTnZ9aVA8oLZjtfq94REguvjsLGhtdwp6Spr found at block %d in transaction %q", blockNum, base58.Encode(trxHash)))
-			}
+		eal, err := NewExtendAddressLookup(instruction.Data)
+		if err != nil {
+			return fmt.Errorf("creating extend address lookup: %w", err)
 		}
-		err := p.accountsResolver.Extend(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount, NewAccounts(newAccounts))
+		newAccounts := eal.toAccounts()
+		err = p.accountsResolver.Extend(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount, newAccounts)
 
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
@@ -479,6 +479,33 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 	}
 
 	return nil
+}
+
+type ExtendAddressLookup struct {
+	Index        int32
+	AddressCount uint64 `bin:"sizeof=Addresses"`
+	Addresses    [][32]byte
+}
+
+func NewExtendAddressLookup(data []byte) (*ExtendAddressLookup, error) {
+	var edl ExtendAddressLookup
+
+	decoder := bin.NewDecoder(data)
+	err := decoder.Decode(&edl)
+	if err != nil {
+		return nil, fmt.Errorf("decoding extend address lookup: %w", err)
+	}
+
+	return &edl, nil
+}
+
+func (e *ExtendAddressLookup) toAccounts() Accounts {
+	var out []Account
+	for _, a := range e.Addresses {
+		a := a
+		out = append(out, a[:])
+	}
+	return out
 }
 
 func getTransactionHash(signatures [][]byte) string {
