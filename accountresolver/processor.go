@@ -457,20 +457,30 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 	}
 
 	instruction := instructionable.ToInstruction()
-	if addresstablelookup.ExtendAddressTableLookupInstruction(instruction.Data) {
-		start := time.Now()
+	decodedInstruction, err := addresstablelookup.DecodeInstruction(instruction.Data)
+	if err != nil {
+		return fmt.Errorf("decofing instruction: %w", err)
+	}
 
+	switch val := decodedInstruction.Impl.(type) {
+	case *addresstablelookup.ExtendLookupTable:
+		start := time.Now()
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
-		newAccounts := addresstablelookup.ParseNewAccounts(instruction.Data[12:])
+		newAccounts := make([][]byte, len(val.Addresses))
+		for i := range val.Addresses {
+			newAccounts[i] = val.Addresses[i][:]
+		}
 		p.logger.Debug("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
 		err := p.accountsResolver.Extend(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount, NewAccounts(newAccounts))
-
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
 		}
 
 		stats.totalExtendDuration += time.Since(start)
 		stats.extendCount += 1
+
+	default:
+		// only interested in extend lookup table instruction
 	}
 
 	return nil

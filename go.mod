@@ -2,8 +2,6 @@ module github.com/streamingfast/firehose-solana
 
 go 1.21
 
-toolchain go1.21.2
-
 //replace github.com/streamingfast/solana-go => ../solana-go
 
 require (
@@ -19,7 +17,6 @@ require (
 	github.com/spf13/viper v1.15.0
 	github.com/streamingfast/bstream v0.0.2-0.20230829131224-b9272048dc6a
 	github.com/streamingfast/cli v0.0.4-0.20230825151644-8cc84512cd80
-	github.com/streamingfast/dbin v0.9.1-0.20220513054835-1abebbb944ad
 	github.com/streamingfast/dhammer v0.0.0-20230125192823-c34bbd561bd4
 	github.com/streamingfast/dlauncher v0.0.0-20230607184145-76399faad89e
 	github.com/streamingfast/dstore v0.1.1-0.20230620124109-3924b3b36c77
@@ -29,7 +26,7 @@ require (
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/node-manager v0.0.2-0.20230406142433-692298a8b8d2
 	github.com/streamingfast/pbgo v0.0.6-0.20221020131607-255008258d28
-	github.com/streamingfast/solana-go v0.5.1-0.20230831190518-20e3d532a2b2
+	github.com/streamingfast/solana-go v0.5.1-0.20231022204719-c1874495056f
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.26.0
 	google.golang.org/protobuf v1.31.0
@@ -186,6 +183,7 @@ require (
 	github.com/streamingfast/atm v0.0.0-20220131151839-18c87005e680 // indirect
 	github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5 // indirect
 	github.com/streamingfast/dauth v0.0.0-20230929180355-921f9c9be330 // indirect
+	github.com/streamingfast/dbin v0.9.1-0.20220513054835-1abebbb944ad // indirect
 	github.com/streamingfast/derr v0.0.0-20230515163924-8570aaa43fe1 // indirect
 	github.com/streamingfast/dgrpc v0.0.0-20230929132851-893fc52687fa // indirect
 	github.com/streamingfast/dmetering v0.0.0-20230731155453-e1df53e362aa // indirect
