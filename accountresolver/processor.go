@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	bin "github.com/streamingfast/binary"
+
 	"github.com/hako/durafmt"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
