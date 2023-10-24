@@ -200,6 +200,10 @@ func PrintBlock(block *pbsol.Block, libNum uint64) error {
 			}
 		}
 
+		if len(trx.Meta.InnerInstructions) > 0 {
+			panic("wark")
+		}
+
 		if trx.Meta.InnerInstructionsNone {
 			fmt.Println("No inner instructions")
 			continue

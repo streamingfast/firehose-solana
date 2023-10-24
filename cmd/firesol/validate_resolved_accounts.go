@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/streamingfast/cli/sflags"
 	"os"
 	"time"
 
@@ -21,12 +22,16 @@ import (
 )
 
 func newValidateResolvedAddresses(logger *zap.Logger, tracer logging.Tracer, chain *firecore.Chain[*pbsolv1.Block]) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "validate-resolve-addresses {key} {kv-dsn}",
 		Short: "",
 		RunE:  processValidateResolvedAddressesE(chain, logger, tracer),
 		Args:  cobra.ExactArgs(2),
 	}
+
+	cmd.Flags().String("rpc-endpoint", "", "Pass in your RPC endpoint")
+
+	return cmd
 }
 
 func processValidateResolvedAddressesE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Logger, tracer logging.Tracer) func(cmd *cobra.Command, args []string) error {
@@ -97,8 +102,7 @@ func processValidateAllResolvedAddressesE(chain *firecore.Chain[*pbsolv1.Block],
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}
 
-		//endpoint := rpc.MainNetBeta_RPC
-		client := rpc.New("")
+		client := rpc.New(sflags.MustGetString(cmd, "rpc-endpoint"))
 
 		iter := db.Prefix(ctx, []byte{accountsresolver.TableAccountLookup}, kvstore.Unlimited)
 		keyCount := 0
@@ -166,7 +170,6 @@ func processValidateAllResolvedAddressesE(chain *firecore.Chain[*pbsolv1.Block],
 }
 
 func loadValidationState(filePath string) (*ValidationState, error) {
-
 	if fileExists(filePath) {
 		data, err := os.ReadFile(filePath)
 		if err != nil {
@@ -209,8 +212,8 @@ func fileExists(filename string) bool {
 	}
 	return !info.IsDir()
 }
-func Validate(ctx context.Context, client *rpc.Client, pubKey solana.PublicKey, resolvedAccounts accountsresolver.Accounts, atBlock uint64, state *addresslookuptable.AddressLookupTableState) (bool, error) {
 
+func Validate(ctx context.Context, client *rpc.Client, pubKey solana.PublicKey, resolvedAccounts accountsresolver.Accounts, atBlock uint64, state *addresslookuptable.AddressLookupTableState) (bool, error) {
 	if atBlock < state.LastExtendedSlot {
 		//fmt.Printf("⚠️ %s Resolved accounts found are before the last extended slot.\n", pubKey.String())
 	} else {

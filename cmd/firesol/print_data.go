@@ -89,6 +89,7 @@ func printDataE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 				if trx.Meta.Err != nil {
 					continue
 				}
+
 				accountKeys := trx.Transaction.Message.AccountKeys
 				var data []*Data
 				trxHash := base58.Encode(trx.Transaction.Signatures[0])
@@ -97,6 +98,12 @@ func printDataE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 				if trxHashFlag != "" && trxHashFlag != trxHash {
 					continue
 				}
+
+				if trxHash != "582GEKNFjkrrJYWNNiWcKwbSY2MqwfWe9SehaFjgxdgTfN28g7vUad4rs94NibdyW6jRStpcw8Shqtnxws7dBkq7" {
+					continue
+				}
+
+				fmt.Println("number of inner instructions", len(trx.Meta.InnerInstructions))
 
 				for instIndex, inst := range trx.Transaction.Message.Instructions {
 					d, err := processInstruction(blockNum, trxHash, accountKeys, accountAddress, inst)
