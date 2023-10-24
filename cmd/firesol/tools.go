@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/streamingfast/cli/sflags"
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/streamingfast/cli/sflags"
 
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"
@@ -69,11 +70,11 @@ func printTransactionE(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
 	}
 
-	transactionId := args[1]
+	//transactionId := args[1]
 	str := sflags.MustGetString(cmd, "store")
 	fmt.Println("Using store", str)
 
-	bytesOnly := sflags.MustGetBool(cmd, "bytes-only")
+	//bytesOnly := sflags.MustGetBool(cmd, "bytes-only")
 
 	store, err := dstore.NewDBinStore(str)
 	if err != nil {
@@ -118,7 +119,8 @@ func printTransactionE(cmd *cobra.Command, args []string) error {
 			}
 
 			if blockNum == block.Num() {
-				if err = readTransaction(block, bytesOnly, transactionId); err != nil {
+				nativeBlock := block.ToProtocol().(*pbsol.Block)
+				if err = PrintBlock(nativeBlock, block.LibNum); err != nil {
 					return err
 				}
 				return nil
@@ -129,9 +131,9 @@ func printTransactionE(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func readTransaction(blk *bstream.Block, bytesOnly bool, transactionId string) error {
-	libNum := blk.LibNum
-	block := blk.ToProtocol().(*pbsol.Block)
+func PrintBlock(block *pbsol.Block, libNum uint64) error {
+	//libNum := blk.LibNum
+	//block := blk.ToProtocol().(*pbsol.Block)
 	blockId := block.Blockhash
 	blockPreviousId := block.PreviousBlockhash
 
@@ -146,33 +148,26 @@ func readTransaction(blk *bstream.Block, bytesOnly bool, transactionId string) e
 
 	for i, trx := range block.Transactions {
 		trxId := base58.Encode(trx.Transaction.Signatures[0])
-		if trxId != transactionId {
-			continue
-		}
 
-		if bytesOnly {
-			fmt.Printf("Found transaction #%d: %v\n\n", i, trx.Transaction.Signatures[0])
-		} else {
-			fmt.Printf("Found transaction #%d: %s\n\n", i, trxId)
-		}
-
+		fmt.Printf("Found transaction #%d: %s\n\n", i, trxId)
 		fmt.Printf("Header: %s\n\n", trx.Transaction.Message.Header.String())
 
 		fmt.Println("Accounts involved:")
 		var accountMetas []*solana.AccountMeta
 		for accI, acc := range trx.Transaction.Message.AccountKeys {
-			if bytesOnly {
-				fmt.Printf("\t> Acc [%d]: %v\n", accI, acc)
-			} else {
-				fmt.Printf("\t> Acc [%d]: %s\n", accI, base58.Encode(acc))
-			}
+			fmt.Printf("\t> Acc [%d]: %s\n", accI, base58.Encode(acc))
 			accountMetas = append(accountMetas, solana.NewAccountMeta(solana.PublicKeyFromBytes(acc), false, false))
 		}
 
-		if bytesOnly {
-			fmt.Printf("\nRecent BlockHash: %v\n", trx.Transaction.Message.RecentBlockhash)
-		} else {
-			fmt.Println("\nRecent BlockHash:", base58.Encode(trx.Transaction.Message.RecentBlockhash))
+		fmt.Println("\nRecent BlockHash:", base58.Encode(trx.Transaction.Message.RecentBlockhash))
+
+		fmt.Println("\n Inner Instructions:", trx.Meta.InnerInstructions)
+
+		fmt.Println("Address Account Table Lookup:")
+		for _, lookup := range trx.Transaction.Message.AddressTableLookups {
+			fmt.Println("\t", lookup.AccountKey)
+			fmt.Println("\t\t writable", lookup.WritableIndexes)
+			fmt.Println("\t\t read only", lookup.ReadonlyIndexes)
 		}
 
 		if len(trx.Transaction.Message.Instructions) > 0 {
@@ -207,7 +202,7 @@ func readTransaction(blk *bstream.Block, bytesOnly bool, transactionId string) e
 
 		if trx.Meta.InnerInstructionsNone {
 			fmt.Println("No inner instructions")
-			break
+			continue
 		}
 
 		for i, innerInstruction := range trx.Meta.InnerInstructions {
@@ -246,19 +241,28 @@ func printInnerInstructionContent(innerInstruction *pbsol.InnerInstruction, acco
 	sb.WriteString(fmt.Sprintf("\t\tProgram id index: %d\n", innerInstruction.ProgramIdIndex))
 	sb.WriteString(fmt.Sprintf("\t\tAccounts:\n"))
 	for i, accIdx := range innerInstruction.Accounts {
+		if accIdx >= byte(len(accounts)) {
+			sb.WriteString(fmt.Sprintf("\t\t\t> Acc [pos: %d, accIdx: %d] not resolved\n", i, accIdx))
+			continue
+		}
 		sb.WriteString(fmt.Sprintf("\t\t\t> Acc [pos: %d, accIdx: %d]: %s\n", i, accIdx, accounts[accIdx].PublicKey.String()))
 	}
 	sb.WriteString(fmt.Sprintf("\t\tData: %v\n", innerInstruction.Data))
 	return sb.String()
 }
 
-func printCompiledInstructionContent(innerInstruction *pbsol.CompiledInstruction, accounts []*solana.AccountMeta) string {
+func printCompiledInstructionContent(compiledInstruction *pbsol.CompiledInstruction, accounts []*solana.AccountMeta) string {
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintf("\t\tProgram id index: %d\n", innerInstruction.ProgramIdIndex))
+	sb.WriteString(fmt.Sprintf("\t\tProgram id index: %d\n", compiledInstruction.ProgramIdIndex))
 	sb.WriteString(fmt.Sprintf("\t\tAccounts:\n"))
-	for i, accIdx := range innerInstruction.Accounts {
+	for i, accIdx := range compiledInstruction.Accounts {
+		if accIdx >= byte(len(accounts)) {
+			sb.WriteString(fmt.Sprintf("\t\t\t> Acc [pos: %d, accIdx: %d] not resolved\n", i, accIdx))
+			continue
+		}
 		sb.WriteString(fmt.Sprintf("\t\t\t> Acc [pos: %d, accIdx: %d]: %s\n", i, accIdx, accounts[accIdx].PublicKey.String()))
+
 	}
-	sb.WriteString(fmt.Sprintf("\t\tData: %v\n", innerInstruction.Data))
+	sb.WriteString(fmt.Sprintf("\t\tData: %v\n", compiledInstruction.Data))
 	return sb.String()
 }

@@ -1,9 +1,11 @@
 package main
 
 import (
-	"encoding/json"
+	"encoding/hex"
 	"fmt"
 	"strconv"
+
+	"github.com/golang/protobuf/proto"
 
 	"cloud.google.com/go/bigtable"
 	"github.com/spf13/cobra"
@@ -61,11 +63,15 @@ func bigtableBlockRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comma
 
 			foundBlock = true
 			fmt.Println("Found bigtable row")
-			cnt, err := json.MarshalIndent(block, "", " ")
+			err := PrintBlock(block, 0)
 			if err != nil {
-				return fmt.Errorf("unable to json marshal block: %w", err)
+				return fmt.Errorf("printing block: %w", err)
 			}
-			fmt.Println(string(cnt))
+			hexData, err := proto.Marshal(block)
+			if err != nil {
+				return fmt.Errorf("marshaling block: %w", err)
+			}
+			fmt.Println("hex:", hex.EncodeToString(hexData))
 			return nil
 		}); err != nil {
 			return fmt.Errorf("failed to find block %d: %w", startBlockNum, err)

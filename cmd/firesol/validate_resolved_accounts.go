@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	solana "github.com/gagliardetto/solana-go"
 	addresslookuptable "github.com/gagliardetto/solana-go/programs/address-lookup-table"
@@ -97,7 +98,7 @@ func processValidateAllResolvedAddressesE(chain *firecore.Chain[*pbsolv1.Block],
 		}
 
 		//endpoint := rpc.MainNetBeta_RPC
-		client := rpc.New("https://hardworking-empty-wave.solana-mainnet.discover.quiknode.pro/912ae55ab84a64528d190c9f7cf21ccce41d908c/")
+		client := rpc.New("")
 
 		iter := db.Prefix(ctx, []byte{accountsresolver.TableAccountLookup}, kvstore.Unlimited)
 		keyCount := 0
@@ -114,7 +115,7 @@ func processValidateAllResolvedAddressesE(chain *firecore.Chain[*pbsolv1.Block],
 				fmt.Println("Saved validation state file", keyCount, notFoundCount)
 			}
 
-			//time.Sleep(105 * time.Millisecond)
+			time.Sleep(time.Second / 25)
 
 			item := iter.Item()
 			tableAccount, atBlock := accountsresolver.Keys.UnpackTableLookup(item.Key)
