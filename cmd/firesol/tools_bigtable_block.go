@@ -1,11 +1,8 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strconv"
-
-	"github.com/golang/protobuf/proto"
 
 	"cloud.google.com/go/bigtable"
 	"github.com/spf13/cobra"
@@ -67,11 +64,11 @@ func bigtableBlockRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comma
 			if err != nil {
 				return fmt.Errorf("printing block: %w", err)
 			}
-			hexData, err := proto.Marshal(block)
-			if err != nil {
-				return fmt.Errorf("marshaling block: %w", err)
-			}
-			fmt.Println("hex:", hex.EncodeToString(hexData))
+			//hexData, err := proto.Marshal(block)
+			//if err != nil {
+			//	return fmt.Errorf("marshaling block: %w", err)
+			//}
+			//fmt.Println("hex:", hex.EncodeToString(hexData))
 			return nil
 		}); err != nil {
 			return fmt.Errorf("failed to find block %d: %w", startBlockNum, err)

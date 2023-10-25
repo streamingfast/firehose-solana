@@ -31,11 +31,6 @@ type Stats struct {
 	totalBlockHandlingDuration         time.Duration
 	totalBlockReadingDuration          time.Duration
 	cacheHit                           int
-	totalBlockPushDuration             time.Duration
-	writeDurationAfterLastPush         time.Duration
-	lastBlockPushedAt                  time.Time
-	totalDecodingDuration              time.Duration
-	timeToFirstDecodedBlock            time.Duration
 	totalTimeWaitingForBlock           time.Duration
 	totalAccountsResolved              int
 	totalAccountsResolvedByCache       int
@@ -67,21 +62,14 @@ func (s *Stats) Log(logger *zap.Logger) {
 		zap.String("total_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration).String()),
 		zap.String("total_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration).String()),
 		zap.String("total_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration).String()),
-		zap.String("total_push_duration", durafmt.Parse(s.totalBlockPushDuration).String()),
 		zap.String("total_lookup_duration", durafmt.Parse(s.totalLookupDuration).String()),
 		zap.String("total_extend_duration", durafmt.Parse(s.totalExtendDuration).String()),
 		zap.String("total_duration", durafmt.Parse(time.Since(s.startProcessing)).String()),
 		zap.String("total_block_reading_duration", durafmt.Parse(s.totalBlockReadingDuration).String()),
-		zap.String("total_decoding_duration", durafmt.Parse(s.totalDecodingDuration).String()),
 		zap.String("total_time_waiting_for_block", durafmt.Parse(s.totalTimeWaitingForBlock).String()),
 		zap.String("total_time_waiting_for_block", durafmt.Parse(s.totalTimeWaitingForBlock).String()),
-		//zap.String("average_block_handling_duration", durafmt.Parse(s.totalBlockHandlingDuration/time.Duration(s.totalBlockCount)).String()),
-		//zap.String("average_block_processing_duration", durafmt.Parse(s.totalBlockProcessingDuration/time.Duration(s.totalBlockCount)).String()),
-		//zap.String("average_transaction_processing_duration", durafmt.Parse(s.totalTransactionProcessingDuration/time.Duration(s.transactionCount)).String()),
 		zap.String("average_lookup_duration", durafmt.Parse(lookupAvg).String()),
 		zap.String("average_extend_duration", durafmt.Parse(extendAvg).String()),
-		zap.String("write_duration_after_last_push", durafmt.Parse(time.Since(s.lastBlockPushedAt)).String()),
-		zap.String("time_to_first_decoded_block", durafmt.Parse(s.timeToFirstDecodedBlock).String()),
 	)
 }
 
@@ -239,6 +227,8 @@ func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor,
 		if err != nil {
 			panic(fmt.Errorf("storing cursor at block %d: %w", cursor.slotNum, err))
 		}
+		stats.Log(p.logger)
+		timeOfLastPush = time.Now()
 	}
 	return nil
 }
