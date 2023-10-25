@@ -12,9 +12,7 @@ import (
 	"github.com/hako/durafmt"
 	"github.com/mr-tron/base58"
 	"github.com/streamingfast/bstream"
-	"github.com/streamingfast/dhammer"
 	"github.com/streamingfast/dstore"
-	firecore "github.com/streamingfast/firehose-core"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go/programs/addresstablelookup"
 	"go.uber.org/zap"
@@ -114,17 +112,17 @@ func NewProcessor(readerName string, accountsResolver AccountsResolver, logger *
 	}
 }
 
-func (p *Processor) ProcessMergeBlocks(ctx context.Context, cursor *Cursor, sourceStore dstore.Store, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
+func (p *Processor) ProcessMergeBlocks(ctx context.Context, cursor *Cursor, sourceStore dstore.Store) error {
 	startBlockNum := cursor.slotNum - cursor.slotNum%100 //This is the first block slot of the last merge block file
 	startBlockNum += 100                                 //This is the first block slot of the next merge block file
 	paddedBlockNum := fmt.Sprintf("%010d", startBlockNum)
 
 	p.logger.Info("Processing merge blocks", zap.Uint64("cursor_block_num", cursor.slotNum), zap.String("first_merge_filename", paddedBlockNum))
 
-	mergeBlocksFileChan := make(chan *mergeBlocksFile, 20)
+	downloadedMergeBlocksFileChan := make(chan *mergeBlocksFile, 20)
 
 	go func() {
-		err := p.processMergeBlocksFiles(ctx, cursor, mergeBlocksFileChan, destinationStore, encoder)
+		err := p.processMergeBlocksFiles(ctx, cursor, downloadedMergeBlocksFileChan)
 		panic(fmt.Errorf("processing merge blocks files: %w", err))
 	}()
 
@@ -136,7 +134,7 @@ func (p *Processor) ProcessMergeBlocks(ctx context.Context, cursor *Cursor, sour
 				panic(fmt.Errorf("processing merge block file %s: %w", mbf.filename, err))
 			}
 		}()
-		mergeBlocksFileChan <- mbf
+		downloadedMergeBlocksFileChan <- mbf
 		return nil
 	})
 
@@ -201,137 +199,47 @@ func (f *mergeBlocksFile) process(ctx context.Context, sourceStore dstore.Store)
 	}
 }
 
-type bundleJob struct {
-	filename     string
-	cursor       *Cursor
-	stats        *Stats
-	bundleReader *BundleReader
-}
-
-func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor, mergeBlocksFileChan chan *mergeBlocksFile, destinationStore dstore.Store, encoder firecore.BlockEncoder) error {
-
-	writerNailer := dhammer.NewNailer(100, func(ctx context.Context, br *bundleJob) (*bundleJob, error) {
-		p.logger.Info("nailing writing bundle file", zap.String("filename", br.filename))
-		err := destinationStore.WriteObject(ctx, br.filename, br.bundleReader)
-		if err != nil {
-			return br, fmt.Errorf("writing bundle file: %w", err)
-		}
-
-		p.logger.Info("nailed writing bundle file", zap.String("filename", br.filename))
-		return br, nil
-	})
-	writerNailer.OnTerminating(func(err error) {
-		if err != nil {
-			panic(fmt.Errorf("writing bundle file: %w", err))
-		}
-	})
-	writerNailer.Start(ctx)
-
-	go func() {
-		for out := range writerNailer.Out {
-			p.logger.Info("new merge blocks file written:", zap.String("filename", out.filename))
-			err := p.accountsResolver.StoreCursor(ctx, p.readerName, out.cursor)
-			if err != nil {
-				panic(fmt.Errorf("storing cursor at block %d: %w", out.cursor.slotNum, err))
-			}
-			out.stats.Log(p.logger)
-		}
-	}()
-
+func (p *Processor) processMergeBlocksFiles(ctx context.Context, cursor *Cursor, mergeBlocksFileChan chan *mergeBlocksFile) error {
 	timeOfLastPush := time.Now()
 	for mbf := range mergeBlocksFileChan {
-		p.logger.Info("Receive merge block file", zap.String("filename", mbf.filename), zap.String("time_since_last push", durafmt.Parse(time.Since(timeOfLastPush)).String()))
+		p.logger.Info("Receive merge block file", zap.String("filename", mbf.filename), zap.String("time_since_last_process_", durafmt.Parse(time.Since(timeOfLastPush)).String()))
 		stats := &Stats{
 			startProcessing: time.Now(),
 		}
-		bundleReader := NewBundleReader(ctx, p.logger)
 
-		decoderNailer := dhammer.NewNailer(100, func(ctx context.Context, blk *pbsol.Block) (*bstream.Block, error) {
-			//start := time.Now()
-			b, err := encoder.Encode(blk)
-			//fmt.Println("encoding block", time.Since(start), blk.Slot)
-			if err != nil {
-				return nil, fmt.Errorf("encoding block: %w", err)
-			}
-
-			return b, nil
-		})
-		decoderNailer.OnTerminating(func(err error) {
-			if err != nil {
-				panic(fmt.Errorf("encoding block: %w", err))
-			}
-		})
-		decoderNailer.Start(ctx)
-
-		job := &bundleJob{
-			mbf.filename,
-			NewCursor(cursor.slotNum),
-			stats,
-			bundleReader,
-		}
-		writerNailer.Push(ctx, job)
-
-		mbf := mbf
-		go func() {
-			for {
+		for blk := range mbf.blockChan {
+			select {
+			case <-ctx.Done():
+				return nil
+			default:
 				startWaiting := time.Now()
-				select {
-				case <-ctx.Done():
-					return
-				case blk, ok := <-mbf.blockChan:
-					if !ok {
-						decoderNailer.Close()
-						return
-					}
-					stats.totalTimeWaitingForBlock += time.Since(startWaiting)
-					if blk.Slot <= cursor.slotNum {
-						p.logger.Info("skip block", zap.Uint64("slot", blk.Slot))
-						continue
-					}
-					p.logger.Debug("handling block", zap.Uint64("slot", blk.Slot), zap.Uint64("parent_slot", blk.ParentSlot))
-					if cursor.slotNum != blk.ParentSlot {
-						bundleReader.PushError(fmt.Errorf("cursor block num %d is not the same as parent slot num %d of block %d", cursor.slotNum, blk.ParentSlot, blk.Slot))
-						return
-					}
-
-					start := time.Now()
-					err := p.ProcessBlock(context.Background(), stats, blk)
-					if err != nil {
-						bundleReader.PushError(fmt.Errorf("processing block: %w", err))
-						return
-					}
-
-					stats.totalBlockProcessingDuration += time.Since(start)
-
-					cursor.slotNum = blk.Slot //this is global cursor
-					job.cursor.slotNum = blk.Slot
-					decoderNailer.Push(ctx, blk)
-
-					stats.totalBlockHandlingDuration += time.Since(start)
+				stats.totalTimeWaitingForBlock += time.Since(startWaiting)
+				if blk.Slot <= cursor.slotNum {
+					p.logger.Info("skip block", zap.Uint64("slot", blk.Slot))
+					continue
 				}
+				p.logger.Debug("handling block", zap.Uint64("slot", blk.Slot), zap.Uint64("parent_slot", blk.ParentSlot))
+				if cursor.slotNum != blk.ParentSlot {
+					return fmt.Errorf("cursor block num %d is not the same as parent slot num %d of block %d", cursor.slotNum, blk.ParentSlot, blk.Slot)
+				}
+
+				start := time.Now()
+				err := p.ProcessBlock(context.Background(), stats, blk)
+				if err != nil {
+					return fmt.Errorf("processing block: %w", err)
+				}
+
+				stats.totalBlockProcessingDuration += time.Since(start)
+
+				cursor.slotNum = blk.Slot
+				stats.totalBlockHandlingDuration += time.Since(start)
 			}
-		}()
-		decoderStart := time.Now()
-		for bb := range decoderNailer.Out {
-			if stats.timeToFirstDecodedBlock == 0 {
-				stats.timeToFirstDecodedBlock = time.Since(decoderStart)
-			}
-			p.logger.Debug("pushing block", zap.Uint64("slot", bb.Num()))
-			pushStart := time.Now()
-			err := bundleReader.PushBlock(bb)
-			if err != nil {
-				bundleReader.PushError(fmt.Errorf("pushing block to bundle reader: %w", err))
-				return fmt.Errorf("pushing block to bundle reader: %w", err)
-			}
-			stats.totalBlockPushDuration += time.Since(pushStart)
 		}
-		stats.totalDecodingDuration = time.Since(decoderStart)
-		bundleReader.Close()
-		timeOfLastPush = time.Now()
-		stats.lastBlockPushedAt = time.Now()
-
+		err := p.accountsResolver.StoreCursor(ctx, p.readerName, cursor)
+		if err != nil {
+			panic(fmt.Errorf("storing cursor at block %d: %w", cursor.slotNum, err))
+		}
 	}
-
 	return nil
 }
 

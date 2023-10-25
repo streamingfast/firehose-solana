@@ -19,12 +19,11 @@ import (
 )
 
 func newProcessAddressLookupCmd(logger *zap.Logger, tracer logging.Tracer, chain *firecore.Chain[*pbsolv1.Block]) *cobra.Command {
-
 	cmd := &cobra.Command{
-		Use:   "process-address-lookup {store} {destination-store} {badger-db}",
+		Use:   "process-address-lookup {store} {badger-db}",
 		Short: "scan the blocks and process and extract the address lookup data",
 		RunE:  processAddressLookupE(chain, logger, tracer),
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 	}
 	cmd.PersistentFlags().Uint64("start-block", 0, "override the cursor")
 	return cmd
@@ -43,12 +42,7 @@ func processAddressLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Lo
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}
 
-		destinationStore, err := dstore.NewDBinStore(args[1])
-		if err != nil {
-			return fmt.Errorf("unable to create sourceStore: %w", err)
-		}
-
-		db, err := kvstore.New(args[2])
+		db, err := kvstore.New(args[1])
 		if err != nil {
 			return fmt.Errorf("unable to create sourceStore: %w", err)
 		}
@@ -71,7 +65,7 @@ func processAddressLookupE(chain *firecore.Chain[*pbsolv1.Block], logger *zap.Lo
 
 		processor := accountsresolver.NewProcessor("reproc", resolver, logger)
 
-		err = processor.ProcessMergeBlocks(ctx, cursor, sourceStore, destinationStore, chain.BlockEncoder)
+		err = processor.ProcessMergeBlocks(ctx, cursor, sourceStore)
 		if err != nil {
 			return fmt.Errorf("unable to process merge blocks: %w", err)
 		}
