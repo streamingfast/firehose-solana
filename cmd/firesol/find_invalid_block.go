@@ -3,7 +3,7 @@ package main
 import (
 	"cloud.google.com/go/bigtable"
 	"fmt"
-	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/cli/sflags"
 	firecore "github.com/streamingfast/firehose-core"
@@ -35,8 +35,7 @@ func processFindInvalidBlockE(chain *firecore.Chain[*pbsolv1.Block], logger *zap
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		rpcClient := rpc.New(sflags.MustGetString(cmd, "rpc-endpoint"))
-		_ = rpcClient
+		//rpcClient := rpc.New(sflags.MustGetString(cmd, "rpc-endpoint"))
 
 		startBlockNum, err := strconv.ParseUint(args[0], 10, 64)
 		if err != nil {
@@ -65,20 +64,20 @@ func processFindInvalidBlockE(chain *firecore.Chain[*pbsolv1.Block], logger *zap
 		btClient := bt.New(client, 10, logger, tracer)
 
 		return btClient.ReadBlocks(ctx, startBlockNum, endBlockNum, linkable, func(block *pbsolv1.Block) error {
-			missingLogMessagesAndInnerInstructions := 0
+			trxMissingLogMessagesAndInnerInstructions := 0
+			numberOfTransactions := len(block.Transactions)
+			var transactionNotMissing []string
 			for _, trx := range block.Transactions {
-				if trx.Meta.Err != nil {
+				if trx.Meta.LogMessagesNone && trx.Meta.InnerInstructionsNone {
+					trxMissingLogMessagesAndInnerInstructions++
 					continue
 				}
-
-				if trx.Meta.LogMessagesNone && trx.Meta.InnerInstructionsNone {
-					missingLogMessagesAndInnerInstructions++
-				}
+				transactionNotMissing = append(transactionNotMissing, base58.Encode(trx.Transaction.Signatures[0]))
 			}
 
-			if missingLogMessagesAndInnerInstructions > 0 {
+			if trxMissingLogMessagesAndInnerInstructions == numberOfTransactions {
 				fmt.Printf("Block: %d number of transactions: %d\n", block.Slot, len(block.Transactions))
-				fmt.Printf("\tNumber transactions with missing log messags and inner instructions: %d\n", missingLogMessagesAndInnerInstructions)
+				fmt.Printf("\tTransactions containing logs: %s\n", transactionNotMissing)
 			}
 			return nil
 		})
