@@ -11,7 +11,7 @@ import (
 )
 
 type AccountsResolver interface {
-	Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex uint64, key Account, accounts Accounts) error
+	Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex string, key Account, accounts Accounts) error
 	Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error)
 	StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error
 	GetCursor(ctx context.Context, readerName string) (*Cursor, error)
@@ -36,7 +36,7 @@ func NewKVDBAccountsResolver(store store.KVStore, logger *zap.Logger) *KVDBAccou
 	}
 }
 
-func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex uint64, key Account, accounts Accounts) error {
+func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex string, key Account, accounts Accounts) error {
 	if !r.isKnownInstruction(ctx, trxHash, instructionIndex) {
 		return nil
 	}
@@ -157,7 +157,7 @@ func (r *KVDBAccountsResolver) ResolveWithBlock(ctx context.Context, atBlockNum 
 	return resolvedAccounts, keyBlockNum, false, nil
 }
 
-func (r *KVDBAccountsResolver) isKnownInstruction(ctx context.Context, transactionHash []byte, instructionIndex uint64) bool {
+func (r *KVDBAccountsResolver) isKnownInstruction(ctx context.Context, transactionHash []byte, instructionIndex string) bool {
 	instructionKey := Keys.knownInstruction(transactionHash, instructionIndex)
 	_, err := r.store.Get(ctx, instructionKey)
 	return errors.Is(err, store.ErrNotFound)

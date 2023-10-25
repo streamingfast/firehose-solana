@@ -26,7 +26,7 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	require.NoError(t, err)
 
 	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
-	err = resolver.Extend(context.Background(), 1, []byte{0x00}, 0, accountFromBase58(t, a1), []Account{accountFromBase58(t, a2), accountFromBase58(t, a3)})
+	err = resolver.Extend(context.Background(), 1, []byte{0x00}, "0", accountFromBase58(t, a1), []Account{accountFromBase58(t, a2), accountFromBase58(t, a3)})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
@@ -37,7 +37,7 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
 
-	err = resolver.Extend(context.Background(), 100, []byte{0x01}, 0, accountFromBase58(t, a1), []Account{accountFromBase58(t, a4)})
+	err = resolver.Extend(context.Background(), 100, []byte{0x01}, "0", accountFromBase58(t, a1), []Account{accountFromBase58(t, a4)})
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
@@ -109,7 +109,7 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 		context.Background(),
 		1,
 		trxHash1,
-		0,
+		"0",
 		accountFromBase58(t, a1),
 		[]Account{
 			accountFromBase58(t, a2),
@@ -128,7 +128,7 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 	err = resolver.Extend(
 		context.Background(),
 		1, trxHash2,
-		0,
+		"0",
 		accountFromBase58(t, a1),
 		[]Account{
 			accountFromBase58(t, a4),
@@ -158,7 +158,7 @@ func Test_Extend_Multiple_Accounts_Same_Trx(t *testing.T) {
 	err = resolver.Extend(
 		context.Background(),
 		1, trxHash1,
-		0,
+		"0",
 		accountFromBase58(t, a1),
 		[]Account{
 			accountFromBase58(t, a2),
@@ -170,7 +170,7 @@ func Test_Extend_Multiple_Accounts_Same_Trx(t *testing.T) {
 	err = resolver.Extend(
 		context.Background(),
 		1, trxHash1,
-		1,
+		"1",
 		accountFromBase58(t, a1),
 		[]Account{
 			accountFromBase58(t, a4),

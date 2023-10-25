@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -426,17 +425,16 @@ func (p *Processor) ProcessTransaction(ctx context.Context, stats *Stats, blockN
 	accountKeys := confirmedTransaction.Transaction.Message.AccountKeys
 	for instructionIndex, compiledInstruction := range confirmedTransaction.Transaction.Message.Instructions {
 		idx := compiledInstruction.ProgramIdIndex
-		err := p.ProcessInstruction(ctx, stats, blockNum, confirmedTransaction.Transaction.Signatures[0], uint64(instructionIndex), confirmedTransaction.Transaction.Message.AccountKeys[idx], accountKeys, compiledInstruction)
+		err := p.ProcessInstruction(ctx, stats, blockNum, confirmedTransaction.Transaction.Signatures[0], fmt.Sprintf("%d", instructionIndex), confirmedTransaction.Transaction.Message.AccountKeys[idx], accountKeys, compiledInstruction)
 		if err != nil {
 			return fmt.Errorf("confirmedTransaction %s processing compiled instruction: %w", getTransactionHash(confirmedTransaction.Transaction.Signatures), err)
 		}
-		//todo; only inner instructions of compiled instructions
-		if instructionIndex+1 > len(confirmedTransaction.Meta.InnerInstructions) {
-			continue
+		inner := GetInnerInstructions(instructionIndex, confirmedTransaction.Meta.InnerInstructions)
+		if inner == nil {
+			continue // there are no inner instructions for the CompiledInstruction
 		}
-		inner := confirmedTransaction.Meta.InnerInstructions[instructionIndex]
-		for instructionIndex, instruction := range inner.Instructions {
-			index := math.MaxUint64 - uint64(instructionIndex)
+		for i, instruction := range inner.Instructions {
+			index := fmt.Sprintf("%d.%d", instructionIndex, i)
 			if len(accountKeys) < int(instruction.ProgramIdIndex) {
 				return fmt.Errorf("missing account key at instructionIndex %d for transaction %s with account keys count of %d", instruction.ProgramIdIndex, getTransactionHash(confirmedTransaction.Transaction.Signatures), len(accountKeys))
 			}
@@ -451,7 +449,16 @@ func (p *Processor) ProcessTransaction(ctx context.Context, stats *Stats, blockN
 	return nil
 }
 
-func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockNum uint64, trxHash []byte, instructionIndex uint64, programAccount Account, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
+func GetInnerInstructions(index int, trxMetaInnerInstructions []*pbsol.InnerInstructions) *pbsol.InnerInstructions {
+	for _, innerInstructions := range trxMetaInnerInstructions {
+		if int(innerInstructions.Index) == index {
+			return innerInstructions
+		}
+	}
+	return nil
+}
+
+func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockNum uint64, trxHash []byte, instructionIndex string, programAccount Account, accountKeys [][]byte, instructionable pbsol.Instructionable) error {
 	if !bytes.Equal(programAccount, AddressTableLookupAccountProgram) {
 		return nil
 	}
@@ -459,7 +466,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 	instruction := instructionable.ToInstruction()
 	decodedInstruction, err := addresstablelookup.DecodeInstruction(instruction.Data)
 	if err != nil {
-		return fmt.Errorf("decofing instruction: %w", err)
+		return fmt.Errorf("decoding instruction: %w", err)
 	}
 
 	switch val := decodedInstruction.Impl.(type) {

@@ -1,7 +1,6 @@
 package accountsresolver
 
 import (
-	"math"
 	"testing"
 
 	"github.com/mr-tron/base58"
@@ -40,7 +39,7 @@ func Test_Keyer_Instruction(t *testing.T) {
 	expectedTrxHash := "3jEHL7aiPPgUReL3uyPAn8FU4G417rnJGGfjq5uyD1uumxCXGDPLi3dCw9PVB7FN1nL3dbtLAQ6tks1cmJ76FYrM"
 	hash, err := base58.Decode(expectedTrxHash)
 	require.NoError(t, err)
-	expectedInstructionIndex := uint64(2)
+	expectedInstructionIndex := "2"
 
 	key := Keys.knownInstruction(hash, expectedInstructionIndex)
 	unpackHash, unpackIndex := Keys.unpackKnowInstruction(key)
@@ -52,7 +51,7 @@ func Test_Keyer_Inner_Instruction(t *testing.T) {
 	expectedTrxHash := "3jEHL7aiPPgUReL3uyPAn8FU4G417rnJGGfjq5uyD1uumxCXGDPLi3dCw9PVB7FN1nL3dbtLAQ6tks1cmJ76FYrM"
 	hash, err := base58.Decode(expectedTrxHash)
 	require.NoError(t, err)
-	expectedInstructionIndex := math.MaxUint64 - uint64(2)
+	expectedInstructionIndex := "1.2"
 
 	key := Keys.knownInstruction(hash, expectedInstructionIndex)
 	unpackHash, unpackIndex := Keys.unpackKnowInstruction(key)

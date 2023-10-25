@@ -63,7 +63,7 @@ func bigtableBlockRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comma
 
 			foundBlock = true
 			fmt.Println("Found bigtable row")
-			err := PrintBlock(block, 0)
+			err := PrintBlock(block, 0, nil)
 			if err != nil {
 				return fmt.Errorf("printing block: %w", err)
 			}

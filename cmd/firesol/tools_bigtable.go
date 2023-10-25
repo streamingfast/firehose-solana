@@ -15,6 +15,7 @@ func newToolsBigtableCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Comma
 	cmd.AddCommand(newToolsBigtableBlockCmd(logger, tracer))
 	cmd.AddCommand(newToolsBigTableBlocksCmd(logger, tracer))
 	cmd.AddCommand(newToolsPrintDataCmd(logger, tracer))
+	cmd.AddCommand(newPrintTransactionCmd(logger, tracer))
 
 	cmd.AddCommand(newFindInvalidBlock(logger, tracer, nil))
 

@@ -1,7 +1,12 @@
 package main
 
 import (
+	"cloud.google.com/go/bigtable"
 	"fmt"
+	firecore "github.com/streamingfast/firehose-core"
+	"github.com/streamingfast/firehose-solana/bt"
+	"github.com/streamingfast/logging"
+	"go.uber.org/zap"
 	"io"
 	"strconv"
 	"strings"
@@ -12,7 +17,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/streamingfast/bstream"
-	"github.com/streamingfast/dstore"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/solana-go"
 	"github.com/streamingfast/solana-go/programs/token"
@@ -48,92 +52,73 @@ func printBlock(blk *bstream.Block, alsoPrintTransactions bool, out io.Writer) e
 	return nil
 }
 
-func newPrintTransactionCmd() *cobra.Command {
-	transactionCmd.PersistentFlags().String("store", "", "block store")
+func newPrintTransactionCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
+	transactionCmd := &cobra.Command{
+		Use:   "transaction {block_num} {transaction_id}",
+		Short: "Prints the content summary of a transaction",
+		Long:  "Prints all the content of the transaction given at block num",
+		Args:  cobra.ExactArgs(2),
+		RunE:  printTransactionE(logger, tracer),
+	}
 	transactionCmd.PersistentFlags().Bool("decode-token-program", false, "decode token mint to program instruction")
 	transactionCmd.PersistentFlags().Bool("bytes-only", false, "print addresses as bytes only")
 	return transactionCmd
 }
 
-var transactionCmd = &cobra.Command{
-	Use:   "transaction {block_num} {transaction_id}",
-	Short: "Prints the content summary of a transaction",
-	Long:  "Prints all the content of the transaction given at block num",
-	Args:  cobra.ExactArgs(2),
-	RunE:  printTransactionE,
-}
-
-func printTransactionE(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
-	blockNum, err := strconv.ParseUint(args[0], 10, 64)
-	if err != nil {
-		return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
-	}
-
-	//transactionId := args[1]
-	str := sflags.MustGetString(cmd, "store")
-	fmt.Println("Using store", str)
-
-	//bytesOnly := sflags.MustGetBool(cmd, "bytes-only")
-
-	store, err := dstore.NewDBinStore(str)
-	if err != nil {
-		return fmt.Errorf("unable to create store at path %q: %w", store, err)
-	}
-
-	var files []string
-	bundleFilename := blockNum - (blockNum % 100)
-	filePrefix := fmt.Sprintf("%010d", bundleFilename)
-	fmt.Println(filePrefix)
-	err = store.Walk(ctx, filePrefix, func(filename string) (err error) {
-		files = append(files, filename)
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("unable to find on block files: %w", err)
-	}
-
-	fmt.Printf("Found %d oneblock files for block number %d\n", len(files), blockNum)
-	for _, filepath := range files {
-		reader, err := store.OpenObject(ctx, filepath)
+func printTransactionE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecutor {
+	return func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+		blockNum, err := strconv.ParseUint(args[0], 10, 64)
 		if err != nil {
-			fmt.Printf("❌ Unable to read block filename %s: %s\n", filepath, err)
-			return err
-		}
-		defer reader.Close()
-
-		readerFactory, err := bstream.GetBlockReaderFactory.New(reader)
-		if err != nil {
-			fmt.Printf("❌ Unable to read blocks filename %s: %s\n", filepath, err)
-			return err
+			return fmt.Errorf("unable to parse block number %q: %w", args[0], err)
 		}
 
-		fmt.Printf("One Block File: %s\n", store.ObjectURL(filepath))
-		for {
-			block, err := readerFactory.Read()
-			if err != nil {
-				if err == io.EOF {
-					return fmt.Errorf("block not found: %q", blockNum)
-				}
-				return fmt.Errorf("reading block: %w", err)
-			}
+		transactionId := args[1]
 
-			if blockNum == block.Num() {
-				nativeBlock := block.ToProtocol().(*pbsol.Block)
-				if err = PrintBlock(nativeBlock, block.LibNum); err != nil {
-					return err
-				}
+		bytesOnly := sflags.MustGetBool(cmd, "bytes-only")
+		_ = bytesOnly
+
+		btProject := sflags.MustGetString(cmd, "bt-project")
+		btInstance := sflags.MustGetString(cmd, "bt-instance")
+
+		client, err := bigtable.NewClient(ctx, btProject, btInstance)
+		if err != nil {
+			return fmt.Errorf("unable to create big table client: %w", err)
+		}
+
+		btClient := bt.New(client, 10, logger, tracer)
+		foundBlock := false
+
+		if err = btClient.ReadBlocks(ctx, blockNum, blockNum+1, false, func(block *pbsol.Block) error {
+			// the block range may return the next block if it cannot find it
+			if block.Slot != blockNum {
 				return nil
 			}
-		}
-	}
 
-	return nil
+			foundBlock = true
+			fmt.Println("Found bigtable row")
+			blockOption := &BlockOptions{transactionId: transactionId}
+			err := PrintBlock(block, 0, blockOption)
+			if err != nil {
+				return fmt.Errorf("printing block: %w", err)
+			}
+			return nil
+		}); err != nil {
+			return fmt.Errorf("failed to find block %d: %w", blockNum, err)
+		}
+		if !foundBlock {
+			fmt.Printf("Could not find desired block %d\n", blockNum)
+		}
+		return nil
+	}
 }
 
-func PrintBlock(block *pbsol.Block, libNum uint64) error {
-	//libNum := blk.LibNum
-	//block := blk.ToProtocol().(*pbsol.Block)
+type BlockOptions struct {
+	transactionId string
+	bytesOnly     bool
+}
+
+func PrintBlock(block *pbsol.Block, libNum uint64, options *BlockOptions) error {
 	blockId := block.Blockhash
 	blockPreviousId := block.PreviousBlockhash
 
@@ -148,6 +133,10 @@ func PrintBlock(block *pbsol.Block, libNum uint64) error {
 
 	for i, trx := range block.Transactions {
 		trxId := base58.Encode(trx.Transaction.Signatures[0])
+
+		if options != nil && options.transactionId != trxId {
+			continue
+		}
 
 		fmt.Printf("Found transaction #%d: %s\n\n", i, trxId)
 		fmt.Printf("Header: %s\n\n", trx.Transaction.Message.Header.String())
@@ -200,18 +189,14 @@ func PrintBlock(block *pbsol.Block, libNum uint64) error {
 			}
 		}
 
-		if len(trx.Meta.InnerInstructions) > 0 {
-			panic("wark")
-		}
-
 		if trx.Meta.InnerInstructionsNone {
 			fmt.Println("No inner instructions")
 			continue
 		}
 
-		for i, innerInstruction := range trx.Meta.InnerInstructions {
-			fmt.Printf("\nInner Instruction [%d]:\n", i)
-			for j, innerInstruction := range innerInstruction.Instructions {
+		for _, innerInstructions := range trx.Meta.InnerInstructions {
+			fmt.Printf("\nInner Instruction [%d]:\n", innerInstructions.Index)
+			for j, innerInstruction := range innerInstructions.Instructions {
 				acc := trx.Transaction.Message.AccountKeys[innerInstruction.ProgramIdIndex]
 				if len(acc) == 0 {
 					panic(fmt.Sprintf("account isn't part of the transaction accounts, program id index %d", innerInstruction.ProgramIdIndex))
@@ -265,7 +250,6 @@ func printCompiledInstructionContent(compiledInstruction *pbsol.CompiledInstruct
 			continue
 		}
 		sb.WriteString(fmt.Sprintf("\t\t\t> Acc [pos: %d, accIdx: %d]: %s\n", i, accIdx, accounts[accIdx].PublicKey.String()))
-
 	}
 	sb.WriteString(fmt.Sprintf("\t\tData: %v\n", compiledInstruction.Data))
 	return sb.String()
