@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## v0.2.5
+
+* bump firehose-core to `v0.1.11` with a regression fix for when a substreams has a start block in the reversible segment
+
 ## v0.2.4
 
 ### Changed
