@@ -462,7 +462,7 @@ func Test_BlockResolved(t *testing.T) {
 	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
 	p := NewProcessor("test", NewKVDBAccountsResolver(db, zap.NewNop()), zap.NewNop())
 
-	// Pre populate the table lookup account with the address table lookup program
+	// Pre-populate the table lookup account with the address table lookup program
 	err = p.accountsResolver.Extend(context.Background(), 185_914_860, []byte{0x00}, "test1", transactionTableLookupAddress, tableContent)
 	require.NoError(t, err)
 	err = resolver.store.FlushPuts(context.Background())
@@ -477,4 +477,82 @@ func Test_BlockResolved(t *testing.T) {
 	blockAccountsData := solBlock.Transactions[0].Transaction.Message.AccountKeys
 	blockAccounts := NewAccounts(blockAccountsData)
 	require.Equal(t, expectedBlockAccounts, blockAccounts)
+}
+
+func Test_BlockResolved_Multiple_extend(t *testing.T) {
+	tableLookupAccount := accountFromBase58(t, "6pyNrJXyGdDDA3esoLEHJ2uoohcdf2xGT11acfmfyA7Q")
+	tableLookupToExtendIndex := byte(2)
+
+	account1 := accountFromBase58(t, "He3iAEV5rYjv6Xf7PxKro19eVrC3QAcdic5CF2D2obPt")
+	account2 := accountFromBase58(t, "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1")
+	solBlock := &pbsol.Block{
+		PreviousBlockhash: "9RXPunwLvRcNGiLKwMBFtxmqr3d1rTxSkYYsMZPbKCct",
+		Blockhash:         "6CqnntW5shmcB92VivDAUkKdckn6m7Dmn7nTzSvX1G6o",
+		ParentSlot:        157_564_919,
+		Transactions: []*pbsol.ConfirmedTransaction{
+			{
+				Transaction: &pbsol.Transaction{
+					Signatures: [][]byte{{0}},
+					Message: &pbsol.Message{
+						AccountKeys: [][]byte{
+							accountFromBase58(t, "AddressLookupTab1e1111111111111111111111111"),
+							accountFromBase58(t, "ShR6BYfi2pN6FA2xy45yAQkZGuWCt1dPKuGXe4v9wRY"), // random program id
+							tableLookupAccount,
+						},
+						Instructions: []*pbsol.CompiledInstruction{
+							{
+								ProgramIdIndex: 1,
+							},
+							{
+								ProgramIdIndex: 1,
+							},
+							{
+								ProgramIdIndex: 1,
+							},
+						},
+					},
+				},
+				Meta: &pbsol.TransactionStatusMeta{
+					InnerInstructions: []*pbsol.InnerInstructions{
+						{
+							Index: 0,
+							Instructions: []*pbsol.InnerInstruction{
+								{
+									ProgramIdIndex: 0,
+									Accounts:       []byte{tableLookupToExtendIndex, 15, 0, 3},
+									Data:           append([]byte{2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0}, encodeAccounts([]Account{account1})...),
+								},
+							},
+						},
+						{
+							Index: 2,
+							Instructions: []*pbsol.InnerInstruction{
+								{
+									ProgramIdIndex: 0,
+									Accounts:       []byte{tableLookupToExtendIndex, 15, 0, 3},
+									Data:           append([]byte{2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0}, encodeAccounts([]Account{account2})...),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		BlockHeight: &pbsol.BlockHeight{
+			BlockHeight: 157_564_920,
+		},
+		Slot: 157_564_920,
+	}
+	err := os.RemoveAll("/tmp/my-badger.db")
+	require.NoError(t, err)
+	db, err := kvstore.New("badger3:///tmp/my-badger.db")
+	require.NoError(t, err)
+
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
+	p := NewProcessor("test", NewKVDBAccountsResolver(db, zap.NewNop()), zap.NewNop())
+	err = p.ProcessBlock(context.Background(), &Stats{}, solBlock)
+	require.NoError(t, err)
+
+	accounts, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	require.Equal(t, Accounts{account1, account2}, accounts)
 }

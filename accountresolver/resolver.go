@@ -10,13 +10,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type AccountsResolver interface {
-	Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex string, key Account, accounts Accounts) error
-	Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error)
-	StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error
-	GetCursor(ctx context.Context, readerName string) (*Cursor, error)
-}
-
 type cacheItem struct {
 	blockNum uint64
 	accounts Accounts
@@ -36,14 +29,30 @@ func NewKVDBAccountsResolver(store store.KVStore, logger *zap.Logger) *KVDBAccou
 	}
 }
 
-func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex string, key Account, accounts Accounts) error {
-	if !r.isKnownInstruction(ctx, trxHash, instructionIndex) {
-		return nil
+func (r *KVDBAccountsResolver) CreateOrDelete(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex string, key Account) error {
+	err := r.store.Put(ctx, Keys.extendTableLookup(key, blockNum), nil)
+	if err != nil {
+		return fmt.Errorf("reseting table account for %s: %w", key, err)
 	}
 
+	err = r.store.FlushPuts(ctx)
+	if err != nil {
+		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
+	}
+
+	r.cache[key.Base58()] = append(r.cache[key.Base58()],
+		[]*cacheItem{{
+			blockNum: blockNum,
+			accounts: nil,
+		}}...)
+
+	return nil
+}
+
+func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex string, key Account, accounts Accounts) error {
 	currentAccounts, _, err := r.Resolve(ctx, blockNum, key)
 	if err != nil {
-		return fmt.Errorf("retreiving last accounts for key %q: %w", key, err)
+		return fmt.Errorf("retrieving last accounts for key %q: %w", key, err)
 	}
 	extendedAccount := append(currentAccounts, accounts...)
 	payload := encodeAccounts(extendedAccount)
@@ -84,7 +93,7 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		//	r.logger.Debug("cached item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum), zap.String("key", key.base58()))
 		//}
 		for _, cacheItem := range cacheItems {
-			if cacheItem.blockNum <= atBlockNum {
+			if cacheItem.blockNum < atBlockNum {
 				//r.logger.Debug("match cache item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum), zap.String("key", key.base58()))
 				return cacheItem.accounts, true, nil
 			}
@@ -123,7 +132,7 @@ func (r *KVDBAccountsResolver) ResolveWithBlock(ctx context.Context, atBlockNum 
 		//	r.logger.Debug("cached item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum), zap.String("key", key.base58()))
 		//}
 		for _, cacheItem := range cacheItems {
-			if cacheItem.blockNum <= atBlockNum {
+			if cacheItem.blockNum < atBlockNum {
 				//r.logger.Debug("match cache item", zap.Uint64("block_num", cacheItem.blockNum), zap.Uint64("at_block_num", atBlockNum), zap.String("key", key.base58()))
 				return cacheItem.accounts, cacheItem.blockNum, true, nil
 			}

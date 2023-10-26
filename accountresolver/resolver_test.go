@@ -50,10 +50,9 @@ func TestKVDBAccountsResolver_Extended(t *testing.T) {
 
 	accounts, _, err = resolver.Resolve(context.Background(), 100, accountFromBase58(t, a1))
 	require.NoError(t, err)
-	require.Equal(t, 3, len(accounts))
+	require.Equal(t, 2, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
-	require.Equal(t, accountFromBase58(t, a4), accounts[2])
 
 	accounts, _, err = resolver.Resolve(context.Background(), 1000, accountFromBase58(t, a1))
 	require.NoError(t, err)
@@ -146,6 +145,7 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 	require.Equal(t, accountFromBase58(t, a4), accounts[2])
 	require.Equal(t, accountFromBase58(t, a5), accounts[3])
 }
+
 func Test_Extend_Multiple_Accounts_Same_Trx(t *testing.T) {
 	trxHash1 := []byte{0x01}
 	err := os.RemoveAll("/tmp/my-badger.db")
@@ -193,4 +193,35 @@ func Test_Extend_Multiple_Accounts_Same_Trx(t *testing.T) {
 	require.Equal(t, accountFromBase58(t, a3), accounts[1])
 	require.Equal(t, accountFromBase58(t, a4), accounts[2])
 	require.Equal(t, accountFromBase58(t, a5), accounts[3])
+}
+
+func Test_Create_Extend_Delete_TableLookupAccount_SameTransaction(t *testing.T) {
+	trxHash := []byte{0x01}
+	err := os.RemoveAll("/tmp/my-badger.db")
+	require.NoError(t, err)
+
+	db, err := store.New("badger3:///tmp/my-badger.db")
+	require.NoError(t, err)
+
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
+	err = resolver.CreateOrDelete(context.Background(), 1, trxHash, "0", accountFromBase58(t, a1))
+	require.NoError(t, err)
+	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	require.NoError(t, err)
+	require.Equal(t, Accounts(nil), accounts)
+
+	err = resolver.Extend(context.Background(), 1, trxHash, "1", accountFromBase58(t, a1), []Account{accountFromBase58(t, a2)})
+	require.NoError(t, err)
+
+	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	require.NoError(t, err)
+	require.Equal(t, 1, len(accounts))
+	require.Equal(t, accountFromBase58(t, a2), accounts[0])
+
+	err = resolver.CreateOrDelete(context.Background(), 1, trxHash, "0", accountFromBase58(t, a1))
+	require.NoError(t, err)
+
+	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	require.NoError(t, err)
+	require.Equal(t, Accounts(nil), accounts)
 }

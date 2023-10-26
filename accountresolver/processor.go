@@ -23,10 +23,14 @@ type Stats struct {
 	transactionCount                   int
 	lookupCount                        int
 	extendCount                        int
+	createCount                        int
+	deleteCount                        int
 	totalBlockCount                    int
 	totalLookupDuration                time.Duration
 	totalTransactionProcessingDuration time.Duration
 	totalExtendDuration                time.Duration
+	totalCreateDuration                time.Duration
+	totalDeleteDuration                time.Duration
 	totalBlockProcessingDuration       time.Duration
 	totalBlockHandlingDuration         time.Duration
 	totalBlockReadingDuration          time.Duration
@@ -91,12 +95,12 @@ func NewCursor(blockNum uint64) *Cursor {
 }
 
 type Processor struct {
-	accountsResolver AccountsResolver
+	accountsResolver *KVDBAccountsResolver
 	readerName       string
 	logger           *zap.Logger
 }
 
-func NewProcessor(readerName string, accountsResolver AccountsResolver, logger *zap.Logger) *Processor {
+func NewProcessor(readerName string, accountsResolver *KVDBAccountsResolver, logger *zap.Logger) *Processor {
 	return &Processor{
 		readerName:       readerName,
 		accountsResolver: accountsResolver,
@@ -299,7 +303,7 @@ func (p *Processor) ProcessTransaction(ctx context.Context, stats *Stats, blockN
 	return nil
 }
 
-func ApplyTableLookup(ctx context.Context, stats *Stats, blockNum uint64, trx *pbsol.ConfirmedTransaction, accountsResolver AccountsResolver, logger *zap.Logger) error {
+func ApplyTableLookup(ctx context.Context, stats *Stats, blockNum uint64, trx *pbsol.ConfirmedTransaction, accountsResolver *KVDBAccountsResolver, logger *zap.Logger) error {
 	start := time.Now()
 	for _, addressTableLookup := range trx.Transaction.Message.AddressTableLookups {
 		resolvedAccounts, cached, err := accountsResolver.Resolve(ctx, blockNum, addressTableLookup.AccountKey)
@@ -357,6 +361,19 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 	}
 
 	switch val := decodedInstruction.Impl.(type) {
+	case *addresstablelookup.CreateLookupTable:
+		start := time.Now()
+
+		tableLookupAccount := accountKeys[instruction.Accounts[0]]
+		p.logger.Debug("Creating address table lookup", zap.String("account", base58.Encode(tableLookupAccount)))
+		err = p.accountsResolver.CreateOrDelete(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount)
+		if err != nil {
+			return fmt.Errorf("creating lookup table %s at block %d: %w", base58.Encode(tableLookupAccount), blockNum, err)
+		}
+
+		stats.totalCreateDuration += time.Since(start)
+		stats.createCount += 1
+
 	case *addresstablelookup.ExtendLookupTable:
 		start := time.Now()
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
@@ -365,7 +382,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 			newAccounts[i] = val.Addresses[i][:]
 		}
 		p.logger.Debug("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
-		err := p.accountsResolver.Extend(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount, NewAccounts(newAccounts))
+		err = p.accountsResolver.Extend(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount, NewAccounts(newAccounts))
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
 		}
@@ -373,8 +390,20 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 		stats.totalExtendDuration += time.Since(start)
 		stats.extendCount += 1
 
+	case *addresstablelookup.CloseLookupTable:
+		start := time.Now()
+		tableLookupAccount := accountKeys[instruction.Accounts[0]]
+		p.logger.Debug("Deleting address table lookup", zap.String("account", base58.Encode(tableLookupAccount)))
+		err = p.accountsResolver.CreateOrDelete(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount)
+		if err != nil {
+			return fmt.Errorf("deleting lookup table %s at block %d: %w", base58.Encode(tableLookupAccount), blockNum, err)
+		}
+
+		stats.totalDeleteDuration += time.Since(start)
+		stats.deleteCount += 1
+
 	default:
-		// only interested in extend lookup table instruction
+		// the instruction is not interesting to us
 	}
 
 	return nil
