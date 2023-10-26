@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/streamingfast/cli/sflags"
 	"os"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	addresslookuptable "github.com/gagliardetto/solana-go/programs/address-lookup-table"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/spf13/cobra"
+	"github.com/streamingfast/cli/sflags"
 	firecore "github.com/streamingfast/firehose-core"
 	accountsresolver "github.com/streamingfast/firehose-solana/accountresolver"
 	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
@@ -74,12 +74,14 @@ func processValidateResolvedAddressesE(chain *firecore.Chain[*pbsolv1.Block], lo
 }
 
 func newValidateAllResolvedAddresses(logger *zap.Logger, tracer logging.Tracer, chain *firecore.Chain[*pbsolv1.Block]) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "validate-all-resolve-addresses  {kv-dsn}",
 		Short: "",
 		RunE:  processValidateAllResolvedAddressesE(chain, logger, tracer),
 		Args:  cobra.ExactArgs(1),
 	}
+	cmd.Flags().String("rpc-endpoint", "", "Pass in your RPC endpoint")
+	return cmd
 }
 
 type ValidationState struct {

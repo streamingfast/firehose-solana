@@ -243,7 +243,6 @@ func (p *Processor) ProcessBlock(ctx context.Context, stats *Stats, block *pbsol
 		if trx.Meta.Err != nil {
 			continue
 		}
-		//p.logger.Debug("processing transaction", zap.Uint64("block_num", block.Slot), zap.String("trx_id", base58.Encode(trx.Transaction.Signatures[0])))
 		err := ApplyTableLookup(ctx, stats, block.Slot, trx, p.accountsResolver, p.logger)
 		if err != nil {
 			return fmt.Errorf("applying table lookup at block %d: %w", block.Slot, err)
@@ -308,17 +307,11 @@ func ApplyTableLookup(ctx context.Context, stats *Stats, blockNum uint64, trx *p
 			return fmt.Errorf("resolving address table %s at block %d: %w", base58.Encode(addressTableLookup.AccountKey), blockNum, err)
 		}
 
-		if len(resolvedAccounts) == 0 {
-			logger.Warn("Resolved accounts is empty", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Bool("cached", cached), zap.Int("account_count", len(resolvedAccounts)))
-		}
-
 		if cached {
 			stats.cacheHit += 1
 			stats.totalAccountsResolvedByCache += len(resolvedAccounts)
 		}
 		stats.totalAccountsResolved += len(resolvedAccounts)
-
-		//p.logger.Info("resolved accounts", zap.Uint64("block", blockNum), zap.String("table account", base58.Encode(addressTableLookup.AccountKey)), zap.Int("account_count", len(resolvedAccounts)))
 
 		for _, index := range addressTableLookup.WritableIndexes {
 			if int(index) >= len(resolvedAccounts) {
@@ -336,17 +329,9 @@ func ApplyTableLookup(ctx context.Context, stats *Stats, blockNum uint64, trx *p
 	}
 	totalDuration := time.Since(start)
 	lookupCount := len(trx.Transaction.Message.AddressTableLookups)
-
 	if lookupCount > 0 {
 		stats.lookupCount += lookupCount
 		stats.totalLookupDuration += totalDuration
-		logger.Debug(
-			"applyTableLookup",
-			zap.Duration("duration", totalDuration),
-			zap.Int("lookup_count", lookupCount),
-			zap.Int64("average_lookup_time", totalDuration.Milliseconds()/int64(lookupCount)),
-		)
-
 	}
 	return nil
 }

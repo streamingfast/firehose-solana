@@ -3,6 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/hako/durafmt"
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/bstream"
@@ -14,10 +19,6 @@ import (
 	kvstore "github.com/streamingfast/kvdb/store"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
-	"io"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func newResolveAccountsBlockCmd(logger *zap.Logger, tracer logging.Tracer, chain *firecore.Chain[*pbsol.Block]) *cobra.Command {
@@ -93,7 +94,7 @@ func processMergeBlocks(
 		zap.String("first_merge_filename", paddedBlockNum),
 	)
 
-	mergeBlocksFileChan := make(chan *mergeBlocksFile, 20)
+	mergeBlocksFileChan := make(chan *mergeBlocksFile, 5)
 	done := make(chan interface{})
 
 	go func() {

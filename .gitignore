@@ -21,3 +21,4 @@ venv
 /build
 accountresolver/devel
 /accountresolver/tmp/
+/validation_state.json
