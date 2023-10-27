@@ -9,6 +9,7 @@ for instructions to keep up to date.
 * Migrated to firehose-core
 * change block reader-node block encoding from hex to base64
 * Added support for address lookup in the `reader-bt` app and tools `tablelookup` 
+* Bump firehose-core to v0.1.12
 
 ## v0.2.2-rc1
 
