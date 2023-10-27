@@ -38,7 +38,10 @@ func readerNodeStartBlockResolver(ctx context.Context, command *cobra.Command, r
 	)
 
 	lastMergedBlockNum := firecore.LastMergedBlockNum(ctx, firstStreamableBlock, mergedBlocksStore, rootLog)
-	startBlockNum = lastMergedBlockNum + 100
+	if firstStreamableBlock != lastMergedBlockNum {
+		startBlockNum = lastMergedBlockNum + 100
+	}
+
 	rootLog.Info("start block resolved",
 		zap.Duration("elapsed", time.Since(t0)),
 		zap.Uint64("start_block", startBlockNum),
