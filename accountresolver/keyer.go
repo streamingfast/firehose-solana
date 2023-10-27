@@ -5,11 +5,6 @@ import (
 	"math"
 )
 
-// al:table_address:reader_1:block = []
-// al:table_address:block = accounts
-
-// cur:reader_1:block = []
-
 const TableAccountLookup = 0x0
 const TableCursor = 0x1
 const TableKnownInstruction = 0x3

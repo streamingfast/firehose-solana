@@ -94,7 +94,7 @@ func processMergeBlocks(
 		zap.String("first_merge_filename", paddedBlockNum),
 	)
 
-	mergeBlocksFileChan := make(chan *mergeBlocksFile, 5)
+	mergeBlocksFileChan := make(chan *mergeBlocksFile, 3)
 	done := make(chan interface{})
 
 	go func() {

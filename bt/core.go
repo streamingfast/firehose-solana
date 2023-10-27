@@ -163,5 +163,4 @@ func (r *Client) progressLog(blk *pbsolv1.Block, zlogger *zap.Logger) {
 
 		zlogger.Info(fmt.Sprintf("processing block 1 / %d", PrintFreq), opts...)
 	}
-
 }
