@@ -54,8 +54,8 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 	if err != nil {
 		return fmt.Errorf("retrieving last accounts for key %q: %w", key, err)
 	}
-	extendedAccount := append(currentAccounts, accounts...)
-	payload := encodeAccounts(extendedAccount)
+	extendedAccounts := append(currentAccounts, accounts...)
+	payload := encodeAccounts(extendedAccounts)
 	err = r.store.Put(ctx, Keys.extendTableLookup(key, blockNum), payload)
 	if err != nil {
 		return fmt.Errorf("writing extended accounts for key %q: %w", key, err)
@@ -73,23 +73,24 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 	if cacheItems, ok := r.cache[key.Base58()]; ok {
 		for _, cacheItem := range cacheItems {
 			if cacheItem.blockNum == blockNum {
-				cacheItem.accounts = extendedAccount
+				cacheItem.accounts = append(cacheItem.accounts, extendedAccounts...)
 				return nil
 			}
 		}
 	}
 
-	r.cache[key.Base58()] = append([]*cacheItem{{
+	r.cache[key.Base58()] = append(r.cache[key.Base58()], []*cacheItem{{
 		blockNum: blockNum,
-		accounts: extendedAccount,
-	}}, r.cache[key.Base58()]...)
+		accounts: extendedAccounts,
+	}}...)
 
 	return nil
 }
 
 func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error) {
 	if cacheItems, ok := r.cache[key.Base58()]; ok {
-		for _, cacheItem := range cacheItems {
+		for i := len(cacheItems) - 1; i >= 0; i-- {
+			cacheItem := cacheItems[i]
 			if cacheItem.blockNum < atBlockNum {
 				return cacheItem.accounts, true, nil
 			}
@@ -105,10 +106,11 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		_, keyBlockNum := Keys.UnpackTableLookup(item.Key)
 		accounts := DecodeAccounts(item.Value)
 
-		r.cache[key.Base58()] = append(r.cache[key.Base58()], &cacheItem{
-			blockNum: keyBlockNum,
-			accounts: accounts,
-		})
+		// why are we touching the cache here?
+		//r.cache[key.Base58()] = append(r.cache[key.Base58()], &cacheItem{
+		//	blockNum: keyBlockNum,
+		//	accounts: accounts,
+		//})
 
 		if keyBlockNum < atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
