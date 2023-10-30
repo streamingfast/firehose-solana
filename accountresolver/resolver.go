@@ -40,11 +40,7 @@ func (r *KVDBAccountsResolver) CreateOrDelete(ctx context.Context, blockNum uint
 		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
 	}
 
-	r.cache[key.Base58()] = append(r.cache[key.Base58()],
-		[]*cacheItem{{
-			blockNum: blockNum,
-			accounts: nil,
-		}}...)
+	r.pushToCache(blockNum, key.Base58(), nil)
 
 	return nil
 }
@@ -70,27 +66,14 @@ func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxH
 		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
 	}
 
-	if cacheItems, ok := r.cache[key.Base58()]; ok {
-		for _, cacheItem := range cacheItems {
-			if cacheItem.blockNum == blockNum {
-				cacheItem.accounts = append(cacheItem.accounts, extendedAccounts...)
-				return nil
-			}
-		}
-	}
-
-	r.cache[key.Base58()] = append(r.cache[key.Base58()], []*cacheItem{{
-		blockNum: blockNum,
-		accounts: extendedAccounts,
-	}}...)
+	r.pushToCache(blockNum, key.Base58(), extendedAccounts)
 
 	return nil
 }
 
 func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, key Account) (Accounts, bool, error) {
 	if cacheItems, ok := r.cache[key.Base58()]; ok {
-		for i := len(cacheItems) - 1; i >= 0; i-- {
-			cacheItem := cacheItems[i]
+		for _, cacheItem := range cacheItems {
 			if cacheItem.blockNum < atBlockNum {
 				return cacheItem.accounts, true, nil
 			}
@@ -106,11 +89,7 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		_, keyBlockNum := Keys.UnpackTableLookup(item.Key)
 		accounts := DecodeAccounts(item.Value)
 
-		// why are we touching the cache here?
-		//r.cache[key.Base58()] = append(r.cache[key.Base58()], &cacheItem{
-		//	blockNum: keyBlockNum,
-		//	accounts: accounts,
-		//})
+		r.pushToCache(atBlockNum, key.Base58(), resolvedAccounts)
 
 		if keyBlockNum < atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
@@ -143,10 +122,7 @@ func (r *KVDBAccountsResolver) ResolveWithBlock(ctx context.Context, atBlockNum 
 		_, keyBlockNum = Keys.UnpackTableLookup(item.Key)
 		accounts := DecodeAccounts(item.Value)
 
-		r.cache[key.Base58()] = append(r.cache[key.Base58()], &cacheItem{
-			blockNum: keyBlockNum,
-			accounts: accounts,
-		})
+		r.pushToCache(keyBlockNum, key.Base58(), accounts)
 
 		if keyBlockNum <= atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
@@ -194,6 +170,23 @@ func (r *KVDBAccountsResolver) GetCursor(ctx context.Context, readerName string)
 	}
 	blockNum := binary.BigEndian.Uint64(payload)
 	return NewCursor(blockNum), nil
+}
+
+func (r *KVDBAccountsResolver) pushToCache(blockNum uint64, key string, accounts Accounts) {
+	if cacheItems, found := r.cache[key]; found {
+		for _, ci := range cacheItems {
+			if ci.blockNum == blockNum {
+				ci.accounts = append(ci.accounts, accounts...)
+				return
+			}
+		}
+	}
+	r.cache[key] = append([]*cacheItem{
+		{
+			blockNum: blockNum,
+			accounts: accounts,
+		},
+	}, r.cache[key]...)
 }
 
 func DecodeAccounts(payload []byte) Accounts {
