@@ -257,6 +257,11 @@ func (p *Processor) ProcessBlock(ctx context.Context, stats *Stats, block *pbsol
 			return fmt.Errorf("managing address lookup at block %d: %w", block.Slot, err)
 		}
 	}
+	err := p.accountsResolver.CommitBlock(ctx, block.Slot)
+	if err != nil {
+		return fmt.Errorf("committing block %d: %w", block.Slot, err)
+	}
+
 	stats.totalBlockCount += 1
 
 	return nil
@@ -382,7 +387,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 			newAccounts[i] = val.Addresses[i][:]
 		}
 		p.logger.Debug("Extending address table lookup", zap.String("account", base58.Encode(tableLookupAccount)), zap.Int("new_account_count", len(newAccounts)))
-		err = p.accountsResolver.Extend(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount, NewAccounts(newAccounts))
+		err = p.accountsResolver.Extend(tableLookupAccount, NewAccounts(newAccounts))
 		if err != nil {
 			return fmt.Errorf("extending address table %s at block %d: %w", tableLookupAccount, blockNum, err)
 		}

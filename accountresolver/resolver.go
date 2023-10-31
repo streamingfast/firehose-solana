@@ -16,16 +16,18 @@ type cacheItem struct {
 }
 
 type KVDBAccountsResolver struct {
-	store  store.KVStore
-	cache  map[string][]*cacheItem
-	logger *zap.Logger
+	store    store.KVStore
+	cache    map[string][]*cacheItem
+	logger   *zap.Logger
+	toCommit map[string][]Account
 }
 
 func NewKVDBAccountsResolver(store store.KVStore, logger *zap.Logger) *KVDBAccountsResolver {
 	return &KVDBAccountsResolver{
-		store:  store,
-		cache:  make(map[string][]*cacheItem),
-		logger: logger,
+		store:    store,
+		cache:    make(map[string][]*cacheItem),
+		toCommit: make(map[string][]Account),
+		logger:   logger,
 	}
 }
 
@@ -45,29 +47,34 @@ func (r *KVDBAccountsResolver) CreateOrDelete(ctx context.Context, blockNum uint
 	return nil
 }
 
-func (r *KVDBAccountsResolver) Extend(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex string, key Account, accounts Accounts) error {
-	currentAccounts, _, err := r.Resolve(ctx, blockNum, key)
-	if err != nil {
-		return fmt.Errorf("retrieving last accounts for key %q: %w", key, err)
-	}
-	extendedAccounts := append(currentAccounts, accounts...)
-	payload := encodeAccounts(extendedAccounts)
-	err = r.store.Put(ctx, Keys.extendTableLookup(key, blockNum), payload)
-	if err != nil {
-		return fmt.Errorf("writing extended accounts for key %q: %w", key, err)
-	}
+func (r *KVDBAccountsResolver) CommitBlock(ctx context.Context, blockNum uint64) error {
+	for base58key, accounts := range r.toCommit {
+		tableKey := MustFromBase58(base58key)
+		currentAccounts, _, err := r.Resolve(ctx, blockNum, tableKey)
+		if err != nil {
+			return fmt.Errorf("retrieving last accounts for tableKey %q: %w", tableKey, err)
+		}
 
-	err = r.store.Put(ctx, Keys.knownInstruction(trxHash, instructionIndex), []byte{})
-	if err != nil {
-		return fmt.Errorf("writing known transaction %x: %w", trxHash, err)
-	}
-	err = r.store.FlushPuts(ctx) //todo: move that up in call stack
-	if err != nil {
-		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
-	}
+		extendedAccounts := append(currentAccounts, accounts...)
+		payload := encodeAccounts(extendedAccounts)
+		err = r.store.Put(ctx, Keys.extendTableLookup(tableKey, blockNum), payload)
+		if err != nil {
+			return fmt.Errorf("writing extended accounts for tableKey %q: %w", tableKey, err)
+		}
 
-	r.pushToCache(blockNum, key.Base58(), extendedAccounts)
+		err = r.store.FlushPuts(ctx)
+		if err != nil {
+			return fmt.Errorf("flushing extended accounts for tableKey %q: %w", tableKey, err)
+		}
 
+		r.pushToCache(blockNum, tableKey.Base58(), extendedAccounts)
+	}
+	r.toCommit = make(map[string][]Account)
+	return nil
+}
+
+func (r *KVDBAccountsResolver) Extend(key Account, accounts Accounts) error {
+	r.toCommit[key.Base58()] = append(r.toCommit[key.Base58()], accounts...)
 	return nil
 }
 
@@ -134,12 +141,6 @@ func (r *KVDBAccountsResolver) ResolveWithBlock(ctx context.Context, atBlockNum 
 	}
 
 	return resolvedAccounts, keyBlockNum, false, nil
-}
-
-func (r *KVDBAccountsResolver) isKnownInstruction(ctx context.Context, transactionHash []byte, instructionIndex string) bool {
-	instructionKey := Keys.knownInstruction(transactionHash, instructionIndex)
-	_, err := r.store.Get(ctx, instructionKey)
-	return errors.Is(err, store.ErrNotFound)
 }
 
 func (r *KVDBAccountsResolver) StoreCursor(ctx context.Context, readerName string, cursor *Cursor) error {

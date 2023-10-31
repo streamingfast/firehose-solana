@@ -71,7 +71,15 @@ func Test_ExtendTableLookupInCompiledInstruction(t *testing.T) {
 	require.NoError(t, err)
 
 	accounts, _, err := resolver.Resolve(context.Background(), 185_914_863, tableLookupAccount)
+	require.NoError(t, err)
 	require.Equal(t, expectedCreatedAccounts, accounts)
+
+	resolver.cache = make(map[string][]*cacheItem)
+
+	accounts, _, err = resolver.Resolve(context.Background(), 185_914_863, tableLookupAccount)
+	require.NoError(t, err)
+	require.Equal(t, expectedCreatedAccounts, accounts)
+
 }
 
 func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
@@ -137,7 +145,14 @@ func Test_ExtendTableLookup_In_InnerInstructions(t *testing.T) {
 	require.NoError(t, err)
 
 	accounts, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	require.NoError(t, err)
 	require.Equal(t, expectedCreatedAccounts, accounts)
+
+	resolver.cache = make(map[string][]*cacheItem)
+	accounts, _, err = resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	require.NoError(t, err)
+	require.Equal(t, expectedCreatedAccounts, accounts)
+
 }
 
 func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLookupTableProgramID(t *testing.T) {
@@ -209,13 +224,12 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	p := NewProcessor("test", NewKVDBAccountsResolver(db, zap.NewNop()), zap.NewNop())
 
 	err = p.accountsResolver.Extend(
-		context.Background(),
-		185_914_860,
-		[]byte{0x00},
-		"test1",
 		tableLookupAddressToResolve,
 		Accounts{AddressTableLookupAccountProgram},
 	)
+	require.NoError(t, err)
+
+	err = p.accountsResolver.CommitBlock(context.Background(), 185_914_860)
 	require.NoError(t, err)
 
 	accounts := NewAccounts(solBlock.Transactions[0].Transaction.Message.AccountKeys)
@@ -229,6 +243,12 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_AddressLooku
 	require.Equal(t, accounts[2], AddressTableLookupAccountProgram)
 
 	accounts, _, err = resolver.Resolve(context.Background(), 185_914_863, tableLookupAddressToExtend)
+	require.NoError(t, err)
+	require.Equal(t, expectedCreatedAccounts, accounts)
+
+	resolver.cache = make(map[string][]*cacheItem)
+	accounts, _, err = resolver.Resolve(context.Background(), 185_914_863, tableLookupAddressToExtend)
+	require.NoError(t, err)
 	require.Equal(t, expectedCreatedAccounts, accounts)
 
 }
@@ -306,8 +326,11 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	p := NewProcessor("test", NewKVDBAccountsResolver(db, zap.NewNop()), zap.NewNop())
 
 	// Pre-populate the table lookup account with the address table lookup program
-	err = p.accountsResolver.Extend(context.Background(), 185_914_860, []byte{0x00}, "test1", tableLookupAccountInTransaction, Accounts{tableAccountToExtend})
+	err = p.accountsResolver.Extend(tableLookupAccountInTransaction, Accounts{tableAccountToExtend})
 	require.NoError(t, err)
+
+	err = p.accountsResolver.CommitBlock(context.Background(), 185_914_860)
+
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
@@ -315,7 +338,14 @@ func Test_ExtendTableLookup_By_AnotherAddressTableLookup_Containing_ExtendableTa
 	require.NoError(t, err)
 
 	accounts, _, err := resolver.Resolve(context.Background(), 185_914_863, tableAccountToExtend)
+	require.NoError(t, err)
 	require.Equal(t, expectedCreatedAccounts, accounts)
+
+	resolver.cache = make(map[string][]*cacheItem)
+	accounts, _, err = resolver.Resolve(context.Background(), 185_914_863, tableAccountToExtend)
+	require.NoError(t, err)
+	require.Equal(t, expectedCreatedAccounts, accounts)
+
 }
 
 func Test_ExtendTableLookup_Multiple_Instructions(t *testing.T) {
@@ -395,7 +425,14 @@ func Test_ExtendTableLookup_Multiple_Instructions(t *testing.T) {
 	require.NoError(t, err)
 
 	accounts, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	require.NoError(t, err)
 	require.Equal(t, expectedExtendedAccountsForTableLookupAccount, accounts)
+
+	resolver.cache = make(map[string][]*cacheItem)
+	accounts, _, err = resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	require.NoError(t, err)
+	require.Equal(t, expectedExtendedAccountsForTableLookupAccount, accounts)
+
 }
 
 func Test_ExtendTableLookup_Multiple_Transactions_Same_Block(t *testing.T) {
@@ -488,7 +525,14 @@ func Test_ExtendTableLookup_Multiple_Transactions_Same_Block(t *testing.T) {
 	require.NoError(t, err)
 
 	accounts, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	require.NoError(t, err)
 	require.Equal(t, Accounts{account1, account2}, accounts)
+
+	resolver.cache = make(map[string][]*cacheItem)
+	accounts, _, err = resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	require.NoError(t, err)
+	require.Equal(t, Accounts{account1, account2}, accounts)
+
 }
 
 func Test_BlockResolved(t *testing.T) {
@@ -561,8 +605,11 @@ func Test_BlockResolved(t *testing.T) {
 	p := NewProcessor("test", NewKVDBAccountsResolver(db, zap.NewNop()), zap.NewNop())
 
 	// Pre-populate the table lookup account with the address table lookup program
-	err = p.accountsResolver.Extend(context.Background(), 185_914_860, []byte{0x00}, "test1", transactionTableLookupAddress, tableContent)
+	err = p.accountsResolver.Extend(transactionTableLookupAddress, tableContent)
 	require.NoError(t, err)
+
+	err = p.accountsResolver.CommitBlock(context.Background(), 185_914_860)
+
 	err = resolver.store.FlushPuts(context.Background())
 	require.NoError(t, err)
 
@@ -652,5 +699,12 @@ func Test_BlockResolved_Multiple_extend(t *testing.T) {
 	require.NoError(t, err)
 
 	accounts, _, err := resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	require.NoError(t, err)
 	require.Equal(t, Accounts{account1, account2}, accounts)
+
+	resolver.cache = make(map[string][]*cacheItem)
+	accounts, _, err = resolver.Resolve(context.Background(), 157_564_921, tableLookupAccount)
+	require.NoError(t, err)
+	require.Equal(t, Accounts{account1, account2}, accounts)
+
 }

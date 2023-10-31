@@ -7,7 +7,6 @@ import (
 
 const TableAccountLookup = 0x0
 const TableCursor = 0x1
-const TableKnownInstruction = 0x3
 
 var Keys keyer
 
@@ -37,23 +36,4 @@ func (keyer) cursor(readerName string) (out []byte) {
 	out[0] = TableCursor
 	copy(out[1:], readerName)
 	return out
-}
-
-func (keyer) transactionSeenPrefix(blockNum uint64) []byte {
-	out := make([]byte, 1+9)
-	out[0] = TableKnownInstruction
-	binary.BigEndian.PutUint64(out[1:], math.MaxUint64-blockNum)
-	return out
-}
-
-func (keyer) knownInstruction(trxHash []byte, instructionIndex string) []byte {
-	out := make([]byte, 1+64+len(instructionIndex))
-	out[0] = TableKnownInstruction
-	copy(out[1:], trxHash)
-	copy(out[65:], instructionIndex)
-	return out
-}
-
-func (keyer) unpackKnowInstruction(key []byte) (trxHash []byte, instructionIndex string) {
-	return key[1:65], string(key[65:])
 }
