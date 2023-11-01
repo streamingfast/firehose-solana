@@ -9,6 +9,7 @@ import (
 
 	"github.com/streamingfast/kvdb/store"
 	_ "github.com/streamingfast/kvdb/store/badger3"
+	_ "github.com/streamingfast/kvdb/store/bigkv"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,6 +18,22 @@ var a2 = "4YTppbHxaNfZdYjJq9iXvT5T2xnVywqN2FfDX9p7f7MG"
 var a3 = "5J7HHVuLb1kUn9q4PZgGYsLm4DNRg1dcmB5FENuM7wQz"
 var a4 = "9hT5nqawMAn4xgCcjCmiPDXzVqECQTap3c3wHk6dxyFx"
 var a5 = "A8YFwAca6hSp9Xw1RcqUcdXuVgMvQbT2yYLmArCFKxfD"
+
+func TestKVDBAccountsResolver_WTF(t *testing.T) {
+
+	db, err := store.New("bigkv://dfuseio-global.dfuse-saas/sol-account-lookup-v1.1")
+	require.NoError(t, err)
+
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
+	accounts, _, err := resolver.Resolve(context.Background(), 154804305, MustFromBase58("2yEiJNpLnFPizeXzpFSGwBC6idLfNYCJ2h42EqqdJ19h"))
+	require.NoError(t, err)
+	require.Equal(t, 254, len(accounts))
+
+	accounts, _, err = resolver.Resolve(context.Background(), 154804305, MustFromBase58("2yEiJNpLnFPizeXzpFSGwBC6idLfNYCJ2h42EqqdJ19h"))
+	require.NoError(t, err)
+	require.Equal(t, 254, len(accounts))
+
+}
 
 func TestKVDBAccountsResolver_Extended(t *testing.T) {
 	err := os.RemoveAll("/tmp/my-badger.db")

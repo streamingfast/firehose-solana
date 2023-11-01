@@ -121,7 +121,7 @@ func processValidateAllResolvedAddressesE(chain *firecore.Chain[*pbsolv1.Block],
 				fmt.Println("Saved validation state file", keyCount, notFoundCount)
 			}
 
-			time.Sleep(time.Second / 10)
+			time.Sleep(time.Second / 5)
 
 			item := iter.Item()
 			tableAccount, atBlock := accountsresolver.Keys.UnpackTableLookup(item.Key)

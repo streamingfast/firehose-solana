@@ -62,7 +62,7 @@ func (r *KVDBAccountsResolver) CommitBlock(ctx context.Context, blockNum uint64)
 			return fmt.Errorf("flushing extended accounts for tableKey %q: %w", tableKey, err)
 		}
 
-		r.pushToCache(blockNum, tableKey.Base58(), extendedAccounts)
+		r.prependToCache(blockNum, tableKey.Base58(), extendedAccounts)
 	}
 	r.toCommit = make(map[string][]Account)
 	return nil
@@ -91,7 +91,7 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		_, keyBlockNum := Keys.UnpackTableLookup(item.Key)
 		accounts := DecodeAccounts(item.Value)
 
-		r.pushToCache(keyBlockNum, key.Base58(), accounts)
+		r.appendToCache(keyBlockNum, key.Base58(), accounts)
 
 		if keyBlockNum < atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
@@ -124,7 +124,7 @@ func (r *KVDBAccountsResolver) ResolveWithBlock(ctx context.Context, atBlockNum 
 		_, keyBlockNum = Keys.UnpackTableLookup(item.Key)
 		accounts := DecodeAccounts(item.Value)
 
-		r.pushToCache(keyBlockNum, key.Base58(), accounts)
+		r.appendToCache(keyBlockNum, key.Base58(), accounts)
 
 		if keyBlockNum <= atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
@@ -168,7 +168,22 @@ func (r *KVDBAccountsResolver) GetCursor(ctx context.Context, readerName string)
 	return NewCursor(blockNum), nil
 }
 
-func (r *KVDBAccountsResolver) pushToCache(blockNum uint64, key string, accounts Accounts) {
+func (r *KVDBAccountsResolver) appendToCache(blockNum uint64, key string, accounts Accounts) {
+	if cacheItems, found := r.cache[key]; found {
+		for _, ci := range cacheItems {
+			if ci.blockNum == blockNum {
+				return
+			}
+		}
+	}
+	r.cache[key] = append(r.cache[key], []*cacheItem{
+		{
+			blockNum: blockNum,
+			accounts: accounts,
+		},
+	}...)
+}
+func (r *KVDBAccountsResolver) prependToCache(blockNum uint64, key string, accounts Accounts) {
 	if cacheItems, found := r.cache[key]; found {
 		for _, ci := range cacheItems {
 			if ci.blockNum == blockNum {
