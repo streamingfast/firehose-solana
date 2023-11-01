@@ -172,9 +172,7 @@ func (r *KVDBAccountsResolver) pushToCache(blockNum uint64, key string, accounts
 	if cacheItems, found := r.cache[key]; found {
 		for _, ci := range cacheItems {
 			if ci.blockNum == blockNum {
-				continue
-				//ci.accounts = append(ci.accounts, accounts...)
-				//return
+				return
 			}
 		}
 	}
