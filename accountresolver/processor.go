@@ -371,7 +371,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
 		p.logger.Debug("Creating address table lookup", zap.String("account", base58.Encode(tableLookupAccount)))
-		err = p.accountsResolver.CreateOrDelete(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount)
+		err = p.accountsResolver.CreateOrDelete(tableLookupAccount)
 		if err != nil {
 			return fmt.Errorf("creating lookup table %s at block %d: %w", base58.Encode(tableLookupAccount), blockNum, err)
 		}
@@ -399,7 +399,7 @@ func (p *Processor) ProcessInstruction(ctx context.Context, stats *Stats, blockN
 		start := time.Now()
 		tableLookupAccount := accountKeys[instruction.Accounts[0]]
 		p.logger.Debug("Deleting address table lookup", zap.String("account", base58.Encode(tableLookupAccount)))
-		err = p.accountsResolver.CreateOrDelete(ctx, blockNum, trxHash, instructionIndex, tableLookupAccount)
+		err = p.accountsResolver.CreateOrDelete(tableLookupAccount)
 		if err != nil {
 			return fmt.Errorf("deleting lookup table %s at block %d: %w", base58.Encode(tableLookupAccount), blockNum, err)
 		}

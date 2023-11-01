@@ -31,19 +31,8 @@ func NewKVDBAccountsResolver(store store.KVStore, logger *zap.Logger) *KVDBAccou
 	}
 }
 
-func (r *KVDBAccountsResolver) CreateOrDelete(ctx context.Context, blockNum uint64, trxHash []byte, instructionIndex string, key Account) error {
-	err := r.store.Put(ctx, Keys.extendTableLookup(key, blockNum), nil)
-	if err != nil {
-		return fmt.Errorf("reseting table account for %s: %w", key, err)
-	}
-
-	err = r.store.FlushPuts(ctx)
-	if err != nil {
-		return fmt.Errorf("flushing extended accounts for key %q: %w", key, err)
-	}
-
-	r.pushToCache(blockNum, key.Base58(), nil)
-
+func (r *KVDBAccountsResolver) CreateOrDelete(key Account) error {
+	r.toCommit[key.Base58()] = nil
 	return nil
 }
 
@@ -55,8 +44,14 @@ func (r *KVDBAccountsResolver) CommitBlock(ctx context.Context, blockNum uint64)
 			return fmt.Errorf("retrieving last accounts for tableKey %q: %w", tableKey, err)
 		}
 
-		extendedAccounts := append(currentAccounts, accounts...)
-		payload := encodeAccounts(extendedAccounts)
+		var payload []byte
+		var extendedAccounts Accounts
+		if accounts != nil { // nil means delete or create
+			extendedAccounts = append(currentAccounts, accounts...)
+			payload = encodeAccounts(extendedAccounts)
+
+		}
+
 		err = r.store.Put(ctx, Keys.extendTableLookup(tableKey, blockNum), payload)
 		if err != nil {
 			return fmt.Errorf("writing extended accounts for tableKey %q: %w", tableKey, err)

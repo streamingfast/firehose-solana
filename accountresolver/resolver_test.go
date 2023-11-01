@@ -181,7 +181,6 @@ func Test_Extend_Multiple_Accounts_Same_Trx(t *testing.T) {
 }
 
 func Test_Create_Extend_TableLookupAccount_SameTransaction(t *testing.T) {
-	trxHash := []byte{0x01}
 	err := os.RemoveAll("/tmp/my-badger.db")
 	require.NoError(t, err)
 
@@ -189,11 +188,8 @@ func Test_Create_Extend_TableLookupAccount_SameTransaction(t *testing.T) {
 	require.NoError(t, err)
 
 	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
-	err = resolver.CreateOrDelete(context.Background(), 1, trxHash, "0", accountFromBase58(t, a1))
+	err = resolver.CreateOrDelete(accountFromBase58(t, a1))
 	require.NoError(t, err)
-	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
-	require.NoError(t, err)
-	require.Equal(t, Accounts(nil), accounts)
 
 	err = resolver.Extend(accountFromBase58(t, a1), []Account{accountFromBase58(t, a2)})
 	require.NoError(t, err)
@@ -201,7 +197,7 @@ func Test_Create_Extend_TableLookupAccount_SameTransaction(t *testing.T) {
 	err = resolver.CommitBlock(context.Background(), 1)
 	require.NoError(t, err)
 
-	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, Accounts(nil), accounts)
 
@@ -212,7 +208,6 @@ func Test_Create_Extend_TableLookupAccount_SameTransaction(t *testing.T) {
 }
 
 func Test_Create_Extend_TableLookupAccount_SameTransaction_Delete_Other_Block(t *testing.T) {
-	trxHash, trxHash1 := []byte{0x01}, []byte{0x02}
 	err := os.RemoveAll("/tmp/my-badger.db")
 	require.NoError(t, err)
 
@@ -220,18 +215,16 @@ func Test_Create_Extend_TableLookupAccount_SameTransaction_Delete_Other_Block(t 
 	require.NoError(t, err)
 
 	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
-	err = resolver.CreateOrDelete(context.Background(), 1, trxHash, "0", accountFromBase58(t, a1))
+	err = resolver.CreateOrDelete(accountFromBase58(t, a1))
 	require.NoError(t, err)
-	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
-	require.NoError(t, err)
-	require.Equal(t, Accounts(nil), accounts)
 
 	err = resolver.Extend(accountFromBase58(t, a1), []Account{accountFromBase58(t, a2)})
 	require.NoError(t, err)
 
 	err = resolver.CommitBlock(context.Background(), 1)
+	require.NoError(t, err)
 
-	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, Accounts(nil), accounts)
 
@@ -240,7 +233,10 @@ func Test_Create_Extend_TableLookupAccount_SameTransaction_Delete_Other_Block(t 
 	require.Equal(t, 1, len(accounts))
 	require.Equal(t, accountFromBase58(t, a2), accounts[0])
 
-	err = resolver.CreateOrDelete(context.Background(), 2, trxHash1, "0", accountFromBase58(t, a1))
+	err = resolver.CreateOrDelete(accountFromBase58(t, a1))
+	require.NoError(t, err)
+
+	err = resolver.CommitBlock(context.Background(), 2)
 	require.NoError(t, err)
 
 	accounts, _, err = resolver.Resolve(context.Background(), 2, accountFromBase58(t, a1))
