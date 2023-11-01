@@ -116,19 +116,6 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = resolver.CommitBlock(context.Background(), 1)
-	require.NoError(t, err)
-
-	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
-	require.NoError(t, err)
-	require.Equal(t, 0, len(accounts))
-
-	accounts, _, err = resolver.Resolve(context.Background(), 2, accountFromBase58(t, a1))
-	require.NoError(t, err)
-	require.Equal(t, 2, len(accounts))
-	require.Equal(t, accountFromBase58(t, a2), accounts[0])
-	require.Equal(t, accountFromBase58(t, a3), accounts[1])
-
 	err = resolver.Extend(
 		accountFromBase58(t, a1),
 		[]Account{
@@ -141,7 +128,7 @@ func Test_Extend_Multiple_Accounts_Same_Block(t *testing.T) {
 	err = resolver.CommitBlock(context.Background(), 1)
 	require.NoError(t, err)
 
-	accounts, _, err = resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
+	accounts, _, err := resolver.Resolve(context.Background(), 1, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, 0, len(accounts))
 
@@ -264,4 +251,39 @@ func Test_Create_Extend_TableLookupAccount_SameTransaction_Delete_Other_Block(t 
 	accounts, _, err = resolver.Resolve(context.Background(), 3, accountFromBase58(t, a1))
 	require.NoError(t, err)
 	require.Equal(t, Accounts(nil), accounts)
+}
+
+func Test_Multiple_Cache_Call(t *testing.T) {
+	err := os.RemoveAll("/tmp/my-badger.db")
+	require.NoError(t, err)
+
+	db, err := store.New("badger3:///tmp/my-badger.db")
+	require.NoError(t, err)
+
+	resolver := NewKVDBAccountsResolver(db, zap.NewNop())
+	err = resolver.Extend(
+		accountFromBase58(t, a1),
+		[]Account{
+			accountFromBase58(t, a2),
+		})
+	require.NoError(t, err)
+
+	err = resolver.CommitBlock(context.Background(), 1)
+	require.NoError(t, err)
+
+	//flush the cache
+	resolver.cache = make(map[string][]*cacheItem)
+
+	accounts, cached, err := resolver.Resolve(context.Background(), 2, accountFromBase58(t, a1))
+	require.NoError(t, err)
+	require.Equal(t, false, cached)
+	require.Equal(t, 1, len(accounts))
+	require.Equal(t, accountFromBase58(t, a2), accounts[0])
+
+	accounts, cached, err = resolver.Resolve(context.Background(), 2, accountFromBase58(t, a1))
+	require.NoError(t, err)
+	require.Equal(t, true, cached)
+	require.Equal(t, 1, len(accounts))
+	require.Equal(t, accountFromBase58(t, a2), accounts[0])
+
 }

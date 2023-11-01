@@ -96,7 +96,7 @@ func (r *KVDBAccountsResolver) Resolve(ctx context.Context, atBlockNum uint64, k
 		_, keyBlockNum := Keys.UnpackTableLookup(item.Key)
 		accounts := DecodeAccounts(item.Value)
 
-		r.pushToCache(atBlockNum, key.Base58(), resolvedAccounts)
+		r.pushToCache(keyBlockNum, key.Base58(), accounts)
 
 		if keyBlockNum < atBlockNum && resolvedAccounts == nil {
 			resolvedAccounts = accounts
@@ -177,8 +177,9 @@ func (r *KVDBAccountsResolver) pushToCache(blockNum uint64, key string, accounts
 	if cacheItems, found := r.cache[key]; found {
 		for _, ci := range cacheItems {
 			if ci.blockNum == blockNum {
-				ci.accounts = append(ci.accounts, accounts...)
-				return
+				continue
+				//ci.accounts = append(ci.accounts, accounts...)
+				//return
 			}
 		}
 	}
