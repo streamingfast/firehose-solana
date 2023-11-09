@@ -4,6 +4,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## v0.2.6
+
+* bumped firehose-core to `v0.2.1`
+
+### Operators
+
+> [!IMPORTANT]
+> We have had reports of older versions of this software creating corrupted merged-blocks-files (with duplicate or extra out-of-bound blocks)
+> This release adds additional validation of merged-blocks to prevent serving duplicate blocks from the firehose or substreams service. 
+> This may cause service outage if you have produced those blocks or downloaded them from another party who was affected by this bug.
+
+1. Find the affected files by running the following command (can be run multiple times in parallel, over smaller ranges) 
+
+```
+tools check merged-blocks-batch <merged-blocks-store> <start> <stop>
+```
+
+2. If you see any affected range, produce fixed merged-blocks files with the following command, on each range:
+
+```
+tools fix-bloated-merged-blocks <merged-blocks-store> <output-store> <start>:<stop>
+```
+
+3. Copy the merged-blocks files created in output-store over to the your merged-blocks-store, replacing the corrupted files.
+
+### Added
+
+* Added `tools check merged-blocks-batch` to simplify checking blocks continuity in batched mode, optionally writing results to a store
+* Added the command `tools fix-bloated-merged-blocks` to try to fix merged-blocks that contain duplicates and blocks outside of their range.
+* Command `tools print one-block and merged-blocks` now supports a new `--output-format` `jsonl` format. Bytes data can now printed as hex or base58 string instead of base64 string.
+* Added retry loop for merger when walking one block files. Some use-cases where the bundle reader was sending files too fast and the merger was not waiting to accumulate enough files to start bundling merged files
+
+### Fixed
+
+* Bumped `bstream`: the `filesource` will now refuse to read blocks from a merged-files if they are not ordered or if there are any duplicate.
+* The command `tools download-from-firehose` will now fail if it is being served blocks "out of order", to prevent any corrupted merged-blocks from being created.
+* The command `tools print merged-blocks` did not print the whole merged-blocks file, the arguments were confusing: now it will parse <start_block> as a uint64.
+* The command `tools unmerge-blocks` did not cover the whole given range, now fixed
+
+### Removed
+
+* **Breaking** The `reader-node-log-to-zap` flag has been removed. This was a source of confusion for operators reporting Firehose on <Chain> bugs because the node's logs where merged within normal Firehose on <Chain> logs and it was not super obvious.
+
+  Now, logs from the node will be printed to `stdout` unformatted exactly like presented by the chain. Filtering of such logs must now be delegated to the node's implementation and how it deals depends on the node's binary. Refer to it to determine how you can tweak the logging verbosity emitted by the node.
+
 ## v0.2.5
 
 * bump firehose-core to `v0.1.11` with a regression fix for when a substreams has a start block in the reversible segment

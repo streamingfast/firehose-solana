@@ -18,10 +18,18 @@ func (b *Block) GetFirehoseBlockParentID() string {
 	return base58.Encode(b.PreviousId)
 }
 
+func (b *Block) GetFirehoseBlockParentNumber() uint64 {
+	return b.PreviousBlock
+}
+
 func (b *Block) GetFirehoseBlockTime() time.Time {
 	return time.Unix(int64(b.GenesisUnixTimestamp), 0)
 }
 
 func (x *Block) GetFirehoseBlockLIBNum() uint64 {
 	return 0
+}
+
+func (b *Block) GetFirehoseBlockVersion() int32 {
+	return int32(b.Version)
 }

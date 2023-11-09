@@ -16,6 +16,14 @@ func (x *Block) GetFirehoseBlockNumber() uint64 {
 	return x.Slot
 }
 
+func (b *Block) GetFirehoseBlockParentNumber() uint64 {
+	return b.ParentSlot
+}
+
+func (b *Block) GetFirehoseBlockVersion() int32 {
+	return 1
+}
+
 func (x *Block) GetFirehoseBlockParentID() string {
 	return x.PreviousBlockhash
 }
