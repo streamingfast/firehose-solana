@@ -4,6 +4,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## v0.2.7
+
+* bumped firehose-core to `v0.2.2`
+
+### Added
+
+* Firehose logs now include auth information (userID, keyID, realIP) along with blocks + egress bytes sent.
+
+### Fixed
+
+* Filesource validation of block order in merged-blocks now works correctly when using indexes in firehose `Blocks` queries (regression in v0.2.6)
+
+### Removed
+
+* Flag `substreams-rpc-endpoints` removed, this was present by mistake and unused actually.
+* Flag `substreams-rpc-cache-store-url` removed, this was present by mistake and unused actually.
+* Flag `substreams-rpc-cache-chunk-size` removed, this was present by mistake and unused actually.
+
 ## v0.2.6
 
 * bumped firehose-core to `v0.2.1`
