@@ -4,7 +4,6 @@ name: buf.build/streamingfast/firehose-solana
 lint:
   use:
     - DEFAULT
-
 breaking:
   use:
     - FILE

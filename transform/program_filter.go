@@ -58,6 +58,7 @@ func (p *ProgramFilter) matches(programId []byte) bool {
 	}
 	return false
 }
+
 func (p *ProgramFilter) Transform(readOnlyBlk *bstream.Block, in transform.Input) (transform.Output, error) {
 	solBlock := readOnlyBlk.ToProtocol().(*pbsolv2.Block)
 	filteredTransactions := []*pbsolv2.Transaction{}

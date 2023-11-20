@@ -15,6 +15,7 @@ import (
 func init() {
 	firecore.UnsafePayloadKind = pbbstream.Protocol_SOLANA
 	firecore.UnsafeResolveReaderNodeStartBlock = readerNodeStartBlockResolver
+	firecore.UnsafeJsonBytesEncoder = "base58"
 }
 
 func main() {

@@ -8,6 +8,13 @@ import (
 	"github.com/mr-tron/base58"
 )
 
+func (x *Block) GetFirehoseBlockVersion() int32 {
+	return 1
+}
+func (x *Block) GetFirehoseBlockParentNumber() uint64 {
+	return x.ParentSlot
+}
+
 func (x *Block) GetFirehoseBlockID() string {
 	return x.Blockhash
 }
