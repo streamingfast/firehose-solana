@@ -1,30 +1,43 @@
-package main
+package bigtable
 
 import (
-	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 
 	"cloud.google.com/go/bigtable"
+	"github.com/go-json-experiment/json"
+	"github.com/go-json-experiment/json/jsontext"
+	"github.com/mr-tron/base58"
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/cli/sflags"
 	firecore "github.com/streamingfast/firehose-core"
-	"github.com/streamingfast/firehose-solana/bt"
+	"github.com/streamingfast/firehose-solana/blockreader"
 	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 )
 
-func newToolsBigtableBlockCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
-	return &cobra.Command{
-		Use:   "block <block_num>",
-		Short: "get a block from bigtable",
+func newPrintCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "print <block_num>",
+		Short: "print a block from bigtable",
 		Args:  cobra.ExactArgs(1),
-		RunE:  bigtableBlockRunE(logger, tracer),
 	}
+	cmd.AddCommand(newPrintBlocksCmd(logger, tracer))
+	return cmd
 }
 
-func bigtableBlockRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecutor {
+func newPrintBlocksCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "block",
+		Short: "block",
+		RunE:  printBlockRunE(logger, tracer),
+	}
+	return cmd
+}
+
+func printBlockRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecutor {
 	return func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
@@ -43,7 +56,7 @@ func bigtableBlockRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comma
 			return fmt.Errorf("unable to create big table client: %w", err)
 		}
 
-		btClient := bt.New(client, 10, logger, tracer)
+		blockReader := blockreader.NewBigtableReader(client, 10, logger, tracer)
 
 		startBlockNum, err := strconv.ParseUint(blockNumStr, 10, 64)
 		if err != nil {
@@ -53,21 +66,30 @@ func bigtableBlockRunE(logger *zap.Logger, tracer logging.Tracer) firecore.Comma
 		fmt.Println("Looking for block: ", startBlockNum)
 
 		foundBlock := false
-		if err = btClient.ReadBlocks(ctx, startBlockNum, endBlockNum, false, func(block *pbsolv1.Block) error {
+		err = blockReader.Read(ctx, startBlockNum, endBlockNum, func(block *pbsolv1.Block) error {
 			// the block range may return the next block if it cannot find it
 			if block.Slot != startBlockNum {
 				return nil
 			}
 
 			foundBlock = true
-			fmt.Println("Found bigtable row")
-			cnt, err := json.MarshalIndent(block, "", " ")
+			encoder := jsontext.NewEncoder(os.Stdout)
+
+			var marshallers = json.NewMarshalers(
+				json.MarshalFuncV2(func(encoder *jsontext.Encoder, t []byte, options json.Options) error {
+					return encoder.WriteToken(jsontext.String(base58.Encode(t)))
+				}),
+			)
+
+			err := json.MarshalEncode(encoder, block, json.WithMarshalers(marshallers))
 			if err != nil {
-				return fmt.Errorf("unable to json marshal block: %w", err)
+				return fmt.Errorf("encoding block: %w", err)
 			}
-			fmt.Println(string(cnt))
 			return nil
-		}); err != nil {
+
+		})
+
+		if err != nil {
 			return fmt.Errorf("failed to find block %d: %w", startBlockNum, err)
 		}
 		if !foundBlock {

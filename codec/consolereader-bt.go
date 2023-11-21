@@ -8,9 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	pbbstream "github.com/streamingfast/bstream/types/pb/sf/bstream/v1"
 	firecore "github.com/streamingfast/firehose-core"
-
-	"github.com/streamingfast/bstream"
 	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -66,11 +65,11 @@ func (cr *BigtableConsoleReader) Close() {
 	cr.close()
 }
 
-func (cr *BigtableConsoleReader) ReadBlock() (out *bstream.Block, err error) {
+func (cr *BigtableConsoleReader) ReadBlock() (out *pbbstream.Block, err error) {
 	return cr.next()
 }
 
-func (cr *BigtableConsoleReader) next() (out *bstream.Block, err error) {
+func (cr *BigtableConsoleReader) next() (out *pbbstream.Block, err error) {
 	for line := range cr.lines {
 		if !strings.HasPrefix(line, "FIRE ") {
 			continue
@@ -89,7 +88,7 @@ func (cr *BigtableConsoleReader) next() (out *bstream.Block, err error) {
 	return nil, io.EOF
 }
 
-func (cr *BigtableConsoleReader) parseLine(line string) (*bstream.Block, error) {
+func (cr *BigtableConsoleReader) parseLine(line string) (*pbbstream.Block, error) {
 	if strings.HasPrefix(line, "BLOCK") {
 		return cr.readBlock(line)
 	}
@@ -105,10 +104,10 @@ func (cr *BigtableConsoleReader) formatError(line string, err error) error {
 }
 
 // // BLOCK <SLOT_NUM> <COMPLETE BLOCK PROTO IN HEX>
-func (cr *BigtableConsoleReader) readBlock(line string) (out *bstream.Block, err error) {
+func (cr *BigtableConsoleReader) readBlock(line string) (out *pbbstream.Block, err error) {
 	chunks := strings.SplitN(line, " ", -1)
-	if len(chunks) != BlockCompleteChunk {
-		return nil, fmt.Errorf("expected %d fields, got %d", BlockCompleteChunk, len(chunks))
+	if len(chunks) != 3 {
+		return nil, fmt.Errorf("expected %d fields, got %d", 3, len(chunks))
 	}
 
 	var slotNum uint64
