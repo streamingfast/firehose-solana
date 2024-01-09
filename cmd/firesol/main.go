@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/spf13/cobra"
 	firecore "github.com/streamingfast/firehose-core"
-	"github.com/streamingfast/firehose-solana/cmd/firesol/bigtable"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
@@ -28,7 +27,7 @@ func Chain() *firecore.Chain[*pbsol.Block] {
 
 			RegisterExtraCmd: func(chain *firecore.Chain[*pbsol.Block], toolsCmd *cobra.Command, zlog *zap.Logger, tracer logging.Tracer) error {
 				toolsCmd.AddCommand(newPollerCmd(zlog, tracer))
-				toolsCmd.AddCommand(bigtable.NewBigTableCmd(zlog, tracer))
+				//toolsCmd.AddCommand(bigtable.NewBigTableCmd(zlog, tracer))
 				return nil
 			},
 		},

@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"path"
 	"strconv"
+	"time"
 
+	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/spf13/cobra"
+	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/cli/sflags"
 	firecore "github.com/streamingfast/firehose-core"
+	"github.com/streamingfast/firehose-core/blockpoller"
+	"github.com/streamingfast/firehose-solana/block/fetcher"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 )
@@ -27,6 +32,7 @@ func NewPollerCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 
 func pollerRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecutor {
 	return func(cmd *cobra.Command, args []string) (err error) {
+		ctx := cmd.Context()
 		rpcEndpoint := args[0]
 
 		dataDir := sflags.MustGetString(cmd, "data-dir")
@@ -48,13 +54,27 @@ func pollerRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 			zap.Duration("interval_between_fetch", fetchInterval),
 		)
 
-		//todo: init fetcher
-		//todo: init poller handler
-		//todo: init poller
+		rpcClient := rpc.New(rpcEndpoint)
 
-		//todo: fetch latest block from chain rpc
+		latestBlockRetryInterval := 250 * time.Millisecond
+		poller := blockpoller.New(
+			fetcher.NewRPC(rpcClient, fetchInterval, latestBlockRetryInterval, logger),
+			blockpoller.NewFireBlockHandler("type.googleapis.com/sf.solana.type.v1.Block"),
+			blockpoller.WithStoringState(stateDir),
+			blockpoller.WithLogger(logger),
+		)
 
-		//todo: run the poller
+		latestSlot, err := rpcClient.GetSlot(ctx, rpc.CommitmentConfirmed)
+		if err != nil {
+			return fmt.Errorf("getting latest block: %w", err)
+		}
+
+		requestedBlock, err := rpcClient.GetBlock(ctx, latestSlot)
+
+		err = poller.Run(ctx, firstStreamableBlock, bstream.NewBlockRef(requestedBlock.Blockhash.String(), latestSlot))
+		if err != nil {
+			return fmt.Errorf("running poller: %w", err)
+		}
 
 		return nil
 	}
