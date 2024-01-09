@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/cli/sflags"
 	firecore "github.com/streamingfast/firehose-core"
-	"github.com/streamingfast/firehose-solana/blockreader"
+	"github.com/streamingfast/firehose-solana/block/fetcher"
 	pbsolv1 "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
@@ -61,7 +61,7 @@ func pollerRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 			return fmt.Errorf("unable to parse stop block number %s: %w", stopBlockNumStr, err)
 		}
 
-		blockReader := blockreader.NewBigtableReader(client, 10, logger, tracer)
+		blockReader := fetcher.NewBigtableReader(client, 10, logger, tracer)
 
 		return blockReader.Read(ctx, startBlockNum, stopBlockNum, func(block *pbsolv1.Block) error {
 			cnt, err := proto.Marshal(block)

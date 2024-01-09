@@ -7,8 +7,8 @@ import (
 )
 
 func NewBigTableCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
-	cmd := &cobra.Command{Use: "rpc", Short: "rpc"}
+	cmd := &cobra.Command{Use: "poller", Short: "poller"}
 
-	cmd.AddCommand(newPrintCmd(logger, tracer))
+	cmd.AddCommand(NewPollerCmd(logger, tracer))
 	return cmd
 }

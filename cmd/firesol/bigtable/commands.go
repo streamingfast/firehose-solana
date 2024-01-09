@@ -7,10 +7,10 @@ import (
 )
 
 func NewBigTableCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
-	cmd := &cobra.Command{Use: "bigtable", Short: "bigtable"}
+	cmd := &cobra.Command{Use: "poller", Short: "poller"}
 	cmd.PersistentFlags().String("bt-project", "mainnet-beta", "Bigtable project")
 	cmd.PersistentFlags().String("bt-instance", "solana-ledger", "Bigtable instance")
 
-	cmd.AddCommand(newPrintCmd(logger, tracer))
+	cmd.AddCommand(NewPollerCmd(logger, tracer))
 	return cmd
 }

@@ -1,4 +1,4 @@
-package blockreader
+package fetcher
 
 import (
 	"bytes"
