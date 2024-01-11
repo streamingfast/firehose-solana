@@ -48,3 +48,7 @@ func (x *Block) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
 func (x *ConfirmedTransaction) AsBase58String() string {
 	return base58.Encode(x.Transaction.Signatures[0])
 }
+
+func NewUnixTimestamp(t time.Time) *UnixTimestamp {
+	return &UnixTimestamp{Timestamp: t.Unix()}
+}

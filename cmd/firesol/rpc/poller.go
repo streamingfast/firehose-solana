@@ -38,9 +38,9 @@ func pollerRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 		dataDir := sflags.MustGetString(cmd, "data-dir")
 		stateDir := path.Join(dataDir, "poller-state")
 
-		firstStreamableBlock, err := strconv.ParseUint(args[1], 10, 64)
+		startBlock, err := strconv.ParseUint(args[1], 10, 64)
 		if err != nil {
-			return fmt.Errorf("unable to parse first streamable block %d: %w", firstStreamableBlock, err)
+			return fmt.Errorf("unable to parse first streamable block %d: %w", startBlock, err)
 		}
 
 		fetchInterval := sflags.MustGetDuration(cmd, "interval-between-fetch")
@@ -50,7 +50,7 @@ func pollerRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 			zap.String("rpc_endpoint", rpcEndpoint),
 			zap.String("data_dir", dataDir),
 			zap.String("state_dir", stateDir),
-			zap.Uint64("first_streamable_block", firstStreamableBlock),
+			zap.Uint64("first_streamable_block", startBlock),
 			zap.Duration("interval_between_fetch", fetchInterval),
 		)
 
@@ -69,9 +69,13 @@ func pollerRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 			return fmt.Errorf("getting latest block: %w", err)
 		}
 
-		requestedBlock, err := rpcClient.GetBlock(ctx, latestSlot)
+		logger.Info("Found latest slot", zap.Uint64("slot_number", latestSlot))
+		requestedBlock, err := rpcClient.GetBlockWithOpts(ctx, latestSlot, fetcher.GetBlockOpts)
+		if err != nil {
+			return fmt.Errorf("getting requested block %q: %w", latestSlot, err)
+		}
 
-		err = poller.Run(ctx, firstStreamableBlock, bstream.NewBlockRef(requestedBlock.Blockhash.String(), latestSlot))
+		err = poller.Run(ctx, startBlock, bstream.NewBlockRef(requestedBlock.Blockhash.String(), latestSlot))
 		if err != nil {
 			return fmt.Errorf("running poller: %w", err)
 		}

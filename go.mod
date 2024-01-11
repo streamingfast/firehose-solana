@@ -12,6 +12,7 @@ require (
 	github.com/streamingfast/cli v0.0.4-0.20230825151644-8cc84512cd80
 	github.com/streamingfast/firehose-core v1.0.1-0.20240109054458-3f1edeff522c
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
+	github.com/streamingfast/solana-go v0.5.1-0.20230622180848-8faf68a7cb1d
 	go.uber.org/zap v1.26.0
 	google.golang.org/protobuf v1.31.0
 )
@@ -239,6 +240,7 @@ require (
 replace (
 	github.com/ShinyTrinkets/overseer => github.com/dfuse-io/overseer v0.2.1-0.20191024193921-39856397cf3f
 	github.com/bytecodealliance/wasmtime-go/v4 => github.com/streamingfast/wasmtime-go/v4 v4.0.0-freemem3
+	github.com/gagliardetto/solana-go => github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240111145418-2be68b59fe4c
 	github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
 	github.com/jhump/protoreflect => github.com/streamingfast/protoreflect v0.0.0-20231205191344-4b629d20ce8d
 )
