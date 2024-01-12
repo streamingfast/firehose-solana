@@ -71,7 +71,7 @@ func (r *BigtableBlockReader) Read(
 		btRange := bigtable.NewRange(fmt.Sprintf("%016x", startBlockNum), "")
 		err := table.ReadRows(ctx, btRange, func(row bigtable.Row) bool {
 
-			blk, zlogger, err := r.processRow(row)
+			blk, zlogger, err := r.ProcessRow(row)
 			if err != nil {
 				fatalError = fmt.Errorf("failed to read row: %w", err)
 				return false
@@ -192,7 +192,7 @@ func explodeRow(row bigtable.Row) (*big.Int, RowType, []byte) {
 	return blockNum, rowType, el.Value
 }
 
-func (r *BigtableBlockReader) processRow(row bigtable.Row) (*pbsolv1.Block, *zap.Logger, error) {
+func (r *BigtableBlockReader) ProcessRow(row bigtable.Row) (*pbsolv1.Block, *zap.Logger, error) {
 	blockNum, rowType, rowCnt := explodeRow(row)
 	zlogger := r.logger.With(
 		zap.Uint64("block_num", blockNum.Uint64()),

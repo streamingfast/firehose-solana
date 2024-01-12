@@ -3,6 +3,7 @@ package fetcher
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -44,43 +45,46 @@ func NewRPC(rpcClient *rpc.Client, fetchInterval time.Duration, latestBlockRetry
 	}
 }
 
-func (f *RPCFetcher) Fetch(ctx context.Context, blockNum uint64) (out *pbbstream.Block, err error) {
-	f.logger.Debug("fetching block", zap.Uint64("block_num", blockNum))
+func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbstream.Block, err error) {
+	f.logger.Info("fetching block", zap.Uint64("block_num", requestedSlot))
 
-	for f.latestConfirmedSlot < blockNum {
+	for f.latestConfirmedSlot < requestedSlot {
 		f.latestConfirmedSlot, err = f.rpcClient.GetSlot(ctx, rpc.CommitmentConfirmed)
 		if err != nil {
 			return nil, fmt.Errorf("fetching latestConfirmedSlot block num: %w", err)
 		}
 
-		f.logger.Info("got latest confirmed slot block", zap.Uint64("latest_confirmed_slot", f.latestConfirmedSlot), zap.Uint64("block_num", blockNum))
+		f.logger.Info("got latest confirmed slot block", zap.Uint64("latest_confirmed_slot", f.latestConfirmedSlot), zap.Uint64("block_num", requestedSlot))
 		//
-		if f.latestConfirmedSlot < blockNum {
+		if f.latestConfirmedSlot < requestedSlot {
 			time.Sleep(f.latestBlockRetryInterval)
 			continue
 		}
 		break
 	}
-	for f.latestFinalizedSlot < blockNum {
+	for f.latestFinalizedSlot < requestedSlot {
 		f.latestFinalizedSlot, err = f.rpcClient.GetSlot(ctx, rpc.CommitmentFinalized)
 		if err != nil {
 			return nil, fmt.Errorf("fetching latest finalized Slot block num: %w", err)
 		}
 
-		f.logger.Info("got latest finalized slot block", zap.Uint64("latest_finalized_slot", f.latestFinalizedSlot), zap.Uint64("block_num", blockNum))
+		f.logger.Info("got latest finalized slot block", zap.Uint64("latest_finalized_slot", f.latestFinalizedSlot), zap.Uint64("block_num", requestedSlot))
 		//
-		if f.latestFinalizedSlot < blockNum {
+		if f.latestFinalizedSlot < requestedSlot {
 			time.Sleep(f.latestBlockRetryInterval)
 			continue
 		}
 		break
 	}
 
-	blockResult, err := f.rpcClient.GetBlockWithOpts(ctx, blockNum, GetBlockOpts)
+	blockResult, err := f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
 	if err != nil {
-		return nil, fmt.Errorf("fetching block %d: %w", blockNum, err)
+		return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
 	}
-	block, _ := blockFromBlockResult(blockNum, f.latestConfirmedSlot, f.latestFinalizedSlot, blockResult)
+	block, err := blockFromBlockResult(requestedSlot, f.latestConfirmedSlot, f.latestFinalizedSlot, blockResult)
+	if err != nil {
+		return nil, fmt.Errorf("decoding block %d: %w", requestedSlot, err)
+	}
 	return block, nil
 }
 
@@ -146,7 +150,7 @@ func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedS
 	}
 
 	pbBlock := &pbbstream.Block{
-		Number:    *result.BlockHeight,
+		Number:    requestedSlot,
 		Id:        result.Blockhash.String(),
 		ParentId:  result.PreviousBlockhash.String(),
 		Timestamp: timestamppb.New(result.BlockTime.Time()),
@@ -165,8 +169,14 @@ func toPbTransactions(transactions []rpc.TransactionWithMeta) (out []*pbsol.Conf
 		if err != nil {
 			return nil, fmt.Errorf(`decoding transaction meta: %w`, err)
 		}
+		solanaTrx := &solana.Transaction{}
+		transaction.Transaction.GetRawJSON()
+		err = json.Unmarshal(transaction.Transaction.GetRawJSON(), solanaTrx)
+		if err != nil {
+			return nil, fmt.Errorf(`decoding transaction: %w`, err)
+		}
 		out = append(out, &pbsol.ConfirmedTransaction{
-			Transaction: toPbTransaction(transaction.MustGetTransaction()),
+			Transaction: toPbTransaction(solanaTrx),
 			Meta:        meta,
 		})
 	}
@@ -178,27 +188,31 @@ func toPbTransactionMeta(meta *rpc.TransactionMeta) (*pbsol.TransactionStatusMet
 	if err != nil {
 		return nil, fmt.Errorf("decoding return data: %w", err)
 	}
+	trxErr, err := toPbTransactionError(meta.Err)
 	return &pbsol.TransactionStatusMeta{
-		Err:                     toPbTransactionError(meta.Err),
+		Err:                     trxErr,
 		Fee:                     meta.Fee,
 		PreBalances:             meta.PreBalances,
 		PostBalances:            meta.PostBalances,
 		InnerInstructions:       toPbInnerInstructions(meta.InnerInstructions),
-		InnerInstructionsNone:   false,
+		InnerInstructionsNone:   false, //todo: should we remove?
 		LogMessages:             meta.LogMessages,
-		LogMessagesNone:         false,
+		LogMessagesNone:         false, //todo: should we remove?
 		PreTokenBalances:        toPbTokenBalances(meta.PreTokenBalances),
 		PostTokenBalances:       toPbTokenBalances(meta.PostTokenBalances),
 		Rewards:                 toPBReward(meta.Rewards),
 		LoadedWritableAddresses: toPbWritableAddresses(meta.LoadedAddresses.Writable),
 		LoadedReadonlyAddresses: toPbReadonlyAddresses(meta.LoadedAddresses.ReadOnly),
 		ReturnData:              returnData,
-		ReturnDataNone:          false,
+		ReturnDataNone:          false, //todo: should we remove?
 		ComputeUnitsConsumed:    meta.ComputeUnitsConsumed,
 	}, nil
 }
 
 func toPbReturnData(data rpc.ReturnData) (*pbsol.ReturnData, error) {
+	if len(data.Data) == 0 {
+		return nil, nil
+	}
 	d, err := base64.StdEncoding.DecodeString(data.Data[0])
 	if err != nil {
 		return nil, fmt.Errorf("decoding return data: %w", err)
@@ -245,8 +259,15 @@ func toPbTokenBalances(balances []rpc.TokenBalance) []*pbsol.TokenBalance {
 }
 
 func toPbUiTokenAmount(amount *rpc.UiTokenAmount) *pbsol.UiTokenAmount {
+	if amount == nil {
+		return nil
+	}
+	uiAmount := float64(0)
+	if amount.UiAmount != nil {
+		uiAmount = *amount.UiAmount
+	}
 	return &pbsol.UiTokenAmount{
-		UiAmount:       *amount.UiAmount,
+		UiAmount:       uiAmount,
 		Decimals:       uint32(amount.Decimals),
 		Amount:         amount.Amount,
 		UiAmountString: amount.UiAmountString,
@@ -285,11 +306,45 @@ func compileInstructionsToPbInnerInstructionArray(instructions []solana.Compiled
 	return
 }
 
-func toPbTransactionError(err interface{}) *pbsol.TransactionError {
+type TransactionError struct {
+	Type    string `json:"err"`
+	Details string
+}
+
+func toPbTransactionError(err interface{}) (*pbsol.TransactionError, error) {
 	if err == nil {
-		return nil
+		return nil, nil
 	}
-	panic("not implemented") //todo : implement
+
+	if mapErr, ok := err.(map[string]interface{}); ok {
+		for key, value := range mapErr {
+			detail, err := json.Marshal(value)
+			if err != nil {
+				return nil, fmt.Errorf("decoding transaction error: %w", err)
+			}
+			trxErr := &TransactionError{
+				Type:    key,
+				Details: string(detail),
+			}
+			fmt.Println(trxErr)
+			return nil, nil
+		}
+	}
+
+	//8 0 0 0 3 25 0 0 0 113 23 0 0
+
+	//	"InstructionError": [
+	//	  3,
+	//	    {
+	//	       "Custom": 6001
+	//	    }
+	//  ]
+
+	//8 0 0 0 -> TransactionError.InstructionError
+	//3 -> instruction index
+	//25 0 0 0 -> InstructionError.Custom
+	//113 23 0 0 -> u32 error code
+	panic("not implemented") //todo : implement when test with a failed transaction
 }
 
 func toPbTransaction(transaction *solana.Transaction) *pbsol.Transaction {
