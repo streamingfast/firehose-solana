@@ -133,11 +133,11 @@ func MustNewTransactionError(e any) *TransactionError {
 				case TrxErr_InstructionError:
 					errorDetail = MustNewInstructionError(detailMap)
 				case TrxErr_DuplicateInstruction:
-					//todo: DuplicateInstruction(u8)
+					errorDetail = MustNewDuplicateInstructionError(detailMap)
 				case TrxErr_InsufficientFundsForRent:
-					//todo: InsufficientFundsForRent { account_index: u8
+					errorDetail = MustNewInsufficientFundsForRentError(detailMap)
 				case TrxErr_ProgramExecutionTemporarilyRestricted:
-					//todo: ProgramExecutionTemporarilyRestricted { account_index: u8 }
+					errorDetail = MustNewProgramExecutionTemporarilyRestrictedError(detailMap)
 				default:
 					panic(fmt.Errorf("unknown error code: %d", errorCode))
 				}
@@ -150,6 +150,71 @@ func MustNewTransactionError(e any) *TransactionError {
 	}
 
 	panic(fmt.Errorf("unknown error type: %T", e))
+}
+
+type DuplicateInstructionError struct {
+	duplicateInstructionIndex byte
+}
+
+type InsufficientFundsForRentError struct {
+	AccountIndex byte
+}
+
+type ProgramExecutionTemporarilyRestrictedError struct {
+	AccountIndex byte
+}
+
+func (e *ProgramExecutionTemporarilyRestrictedError) Encode(encoder *bin.Encoder) error {
+	err := encoder.WriteByte(e.AccountIndex)
+	if err != nil {
+		return fmt.Errorf("unable to encode byte: %w", err)
+	}
+	return nil
+}
+
+func (e *InsufficientFundsForRentError) Encode(encoder *bin.Encoder) error {
+	err := encoder.WriteByte(e.AccountIndex)
+	if err != nil {
+		return fmt.Errorf("unable to encode byte: %w", err)
+	}
+	return nil
+}
+
+func MustNewProgramExecutionTemporarilyRestrictedError(e any) *ProgramExecutionTemporarilyRestrictedError {
+	accountIndex, ok := e.(uint8)
+	if !ok {
+		panic(fmt.Errorf("expected byte, got: %T", e))
+	}
+	return &ProgramExecutionTemporarilyRestrictedError{
+		AccountIndex: accountIndex,
+	}
+}
+
+func MustNewInsufficientFundsForRentError(e any) *InsufficientFundsForRentError {
+	accountIndex, ok := e.(uint8)
+	if !ok {
+		panic(fmt.Errorf("expected byte, got: %T", e))
+	}
+	return &InsufficientFundsForRentError{
+		AccountIndex: accountIndex,
+	}
+}
+func MustNewDuplicateInstructionError(e any) *DuplicateInstructionError {
+	duplicateInstructionIndex, ok := e.(uint8)
+	if !ok {
+		panic(fmt.Errorf("expected byte, got: %T", e))
+	}
+	return &DuplicateInstructionError{
+		duplicateInstructionIndex: duplicateInstructionIndex,
+	}
+}
+
+func (e *DuplicateInstructionError) Encode(encoder *bin.Encoder) error {
+	err := encoder.WriteByte(e.duplicateInstructionIndex)
+	if err != nil {
+		return fmt.Errorf("unable to encode byte: %w", err)
+	}
+	return nil
 }
 
 func (e *TransactionError) Encode(encoder *bin.Encoder) error {
@@ -391,6 +456,9 @@ func MustNewBorshIoError(a any) BorshIoError {
 }
 
 func (b BorshIoError) Encode(encoder *bin.Encoder) error {
-	//TODO implement me
-	panic("implement me")
+	err := encoder.WriteString(b.msg)
+	if err != nil {
+		return fmt.Errorf("unable to encode borsh io error: %w", err)
+	}
+	return nil
 }
