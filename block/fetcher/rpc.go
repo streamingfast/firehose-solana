@@ -1,12 +1,15 @@
 package fetcher
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
 	"time"
+
+	bin "github.com/streamingfast/binary"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
@@ -306,45 +309,21 @@ func compileInstructionsToPbInnerInstructionArray(instructions []solana.Compiled
 	return
 }
 
-type TransactionError struct {
-	Type    string `json:"err"`
-	Details string
-}
-
-func toPbTransactionError(err interface{}) (*pbsol.TransactionError, error) {
-	if err == nil {
+func toPbTransactionError(e interface{}) (*pbsol.TransactionError, error) {
+	if e == nil {
 		return nil, nil
 	}
 
-	if mapErr, ok := err.(map[string]interface{}); ok {
-		for key, value := range mapErr {
-			detail, err := json.Marshal(value)
-			if err != nil {
-				return nil, fmt.Errorf("decoding transaction error: %w", err)
-			}
-			trxErr := &TransactionError{
-				Type:    key,
-				Details: string(detail),
-			}
-			fmt.Println(trxErr)
-			return nil, nil
-		}
+	txErr := MustNewTransactionError(e)
+	buf := bytes.NewBuffer(nil)
+	encoder := bin.NewEncoder(buf)
+	err := txErr.Encode(encoder)
+	if err != nil {
+		return nil, err
 	}
-
-	//8 0 0 0 3 25 0 0 0 113 23 0 0
-
-	//	"InstructionError": [
-	//	  3,
-	//	    {
-	//	       "Custom": 6001
-	//	    }
-	//  ]
-
-	//8 0 0 0 -> TransactionError.InstructionError
-	//3 -> instruction index
-	//25 0 0 0 -> InstructionError.Custom
-	//113 23 0 0 -> u32 error code
-	panic("not implemented") //todo : implement when test with a failed transaction
+	return &pbsol.TransactionError{
+		Err: buf.Bytes(),
+	}, nil
 }
 
 func toPbTransaction(transaction *solana.Transaction) *pbsol.Transaction {
