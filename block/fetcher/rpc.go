@@ -99,36 +99,7 @@ func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedS
 		libNum = result.ParentSlot
 	}
 
-	//todo:  //horrible tweaks
-	//	switch blk.Blockhash {
-	//	case "Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v":
-	//		zlogger.Warn("applying horrible tweak to block Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v")
-	//		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
-	//			blk.PreviousBlockhash = "HQEr9qcbUVBt2okfu755FdJvJrPYTSpzzmmyeWTj5oau"
-	//		}
-	//	case "6UFQveZ94DUKGbcLFoyayn1QwthVfD3ZqvrM2916pHCR":
-	//		zlogger.Warn("applying horrible tweak to block 63,072,071")
-	//		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
-	//			blk.PreviousBlockhash = "7cLQx2cZvyKbGoMuutXEZ3peg3D21D5qbX19T5V1XEiK"
-	//		}
-	//	case "Fqbm7QvCTYnToXWcCw6nbkWhMmXx2Nv91LsXBrKraB43":
-	//		zlogger.Warn("applying horrible tweak to block 53,135,959")
-	//		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
-	//			blk.PreviousBlockhash = "RfXUrekgajPSb1R4CGFJWNaHTnB6p53Tzert4gouj2u"
-	//		}
-	//	case "ABp9G2NaPzM6kQbeyZYCYgdzL8JN9AxSSbCQG2X1K9UF":
-	//		zlogger.Warn("applying horrible tweak to block 46,223,993")
-	//		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
-	//			blk.PreviousBlockhash = "9F2C7TGqUpFu6krd8vQbUv64BskrneBSgY7U2QfrGx96"
-	//		}
-	//	case "ByUxmGuaT7iQS9qGS8on5xHRjiHXcGxvwPPaTGZXQyz7":
-	//		zlogger.Warn("applying horrible tweak to block 61,328,766")
-	//		if blk.PreviousBlockhash == "11111111111111111111111111111111" {
-	//			blk.PreviousBlockhash = "J6rRToKMK5DQDzVLqo7ibL3snwBYtqkYnRnQ7vXoUSEc"
-	//		}
-	//	}
-
-	//todo: horrible tweaks validate parent slot number
+	fixedPreviousBlockHash := fixPreviousBlockHash(result)
 
 	transactions, err := toPbTransactions(result.Transactions)
 	if err != nil {
@@ -136,7 +107,7 @@ func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedS
 	}
 	block := &pbsol.Block{
 		PreviousBlockhash: result.PreviousBlockhash.String(),
-		Blockhash:         result.Blockhash.String(),
+		Blockhash:         fixedPreviousBlockHash,
 		ParentSlot:        result.ParentSlot,
 		Transactions:      transactions,
 		Rewards:           toPBReward(result.Rewards),
@@ -155,7 +126,7 @@ func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedS
 	pbBlock := &pbbstream.Block{
 		Number:    requestedSlot,
 		Id:        result.Blockhash.String(),
-		ParentId:  result.PreviousBlockhash.String(),
+		ParentId:  fixedPreviousBlockHash,
 		Timestamp: timestamppb.New(result.BlockTime.Time()),
 		LibNum:    libNum,
 		ParentNum: result.ParentSlot,
@@ -164,6 +135,43 @@ func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedS
 
 	return pbBlock, nil
 
+}
+
+func fixPreviousBlockHash(blockResult *rpc.GetBlockResult) (previousFixedBlockHash string) {
+	switch blockResult.Blockhash.String() {
+	case "Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v":
+		//zlogger.Warn("applying horrible tweak to block Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v")
+		if blockResult.PreviousBlockhash.String() == "11111111111111111111111111111111" {
+			previousFixedBlockHash = "HQEr9qcbUVBt2okfu755FdJvJrPYTSpzzmmyeWTj5oau"
+			return previousFixedBlockHash
+		}
+	case "6UFQveZ94DUKGbcLFoyayn1QwthVfD3ZqvrM2916pHCR":
+		//zlogger.Warn("applying horrible tweak to block 63,072,071")
+		if blockResult.PreviousBlockhash.String() == "11111111111111111111111111111111" {
+			previousFixedBlockHash = "7cLQx2cZvyKbGoMuutXEZ3peg3D21D5qbX19T5V1XEiK"
+			return previousFixedBlockHash
+		}
+	case "Fqbm7QvCTYnToXWcCw6nbkWhMmXx2Nv91LsXBrKraB43":
+		//zlogger.Warn("applying horrible tweak to block 53,135,959")
+		if previousFixedBlockHash == "11111111111111111111111111111111" {
+			previousFixedBlockHash = "RfXUrekgajPSb1R4CGFJWNaHTnB6p53Tzert4gouj2u"
+			return previousFixedBlockHash
+		}
+	case "ABp9G2NaPzM6kQbeyZYCYgdzL8JN9AxSSbCQG2X1K9UF":
+		//zlogger.Warn("applying horrible tweak to block 46,223,993")
+		if previousFixedBlockHash == "11111111111111111111111111111111" {
+			previousFixedBlockHash = "9F2C7TGqUpFu6krd8vQbUv64BskrneBSgY7U2QfrGx96"
+			return previousFixedBlockHash
+		}
+	case "ByUxmGuaT7iQS9qGS8on5xHRjiHXcGxvwPPaTGZXQyz7":
+		//zlogger.Warn("applying horrible tweak to block 61,328,766")
+		if previousFixedBlockHash == "11111111111111111111111111111111" {
+			previousFixedBlockHash = "J6rRToKMK5DQDzVLqo7ibL3snwBYtqkYnRnQ7vXoUSEc"
+			return previousFixedBlockHash
+		}
+	}
+
+	return blockResult.PreviousBlockhash.String()
 }
 
 func toPbTransactions(transactions []rpc.TransactionWithMeta) (out []*pbsol.ConfirmedTransaction, err error) {
@@ -303,7 +311,7 @@ func compileInstructionsToPbInnerInstructionArray(instructions []solana.Compiled
 			ProgramIdIndex: uint32(compiledInstruction.ProgramIDIndex),
 			Accounts:       accounts,
 			Data:           compiledInstruction.Data,
-			StackHeight:    nil, //not return by the rpc endpoint getBlockCall //todo: check if it part of bigtable data
+			StackHeight:    &compiledInstruction.StackHeight, //not return by the rpc endpoint getBlockCall
 		})
 	}
 	return
@@ -333,8 +341,6 @@ func toPbTransaction(transaction *solana.Transaction) *pbsol.Transaction {
 	}
 
 }
-
-//todo: review message implementation with Charles
 
 func toPbMessage(message solana.Message) *pbsol.Message {
 	return &pbsol.Message{

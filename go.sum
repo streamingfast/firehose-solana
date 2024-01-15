@@ -766,6 +766,7 @@ github.com/streamingfast/firehose-core v1.0.1-0.20240109054458-3f1edeff522c h1:P
 github.com/streamingfast/firehose-core v1.0.1-0.20240109054458-3f1edeff522c/go.mod h1:Y/Sza/3iOeabRhVC/hPoRx21jZDcyQFBYRNR8wgIk7I=
 github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240111145418-2be68b59fe4c h1:GWlMGvspp2Mb5iCZBV31FeOHwliPI/LoIowvlx253qA=
 github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240111145418-2be68b59fe4c/go.mod h1:i+7aAyNDTHG0jK8GZIBSI4OVvDqkt2Qx+LklYclRNG8=
+github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240115191424-05c37cd0760d/go.mod h1:i+7aAyNDTHG0jK8GZIBSI4OVvDqkt2Qx+LklYclRNG8=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 h1:g8eEYbFSykyzIyuxNMmHEUGGUvJE0ivmqZagLDK42gw=
 github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0/go.mod h1:cTNObq2Uofb330y05JbbZZ6RwE6QUXw5iVcHk1Fx3fk=
 github.com/streamingfast/logging v0.0.0-20210811175431-f3b44b61606a/go.mod h1:4GdqELhZOXj4xwc4IaBmzofzdErGynnaSzuzxy0ZIBo=
