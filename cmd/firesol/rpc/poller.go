@@ -70,7 +70,7 @@ func pollerRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 		logger.Info("Found latest slot", zap.Uint64("slot_number", latestSlot))
 		requestedBlock, err := rpcClient.GetBlockWithOpts(ctx, latestSlot, fetcher.GetBlockOpts)
 		if err != nil {
-			return fmt.Errorf("getting requested block %q: %w", latestSlot, err)
+			return fmt.Errorf("getting requested block %d: %w", latestSlot, err)
 		}
 
 		err = poller.Run(ctx, startBlock, bstream.NewBlockRef(requestedBlock.Blockhash.String(), latestSlot))
