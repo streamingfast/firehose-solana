@@ -738,8 +738,9 @@ github.com/spf13/viper v1.7.1/go.mod h1:8WkrPz2fc9jxqZNCJI/76HCieCp4Q8HaLFoCha5q
 github.com/spf13/viper v1.15.0 h1:js3yy885G8xwJa6iOISGFwd+qlUo5AvyXb7CiihdtiU=
 github.com/spf13/viper v1.15.0/go.mod h1:fFcTBJxvhhzSJiZy8n+PeW6t8l+KeT/uTARa0jHOQLA=
 github.com/stoewer/go-strcase v1.2.0/go.mod h1:IBiWB2sKIp3wVVQ3Y035++gc+knqhUQag1KpM8ahLw8=
-github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5 h1:xCVaIP9q+nqRxHrb1wCLs3AABUcCgLGK0IakN4CMQbk=
 github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5/go.mod h1:LEQhe6qUvAQSYBJu7MZvDU1kx4JrZzxru3Ga1rRCCuo=
+github.com/streamingfast/binary v0.0.0-20240116152459-ebe30de95370 h1:/7j4mKpSJgGPYD4de7AA3nPzy3UeObvjUqidayw+dh8=
+github.com/streamingfast/binary v0.0.0-20240116152459-ebe30de95370/go.mod h1:LEQhe6qUvAQSYBJu7MZvDU1kx4JrZzxru3Ga1rRCCuo=
 github.com/streamingfast/bstream v0.0.2-0.20231211192436-01f6a005b0e4 h1:WFXOC6fg2k9CuxUhbgtH7IYOZvu0CEPXuGRitS74YwQ=
 github.com/streamingfast/bstream v0.0.2-0.20231211192436-01f6a005b0e4/go.mod h1:08GVb+DXyz6jVNIsbf+2zlaC81UeEGu5o1h49KrSR3Y=
 github.com/streamingfast/cli v0.0.4-0.20230825151644-8cc84512cd80 h1:UxJUTcEVkdZy8N77E3exz0iNlgQuxl4m220GPvzdZ2s=

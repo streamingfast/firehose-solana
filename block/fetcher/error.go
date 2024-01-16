@@ -456,9 +456,22 @@ func MustNewBorshIoError(a any) BorshIoError {
 }
 
 func (b BorshIoError) Encode(encoder *bin.Encoder) error {
-	err := encoder.WriteString(b.Msg)
+	err := WriteString(b.Msg, encoder)
 	if err != nil {
 		return fmt.Errorf("unable to encode borsh io error: %w", err)
+	}
+	return nil
+}
+
+func WriteString(b string, e *bin.Encoder) error {
+	length := len(b)
+	err := e.WriteInt64(int64(length), binary.LittleEndian)
+	if err != nil {
+		return fmt.Errorf("unable to encode string length: %w", err)
+	}
+	err = e.WriteRaw([]byte(b))
+	if err != nil {
+		return fmt.Errorf("unable to encode string: %w", err)
 	}
 	return nil
 }

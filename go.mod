@@ -8,7 +8,7 @@ require (
 	github.com/klauspost/compress v1.16.5
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.7.0
-	github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5
+	github.com/streamingfast/binary v0.0.0-20240116152459-ebe30de95370
 	github.com/streamingfast/bstream v0.0.2-0.20231211192436-01f6a005b0e4
 	github.com/streamingfast/cli v0.0.4-0.20230825151644-8cc84512cd80
 	github.com/streamingfast/firehose-core v1.0.1-0.20240109054458-3f1edeff522c
@@ -245,4 +245,5 @@ replace (
 	github.com/gagliardetto/solana-go => github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240115191424-05c37cd0760d
 	github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
 	github.com/jhump/protoreflect => github.com/streamingfast/protoreflect v0.0.0-20231205191344-4b629d20ce8d
+
 )
