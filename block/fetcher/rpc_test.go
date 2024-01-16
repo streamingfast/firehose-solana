@@ -70,6 +70,7 @@ func Test_TrxErrorEncode(t *testing.T) {
 				TrxErrCode: TrxErr_InstructionError,
 				detail: &InstructionError{
 					InstructionErrorCode: InstructionError_BorshIoError,
+					InstructionIndex:     1,
 					detail: &BorshIoError{
 						Msg: "error.1",
 					},
