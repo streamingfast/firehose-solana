@@ -444,7 +444,7 @@ func (i InstructionCustomError) Encode(encoder *bin.Encoder) error {
 }
 
 type BorshIoError struct {
-	msg string
+	Msg string
 }
 
 func MustNewBorshIoError(a any) BorshIoError {
@@ -452,11 +452,11 @@ func MustNewBorshIoError(a any) BorshIoError {
 	if !ok {
 		panic(fmt.Errorf("expected string, got: %T", a))
 	}
-	return BorshIoError{msg: msg}
+	return BorshIoError{Msg: msg}
 }
 
 func (b BorshIoError) Encode(encoder *bin.Encoder) error {
-	err := encoder.WriteString(b.msg)
+	err := encoder.WriteString(b.Msg)
 	if err != nil {
 		return fmt.Errorf("unable to encode borsh io error: %w", err)
 	}

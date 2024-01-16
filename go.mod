@@ -8,6 +8,7 @@ require (
 	github.com/klauspost/compress v1.16.5
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.7.0
+	github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5
 	github.com/streamingfast/bstream v0.0.2-0.20231211192436-01f6a005b0e4
 	github.com/streamingfast/cli v0.0.4-0.20230825151644-8cc84512cd80
 	github.com/streamingfast/firehose-core v1.0.1-0.20240109054458-3f1edeff522c
@@ -160,7 +161,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
-	github.com/streamingfast/binary v0.0.0-20210928223119-44fc44e4a0b5 // indirect
 	github.com/streamingfast/dauth v0.0.0-20231120142446-843f4e045cc2 // indirect
 	github.com/streamingfast/dbin v0.9.1-0.20231117225723-59790c798e2c // indirect
 	github.com/streamingfast/derr v0.0.0-20230515163924-8570aaa43fe1 // indirect

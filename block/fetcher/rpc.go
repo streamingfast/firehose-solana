@@ -9,10 +9,9 @@ import (
 	"math"
 	"time"
 
-	bin "github.com/streamingfast/binary"
-
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	bin "github.com/streamingfast/binary"
 	pbbstream "github.com/streamingfast/bstream/pb/sf/bstream/v1"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	sfsol "github.com/streamingfast/solana-go"
