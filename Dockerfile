@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.2
 
-FROM ghcr.io/streamingfast/firehose-solana:solana-bigtable-decoder as chain
+FROM ghcr.io/streamingfast/firehose-core as core
 
 FROM ubuntu:20.04
 
@@ -12,24 +12,21 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 
 RUN rm /etc/localtime && ln -snf /usr/share/zoneinfo/America/Montreal /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
 
-RUN mkdir /tmp/wasmer-install && cd /tmp/wasmer-install && \
-    curl -L https://github.com/wasmerio/wasmer/releases/download/2.3.0/wasmer-linux-amd64.tar.gz | tar xzf - && \
-    mv lib/libwasmer.a lib/libwasmer.so /usr/lib/ && cd / && rm -rf /tmp/wasmer-install
 
 ADD /firesol /app/firesol
 
-COPY tools/docker/motd_generic /etc/
-COPY tools/docker/motd_node_manager /etc/
-COPY tools/docker/99-firehose-solana.sh /etc/profile.d/
-COPY tools/docker/scripts/* /usr/local/bin
+#COPY tools/docker/motd_generic /etc/
+#COPY tools/docker/motd_node_manager /etc/
+#COPY tools/docker/99-firehose-solana.sh /etc/profile.d/
+#COPY tools/docker/scripts/* /usr/local/bin
 
 # On SSH connection, /root/.bashrc is invoked which invokes '/root/.bash_aliases' if existing,
 # so we hijack the file to "execute" our specialized bash script
-RUN echo ". /etc/profile.d/99-firehose-solana.sh" > /root/.bash_aliases
+#RUN echo ". /etc/profile.d/99-firehose-solana.sh" > /root/.bash_aliases
 
 ENV PATH "$PATH:/app"
 
-COPY --from=chain /app/solana-bigtable-decoder /app/solana-bigtable-decoder
+COPY --from=core /app/firecore /app/firecore
 
 ENTRYPOINT ["/app/firesol"]
 
