@@ -2,11 +2,26 @@ package fetcher
 
 import (
 	"bytes"
+	"context"
 	"testing"
+	"time"
 
+	"go.uber.org/zap"
+
+	"github.com/gagliardetto/solana-go/rpc"
 	bin "github.com/streamingfast/binary"
 	"github.com/test-go/testify/require"
 )
+
+func Test_ToPBTransaction(t *testing.T) {
+	ctx := context.Background()
+	rpcClient := rpc.New("https://icy-old-cloud.solana-mainnet.quiknode.pro/75682dc94e37cd35ccf9351e11669dcabc3ad176/")
+	f := NewRPC(rpcClient, 0*time.Millisecond, 0*time.Millisecond, zap.NewNop())
+	_, err := f.Fetch(ctx, 240816644)
+
+	require.NoError(t, err)
+
+}
 
 func Test_TrxErrorEncode(t *testing.T) {
 	cases := []struct {

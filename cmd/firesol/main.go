@@ -13,12 +13,12 @@ import (
 var logger, tracer = logging.PackageLogger("firesol", "github.com/streamingfast/firehose-solana")
 var rootCmd = &cobra.Command{
 	Use:   "firesol",
-	Short: "firesol poller and tooling",
+	Short: "firesol fetching and tooling",
 }
 
 func init() {
 	logging.InstantiateLoggers(logging.WithDefaultLevel(zap.InfoLevel))
-	rootCmd.AddCommand(newPollerCmd(logger, tracer))
+	rootCmd.AddCommand(newFetchCmd(logger, tracer))
 }
 
 func main() {
@@ -28,12 +28,12 @@ func main() {
 	}
 }
 
-func newPollerCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
+func newFetchCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "poller",
-		Short: "poll blocks from different sources",
+		Use:   "fetch",
+		Short: "fetch blocks from different sources",
 		Args:  cobra.ExactArgs(2),
 	}
-	cmd.AddCommand(rpc.NewPollerCmd(logger, tracer))
+	cmd.AddCommand(rpc.NewFetchCmd(logger, tracer))
 	return cmd
 }

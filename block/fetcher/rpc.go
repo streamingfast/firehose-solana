@@ -10,6 +10,7 @@ import (
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
 	bin "github.com/streamingfast/binary"
 	pbbstream "github.com/streamingfast/bstream/pb/sf/bstream/v1"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
@@ -78,10 +79,22 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 		break
 	}
 
-	blockResult, err := f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
-	if err != nil {
-		return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
+	//todo : if err is a type skipped block error here, requestedSlot will be requestSlot + 1 while it's returning no skipped error
+	var blockResult *rpc.GetBlockResult
+
+	for {
+		blockResult, err = f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
+		if err != nil {
+			rpcErr := err.(*jsonrpc.RPCError)
+			if rpcErr != nil && rpcErr.Code == -32009 {
+				requestedSlot += 1
+				continue
+			}
+			return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
+		}
+		break
 	}
+
 	block, err := blockFromBlockResult(requestedSlot, f.latestConfirmedSlot, f.latestFinalizedSlot, blockResult)
 	if err != nil {
 		return nil, fmt.Errorf("decoding block %d: %w", requestedSlot, err)
