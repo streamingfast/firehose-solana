@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -179,14 +178,11 @@ func toPbTransactions(transactions []rpc.TransactionWithMeta) (out []*pbsol.Conf
 		if err != nil {
 			return nil, fmt.Errorf(`decoding transaction meta: %w`, err)
 		}
-		solanaTrx := &solana.Transaction{}
-		transaction.Transaction.GetRawJSON()
-		err = json.Unmarshal(transaction.Transaction.GetRawJSON(), solanaTrx)
 		if err != nil {
 			return nil, fmt.Errorf(`decoding transaction: %w`, err)
 		}
 		out = append(out, &pbsol.ConfirmedTransaction{
-			Transaction: toPbTransaction(solanaTrx),
+			Transaction: toPbTransaction(transaction.MustGetTransaction()),
 			Meta:        meta,
 		})
 	}

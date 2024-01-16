@@ -1,47 +1,39 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
-	firecore "github.com/streamingfast/firehose-core"
-	fhCmd "github.com/streamingfast/firehose-core/cmd"
-	"github.com/streamingfast/firehose-core/node-manager/mindreader"
-	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
+	"github.com/streamingfast/firehose-solana/cmd/firesol/rpc"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-func main() {
-	fhCmd.Main(Chain())
+var logger, tracer = logging.PackageLogger("firesol", "github.com/streamingfast/firehose-solana")
+var rootCmd = &cobra.Command{
+	Use:   "firesol",
+	Short: "firesol poller and tooling",
 }
 
-func Chain() *firecore.Chain[*pbsol.Block] {
-	return &firecore.Chain[*pbsol.Block]{
-		ShortName:            "sol",
-		LongName:             "Solana",
-		ExecutableName:       "firesol",
-		FullyQualifiedModule: "github.com/streamingfast/firehose-solana",
-		Version:              version,
+func init() {
+	logging.InstantiateLoggers(logging.WithDefaultLevel(zap.InfoLevel))
+	rootCmd.AddCommand(newPollerCmd(logger, tracer))
+}
 
-		BlockFactory: func() firecore.Block { return new(pbsol.Block) },
-
-		BlockIndexerFactories: map[string]firecore.BlockIndexerFactory[*pbsol.Block]{},
-
-		BlockTransformerFactories: map[protoreflect.FullName]firecore.BlockTransformerFactory{},
-		ConsoleReaderFactory: func(lines chan string, blockEncoder firecore.BlockEncoder, logger *zap.Logger, tracer logging.Tracer) (mindreader.ConsolerReader, error) {
-			panic("should not be used!")
-		},
-
-		Tools: &firecore.ToolsConfig[*pbsol.Block]{
-
-			RegisterExtraCmd: func(chain *firecore.Chain[*pbsol.Block], toolsCmd *cobra.Command, zlog *zap.Logger, tracer logging.Tracer) error {
-				toolsCmd.AddCommand(newPollerCmd(zlog, tracer))
-				//toolsCmd.AddCommand(bigtable.NewBigTableCmd(zlog, tracer))
-				return nil
-			},
-		},
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Whoops. There was an error while executing your CLI '%s'", err)
+		os.Exit(1)
 	}
 }
 
-// Version value, injected via go build `ldflags` at build time, **must** not be removed or inlined
-var version = "dev"
+func newPollerCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "poller",
+		Short: "poll blocks from different sources",
+		Args:  cobra.ExactArgs(2),
+	}
+	cmd.AddCommand(rpc.NewPollerCmd(logger, tracer))
+	return cmd
+}

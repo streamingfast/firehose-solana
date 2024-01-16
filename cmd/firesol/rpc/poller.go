@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"fmt"
-	"path"
 	"strconv"
 	"time"
 
@@ -25,6 +24,7 @@ func NewPollerCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 		RunE:  pollerRunE(logger, tracer),
 	}
 
+	cmd.Flags().String("state-dir", "/data/poller", "interval between fetch")
 	cmd.Flags().Duration("interval-between-fetch", 0, "interval between fetch")
 
 	return cmd
@@ -35,8 +35,7 @@ func pollerRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 		ctx := cmd.Context()
 		rpcEndpoint := args[0]
 
-		dataDir := sflags.MustGetString(cmd, "data-dir")
-		stateDir := path.Join(dataDir, "poller-state")
+		stateDir := sflags.MustGetString(cmd, "state-dir")
 
 		startBlock, err := strconv.ParseUint(args[1], 10, 64)
 		if err != nil {
@@ -48,7 +47,6 @@ func pollerRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecu
 		logger.Info(
 			"launching firehose-solana poller",
 			zap.String("rpc_endpoint", rpcEndpoint),
-			zap.String("data_dir", dataDir),
 			zap.String("state_dir", stateDir),
 			zap.Uint64("first_streamable_block", startBlock),
 			zap.Duration("interval_between_fetch", fetchInterval),
