@@ -1,11 +1,13 @@
 package rpc
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/bstream"
 	"github.com/streamingfast/cli/sflags"
@@ -68,9 +70,21 @@ func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecut
 		}
 
 		logger.Info("Found latest slot", zap.Uint64("slot_number", latestSlot))
-		requestedBlock, err := rpcClient.GetBlockWithOpts(ctx, latestSlot, fetcher.GetBlockOpts)
-		if err != nil {
-			return fmt.Errorf("getting requested block %d: %w", latestSlot, err)
+
+		var requestedBlock *rpc.GetBlockResult
+		for {
+			requestedBlock, err = rpcClient.GetBlockWithOpts(ctx, latestSlot, fetcher.GetBlockOpts)
+			if err != nil {
+				var rpcErr *jsonrpc.RPCError
+				if errors.As(err, &rpcErr) {
+					if rpcErr.Code == -32004 {
+						time.Sleep(latestBlockRetryInterval)
+						continue
+					}
+				}
+				return fmt.Errorf("getting requested block %d: %w", latestSlot, err)
+			}
+			break
 		}
 
 		err = poller.Run(ctx, startBlock, bstream.NewBlockRef(requestedBlock.Blockhash.String(), latestSlot))

@@ -86,8 +86,18 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 	}
 
 	resolvedSlot, blockResult, err := f.fetch(ctx, requestedSlot)
-	if err != nil {
-		return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
+	for {
+		blockResult, err = f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
+		if err != nil {
+			var rpcErr *jsonrpc.RPCError
+			errors.As(err, &rpcErr)
+			if rpcErr != nil && rpcErr.Code == -32009 {
+				requestedSlot += 1
+				continue
+			}
+			return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
+		}
+		break
 	}
 
 	block, err := blockFromBlockResult(resolvedSlot, f.latestConfirmedSlot, f.latestFinalizedSlot, blockResult)
