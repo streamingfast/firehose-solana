@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -28,6 +29,8 @@ var GetBlockOpts = &rpc.GetBlockOpts{
 	MaxSupportedTransactionVersion: &MaxSupportedTransactionVersion,
 }
 
+type fetchBlock func(ctx context.Context, requestedSlot uint64) (slot uint64, out *rpc.GetBlockResult, err error)
+
 type RPCFetcher struct {
 	rpcClient                *rpc.Client
 	latestConfirmedSlot      uint64
@@ -36,15 +39,18 @@ type RPCFetcher struct {
 	fetchInterval            time.Duration
 	lastFetchAt              time.Time
 	logger                   *zap.Logger
+	fetchBlock               fetchBlock
 }
 
 func NewRPC(rpcClient *rpc.Client, fetchInterval time.Duration, latestBlockRetryInterval time.Duration, logger *zap.Logger) *RPCFetcher {
-	return &RPCFetcher{
+	f := &RPCFetcher{
 		rpcClient:                rpcClient,
 		fetchInterval:            fetchInterval,
 		latestBlockRetryInterval: latestBlockRetryInterval,
 		logger:                   logger,
 	}
+	f.fetchBlock = f.fetchRpcBlock
+	return f
 }
 
 func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbstream.Block, err error) {
@@ -79,32 +85,42 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 		break
 	}
 
-	//todo : if err is a type skipped block error here, requestedSlot will be requestSlot + 1 while it's returning no skipped error
-	var blockResult *rpc.GetBlockResult
-
-	for {
-		blockResult, err = f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
-		if err != nil {
-			rpcErr := err.(*jsonrpc.RPCError)
-			if rpcErr != nil && rpcErr.Code == -32009 {
-				requestedSlot += 1
-				continue
-			}
-			return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
-		}
-		break
+	resolvedSlot, blockResult, err := f.fetch(ctx, requestedSlot)
+	if err != nil {
+		return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
 	}
 
-	block, err := blockFromBlockResult(requestedSlot, f.latestConfirmedSlot, f.latestFinalizedSlot, blockResult)
+	block, err := blockFromBlockResult(resolvedSlot, f.latestConfirmedSlot, f.latestFinalizedSlot, blockResult)
 	if err != nil {
-		return nil, fmt.Errorf("decoding block %d: %w", requestedSlot, err)
+		return nil, fmt.Errorf("decoding block %d: %w", resolvedSlot, err)
 	}
 
 	return block, nil
 }
 
-func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedSlot uint64, result *rpc.GetBlockResult) (*pbbstream.Block, error) {
+func (f *RPCFetcher) fetchRpcBlock(ctx context.Context, requestedSlot uint64) (slot uint64, out *rpc.GetBlockResult, err error) {
+	b, err := f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
+	return requestedSlot, b, err
+}
 
+func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (slot uint64, out *rpc.GetBlockResult, err error) {
+	for {
+		resolvedSlot, blockResult, err := f.fetchBlock(ctx, requestedSlot)
+		if err != nil {
+			var rpcErr *jsonrpc.RPCError
+			if errors.As(err, &rpcErr) {
+				if rpcErr.Code == -32009 {
+					requestedSlot += 1
+					continue
+				}
+			}
+			return 0, nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
+		}
+		return resolvedSlot, blockResult, nil
+	}
+}
+
+func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedSlot uint64, result *rpc.GetBlockResult) (*pbbstream.Block, error) {
 	libNum := finalizedSlot
 
 	if finalizedSlot > requestedSlot {
