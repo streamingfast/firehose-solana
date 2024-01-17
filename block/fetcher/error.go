@@ -181,22 +181,43 @@ func (e *InsufficientFundsForRentError) Encode(encoder *bin.Encoder) error {
 }
 
 func MustNewProgramExecutionTemporarilyRestrictedError(e any) *ProgramExecutionTemporarilyRestrictedError {
-	accountIndex, ok := e.(uint8)
+	mapE, ok := e.(map[string]interface{})
+	if !ok {
+		panic(fmt.Errorf("expected map[string]interface{}, got: %T", e))
+	}
+
+	accountIndex, ok := mapE["account_index"]
+	if !ok {
+		panic(fmt.Errorf("expected account_index, got: %T", e))
+	}
+
+	accountIndexFloat64, ok := accountIndex.(float64)
+
 	if !ok {
 		panic(fmt.Errorf("expected byte, got: %T", e))
 	}
 	return &ProgramExecutionTemporarilyRestrictedError{
-		AccountIndex: accountIndex,
+		AccountIndex: uint8(accountIndexFloat64),
 	}
 }
 
 func MustNewInsufficientFundsForRentError(e any) *InsufficientFundsForRentError {
-	accountIndex, ok := e.(uint8)
+	mapE, ok := e.(map[string]interface{})
 	if !ok {
-		panic(fmt.Errorf("expected byte, got: %T", e))
+		panic(fmt.Errorf("expected map[string]interface{}, got: %T", e))
+	}
+
+	accountIndex, ok := mapE["account_index"]
+	if !ok {
+		panic(fmt.Errorf("expected account_index, got: %T", e))
+	}
+
+	accountIndexFloat64, ok := accountIndex.(float64)
+	if !ok {
+		panic(fmt.Errorf("expected float64, got: %T", e))
 	}
 	return &InsufficientFundsForRentError{
-		AccountIndex: accountIndex,
+		AccountIndex: uint8(accountIndexFloat64),
 	}
 }
 func MustNewDuplicateInstructionError(e any) *DuplicateInstructionError {

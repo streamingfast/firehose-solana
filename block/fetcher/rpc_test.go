@@ -15,11 +15,11 @@ import (
 )
 
 func Test_DoIt(t *testing.T) {
-	t.Skip("TODO: fix this test")
+	//t.Skip("TODO: fix this test")
 	ctx := context.Background()
 	rpcClient := rpc.New(quicknodeURL) //put your own URL in a file call secret.go that will be ignore by git
 	f := NewRPC(rpcClient, 0*time.Millisecond, 0*time.Millisecond, zap.NewNop())
-	_, err := f.Fetch(ctx, 240816644)
+	_, err := f.Fetch(ctx, 240816742)
 
 	require.NoError(t, err)
 }
