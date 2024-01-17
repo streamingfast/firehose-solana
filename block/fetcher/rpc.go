@@ -99,6 +99,7 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 	if err != nil {
 		return nil, fmt.Errorf("decoding block %d: %w", requestedSlot, err)
 	}
+
 	return block, nil
 }
 
