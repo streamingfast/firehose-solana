@@ -117,11 +117,13 @@ func (f *RPCFetcher) fetchRpcBlock(ctx context.Context, requestedSlot uint64) (s
 func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (slot uint64, out *rpc.GetBlockResult, err error) {
 	currentSlot := requestedSlot
 	for {
-		resolvedSlot, blockResult, err := f.fetchBlock(ctx, requestedSlot)
+		//f.logger.Info("getting block", zap.Uint64("block_num", currentSlot))
+		resolvedSlot, blockResult, err := f.fetchBlock(ctx, currentSlot)
 		if err != nil {
 			var rpcErr *jsonrpc.RPCError
 			if errors.As(err, &rpcErr) {
 				if rpcErr.Code == -32009 {
+					f.logger.Info("block was skipped", zap.Uint64("block_num", currentSlot))
 					currentSlot += 1
 					continue
 				}
