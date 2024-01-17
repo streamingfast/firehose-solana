@@ -95,6 +95,7 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 				requestedSlot += 1
 				continue
 			}
+			f.logger.Warn("fetching block failed", zap.Uint64("block_num", requestedSlot), zap.Error(err))
 			return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
 		}
 		break
@@ -114,26 +115,27 @@ func (f *RPCFetcher) fetchRpcBlock(ctx context.Context, requestedSlot uint64) (s
 }
 
 func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (slot uint64, out *rpc.GetBlockResult, err error) {
+	currentSlot := requestedSlot
 	for {
 		resolvedSlot, blockResult, err := f.fetchBlock(ctx, requestedSlot)
 		if err != nil {
 			var rpcErr *jsonrpc.RPCError
 			if errors.As(err, &rpcErr) {
 				if rpcErr.Code == -32009 {
-					requestedSlot += 1
+					currentSlot += 1
 					continue
 				}
 			}
-			return 0, nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
+			return 0, nil, fmt.Errorf("fetching block %d: %w", currentSlot, err)
 		}
 		return resolvedSlot, blockResult, nil
 	}
 }
 
-func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedSlot uint64, result *rpc.GetBlockResult) (*pbbstream.Block, error) {
+func blockFromBlockResult(slot uint64, confirmedSlot uint64, finalizedSlot uint64, result *rpc.GetBlockResult) (*pbbstream.Block, error) {
 	libNum := finalizedSlot
 
-	if finalizedSlot > requestedSlot {
+	if finalizedSlot > slot {
 		libNum = result.ParentSlot
 	}
 
@@ -153,7 +155,7 @@ func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedS
 		BlockHeight: &pbsol.BlockHeight{
 			BlockHeight: *result.BlockHeight,
 		},
-		Slot: requestedSlot,
+		Slot: slot,
 	}
 
 	payload, err := anypb.New(block)
@@ -162,7 +164,7 @@ func blockFromBlockResult(requestedSlot uint64, confirmedSlot uint64, finalizedS
 	}
 
 	pbBlock := &pbbstream.Block{
-		Number:    requestedSlot,
+		Number:    slot,
 		Id:        result.Blockhash.String(),
 		ParentId:  fixedPreviousBlockHash,
 		Timestamp: timestamppb.New(result.BlockTime.Time()),

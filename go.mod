@@ -15,7 +15,6 @@ require (
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/solana-go v0.5.1-0.20230622180848-8faf68a7cb1d
 	github.com/test-go/testify v1.1.4
-	github.com/ybbus/jsonrpc v2.1.2+incompatible
 	go.uber.org/zap v1.26.0
 	google.golang.org/protobuf v1.31.0
 )
