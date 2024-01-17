@@ -15,7 +15,7 @@ import (
 )
 
 func Test_DoIt(t *testing.T) {
-	//t.Skip("TODO: fix this test")
+	t.Skip("Only for manual testing")
 	ctx := context.Background()
 	rpcClient := rpc.New(quicknodeURL) //put your own URL in a file call secret.go that will be ignore by git
 	f := NewRPC(rpcClient, 0*time.Millisecond, 0*time.Millisecond, zap.NewNop())
