@@ -249,16 +249,13 @@ func toPbTransactionMeta(meta *rpc.TransactionMeta) (*pbsol.TransactionStatusMet
 		PreBalances:             meta.PreBalances,
 		PostBalances:            meta.PostBalances,
 		InnerInstructions:       innerInstructions,
-		InnerInstructionsNone:   len(innerInstructions) == 0,
 		LogMessages:             meta.LogMessages,
-		LogMessagesNone:         len(meta.LogMessages) == 0,
 		PreTokenBalances:        toPbTokenBalances(meta.PreTokenBalances),
 		PostTokenBalances:       toPbTokenBalances(meta.PostTokenBalances),
 		Rewards:                 toPBReward(meta.Rewards),
 		LoadedWritableAddresses: toPbWritableAddresses(meta.LoadedAddresses.Writable),
 		LoadedReadonlyAddresses: toPbReadonlyAddresses(meta.LoadedAddresses.ReadOnly),
 		ReturnData:              returnData,
-		ReturnDataNone:          returnData == nil,
 		ComputeUnitsConsumed:    meta.ComputeUnitsConsumed,
 	}, nil
 }
@@ -285,7 +282,9 @@ func toPbReturnData(data rpc.ReturnData) (*pbsol.ReturnData, error) {
 func toPbReadonlyAddresses(readonlyAddresses solana.PublicKeySlice) [][]byte {
 	var out [][]byte
 	for _, readonlyAddresse := range readonlyAddresses {
-		out = append(out, readonlyAddresse[:])
+		o := make([]byte, len(readonlyAddresse))
+		copy(o, readonlyAddresse[:])
+		out = append(out, o)
 	}
 	return out
 }
@@ -293,7 +292,9 @@ func toPbReadonlyAddresses(readonlyAddresses solana.PublicKeySlice) [][]byte {
 func toPbWritableAddresses(writableAddresses solana.PublicKeySlice) [][]byte {
 	var out [][]byte
 	for _, writableAddresse := range writableAddresses {
-		out = append(out, writableAddresse[:])
+		o := make([]byte, len(writableAddresse))
+		copy(o, writableAddresse[:])
+		out = append(out, o)
 	}
 	return out
 }
@@ -417,8 +418,11 @@ func toPbInstructions(instructions []solana.CompiledInstruction) []*pbsol.Compil
 
 func toPbAddressTableLookups(addressTableLookups solana.MessageAddressTableLookupSlice) (out []*pbsol.MessageAddressTableLookup) {
 	for _, addressTableLookup := range addressTableLookups {
+		o := make([]byte, len(addressTableLookup.AccountKey))
+		copy(o, addressTableLookup.AccountKey[:])
+
 		out = append(out, &pbsol.MessageAddressTableLookup{
-			AccountKey:      addressTableLookup.AccountKey[:],
+			AccountKey:      o,
 			WritableIndexes: addressTableLookup.WritableIndexes,
 			ReadonlyIndexes: addressTableLookup.ReadonlyIndexes,
 		})
@@ -428,7 +432,8 @@ func toPbAddressTableLookups(addressTableLookups solana.MessageAddressTableLooku
 
 func toPbAccountKeys(accountKeys []solana.PublicKey) (out [][]byte) {
 	for _, accountKey := range accountKeys {
-		a := accountKey[:]
+		a := make([]byte, len(accountKey))
+		copy(a, accountKey[:])
 		out = append(out, a)
 	}
 	return
@@ -444,7 +449,10 @@ func toPbMessageHeader(header solana.MessageHeader) *pbsol.MessageHeader {
 
 func toPbSignatures(signatures []solana.Signature) (out [][]byte) {
 	for _, signature := range signatures {
-		out = append(out, signature[:])
+		s := make([]byte, len(signature))
+		copy(s, signature[:])
+
+		out = append(out, s)
 	}
 	return
 }

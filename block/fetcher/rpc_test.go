@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gagliardetto/solana-go"
+
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
 	bin "github.com/streamingfast/binary"
@@ -174,4 +176,19 @@ func Test_InstructionEncode(t *testing.T) {
 
 		})
 	}
+}
+
+func Test_toPbAccountKeys(t *testing.T) {
+	accounts := []solana.PublicKey{
+		solana.MustPublicKeyFromBase58("EXsJCamTqHJqRqNaB4ZAszGpFw6psMsk9HfjkrrWwJBc"),
+		solana.MustPublicKeyFromBase58("8F1yhZvTwrFq5SqJ5PH2VLRRwULUGYHju84FjMtDbJPJ"),
+		solana.MustPublicKeyFromBase58("Vote111111111111111111111111111111111111111"),
+	}
+	pbAccounts := toPbAccountKeys(accounts)
+	expected := [][]byte{
+		accounts[0][:],
+		accounts[1][:],
+		accounts[2][:],
+	}
+	require.Equal(t, expected, pbAccounts)
 }
