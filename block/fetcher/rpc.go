@@ -106,6 +106,7 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 		return nil, fmt.Errorf("decoding block %d: %w", resolvedSlot, err)
 	}
 
+	f.logger.Info("fetched block", zap.Uint64("block_num", resolvedSlot), zap.String("block_hash", blockResult.Blockhash.String()))
 	return block, nil
 }
 
