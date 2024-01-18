@@ -148,8 +148,8 @@ func blockFromBlockResult(slot uint64, confirmedSlot uint64, finalizedSlot uint6
 		return nil, fmt.Errorf("decoding transactions: %w", err)
 	}
 	block := &pbsol.Block{
-		PreviousBlockhash: result.PreviousBlockhash.String(),
-		Blockhash:         fixedPreviousBlockHash,
+		PreviousBlockhash: fixedPreviousBlockHash,
+		Blockhash:         result.Blockhash.String(),
 		ParentSlot:        result.ParentSlot,
 		Transactions:      transactions,
 		Rewards:           toPBReward(result.Rewards),
@@ -238,23 +238,26 @@ func toPbTransactionMeta(meta *rpc.TransactionMeta) (*pbsol.TransactionStatusMet
 	if err != nil {
 		return nil, fmt.Errorf("decoding return data: %w", err)
 	}
+
+	innerInstructions := toPbInnerInstructions(meta.InnerInstructions)
+
 	trxErr, err := toPbTransactionError(meta.Err)
 	return &pbsol.TransactionStatusMeta{
 		Err:                     trxErr,
 		Fee:                     meta.Fee,
 		PreBalances:             meta.PreBalances,
 		PostBalances:            meta.PostBalances,
-		InnerInstructions:       toPbInnerInstructions(meta.InnerInstructions),
-		InnerInstructionsNone:   false, //todo: should we remove?
+		InnerInstructions:       innerInstructions,
+		InnerInstructionsNone:   len(innerInstructions) == 0,
 		LogMessages:             meta.LogMessages,
-		LogMessagesNone:         false, //todo: should we remove?
+		LogMessagesNone:         len(meta.LogMessages) == 0,
 		PreTokenBalances:        toPbTokenBalances(meta.PreTokenBalances),
 		PostTokenBalances:       toPbTokenBalances(meta.PostTokenBalances),
 		Rewards:                 toPBReward(meta.Rewards),
 		LoadedWritableAddresses: toPbWritableAddresses(meta.LoadedAddresses.Writable),
 		LoadedReadonlyAddresses: toPbReadonlyAddresses(meta.LoadedAddresses.ReadOnly),
 		ReturnData:              returnData,
-		ReturnDataNone:          false, //todo: should we remove?
+		ReturnDataNone:          returnData == nil,
 		ComputeUnitsConsumed:    meta.ComputeUnitsConsumed,
 	}, nil
 }
@@ -424,7 +427,8 @@ func toPbAddressTableLookups(addressTableLookups solana.MessageAddressTableLooku
 
 func toPbAccountKeys(accountKeys []solana.PublicKey) (out [][]byte) {
 	for _, accountKey := range accountKeys {
-		out = append(out, accountKey[:])
+		a := accountKey[:]
+		out = append(out, a)
 	}
 	return
 }
