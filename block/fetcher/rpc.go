@@ -351,11 +351,13 @@ func compileInstructionsToPbInnerInstructionArray(instructions []solana.Compiled
 			accounts = append(accounts, byte(account))
 		}
 
+		stackHeight := compiledInstruction.StackHeight
+
 		out = append(out, &pbsol.InnerInstruction{
 			ProgramIdIndex: uint32(compiledInstruction.ProgramIDIndex),
 			Accounts:       accounts,
 			Data:           compiledInstruction.Data,
-			StackHeight:    &compiledInstruction.StackHeight, //not return by the rpc endpoint getBlockCall
+			StackHeight:    &stackHeight,
 		})
 	}
 	return

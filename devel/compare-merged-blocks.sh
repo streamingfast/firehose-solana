@@ -26,7 +26,7 @@ function process_block_range() {
 #  local block_range="$start_block:$stop_block"
   local block_range="$start_block"
 
-  firecore tools print merged-blocks "/Users/cbillett/t/data/storage/merged-blocks" "$block_range" -o jsonl > "/tmp/merged-blocks-compare/$output_file"
+  firecore tools print merged-blocks "/Users/arnaudberger/t/data/storage/merged-blocks" "$block_range" -o jsonl > "/tmp/merged-blocks-compare/$output_file"
 
     echo "$output_file"
 }
