@@ -148,17 +148,27 @@ func blockFromBlockResult(slot uint64, confirmedSlot uint64, finalizedSlot uint6
 	if err != nil {
 		return nil, fmt.Errorf("decoding transactions: %w", err)
 	}
+
+	var blockTime *pbsol.UnixTimestamp
+	if result.BlockTime != nil {
+		blockTime = pbsol.NewUnixTimestamp(result.BlockTime.Time())
+	}
+
+	var blockHeight *pbsol.BlockHeight
+	if result.BlockHeight != nil {
+		blockHeight = &pbsol.BlockHeight{
+			BlockHeight: *result.BlockHeight,
+		}
+	}
 	block := &pbsol.Block{
 		PreviousBlockhash: fixedPreviousBlockHash,
 		Blockhash:         result.Blockhash.String(),
 		ParentSlot:        result.ParentSlot,
 		Transactions:      transactions,
 		Rewards:           toPBReward(result.Rewards),
-		BlockTime:         pbsol.NewUnixTimestamp(result.BlockTime.Time()),
-		BlockHeight: &pbsol.BlockHeight{
-			BlockHeight: *result.BlockHeight,
-		},
-		Slot: slot,
+		BlockTime:         blockTime,
+		BlockHeight:       blockHeight,
+		Slot:              slot,
 	}
 
 	payload, err := anypb.New(block)
@@ -166,11 +176,15 @@ func blockFromBlockResult(slot uint64, confirmedSlot uint64, finalizedSlot uint6
 		return nil, fmt.Errorf("unable to marshal block: %w", err)
 	}
 
+	var timeStamp *timestamppb.Timestamp
+	if result.BlockTime != nil {
+		timeStamp = timestamppb.New(result.BlockTime.Time())
+	}
 	pbBlock := &pbbstream.Block{
 		Number:    slot,
 		Id:        result.Blockhash.String(),
 		ParentId:  fixedPreviousBlockHash,
-		Timestamp: timestamppb.New(result.BlockTime.Time()),
+		Timestamp: timeStamp,
 		LibNum:    libNum,
 		ParentNum: result.ParentSlot,
 		Payload:   payload,
@@ -235,6 +249,9 @@ func toPbTransactions(transactions []rpc.TransactionWithMeta) (out []*pbsol.Conf
 }
 
 func toPbTransactionMeta(meta *rpc.TransactionMeta) (*pbsol.TransactionStatusMeta, error) {
+	if meta == nil {
+		return &pbsol.TransactionStatusMeta{}, nil
+	}
 	returnData, err := toPbReturnData(meta.ReturnData)
 	if err != nil {
 		return nil, fmt.Errorf("decoding return data: %w", err)
@@ -351,19 +368,22 @@ func compileInstructionsToPbInnerInstructionArray(instructions []solana.Compiled
 			accounts = append(accounts, byte(account))
 		}
 
-		var stackHeight *uint32
-		if compiledInstruction.StackHeight > 0 {
-			stackHeight = &compiledInstruction.StackHeight
-		}
-
 		out = append(out, &pbsol.InnerInstruction{
 			ProgramIdIndex: uint32(compiledInstruction.ProgramIDIndex),
 			Accounts:       accounts,
 			Data:           compiledInstruction.Data,
-			StackHeight:    stackHeight,
+			StackHeight:    toStackHeight(compiledInstruction.StackHeight),
 		})
 	}
 	return
+}
+
+func toStackHeight(stackHeight uint32) *uint32 {
+	if stackHeight == 0 {
+		return nil
+	}
+	s := stackHeight
+	return &s
 }
 
 func toPbTransactionError(e interface{}) (*pbsol.TransactionError, error) {
