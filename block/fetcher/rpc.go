@@ -351,13 +351,16 @@ func compileInstructionsToPbInnerInstructionArray(instructions []solana.Compiled
 			accounts = append(accounts, byte(account))
 		}
 
-		stackHeight := compiledInstruction.StackHeight
+		var stackHeight *uint32
+		if compiledInstruction.StackHeight > 0 {
+			stackHeight = &compiledInstruction.StackHeight
+		}
 
 		out = append(out, &pbsol.InnerInstruction{
 			ProgramIdIndex: uint32(compiledInstruction.ProgramIDIndex),
 			Accounts:       accounts,
 			Data:           compiledInstruction.Data,
-			StackHeight:    &stackHeight,
+			StackHeight:    stackHeight,
 		})
 	}
 	return

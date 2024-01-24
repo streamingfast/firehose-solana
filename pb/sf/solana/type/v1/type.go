@@ -3,9 +3,8 @@ package pbsol
 import (
 	"time"
 
-	"go.uber.org/zap/zapcore"
-
 	"github.com/mr-tron/base58"
+	"go.uber.org/zap/zapcore"
 )
 
 func (x *Block) GetFirehoseBlockID() string {
