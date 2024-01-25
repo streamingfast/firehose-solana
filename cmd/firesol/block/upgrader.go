@@ -69,6 +69,7 @@ func getMergedBlockUpgrader(rootLog *zap.Logger) func(cmd *cobra.Command, args [
 			LowBlockNum:  firecore.LowBoundary(start),
 			StopBlockNum: stop,
 			TweakBlock:   setParentBlockNumber,
+			Logger:       rootLog,
 		}
 		blockStream := stream.New(nil, sourceStore, nil, int64(start), writer, stream.WithFinalBlocksOnly())
 

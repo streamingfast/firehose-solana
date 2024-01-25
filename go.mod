@@ -2,6 +2,12 @@ module github.com/streamingfast/firehose-solana
 
 go 1.21
 
+replace (
+	github.com/gagliardetto/solana-go => github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240115191424-05c37cd0760d
+	github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
+	github.com/jhump/protoreflect => github.com/streamingfast/protoreflect v0.0.0-20231205191344-4b629d20ce8d
+)
+
 require (
 	cloud.google.com/go/bigtable v1.13.0
 	github.com/gagliardetto/solana-go v1.8.4
@@ -11,7 +17,7 @@ require (
 	github.com/streamingfast/binary v0.0.0-20240116152459-ebe30de95370
 	github.com/streamingfast/bstream v0.0.2-0.20240118123300-2bc69dde3598
 	github.com/streamingfast/cli v0.0.4-0.20230825151644-8cc84512cd80
-	github.com/streamingfast/firehose-core v1.0.1-0.20240109054458-3f1edeff522c
+	github.com/streamingfast/firehose-core v1.0.1-0.20240125145615-f0391d8bb0fc
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/solana-go v0.5.1-0.20230622180848-8faf68a7cb1d
 	github.com/test-go/testify v1.1.4
@@ -195,13 +201,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.1.7 // indirect
-)
-
-replace (
-	github.com/ShinyTrinkets/overseer => github.com/dfuse-io/overseer v0.2.1-0.20191024193921-39856397cf3f
-	github.com/bytecodealliance/wasmtime-go/v4 => github.com/streamingfast/wasmtime-go/v4 v4.0.0-freemem3
-	github.com/gagliardetto/solana-go => github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240115191424-05c37cd0760d
-	github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
-	github.com/jhump/protoreflect => github.com/streamingfast/protoreflect v0.0.0-20231205191344-4b629d20ce8d
-	github.com/streamingfast/firehose-core => ../firehose-core
 )
