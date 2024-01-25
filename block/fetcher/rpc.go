@@ -91,10 +91,11 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 		if err != nil {
 			var rpcErr *jsonrpc.RPCError
 			errors.As(err, &rpcErr)
-			if rpcErr != nil && rpcErr.Code == -32009 {
+			if rpcErr != nil && (rpcErr.Code == -32009 || rpcErr.Code == -32007) {
 				requestedSlot += 1
 				continue
 			}
+
 			f.logger.Warn("fetching block failed", zap.Uint64("block_num", requestedSlot), zap.Error(err))
 			return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
 		}
