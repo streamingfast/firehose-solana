@@ -20,9 +20,7 @@ function fetch_rpc_blocks_for_range() {
   local stop_block=$3
   rm -rf ~/t/data/
 
-  #Call the rpc here to check if the start_block is skipped, if it is, then start block is equal to start_block +1. If the error code is -32009 or -32007
-
-
+  #Check if start block is skipped, if its the case, increment it until we find a block (Otherwise, the merger will fail)
   while :; do
           json_data='
             {
