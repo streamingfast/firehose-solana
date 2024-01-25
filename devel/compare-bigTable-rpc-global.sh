@@ -13,11 +13,6 @@ rpc_endpoint="$RPC_ENDPOINT"
 reference_storage="$REFERENCE_STORAGE"
 current_storage="$CURRENT_STORAGE"
 
-# Now use the variables directly
-echo "RPC Endpoint: ${rpc_endpoint}"
-echo "Reference Storage: $REFERENCE_STORAGE"
-echo "Current Storage: $CURRENT_STORAGE"
-
 function fetch_rpc_blocks_for_range() {
   local rpc_endpoint=$1
   local start_block=$2
