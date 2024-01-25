@@ -86,21 +86,6 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 	}
 
 	resolvedSlot, blockResult, err := f.fetch(ctx, requestedSlot)
-	for {
-		blockResult, err = f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
-		if err != nil {
-			var rpcErr *jsonrpc.RPCError
-			errors.As(err, &rpcErr)
-			if rpcErr != nil && (rpcErr.Code == -32009 || rpcErr.Code == -32007) {
-				requestedSlot += 1
-				continue
-			}
-
-			f.logger.Warn("fetching block failed", zap.Uint64("block_num", requestedSlot), zap.Error(err))
-			return nil, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
-		}
-		break
-	}
 
 	block, err := blockFromBlockResult(resolvedSlot, f.latestConfirmedSlot, f.latestFinalizedSlot, blockResult)
 	if err != nil {
@@ -121,10 +106,11 @@ func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (slot uint
 	for {
 		//f.logger.Info("getting block", zap.Uint64("block_num", currentSlot))
 		resolvedSlot, blockResult, err := f.fetchBlock(ctx, currentSlot)
+
 		if err != nil {
 			var rpcErr *jsonrpc.RPCError
 			if errors.As(err, &rpcErr) {
-				if rpcErr.Code == -32009 {
+				if rpcErr.Code == -32009 || rpcErr.Code == -32007 {
 					f.logger.Info("block was skipped", zap.Uint64("block_num", currentSlot))
 					currentSlot += 1
 					continue
