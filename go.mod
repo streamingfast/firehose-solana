@@ -17,6 +17,7 @@ require (
 	github.com/streamingfast/binary v0.0.0-20240116152459-ebe30de95370
 	github.com/streamingfast/bstream v0.0.2-0.20240118123300-2bc69dde3598
 	github.com/streamingfast/cli v0.0.4-0.20230825151644-8cc84512cd80
+	github.com/streamingfast/dstore v0.1.1-0.20230620124109-3924b3b36c77
 	github.com/streamingfast/firehose-core v1.0.1-0.20240125145615-f0391d8bb0fc
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/solana-go v0.5.1-0.20230622180848-8faf68a7cb1d
@@ -155,7 +156,6 @@ require (
 	github.com/streamingfast/dgrpc v0.0.0-20240119162453-69517bcc1a7f // indirect
 	github.com/streamingfast/dmetering v0.0.0-20231120142327-a3405f0eed83 // indirect
 	github.com/streamingfast/dmetrics v0.0.0-20230919161904-206fa8ebd545 // indirect
-	github.com/streamingfast/dstore v0.1.1-0.20230620124109-3924b3b36c77 // indirect
 	github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839 // indirect
 	github.com/streamingfast/jsonpb v0.0.0-20210811021341-3670f0aa02d0 // indirect
 	github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 // indirect

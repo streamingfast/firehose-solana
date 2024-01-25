@@ -704,7 +704,7 @@ github.com/streamingfast/dstore v0.1.1-0.20230620124109-3924b3b36c77 h1:u7FWLqz3
 github.com/streamingfast/dstore v0.1.1-0.20230620124109-3924b3b36c77/go.mod h1:ngKU7WzHwVjOFpt2g+Wtob5mX4IvN90HYlnARcTRbmQ=
 github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839 h1:K6mJPvh1jAL+/gBS7Bh9jyzWaTib6N47m06gZOTUPwQ=
 github.com/streamingfast/dtracing v0.0.0-20220305214756-b5c0e8699839/go.mod h1:huOJyjMYS6K8upTuxDxaNd+emD65RrXoVBvh8f1/7Ns=
-github.com/streamingfast/firehose-core v1.0.1-0.20240109054458-3f1edeff522c/go.mod h1:Y/Sza/3iOeabRhVC/hPoRx21jZDcyQFBYRNR8wgIk7I=
+github.com/streamingfast/firehose-core v1.0.1-0.20240125145615-f0391d8bb0fc h1:Ev9HCxuf5KzN0WExOehO5y+5gSadBJPWoQwuSWfZYcM=
 github.com/streamingfast/firehose-core v1.0.1-0.20240125145615-f0391d8bb0fc/go.mod h1:S5vyCE7eLhrFoPe7XiJQmEou9FF4YBo8t7DeZhHjTUY=
 github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240115191424-05c37cd0760d h1:Db3yKJeN5DWPz8pesR9tuFXdbs0MnpRLmov+ttsHoTU=
 github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240115191424-05c37cd0760d/go.mod h1:i+7aAyNDTHG0jK8GZIBSI4OVvDqkt2Qx+LklYclRNG8=
