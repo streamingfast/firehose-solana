@@ -3,7 +3,7 @@ echo "STARTING GLOBAL COMPARING!"
 
 # Initialize these variables as needed
 runningTimes=10
-current_block=11690600
+current_block=131690600
 eachNumberOfBlocks=10000000
 stop_block=240000000
 
@@ -56,7 +56,7 @@ function compare_reference_rpc_for_range() {
   local range=$1
   local reference_storage=$2
   local current_storage=$3
-  firesol tools compare-blocks ${reference_storage} ${current_storage}  ${range} --diff
+  firesol tools compare-blocks ${reference_storage} ${current_storage}  ${range} --diff --bytes-encoding base58
 }
 
 for i in $(seq 0 $runningTimes); do

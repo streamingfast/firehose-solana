@@ -15,6 +15,7 @@ import (
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 )
 
 func NewBlockCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
@@ -68,7 +69,7 @@ func getMergedBlockUpgrader(rootLog *zap.Logger) func(cmd *cobra.Command, args [
 			Store:        destStore,
 			LowBlockNum:  firecore.LowBoundary(start),
 			StopBlockNum: stop,
-			TweakBlock:   setParentBlockNumber,
+			TweakBlock:   tweakBlock,
 			Logger:       rootLog,
 		}
 		blockStream := stream.New(nil, sourceStore, nil, int64(start), writer, stream.WithFinalBlocksOnly())
@@ -82,7 +83,7 @@ func getMergedBlockUpgrader(rootLog *zap.Logger) func(cmd *cobra.Command, args [
 	}
 }
 
-func setParentBlockNumber(block *pbbstream.Block) (*pbbstream.Block, error) {
+func tweakBlock(block *pbbstream.Block) (*pbbstream.Block, error) {
 	b := &pbsol.Block{}
 	err := block.Payload.UnmarshalTo(b)
 	if err != nil {
@@ -90,5 +91,16 @@ func setParentBlockNumber(block *pbbstream.Block) (*pbbstream.Block, error) {
 	}
 
 	block.ParentNum = b.ParentSlot
+
+	slices.SortFunc(b.Rewards, func(a, b *pbsol.Reward) bool {
+		return a.Lamports > b.Lamports
+	})
+
+	err = block.Payload.MarshalFrom(b)
+
+	if err != nil {
+		return nil, fmt.Errorf("marshaling solana block %d: %w", block.Number, err)
+	}
+
 	return block, nil
 }
