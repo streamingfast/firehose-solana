@@ -124,6 +124,20 @@ func Test_TrxErrorEncode(t *testing.T) {
 			},
 			expected: []byte{8, 0, 0, 0, 0, 25, 0, 0, 0, 42, 0, 0, 0},
 		},
+		{
+			name: "custom",
+			trxErr: &TransactionError{
+				TrxErrCode: TrxErr_InstructionError,
+				detail: &InstructionError{
+					InstructionErrorCode: 25,
+					InstructionIndex:     0,
+					detail: InstructionCustomError{
+						CustomErrorCode: 0,
+					},
+				},
+			},
+			expected: []byte{8, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0},
+		},
 	}
 
 	for _, c := range cases {
