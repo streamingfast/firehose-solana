@@ -305,13 +305,25 @@ func toPbWritableAddresses(writableAddresses solana.PublicKeySlice) [][]byte {
 
 func toPbTokenBalances(balances []rpc.TokenBalance) []*pbsol.TokenBalance {
 	var out []*pbsol.TokenBalance
+
 	for _, balance := range balances {
+		var owner string
+		if balance.Owner != nil {
+			owner = balance.Owner.String()
+		}
+
+		var programId string
+
+		if balance.ProgramId.String() != "11111111111111111111111111111111" {
+			programId = balance.ProgramId.String()
+		}
+
 		out = append(out, &pbsol.TokenBalance{
 			AccountIndex:  uint32(balance.AccountIndex),
 			Mint:          balance.Mint.String(),
 			UiTokenAmount: toPbUiTokenAmount(balance.UiTokenAmount),
-			Owner:         balance.Owner.String(),
-			ProgramId:     balance.ProgramId.String(),
+			Owner:         owner,
+			ProgramId:     programId,
 		})
 	}
 	return out
@@ -478,6 +490,7 @@ func toPBReward(rewards []rpc.BlockReward) (out []*pbsol.Reward) {
 			RewardType:  toPBRewardType(reward.RewardType),
 		})
 	}
+
 	return
 }
 
