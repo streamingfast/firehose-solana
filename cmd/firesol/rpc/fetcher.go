@@ -28,6 +28,7 @@ func NewFetchCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 
 	cmd.Flags().String("state-dir", "/data/poller", "interval between fetch")
 	cmd.Flags().Duration("interval-between-fetch", 0, "interval between fetch")
+	cmd.Flags().Int("block-fetch-batch-size", 10, "Number of blocks to fetch in a single batch")
 
 	return cmd
 }
@@ -87,7 +88,7 @@ func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecut
 			break
 		}
 
-		err = poller.Run(ctx, startBlock, bstream.NewBlockRef(requestedBlock.Blockhash.String(), latestSlot))
+		err = poller.Run(ctx, startBlock, bstream.NewBlockRef(requestedBlock.Blockhash.String(), latestSlot), sflags.MustGetInt(cmd, "block-fetch-batch-size"))
 		if err != nil {
 			return fmt.Errorf("running poller: %w", err)
 		}

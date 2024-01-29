@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.2
 
-FROM ghcr.io/streamingfast/firehose-core:f0391d8 as core
+FROM ghcr.io/streamingfast/firehose-core:f839e5d as core
 
 FROM ubuntu:20.04
 

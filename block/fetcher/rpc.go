@@ -41,7 +41,6 @@ type RPCFetcher struct {
 	fetchInterval            time.Duration
 	lastFetchAt              time.Time
 	logger                   *zap.Logger
-	fetchBlock               fetchBlock
 }
 
 func NewRPC(rpcClient *rpc.Client, fetchInterval time.Duration, latestBlockRetryInterval time.Duration, logger *zap.Logger) *RPCFetcher {
@@ -51,17 +50,16 @@ func NewRPC(rpcClient *rpc.Client, fetchInterval time.Duration, latestBlockRetry
 		latestBlockRetryInterval: latestBlockRetryInterval,
 		logger:                   logger,
 	}
-	f.fetchBlock = f.fetchRpcBlock
 	return f
 }
 
-func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbstream.Block, err error) {
+func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbstream.Block, skip bool, err error) {
 	f.logger.Info("fetching block", zap.Uint64("block_num", requestedSlot))
 
 	for f.latestConfirmedSlot < requestedSlot {
 		f.latestConfirmedSlot, err = f.rpcClient.GetSlot(ctx, rpc.CommitmentConfirmed)
 		if err != nil {
-			return nil, fmt.Errorf("fetching latestConfirmedSlot block num: %w", err)
+			return nil, false, fmt.Errorf("fetching latestConfirmedSlot block num: %w", err)
 		}
 
 		f.logger.Info("got latest confirmed slot block", zap.Uint64("latest_confirmed_slot", f.latestConfirmedSlot), zap.Uint64("block_num", requestedSlot))
@@ -75,7 +73,7 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 	for f.latestFinalizedSlot < requestedSlot {
 		f.latestFinalizedSlot, err = f.rpcClient.GetSlot(ctx, rpc.CommitmentFinalized)
 		if err != nil {
-			return nil, fmt.Errorf("fetching latest finalized Slot block num: %w", err)
+			return nil, false, fmt.Errorf("fetching latest finalized Slot block num: %w", err)
 		}
 
 		f.logger.Info("got latest finalized slot block", zap.Uint64("latest_finalized_slot", f.latestFinalizedSlot), zap.Uint64("block_num", requestedSlot))
@@ -87,44 +85,49 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 		break
 	}
 
-	resolvedSlot, blockResult, err := f.fetch(ctx, requestedSlot)
-
-	block, err := blockFromBlockResult(resolvedSlot, f.latestConfirmedSlot, f.latestFinalizedSlot, blockResult)
+	blockResult, skip, err := f.fetch(ctx, requestedSlot)
 	if err != nil {
-		return nil, fmt.Errorf("decoding block %d: %w", resolvedSlot, err)
+		return nil, false, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
 	}
 
-	f.logger.Info("fetched block", zap.Uint64("block_num", resolvedSlot), zap.String("block_hash", blockResult.Blockhash.String()))
-	return block, nil
+	if skip {
+		return nil, true, nil
+	}
+
+	block, err := blockFromBlockResult(requestedSlot, f.latestFinalizedSlot, blockResult)
+	if err != nil {
+		return nil, false, fmt.Errorf("decoding block %d: %w", requestedSlot, err)
+	}
+
+	f.logger.Info("fetched block", zap.Uint64("block_num", requestedSlot), zap.String("block_hash", blockResult.Blockhash.String()))
+	return block, false, nil
 }
 
-func (f *RPCFetcher) fetchRpcBlock(ctx context.Context, requestedSlot uint64) (slot uint64, out *rpc.GetBlockResult, err error) {
+func (f *RPCFetcher) fetchRpcBlock(ctx context.Context, requestedSlot uint64) (out *rpc.GetBlockResult, err error) {
 	b, err := f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
-	return requestedSlot, b, err
+	return b, err
 }
 
-func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (slot uint64, out *rpc.GetBlockResult, err error) {
+func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (out *rpc.GetBlockResult, skip bool, err error) {
 	currentSlot := requestedSlot
-	for {
-		//f.logger.Info("getting block", zap.Uint64("block_num", currentSlot))
-		resolvedSlot, blockResult, err := f.fetchBlock(ctx, currentSlot)
+	//f.logger.Info("getting block", zap.Uint64("block_num", currentSlot))
+	blockResult, err := f.fetchRpcBlock(ctx, currentSlot)
 
-		if err != nil {
-			var rpcErr *jsonrpc.RPCError
-			if errors.As(err, &rpcErr) {
-				if rpcErr.Code == -32009 || rpcErr.Code == -32007 {
-					f.logger.Info("block was skipped", zap.Uint64("block_num", currentSlot))
-					currentSlot += 1
-					continue
-				}
+	if err != nil {
+		var rpcErr *jsonrpc.RPCError
+		if errors.As(err, &rpcErr) {
+			if rpcErr.Code == -32009 || rpcErr.Code == -32007 {
+				f.logger.Info("block was skipped", zap.Uint64("block_num", currentSlot))
+				currentSlot += 1
+				return nil, true, nil
 			}
-			return 0, nil, fmt.Errorf("fetching block %d: %w", currentSlot, err)
 		}
-		return resolvedSlot, blockResult, nil
+		return nil, false, fmt.Errorf("fetching block %d: %w", currentSlot, err)
 	}
+	return blockResult, false, nil
 }
 
-func blockFromBlockResult(slot uint64, confirmedSlot uint64, finalizedSlot uint64, result *rpc.GetBlockResult) (*pbbstream.Block, error) {
+func blockFromBlockResult(slot uint64, finalizedSlot uint64, result *rpc.GetBlockResult) (*pbbstream.Block, error) {
 	libNum := finalizedSlot
 
 	if finalizedSlot > slot {
