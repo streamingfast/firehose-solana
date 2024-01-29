@@ -9,6 +9,8 @@ import (
 	"math"
 	"time"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
@@ -490,6 +492,10 @@ func toPBReward(rewards []rpc.BlockReward) (out []*pbsol.Reward) {
 			RewardType:  toPBRewardType(reward.RewardType),
 		})
 	}
+
+	slices.SortFunc(out, func(a, b *pbsol.Reward) bool {
+		return a.Lamports > b.Lamports
+	})
 
 	return
 }
