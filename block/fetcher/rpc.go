@@ -53,6 +53,10 @@ func NewRPC(rpcClient *rpc.Client, fetchInterval time.Duration, latestBlockRetry
 	return f
 }
 
+func (f *RPCFetcher) IsBlockAvailable(requestedSlot uint64) bool {
+	return requestedSlot <= f.latestConfirmedSlot
+}
+
 func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbstream.Block, skip bool, err error) {
 	f.logger.Info("fetching block", zap.Uint64("block_num", requestedSlot))
 
@@ -103,15 +107,10 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 	return block, false, nil
 }
 
-func (f *RPCFetcher) fetchRpcBlock(ctx context.Context, requestedSlot uint64) (out *rpc.GetBlockResult, err error) {
-	b, err := f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
-	return b, err
-}
-
 func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (out *rpc.GetBlockResult, skip bool, err error) {
 	currentSlot := requestedSlot
 	//f.logger.Info("getting block", zap.Uint64("block_num", currentSlot))
-	blockResult, err := f.fetchRpcBlock(ctx, currentSlot)
+	blockResult, err := f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
 
 	if err != nil {
 		var rpcErr *jsonrpc.RPCError
