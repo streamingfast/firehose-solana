@@ -77,20 +77,11 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 		sleepDuration = f.latestBlockRetryInterval
 	}
 
-	sleepDuration = time.Duration(0)
-	for f.latestFinalizedSlot < requestedSlot {
-		time.Sleep(sleepDuration)
+	if f.latestFinalizedSlot < requestedSlot {
 		f.latestFinalizedSlot, err = f.rpcClient.GetSlot(ctx, rpc.CommitmentFinalized)
 		if err != nil {
 			return nil, false, fmt.Errorf("fetching latest finalized Slot block num: %w", err)
 		}
-
-		f.logger.Info("got latest finalized slot block", zap.Uint64("latest_finalized_slot", f.latestFinalizedSlot), zap.Uint64("request_block_num", requestedSlot))
-		//
-		if f.latestFinalizedSlot >= requestedSlot {
-			break
-		}
-		sleepDuration = f.latestBlockRetryInterval
 	}
 
 	blockResult, skip, err := f.fetch(ctx, requestedSlot)
