@@ -217,6 +217,12 @@ func fixPreviousBlockHash(blockResult *rpc.GetBlockResult) (previousFixedBlockHa
 			previousFixedBlockHash = "J6rRToKMK5DQDzVLqo7ibL3snwBYtqkYnRnQ7vXoUSEc"
 			return previousFixedBlockHash
 		}
+	case "2TLDT6Z3WJ5h5958BjdzMwmNGnVo3e4qcHyGBVgBPDm9":
+		//zlogger.Warn("applying horrible tweak to block 61,328,766")
+		if previousFixedBlockHash == "11111111111111111111111111111111" {
+			previousFixedBlockHash = "FCgBdK9Fufcsdc9RGu5SwMwbCFiw4SxNnJzCpZTdNpDq"
+			return previousFixedBlockHash
+		}
 	}
 
 	return blockResult.PreviousBlockhash.String()

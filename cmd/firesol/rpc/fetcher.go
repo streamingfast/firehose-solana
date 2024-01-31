@@ -28,6 +28,7 @@ func NewFetchCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 
 	cmd.Flags().String("state-dir", "/data/poller", "interval between fetch")
 	cmd.Flags().Duration("interval-between-fetch", 0, "interval between fetch")
+	cmd.Flags().Duration("latest-block-retry-interval", time.Second, "interval between fetch")
 	cmd.Flags().Int("block-fetch-batch-size", 10, "Number of blocks to fetch in a single batch")
 
 	return cmd
@@ -53,11 +54,12 @@ func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecut
 			zap.String("state_dir", stateDir),
 			zap.Uint64("first_streamable_block", startBlock),
 			zap.Duration("interval_between_fetch", fetchInterval),
+			zap.Duration("latest_block_retry_interval", sflags.MustGetDuration(cmd, "latest-block-retry-interval")),
 		)
 
 		rpcClient := rpc.New(rpcEndpoint)
 
-		latestBlockRetryInterval := 250 * time.Millisecond
+		latestBlockRetryInterval := sflags.MustGetDuration(cmd, "latest-block-retry-interval")
 		poller := blockpoller.New(
 			fetcher.NewRPC(rpcClient, fetchInterval, latestBlockRetryInterval, logger),
 			blockpoller.NewFireBlockHandler("type.googleapis.com/sf.solana.type.v1.Block"),

@@ -29,4 +29,3 @@ ENV PATH "$PATH:/app"
 COPY --from=core /app/firecore /app/firecore
 
 ENTRYPOINT ["/app/firesol"]
-
