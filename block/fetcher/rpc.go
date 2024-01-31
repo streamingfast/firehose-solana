@@ -84,6 +84,8 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 		}
 	}
 
+	f.logger.Info("fetching block", zap.Uint64("block_num", requestedSlot), zap.Uint64("latest_finalized_slot", f.latestFinalizedSlot), zap.Uint64("latest_confirmed_slot", f.latestConfirmedSlot))
+
 	blockResult, skip, err := f.fetch(ctx, requestedSlot)
 	if err != nil {
 		return nil, false, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
