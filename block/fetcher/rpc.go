@@ -9,18 +9,16 @@ import (
 	"math"
 	"time"
 
-	"github.com/streamingfast/derr"
-
-	"golang.org/x/exp/slices"
-
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
 	bin "github.com/streamingfast/binary"
 	pbbstream "github.com/streamingfast/bstream/pb/sf/bstream/v1"
+	"github.com/streamingfast/derr"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	sfsol "github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -62,6 +60,11 @@ func (f *RPCFetcher) IsBlockAvailable(requestedSlot uint64) bool {
 
 func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbstream.Block, skip bool, err error) {
 	f.logger.Info("fetching block", zap.Uint64("block_num", requestedSlot))
+
+	//THIS IS A FKG Ugly hack!
+	if requestedSlot >= 13334464 && requestedSlot <= 13334475 {
+		return nil, true, nil
+	}
 
 	sleepDuration := time.Duration(0)
 	for f.latestConfirmedSlot < requestedSlot {

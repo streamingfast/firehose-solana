@@ -73,6 +73,7 @@ message TransactionStatusMeta {
     optional uint64 compute_units_consumed = 16;
 }
 
+
 message TransactionError {
     bytes err = 1;
 }
