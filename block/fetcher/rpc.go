@@ -138,6 +138,9 @@ func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (*rpc.GetB
 				}
 			}
 		}
+		if out == nil {
+			panic("out is nil and innerErr is nil. This should not happen.")
+		}
 		return nil
 	})
 
