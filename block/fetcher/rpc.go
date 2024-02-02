@@ -101,7 +101,7 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 		return nil, true, nil
 	}
 
-	block, err := blockFromBlockResult(requestedSlot, f.latestFinalizedSlot, blockResult)
+	block, err := blockFromBlockResult(requestedSlot, f.latestFinalizedSlot, blockResult, f.logger)
 	if err != nil {
 		return nil, false, fmt.Errorf("decoding block %d: %w", requestedSlot, err)
 	}
@@ -139,14 +139,14 @@ func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (*rpc.GetB
 	return out, skipped, err
 }
 
-func blockFromBlockResult(slot uint64, finalizedSlot uint64, result *rpc.GetBlockResult) (*pbbstream.Block, error) {
+func blockFromBlockResult(slot uint64, finalizedSlot uint64, result *rpc.GetBlockResult, logger *zap.Logger) (*pbbstream.Block, error) {
 	libNum := finalizedSlot
 
 	if finalizedSlot > slot {
 		libNum = result.ParentSlot
 	}
 
-	fixedPreviousBlockHash := fixPreviousBlockHash(result)
+	fixedPreviousBlockHash := fixPreviousBlockHash(result, logger)
 
 	transactions, err := toPbTransactions(result.Transactions)
 	if err != nil {
@@ -198,46 +198,44 @@ func blockFromBlockResult(slot uint64, finalizedSlot uint64, result *rpc.GetBloc
 
 }
 
-func fixPreviousBlockHash(blockResult *rpc.GetBlockResult) (previousFixedBlockHash string) {
-	switch blockResult.Blockhash.String() {
-	case "Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v":
-		//zlogger.Warn("applying horrible tweak to block Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v")
-		if blockResult.PreviousBlockhash.String() == "11111111111111111111111111111111" {
-			previousFixedBlockHash = "HQEr9qcbUVBt2okfu755FdJvJrPYTSpzzmmyeWTj5oau"
-			return previousFixedBlockHash
-		}
-	case "6UFQveZ94DUKGbcLFoyayn1QwthVfD3ZqvrM2916pHCR":
-		//zlogger.Warn("applying horrible tweak to block 63,072,071")
-		if blockResult.PreviousBlockhash.String() == "11111111111111111111111111111111" {
-			previousFixedBlockHash = "7cLQx2cZvyKbGoMuutXEZ3peg3D21D5qbX19T5V1XEiK"
-			return previousFixedBlockHash
-		}
-	case "Fqbm7QvCTYnToXWcCw6nbkWhMmXx2Nv91LsXBrKraB43":
-		//zlogger.Warn("applying horrible tweak to block 53,135,959")
-		if previousFixedBlockHash == "11111111111111111111111111111111" {
-			previousFixedBlockHash = "RfXUrekgajPSb1R4CGFJWNaHTnB6p53Tzert4gouj2u"
-			return previousFixedBlockHash
-		}
-	case "ABp9G2NaPzM6kQbeyZYCYgdzL8JN9AxSSbCQG2X1K9UF":
-		//zlogger.Warn("applying horrible tweak to block 46,223,993")
-		if previousFixedBlockHash == "11111111111111111111111111111111" {
-			previousFixedBlockHash = "9F2C7TGqUpFu6krd8vQbUv64BskrneBSgY7U2QfrGx96"
-			return previousFixedBlockHash
-		}
-	case "ByUxmGuaT7iQS9qGS8on5xHRjiHXcGxvwPPaTGZXQyz7":
-		//zlogger.Warn("applying horrible tweak to block 61,328,766")
-		if previousFixedBlockHash == "11111111111111111111111111111111" {
-			previousFixedBlockHash = "J6rRToKMK5DQDzVLqo7ibL3snwBYtqkYnRnQ7vXoUSEc"
-			return previousFixedBlockHash
-		}
-	case "2TLDT6Z3WJ5h5958BjdzMwmNGnVo3e4qcHyGBVgBPDm9":
-		//zlogger.Warn("applying horrible tweak to block 61,328,766")
-		if previousFixedBlockHash == "11111111111111111111111111111111" {
-			previousFixedBlockHash = "FCgBdK9Fufcsdc9RGu5SwMwbCFiw4SxNnJzCpZTdNpDq"
-			return previousFixedBlockHash
-		}
-	}
+var blockToPatch = map[string]string{
+	"2TLDT6Z3WJ5h5958BjdzMwmNGnVo3e4qcHyGBVgBPDm9": "FCgBdK9Fufcsdc9RGu5SwMwbCFiw4SxNnJzCpZTdNpDq",
+	"AACrVjKzuvTLxmjC7Ktn5St1GkFHd9smvNHDf2dCPF5o": "4hkGhNnuuCFqD3w35KXJJvDyfkbSQHZgrUn7SKc7xy76",
+	"Dp1h2oCTMisFbT2EVmpd8thzEZA59sHy5cVEWpnAW9nK": "AkKwmqftQux3tBPZMkHUFEG1ShRj86my3PtLcsXiPEhC",
+	"3fDddQ4CMS1v2AQRhzTKoUV7bhUj7FnrrhgCR27sxbwL": "2hcGqX4YBiD5jcj3AvWCk2DNjN7gL8trnGVdBJ1bmHLw",
+	"HSrRb3iwKJafacyaDGY3U1UTEcW8fnR6RKJeXbcnjjJL": "bFjEKnrEytyyfgfvPn46tXYMjqyERfq5yQW8wETMj5b",
+	"4mjTfuxGqczLL2hHDsJc86Ni3GuiVHyRZ76xWzYEp1rd": "EWL4JSYcGNdgqEKc7LceGbSkLgLRvJPLxruXHaE5LBXz",
+	"FexbnjDrAshJSGUETr8DoB8hUrVbmEe9frxZuZE3YLj6": "5HP9qtrjKkYQgqijkkRJJUYY3EunSYWi7vH8RRoqVE5B",
+	"4kM9y9ucKjfoTmjt41Qn83xpZbBUgLDAbVfySKbyUcRD": "CAHggyj6n8ytmb5peziHDTaPyQGAjDuNRdBZhzNAPYUC",
+	"GHpc3nirTs9fj95andWPw4QX4jwi3Uu4NLJEKbWJ5YmX": "A8p44eo3n9nEyaCv5Mfa77DfJky2m5i6XRdZwBAqADM8",
+	"DhomkvG22nCYqwhoghtpsaoUsNwE3Sd5rP3uWDKk3dcd": "8CZuKdcphp4vs5emnNyPeguLLCtdCwyh4hmEy6XtZ9uo",
+	"Hde6FztxXayXcySpHdtNGK9HJGoNGzmDPLreqv1ocQJr": "AC27cduJoqJu86ETpajJmrwktZko5epUr1ezfLhx1Vzt",
+	"8VJJtvfTo5ixbEA4YyvuLiUQdi1x3fgeY78hhLohD9Dq": "77Wa7nyGcDJnY8wWhVWBAjzpxr3ovqH265ZpVjX6N4LA",
+	"GnjK9dG91VpLkWPNFZwqv6Dyp6FSVtgTTgcZp1Fc8gbU": "AGuB4sQ2xBQ7qLxHAE1jEDbEQun76LRVPpbsU7TA2Ceu",
+	"2p5J7RpEAcv7S1rFdubBd2Jsxk5A9gsPZPYEeZ3AFmPb": "37duR4zVdkmBDQf7nRbWwabzWdCTNY4YxrT7BXQCRnSz",
+	"GyRKbxESPzwQgzY9HGKCahzyCoYE5LPcAeybL5JA43Cv": "6A7Thgk1sWmX5RhygsqxsVKzXyRJTtUVrYCz5fjZEb6x",
+	"BXnB4SLEKHJiUeM6CShcQhG5kC5mXY6xmnzPYnU64sWH": "FyUTMMDb8u7jcQeuouoZ1JS72dbuqxeBvf8PFEZeXwBn",
+	"BTFfa2oTTsCecqmj8JVn5gdpLazAh58mqJFHCkiLMKHF": "CQzukbEBmT9Kf2VCeW8oV7ASvRitZwcB4tVdwdm3VmGN",
+	"7wwDCCNA9EfLiZQzzBZTZKPsJisWxVHNUbKkSWjmnaHg": "6UDRkQfuAHwtMyZVBi8ACoqk2HeumjhVBtGiLGfkwTMD",
+	"C8qCiSUrvjAcGizHDDUHwCfYYZnqDb6tnzsg7XYBKCZ3": "GnN1RorTCy3DCzCJxZjPjSQZaX2JvFbF1g7dMCMMmCiB",
+	"FBnxhciRnEKEtpwX7VRQLv55xCEmTHtRy7fEvjid2W8S": "A85UR6HfVfdNezrSBc7fQiNtbfZrYWXtEbjMuW3Mnqt7",
+	"9WgaJZbYTD4WpTQnQtia87xbb9y3iqsdWJNVzcLG7rX9": "9YWWR5h3tPHKgm6ZpGAHisdeYGyjtNbwXiyLUvKzqP3H",
+	"3BzDxbNwCgtCDdg74KC6LFnDJVAyJeqtSwKuFL4cufx9": "9d8LkjdgGxVJfB5PUnhFUr2r7w8hMmKeoEQg7Kg2jFiJ",
+	"CKL5Pd6f85jtdrLibnbVtnY8VatS9rjBsX8ztD6wAfdj": "7uBfGie2UTW7sUfnZvvYbXi1y5BTUdUWTYhX2WxhYTSf",
+	"7x3cd4zzTMn9ixa4unPN2UGi4ctU8qEpqVAwyC9dwvZe": "4VoUxo2RrJ1reriLMUzuA3VaKuGKqMszXY7KDt6i4cpP",
+	"Goi3t9JjgDkyULZbM2TzE5QqHP1fPeMcHNaXNFBCBv1v": "HQEr9qcbUVBt2okfu755FdJvJrPYTSpzzmmyeWTj5oau",
+	"6UFQveZ94DUKGbcLFoyayn1QwthVfD3ZqvrM2916pHCR": "7cLQx2cZvyKbGoMuutXEZ3peg3D21D5qbX19T5V1XEiK",
+	"Fqbm7QvCTYnToXWcCw6nbkWhMmXx2Nv91LsXBrKraB43": "RfXUrekgajPSb1R4CGFJWNaHTnB6p53Tzert4gouj2u",
+	"ABp9G2NaPzM6kQbeyZYCYgdzL8JN9AxSSbCQG2X1K9UF": "9F2C7TGqUpFu6krd8vQbUv64BskrneBSgY7U2QfrGx96",
+	"ByUxmGuaT7iQS9qGS8on5xHRjiHXcGxvwPPaTGZXQyz7": "J6rRToKMK5DQDzVLqo7ibL3snwBYtqkYnRnQ7vXoUSEc",
+}
 
+func fixPreviousBlockHash(blockResult *rpc.GetBlockResult, logger *zap.Logger) (previousFixedBlockHash string) {
+	if prev, ok := blockToPatch[blockResult.Blockhash.String()]; ok {
+		logger.Info("patching previous block hash", zap.String("block_hash", blockResult.Blockhash.String()), zap.String("previous_block_hash", prev))
+		return prev
+
+	}
 	return blockResult.PreviousBlockhash.String()
 }
 
