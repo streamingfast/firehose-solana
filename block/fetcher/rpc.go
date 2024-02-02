@@ -101,6 +101,10 @@ func (f *RPCFetcher) Fetch(ctx context.Context, requestedSlot uint64) (out *pbbs
 		return nil, true, nil
 	}
 
+	if blockResult == nil {
+		panic("blockResult is nil and skip is false. This should not happen.")
+	}
+
 	block, err := blockFromBlockResult(requestedSlot, f.latestFinalizedSlot, blockResult, f.logger)
 	if err != nil {
 		return nil, false, fmt.Errorf("decoding block %d: %w", requestedSlot, err)
@@ -136,6 +140,10 @@ func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (*rpc.GetB
 		}
 		return nil
 	})
+
+	if err != nil {
+		return nil, false, fmt.Errorf("after retrying fetch block %d: %w", requestedSlot, err)
+	}
 	return out, skipped, err
 }
 
