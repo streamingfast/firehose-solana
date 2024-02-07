@@ -92,3 +92,4 @@ venv
 /firehose-data/storage/one-blocks/0240816597-AQipdgoR9gVQLc2k-juycmDi3U5EMAugh-240816596-default.dbin.zst
 /firehose-data/storage/one-blocks/0240816598-nRQqTFc22RED3W5g-AQipdgoR9gVQLc2k-240816597-default.dbin.zst
 /firehose-data/storage/one-blocks/0240816599-fUUN3FS7js2v2wci-nRQqTFc22RED3W5g-240816598-default.dbin.zst
+/block/fetcher/secret.go
