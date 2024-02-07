@@ -237,6 +237,7 @@ var blockToPatch = map[string]string{
 	"Fqbm7QvCTYnToXWcCw6nbkWhMmXx2Nv91LsXBrKraB43": "RfXUrekgajPSb1R4CGFJWNaHTnB6p53Tzert4gouj2u",
 	"ABp9G2NaPzM6kQbeyZYCYgdzL8JN9AxSSbCQG2X1K9UF": "9F2C7TGqUpFu6krd8vQbUv64BskrneBSgY7U2QfrGx96",
 	"ByUxmGuaT7iQS9qGS8on5xHRjiHXcGxvwPPaTGZXQyz7": "J6rRToKMK5DQDzVLqo7ibL3snwBYtqkYnRnQ7vXoUSEc",
+	"FdDcjfaErqwgGdoZBSJWvMPHh7qd7jr7p9TpEht6AJvb": "V7euK9EAB5YLuQVyeEHynevUthkNPRbsvHHMoAHNnE2",
 }
 
 func fixPreviousBlockHash(blockResult *rpc.GetBlockResult, logger *zap.Logger) (previousFixedBlockHash string) {
