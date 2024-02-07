@@ -3,9 +3,8 @@ package pbsol
 import (
 	"time"
 
-	"go.uber.org/zap/zapcore"
-
 	"github.com/mr-tron/base58"
+	"go.uber.org/zap/zapcore"
 )
 
 func (x *Block) GetFirehoseBlockID() string {
@@ -47,4 +46,8 @@ func (x *Block) MarshalLogObject(encoder zapcore.ObjectEncoder) error {
 
 func (x *ConfirmedTransaction) AsBase58String() string {
 	return base58.Encode(x.Transaction.Signatures[0])
+}
+
+func NewUnixTimestamp(t time.Time) *UnixTimestamp {
+	return &UnixTimestamp{Timestamp: t.Unix()}
 }
