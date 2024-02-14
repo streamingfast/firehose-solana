@@ -64,13 +64,6 @@ func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecut
 			blockpoller.WithLogger(logger),
 		)
 
-		latestSlot, err := rpcClient.GetSlot(ctx, rpc.CommitmentConfirmed)
-		if err != nil {
-			return fmt.Errorf("getting latest block: %w", err)
-		}
-
-		logger.Info("Found latest slot", zap.Uint64("slot_number", latestSlot))
-
 		err = poller.Run(ctx, startBlock, sflags.MustGetInt(cmd, "block-fetch-batch-size"))
 		if err != nil {
 			return fmt.Errorf("running poller: %w", err)
