@@ -16,7 +16,7 @@ require (
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.7.0
 	github.com/streamingfast/binary v0.0.0-20240116152459-ebe30de95370
-	github.com/streamingfast/bstream v0.0.2-0.20240118123300-2bc69dde3598
+	github.com/streamingfast/bstream v0.0.2-0.20240207154557-a98153ba4b86
 	github.com/streamingfast/cli v0.0.4-0.20230825151644-8cc84512cd80
 	github.com/streamingfast/derr v0.0.0-20230515163924-8570aaa43fe1
 	github.com/streamingfast/dstore v0.1.1-0.20230620124109-3924b3b36c77
@@ -164,7 +164,7 @@ require (
 	github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 // indirect
 	github.com/streamingfast/pbgo v0.0.6-0.20231208140754-ed2bd10b96ee // indirect
 	github.com/streamingfast/shutter v1.5.0 // indirect
-	github.com/streamingfast/substreams v1.3.2-0.20240119045851-7de579a236d2 // indirect
+	github.com/streamingfast/substreams v1.3.6-0.20240215202910-375de7cf8b02 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
