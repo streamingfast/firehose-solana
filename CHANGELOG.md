@@ -13,18 +13,18 @@ for instructions to keep up to date.
 > 2. New Poller: firesol no longer gets blocks from a Bigtable instance: it fetches the blocks using RPC calls
 >    - Run `firecore start reader`  with `--reader-node-path=/path/to/firesol` and `--reader-node-arguments=fetch rpc <https://your.solana.rpc/path> <start-block>`
 > 3. New Block Format requires either fetching all the merged blocks again or converting them
->    - Convert old blocks by running: `ACCEPT_SOLANA_LEGACY_BLOCK_FORMAT=true firesol block upgrade-merged-blocks <source-store> <dest-store> <start-num:stop-num>`
+>    - Convert old blocks by running: `ACCEPT_SOLANA_LEGACY_BLOCK_FORMAT=true firesol upgrade-merged-blocks <source-store> <dest-store> <start-num:stop-num>`
 > 4. Upgrading your deployment will require a "stop the world" upgrade, where you start the new binaries, pointing to the new blocks, without any contact with the previous blocks or components.
 
 ## Removed
 
 * All the `firesol start ...` commands have been removed. Use [firecore binary](https://github.com/streamingfast/firehose-core) to run the reader, merger, relayer, firehose and substreams services
-* Most of the `firesol tools` commands
+* All the existing `firesol tools` commands
 
 ## Added
 
 * Added `fetch rpc <endpoint> <start_block>` command fetches and prints the blocks in protobuf format, to be used by the `firecore start reader` command.
-* Added `block upgrade-merged-blocks` command to perform the upgrade on previous solana merged-blocks.
+* Added `upgrade-merged-blocks` command to perform the upgrade on previous solana merged-blocks.
 * Bumped firecore version to v1.2.0
 
 ## Fixed

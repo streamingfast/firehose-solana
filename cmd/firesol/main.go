@@ -6,12 +6,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	firecore "github.com/streamingfast/firehose-core"
 	"github.com/streamingfast/firehose-core/cmd/tools"
-	"github.com/streamingfast/firehose-core/cmd/tools/compare"
-	"github.com/streamingfast/firehose-solana/cmd/firesol/block"
 	"github.com/streamingfast/firehose-solana/cmd/firesol/rpc"
-	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/streamingfast/logging"
 	"go.uber.org/zap"
 )
@@ -25,13 +21,9 @@ var rootCmd = &cobra.Command{
 func init() {
 	logging.InstantiateLoggers(logging.WithDefaultLevel(zap.InfoLevel))
 	rootCmd.AddCommand(newFetchCmd(logger, tracer))
-	chain := &firecore.Chain[*pbsol.Block]{
-		BlockFactory: func() firecore.Block { return new(pbsol.Block) },
-	}
 
 	rootCmd.AddCommand(tools.ToolsCmd)
-	rootCmd.AddCommand(block.NewBlockCmd(logger, tracer))
-	tools.ToolsCmd.AddCommand(compare.NewToolsCompareBlocksCmd(chain))
+	tools.ToolsCmd.AddCommand(NewUpgradeCmd(logger, tracer))
 }
 
 func main() {

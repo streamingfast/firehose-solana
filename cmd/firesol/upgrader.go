@@ -1,4 +1,4 @@
-package block
+package main
 
 import (
 	"context"
@@ -18,18 +18,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func NewBlockCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "block <source> <destination> <range>",
-		Short: "upgrade-merged-blocks from legacy to new format using anypb.Any as payload",
-	}
-
-	cmd.AddCommand(NewFetchCmd(logger, tracer))
-
-	return cmd
-}
-
-func NewFetchCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
+func NewUpgradeCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "upgrade-merged-blocks <source> <destination> <range>",
 		Short: "upgrade-merged-blocks from legacy to new format using anypb.Any as payload",
