@@ -25,6 +25,7 @@ for instructions to keep up to date.
 
 * Added `fetch rpc <endpoint> <start_block>` command fetches and prints the blocks in protobuf format, to be used by the `firecore start reader` command.
 * Added `block upgrade-merged-blocks` command to perform the upgrade on previous solana merged-blocks.
+* Bumped firecore version to v1.2.0
 
 ## Fixed
 

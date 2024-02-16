@@ -8,3 +8,4 @@ release:
     #- substreams pack -o "{{ .buildDir }}/substreams-solana-{{ .release.Version }}.spkg" substreams.yaml
   upload-extra-assets:
     #- "{{ .buildDir }}/substreams-solana-{{ .release.Version }}.spkg"
+  goreleaser-docker-image: goreleaser/goreleaser-cross:v1.22
