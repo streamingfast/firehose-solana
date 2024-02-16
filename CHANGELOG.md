@@ -6,7 +6,7 @@ for instructions to keep up to date.
 
 ## v1.0.0
 
-## Operator notes
+### Operator notes
 > [!IMPORTANT]
 > 1. All firehose processes have been removed from this binary. You will need to run this program from the [firecore binary](https://github.com/streamingfast/firehose-core)
 >    - Previous `firesol start ...` command becomes `firecore start ...`
@@ -16,18 +16,18 @@ for instructions to keep up to date.
 >    - Convert old blocks by running: `ACCEPT_SOLANA_LEGACY_BLOCK_FORMAT=true firesol upgrade-merged-blocks <source-store> <dest-store> <start-num:stop-num>`
 > 4. Upgrading your deployment will require a "stop the world" upgrade, where you start the new binaries, pointing to the new blocks, without any contact with the previous blocks or components.
 
-## Removed
+### Removed
 
 * All the `firesol start ...` commands have been removed. Use [firecore binary](https://github.com/streamingfast/firehose-core) to run the reader, merger, relayer, firehose and substreams services
 * All the existing `firesol tools` commands
 
-## Added
+### Added
 
 * Added `fetch rpc <endpoint> <start_block>` command fetches and prints the blocks in protobuf format, to be used by the `firecore start reader` command.
 * Added `upgrade-merged-blocks` command to perform the upgrade on previous solana merged-blocks.
 * Bumped firecore version to v1.2.0
 
-## Fixed
+### Fixed
 
 * Fixed Substreams scheduler sometimes taking a long time to spawn more than a single worker.
 
