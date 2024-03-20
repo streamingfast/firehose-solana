@@ -4,6 +4,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## v1.0.1
+
+* Fixed `tools check merged-blocks` default range when `-r <range>` is not provided to now be `[0, +∞]` (was previously `[HEAD, +∞]`).
+
+* Fixed `tools check merged-blocks` to be able to run without a block range provided.
+
+* Added API Key based authentication to `tools firehose-client` and `tools firehose-single-block-client`, specify the value through environment variable `FIREHOSE_API_KEY` (you can use flag `--api-key-env-var` to change variable's name to something else than `FIREHOSE_API_KEY`).
+
+* Fixed `tools check merged-blocks` examples using block range (range should be specified as `[<start>]?:[<end>]`).
+
+* Added `--substreams-tier2-max-concurrent-requests` to limit the number of concurrent requests to the tier2 Substreams service.
+
 ## v1.0.0
 
 ### Operator notes
@@ -57,10 +69,10 @@ for instructions to keep up to date.
 
 > [!IMPORTANT]
 > We have had reports of older versions of this software creating corrupted merged-blocks-files (with duplicate or extra out-of-bound blocks)
-> This release adds additional validation of merged-blocks to prevent serving duplicate blocks from the firehose or substreams service. 
+> This release adds additional validation of merged-blocks to prevent serving duplicate blocks from the firehose or substreams service.
 > This may cause service outage if you have produced those blocks or downloaded them from another party who was affected by this bug.
 
-1. Find the affected files by running the following command (can be run multiple times in parallel, over smaller ranges) 
+1. Find the affected files by running the following command (can be run multiple times in parallel, over smaller ranges)
 
 ```
 tools check merged-blocks-batch <merged-blocks-store> <start> <stop>
