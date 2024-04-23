@@ -22,7 +22,7 @@ require (
 	github.com/streamingfast/cli v0.0.4-0.20240412191021-5f81842cb71d
 	github.com/streamingfast/derr v0.0.0-20230515163924-8570aaa43fe1
 	github.com/streamingfast/dstore v0.1.1-0.20240325191553-bcce8892a9bb
-	github.com/streamingfast/firehose-core v1.3.7-0.20240422195111-726964a39dad
+	github.com/streamingfast/firehose-core v1.3.7-0.20240423123154-c25968ebc4a3
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/solana-go v0.5.1-0.20230622180848-8faf68a7cb1d
 	github.com/test-go/testify v1.1.4
