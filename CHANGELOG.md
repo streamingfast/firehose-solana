@@ -4,6 +4,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## v1.0.2
+
+* Bumped `firehose-core` to latest version.
+
+* Fixed some edge cases when block skips.
+
 ## v1.0.1
 
 * Fixed `tools check merged-blocks` default range when `-r <range>` is not provided to now be `[0, +∞]` (was previously `[HEAD, +∞]`).
