@@ -1,6 +1,6 @@
-# syntax=docker/dockerfile:1.2
+ARG FIREHOSE_CORE_VERSION=v1.5.0
 
-FROM ghcr.io/streamingfast/firehose-core:b248423 as core
+FROM ghcr.io/streamingfast/firehose-core:$FIREHOSE_CORE_VERSION as core
 
 FROM ubuntu:20.04
 
