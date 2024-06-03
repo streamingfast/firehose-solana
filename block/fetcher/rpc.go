@@ -118,7 +118,9 @@ func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (*rpc.GetB
 	currentSlot := requestedSlot
 	var out *rpc.GetBlockResult
 	skipped := false
-	//f.logger.Info("getting block", zap.Uint64("block_num", currentSlot))
+
+	var lastErrorPrintedAt time.Time
+
 	err := derr.Retry(math.MaxUint64, func(ctx context.Context) error {
 		var innerErr error
 		out, innerErr = f.rpcClient.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
@@ -137,6 +139,12 @@ func (f *RPCFetcher) fetch(ctx context.Context, requestedSlot uint64) (*rpc.GetB
 					return nil
 				}
 			}
+
+			if lastErrorPrintedAt.IsZero() || time.Since(lastErrorPrintedAt) > 30*time.Second {
+				f.logger.Warn("error getting block", zap.Uint64("block_num", currentSlot), zap.Error(innerErr))
+				lastErrorPrintedAt = time.Now()
+			}
+
 			return fmt.Errorf("getting block %d from rpcClient: %w", requestedSlot, innerErr)
 		}
 		return nil
