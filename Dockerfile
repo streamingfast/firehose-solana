@@ -1,4 +1,4 @@
-ARG FIREHOSE_CORE_VERSION=v1.5.1
+ARG FIREHOSE_CORE_VERSION=v1.5.6
 
 FROM ghcr.io/streamingfast/firehose-core:$FIREHOSE_CORE_VERSION as core
 
