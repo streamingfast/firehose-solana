@@ -4,6 +4,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## v1.0.5
+
+* Fixes fetching "huge" blocks --> no longer panics, increased default size and added `--reader-node-line-buffer-size` flag to control this
+* Bumped `firehose-core` to version [v1.5.6](https://github.com/streamingfast/firehose-core/releases/tag/v1.5.6).
+
 ## v1.0.4
 
 * Bumped `firehose-core` to version [v1.5.1](https://github.com/streamingfast/firehose-core/releases/tag/v1.5.1).
