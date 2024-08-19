@@ -20,12 +20,12 @@ require (
 	github.com/streamingfast/cli v0.0.4-0.20240412191021-5f81842cb71d
 	github.com/streamingfast/derr v0.0.0-20230515163924-8570aaa43fe1
 	github.com/streamingfast/dstore v0.1.1-0.20240325191553-bcce8892a9bb
-	github.com/streamingfast/firehose-core v1.5.6
+	github.com/streamingfast/firehose-core v1.5.8-0.20240814134036-ad3d137d66d4
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/solana-go v0.5.1-0.20230622180848-8faf68a7cb1d
 	github.com/test-go/testify v1.1.4
 	go.uber.org/zap v1.26.0
-	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	google.golang.org/protobuf v1.33.0
 )
 
@@ -56,7 +56,6 @@ require (
 	github.com/alecthomas/participle v0.7.1 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/aws/aws-sdk-go v1.44.325 // indirect
-	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.12.0 // indirect
 	github.com/blendle/zapdriver v1.3.2-0.20200203083823-9200777f8a3d // indirect
@@ -69,9 +68,7 @@ require (
 	github.com/cncf/xds/go v0.0.0-20240318125728-8a4994d93e50 // indirect
 	github.com/containerd/cgroups v1.0.4 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
-	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -99,18 +96,11 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/ipfs/boxo v0.8.0 // indirect
-	github.com/ipfs/go-cid v0.4.0 // indirect
-	github.com/ipfs/go-ipfs-api v0.6.0 // indirect
 	github.com/jhump/protoreflect v1.14.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josephburnett/jd v1.7.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.3 // indirect
-	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
-	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
-	github.com/libp2p/go-libp2p v0.26.3 // indirect
 	github.com/lithammer/dedent v1.1.0 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
@@ -120,8 +110,6 @@ require (
 	github.com/mattn/go-ieproxy v0.0.1 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/minio/sha256-simd v1.0.0 // indirect
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -129,14 +117,6 @@ require (
 	github.com/mostynb/go-grpc-compression v1.1.17 // indirect
 	github.com/mostynb/zstdpool-freelist v0.0.0-20201229113212-927304c0c3b1 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
-	github.com/multiformats/go-base32 v0.1.0 // indirect
-	github.com/multiformats/go-base36 v0.2.0 // indirect
-	github.com/multiformats/go-multiaddr v0.8.0 // indirect
-	github.com/multiformats/go-multibase v0.1.1 // indirect
-	github.com/multiformats/go-multicodec v0.8.1 // indirect
-	github.com/multiformats/go-multihash v0.2.1 // indirect
-	github.com/multiformats/go-multistream v0.4.1 // indirect
-	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/opencontainers/runtime-spec v1.0.2 // indirect
 	github.com/openzipkin/zipkin-go v0.4.2 // indirect
 	github.com/paulbellamy/ratecounter v0.2.0 // indirect
@@ -153,7 +133,6 @@ require (
 	github.com/sethvargo/go-retry v0.2.3 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -171,14 +150,13 @@ require (
 	github.com/streamingfast/pbgo v0.0.6-0.20240430190514-722fe9d82e5d // indirect
 	github.com/streamingfast/sf-tracing v0.0.0-20240430173521-888827872b90 // indirect
 	github.com/streamingfast/shutter v1.5.0 // indirect
-	github.com/streamingfast/substreams v1.9.2 // indirect
+	github.com/streamingfast/substreams v1.9.4-0.20240812210000-635f7bcba6cf // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/tidwall/gjson v1.14.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
-	github.com/whyrusleeping/tar-utils v0.0.0-20201201191210-20a61371de5b // indirect
 	github.com/yourbasic/graph v0.0.0-20210606180040-8ecfec1c2869 // indirect
 	go.mongodb.org/mongo-driver v1.11.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
@@ -196,13 +174,13 @@ require (
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/ratelimit v0.2.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/mod v0.17.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/term v0.20.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/api v0.172.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
@@ -213,5 +191,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	lukechampine.com/blake3 v1.1.7 // indirect
 )

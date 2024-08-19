@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -81,8 +82,8 @@ func tweakBlock(block *pbbstream.Block) (*pbbstream.Block, error) {
 
 	block.ParentNum = b.ParentSlot
 
-	slices.SortFunc(b.Rewards, func(a, b *pbsol.Reward) bool {
-		return a.Lamports > b.Lamports
+	slices.SortFunc(b.Rewards, func(a, b *pbsol.Reward) int {
+		return cmp.Compare(a.Lamports, b.Lamports)
 	})
 
 	err = block.Payload.MarshalFrom(b)

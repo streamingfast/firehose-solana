@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/base64"
 	"errors"
@@ -530,8 +531,8 @@ func toPBReward(rewards []rpc.BlockReward) (out []*pbsol.Reward) {
 		})
 	}
 
-	slices.SortFunc(out, func(a, b *pbsol.Reward) bool {
-		return a.Lamports > b.Lamports
+	slices.SortFunc(out, func(a, b *pbsol.Reward) int {
+		return cmp.Compare(a.Lamports, b.Lamports)
 	})
 
 	return
