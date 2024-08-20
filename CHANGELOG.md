@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## Unreleased
+
+* added support to multiple endpoints through `--endpoints` flag
+
 ## v1.0.5
 
 * Fixes fetching "huge" blocks --> no longer panics, increased default size and added `--reader-node-line-buffer-size` flag to control this
