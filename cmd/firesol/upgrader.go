@@ -83,7 +83,11 @@ func tweakBlock(block *pbbstream.Block) (*pbbstream.Block, error) {
 	block.ParentNum = b.ParentSlot
 
 	slices.SortFunc(b.Rewards, func(a, b *pbsol.Reward) int {
+<<<<<<< HEAD
 		return cmp.Compare(a.Lamports, b.Lamports)
+=======
+		return int(a.Lamports - b.Lamports)
+>>>>>>> 1e3fca7 (Now use multiple endpoints. This should help with block not available at certain time.)
 	})
 
 	err = block.Payload.MarshalFrom(b)

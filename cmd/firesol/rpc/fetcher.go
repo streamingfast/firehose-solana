@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"fmt"
+	firecoreRPC "github.com/streamingfast/firehose-core/rpc"
 	"strconv"
 	"time"
 
@@ -17,12 +18,13 @@ import (
 
 func NewFetchCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rpc <rpc-endpoint> <first-streamable-block>",
+		Use:   "rpc <first-streamable-block>",
 		Short: "fetch blocks from rpc endpoint",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(1),
 		RunE:  fetchRunE(logger, tracer),
 	}
 
+	cmd.Flags().StringArray("endpoints", []string{}, "List of endpoints to use to fetch different method calls")
 	cmd.Flags().String("state-dir", "/data/poller", "interval between fetch")
 	cmd.Flags().Duration("interval-between-fetch", 0, "interval between fetch")
 	cmd.Flags().Duration("latest-block-retry-interval", time.Second, "interval between fetch")
@@ -34,11 +36,10 @@ func NewFetchCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecutor {
 	return func(cmd *cobra.Command, args []string) (err error) {
 		ctx := cmd.Context()
-		rpcEndpoint := args[0]
 
 		stateDir := sflags.MustGetString(cmd, "state-dir")
 
-		startBlock, err := strconv.ParseUint(args[1], 10, 64)
+		startBlock, err := strconv.ParseUint(args[0], 10, 64)
 		if err != nil {
 			return fmt.Errorf("unable to parse first streamable block %d: %w", startBlock, err)
 		}
@@ -47,18 +48,23 @@ func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecut
 
 		logger.Info(
 			"launching firehose-solana poller",
-			zap.String("rpc_endpoint", rpcEndpoint),
 			zap.String("state_dir", stateDir),
 			zap.Uint64("first_streamable_block", startBlock),
 			zap.Duration("interval_between_fetch", fetchInterval),
 			zap.Duration("latest_block_retry_interval", sflags.MustGetDuration(cmd, "latest-block-retry-interval")),
 		)
 
-		rpcClient := rpc.New(rpcEndpoint)
+		rpcEndpoints := sflags.MustGetStringArray(cmd, "endpoints")
+		rpcClients := firecoreRPC.NewClients[*rpc.Client]()
+		for _, rpcEndpoint := range rpcEndpoints {
+			client := rpc.New(rpcEndpoint)
+			rpcClients.Add(client)
+		}
 
 		latestBlockRetryInterval := sflags.MustGetDuration(cmd, "latest-block-retry-interval")
+
 		poller := blockpoller.New(
-			fetcher.NewRPC(rpcClient, fetchInterval, latestBlockRetryInterval, logger),
+			fetcher.NewRPC(rpcClients, fetchInterval, latestBlockRetryInterval, logger),
 			blockpoller.NewFireBlockHandler("type.googleapis.com/sf.solana.type.v1.Block"),
 			blockpoller.WithStoringState(stateDir),
 			blockpoller.WithLogger(logger),
