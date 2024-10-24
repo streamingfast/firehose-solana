@@ -4,9 +4,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
-## Unreleased
+## v1.1.0
 
-* added support to multiple endpoints through `--endpoints` flag
+* Update to `firehose-core` version `v1.6.5`.
+
+* Added support to multiple endpoints through `--endpoints` flag for `firesol fetch rpc`.
 
 ## v1.0.5
 
