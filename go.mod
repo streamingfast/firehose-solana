@@ -2,6 +2,8 @@ module github.com/streamingfast/firehose-solana
 
 go 1.22.0
 
+toolchain go1.22.4
+
 replace (
 	github.com/gagliardetto/solana-go => github.com/streamingfast/gagliardetto-solana-go v0.0.0-20240115191424-05c37cd0760d
 	github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
