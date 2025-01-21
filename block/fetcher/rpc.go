@@ -119,7 +119,7 @@ func (f *RPCFetcher) Fetch(ctx context.Context, client *rpc.Client, requestedSlo
 		return nil, false, fmt.Errorf("decoding block %d: %w", requestedSlot, err)
 	}
 
-	f.logger.Info("fetcher fetched block", zap.Uint64("block_num", requestedSlot), zap.String("block_hash", blockResult.Blockhash.String()))
+	f.logger.Info("fetcher fetched block", zap.Uint64("block_num", requestedSlot), zap.String("block_hash", blockResult.Blockhash.String()), zap.Int("trx_count", len(blockResult.Transactions)))
 	return block, false, nil
 }
 
