@@ -22,7 +22,9 @@ func init() {
 	rootCmd.AddCommand(newFetchCmd(logger, tracer))
 
 	rootCmd.AddCommand(tools.ToolsCmd)
+
 	tools.ToolsCmd.AddCommand(NewUpgradeCmd(logger, tracer))
+	tools.ToolsCmd.AddCommand(NewTrxChecker(logger, tracer))
 }
 
 func main() {
@@ -39,5 +41,6 @@ func newFetchCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 	}
 	cmd.AddCommand(rpc.NewFetchCmd(logger, tracer))
+
 	return cmd
 }
