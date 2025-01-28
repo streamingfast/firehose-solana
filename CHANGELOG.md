@@ -4,9 +4,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
-## Unreleased
+## v1.1.3
 
 * Remove unused legacy 'sf.solana.transforms.v1' from protobuf definitions
+* fix `--interval-between-fetch` so that it is followed. Note that it is incompatible with using `--block-fetch-batch-size` other than 1. A warning will be printed if you do.
 
 ## v1.1.2
 * Log RPC error code when block is skipped
