@@ -39,15 +39,13 @@ type RPCFetcher struct {
 	latestConfirmedSlot      uint64
 	latestFinalizedSlot      uint64
 	latestBlockRetryInterval time.Duration
-	fetchInterval            time.Duration
 	lastFetchAt              time.Time
 	isMainnet                bool
 	logger                   *zap.Logger
 }
 
-func NewRPC(fetchInterval time.Duration, latestBlockRetryInterval time.Duration, isMainnet bool, logger *zap.Logger) *RPCFetcher {
+func NewRPC(latestBlockRetryInterval time.Duration, isMainnet bool, logger *zap.Logger) *RPCFetcher {
 	f := &RPCFetcher{
-		fetchInterval:            fetchInterval,
 		latestBlockRetryInterval: latestBlockRetryInterval,
 		isMainnet:                isMainnet,
 		logger:                   logger,
@@ -101,7 +99,7 @@ func (f *RPCFetcher) Fetch(ctx context.Context, client *rpc.Client, requestedSlo
 
 	f.logger.Info("fetcher fetching block", zap.Uint64("block_num", requestedSlot), zap.Uint64("latest_finalized_slot", f.latestFinalizedSlot), zap.Uint64("latest_confirmed_slot", f.latestConfirmedSlot))
 
-	blockResult, skip, err := f.fetch(ctx, client, requestedSlot, f.latestConfirmedSlot)
+	blockResult, skip, err := f.fetch(ctx, client, requestedSlot)
 	if err != nil {
 		return nil, false, fmt.Errorf("fetching block %d: %w", requestedSlot, err)
 	}
@@ -123,7 +121,7 @@ func (f *RPCFetcher) Fetch(ctx context.Context, client *rpc.Client, requestedSlo
 	return block, false, nil
 }
 
-func (f *RPCFetcher) fetch(ctx context.Context, client *rpc.Client, requestedSlot uint64, lastConfirmBlockNum uint64) (*rpc.GetBlockResult, bool, error) {
+func (f *RPCFetcher) fetch(ctx context.Context, client *rpc.Client, requestedSlot uint64) (*rpc.GetBlockResult, bool, error) {
 	f.logger.Info("calling GetBlockWithOptions", zap.String("endpoints", fmt.Sprintf("%s", client)))
 	blockResult, err := client.GetBlockWithOpts(ctx, requestedSlot, GetBlockOpts)
 
@@ -253,9 +251,6 @@ func toPbTransactions(transactions []rpc.TransactionWithMeta) (out []*pbsol.Conf
 		meta, err := toPbTransactionMeta(transaction.Meta)
 		if err != nil {
 			return nil, fmt.Errorf(`decoding transaction meta: %w`, err)
-		}
-		if err != nil {
-			return nil, fmt.Errorf(`decoding transaction: %w`, err)
 		}
 		out = append(out, &pbsol.ConfirmedTransaction{
 			Transaction: toPbTransaction(transaction.MustGetTransaction()),

@@ -70,7 +70,7 @@ func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecut
 			isMainnet = true
 		}
 
-		blockFetcher := fetcher.NewRPC(fetchInterval, latestBlockRetryInterval, isMainnet, logger)
+		blockFetcher := fetcher.NewRPC(latestBlockRetryInterval, isMainnet, logger)
 		rpcClients.StartSorting(cmd.Context(), firecoreRPC.SortDirectionDescending, blockFetcher, intervalBetweenClientsSort)
 
 		poller := blockpoller.New[*rpc.Client](
@@ -79,6 +79,7 @@ func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecut
 			rpcClients,
 			blockpoller.WithLogger[*rpc.Client](logger),
 			blockpoller.WithStoringState[*rpc.Client](stateDir),
+			blockpoller.WithDelayBetweenFetch[*rpc.Client](fetchInterval),
 		)
 
 		err = poller.Run(startBlock, nil, sflags.MustGetInt(cmd, "block-fetch-batch-size"))
