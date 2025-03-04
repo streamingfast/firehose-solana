@@ -155,19 +155,3 @@ message BlockHeight {
     uint64 block_height = 1;
 }
 
-message AccountBlock {
-    uint64 slot = 1;
-    string hash = 2;
-    uint64 parent_slot = 3;
-    string parent_hash = 4;
-    google.protobuf.Timestamp timestamp = 6;
-    repeated Account accounts = 7;
-}
-
-message Account {
-    bytes address = 1;
-    bytes owner = 2;
-    bytes data = 3;
-    bool deleted = 7;
-}
-
