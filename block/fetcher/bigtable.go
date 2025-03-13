@@ -108,7 +108,7 @@ func (r *BigtableBlockReader) Read(
 			r.progressLog(blk, zlogger)
 			lastSeenBlock = blk
 			if err := processBlock(blk); err != nil {
-				fatalError = fmt.Errorf("failed to write blokc: %w", err)
+				fatalError = fmt.Errorf("failed to write block: %w", err)
 				return false
 			}
 
