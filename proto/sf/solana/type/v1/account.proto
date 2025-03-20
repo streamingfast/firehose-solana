@@ -22,4 +22,5 @@ message Account {
   bool deleted = 7;
 
   optional bytes new_owner = 10;
+  optional bytes prev_owner = 20;
 }
