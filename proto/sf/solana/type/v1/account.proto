@@ -20,7 +20,4 @@ message Account {
   bytes owner = 2;
   bytes data = 3;
   bool deleted = 7;
-
-  optional bytes new_owner = 10;
-  optional bytes prev_owner = 20;
 }
