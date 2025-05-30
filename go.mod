@@ -21,7 +21,7 @@ require (
 	github.com/streamingfast/bstream v0.0.2-0.20250416133616-23bdc92e0e9c
 	github.com/streamingfast/cli v0.0.4-0.20250424204306-678ec20cedec
 	github.com/streamingfast/dstore v0.1.1-0.20250217165048-d508dcc6b33e
-	github.com/streamingfast/firehose-core v1.9.10-0.20250515163933-762604ec5cb9
+	github.com/streamingfast/firehose-core v1.9.10-0.20250530173129-91669576f55a
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/solana-go v0.5.1-0.20230622180848-8faf68a7cb1d
 	github.com/test-go/testify v1.1.4
