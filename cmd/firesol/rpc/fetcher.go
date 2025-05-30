@@ -34,6 +34,7 @@ func NewFetchCmd(logger *zap.Logger, tracer logging.Tracer) *cobra.Command {
 	cmd.Flags().Duration("interval-between-clients-sort", 10*time.Minute, "interval between sorting clients base on their head block")
 	cmd.Flags().Int("block-fetch-batch-size", 10, "Number of blocks to fetch in a single batch")
 	cmd.Flags().String("network", "mainnet", "network to fetch from (mainnet, devnet, testnet) -- only used to patch a known issue on some slots")
+	cmd.Flags().Bool("write-to-file", false, "write blocks to file")
 
 	return cmd
 }
@@ -50,6 +51,7 @@ func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecut
 		fetchInterval := sflags.MustGetDuration(cmd, "interval-between-fetch")
 		maxBlockFetchDuration := sflags.MustGetDuration(cmd, "max-block-fetch-duration")
 		intervalBetweenClientsSort := sflags.MustGetDuration(cmd, "interval-between-clients-sort")
+		writeToFile := sflags.MustGetBool(cmd, "write-to-file")
 
 		logger.Info("launching firehose-solana poller")
 		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
@@ -70,7 +72,7 @@ func fetchRunE(logger *zap.Logger, tracer logging.Tracer) firecore.CommandExecut
 			isMainnet = true
 		}
 
-		blockFetcher := fetcher.NewRPC(latestBlockRetryInterval, isMainnet, logger)
+		blockFetcher := fetcher.NewRPC(latestBlockRetryInterval, isMainnet, writeToFile, logger)
 		rpcClients.StartSorting(cmd.Context(), firecoreRPC.SortDirectionDescending, blockFetcher, intervalBetweenClientsSort)
 
 		poller := blockpoller.New[*rpc.Client](

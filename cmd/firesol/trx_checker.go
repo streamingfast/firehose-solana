@@ -52,6 +52,7 @@ func checkTrx(zlog *zap.Logger, tracer logging.Tracer) firecore.CommandExecutor 
 		rpcFetcher := fetcher.NewRPC(
 			100*time.Millisecond,
 			true,
+			false,
 			zlog,
 		)
 

@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"time"
 
@@ -14,7 +15,9 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/jsonrpc"
 	bin "github.com/streamingfast/binary"
+	"github.com/streamingfast/bstream"
 	pbbstream "github.com/streamingfast/bstream/pb/sf/bstream/v1"
+	"github.com/streamingfast/dstore"
 	firecoreRPC "github.com/streamingfast/firehose-core/rpc"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	sfsol "github.com/streamingfast/solana-go"
@@ -41,14 +44,16 @@ type RPCFetcher struct {
 	latestBlockRetryInterval time.Duration
 	lastFetchAt              time.Time
 	isMainnet                bool
+	saveToFile               bool
 	logger                   *zap.Logger
 }
 
-func NewRPC(latestBlockRetryInterval time.Duration, isMainnet bool, logger *zap.Logger) *RPCFetcher {
+func NewRPC(latestBlockRetryInterval time.Duration, isMainnet bool, saveToFile bool, logger *zap.Logger) *RPCFetcher {
 	f := &RPCFetcher{
 		latestBlockRetryInterval: latestBlockRetryInterval,
 		isMainnet:                isMainnet,
 		logger:                   logger,
+		saveToFile:               saveToFile,
 	}
 	return f
 }
@@ -112,9 +117,36 @@ func (f *RPCFetcher) Fetch(ctx context.Context, client *rpc.Client, requestedSlo
 		panic("blockResult is nil and skip is false. This should not happen.")
 	}
 
-	block, err := blockFromBlockResult(requestedSlot, f.latestFinalizedSlot, blockResult, f.logger)
+	block, err := blockFromBlockResult(requestedSlot, f.latestFinalizedSlot, blockResult, f.isMainnet, f.logger)
 	if err != nil {
 		return nil, false, fmt.Errorf("decoding block %d: %w", requestedSlot, err)
+	}
+
+	if f.saveToFile {
+
+		store, err := dstore.NewStore("file:///tmp/blocks", "dbin", "", false)
+		if err != nil {
+			return nil, false, fmt.Errorf("creating store: %w", err)
+		}
+
+		pipeRead, pipeWrite := io.Pipe()
+
+		writeObjectErrChan := make(chan error)
+		go func() {
+			writeObjectErrChan <- store.WriteObject(ctx, fmt.Sprintf("%d", requestedSlot), pipeRead)
+		}()
+
+		blockWriter, err := bstream.NewDBinBlockWriter(pipeWrite)
+		if err != nil {
+			return nil, false, fmt.Errorf("write block factory: %w", err)
+		}
+
+		pipeWrite.CloseWithError(blockWriter.Write(block))
+
+		err = <-writeObjectErrChan
+		if err != nil {
+			return nil, false, fmt.Errorf("storting block: %w", err)
+		}
 	}
 
 	f.logger.Info("fetcher fetched block", zap.Uint64("block_num", requestedSlot), zap.String("block_hash", blockResult.Blockhash.String()), zap.Int("trx_count", len(blockResult.Transactions)))
@@ -145,14 +177,14 @@ func (f *RPCFetcher) fetch(ctx context.Context, client *rpc.Client, requestedSlo
 	return blockResult, false, nil
 }
 
-func blockFromBlockResult(slot uint64, finalizedSlot uint64, result *rpc.GetBlockResult, logger *zap.Logger) (*pbbstream.Block, error) {
+func blockFromBlockResult(slot uint64, finalizedSlot uint64, result *rpc.GetBlockResult, isMainnet bool, logger *zap.Logger) (*pbbstream.Block, error) {
 	libNum := finalizedSlot
 
 	if finalizedSlot > slot {
 		libNum = result.ParentSlot
 	}
 
-	fixedPreviousBlockHash := fixPreviousBlockHash(result, logger)
+	fixedPreviousBlockHash := fixPreviousBlockHash(result, slot, isMainnet, logger)
 
 	transactions, err := toPbTransactions(result.Transactions)
 	if err != nil {
@@ -237,7 +269,10 @@ var blockToPatch = map[string]string{
 	"FdDcjfaErqwgGdoZBSJWvMPHh7qd7jr7p9TpEht6AJvb": "V7euK9EAB5YLuQVyeEHynevUthkNPRbsvHHMoAHNnE2",
 }
 
-func fixPreviousBlockHash(blockResult *rpc.GetBlockResult, logger *zap.Logger) (previousFixedBlockHash string) {
+func fixPreviousBlockHash(blockResult *rpc.GetBlockResult, slot uint64, isMainnet bool, logger *zap.Logger) (previousFixedBlockHash string) {
+	if isMainnet && slot == 1690557 {
+		return "V7euK9EAB5YLuQVyeEHynevUthkNPRbsvHHMoAHNnE2"
+	}
 	if prev, ok := blockToPatch[blockResult.Blockhash.String()]; ok {
 		logger.Info("patching previous block hash", zap.String("block_hash", blockResult.Blockhash.String()), zap.String("previous_block_hash", prev))
 		return prev
