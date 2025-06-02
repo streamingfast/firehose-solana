@@ -270,6 +270,9 @@ var blockToPatch = map[string]string{
 }
 
 func fixPreviousBlockHash(blockResult *rpc.GetBlockResult, slot uint64, isMainnet bool, logger *zap.Logger) (previousFixedBlockHash string) {
+	if slot == 0 {
+		return ""
+	}
 	if isMainnet && slot == 1690557 {
 		return "V7euK9EAB5YLuQVyeEHynevUthkNPRbsvHHMoAHNnE2"
 	}
