@@ -21,7 +21,7 @@ require (
 	github.com/streamingfast/bstream v0.0.2-0.20250416133616-23bdc92e0e9c
 	github.com/streamingfast/cli v0.0.4-0.20250424204306-678ec20cedec
 	github.com/streamingfast/dstore v0.1.1-0.20250217165048-d508dcc6b33e
-	github.com/streamingfast/firehose-core v1.9.10-0.20250530173129-91669576f55a
+	github.com/streamingfast/firehose-core v1.9.11-0.20250602131806-4509c5af4b4e
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091
 	github.com/streamingfast/solana-go v0.5.1-0.20230622180848-8faf68a7cb1d
 	github.com/test-go/testify v1.1.4
@@ -165,7 +165,7 @@ require (
 	github.com/streamingfast/pbgo v0.0.6-0.20250114182320-0b43084f4000 // indirect
 	github.com/streamingfast/sf-tracing v0.0.0-20240430173521-888827872b90 // indirect
 	github.com/streamingfast/shutter v1.5.0 // indirect
-	github.com/streamingfast/substreams v1.15.6-0.20250515163906-89077d123e19 // indirect
+	github.com/streamingfast/substreams v1.15.7 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
