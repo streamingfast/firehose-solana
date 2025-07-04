@@ -267,7 +267,8 @@ var blockToPatch = map[string]string{
 	"ABp9G2NaPzM6kQbeyZYCYgdzL8JN9AxSSbCQG2X1K9UF": "9F2C7TGqUpFu6krd8vQbUv64BskrneBSgY7U2QfrGx96",
 	"ByUxmGuaT7iQS9qGS8on5xHRjiHXcGxvwPPaTGZXQyz7": "J6rRToKMK5DQDzVLqo7ibL3snwBYtqkYnRnQ7vXoUSEc",
 	"FdDcjfaErqwgGdoZBSJWvMPHh7qd7jr7p9TpEht6AJvb": "V7euK9EAB5YLuQVyeEHynevUthkNPRbsvHHMoAHNnE2",
-	"AsuR5cPfVncxaJHS3Lq5rvVfe19P8Fzo7EmiqrDNwcnG": "5rKdbsGmhhVF9Nthcbp5jYJSY7BsLu2giPa9mYYn1A2v",
+	"7xYBuK3myGxhx33xUVhohwjr4nELpTEBou1wc8rB4bqE": "HS2BL2FVkpr5HVaTsGSXLN8yQJ6h4kV6SuyekPRPZ9fK", // devnet block 391855925 , parent 923
+	"AsuR5cPfVncxaJHS3Lq5rvVfe19P8Fzo7EmiqrDNwcnG": "5rKdbsGmhhVF9Nthcbp5jYJSY7BsLu2giPa9mYYn1A2v", // devnet block 391855936
 }
 
 func fixPreviousBlockHash(blockResult *rpc.GetBlockResult, slot uint64, isMainnet bool, logger *zap.Logger) (previousFixedBlockHash string) {
