@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## Unreleased
+
+* Add `Account` message to `sf.solana.type.v1` protobuf definitions for foundational store support
+
 ## v1.1.3
 
 * Remove unused legacy 'sf.solana.transforms.v1' from protobuf definitions
