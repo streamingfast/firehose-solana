@@ -6,7 +6,7 @@ for instructions to keep up to date.
 
 ## Unreleased
 
-* Add `Account` message to `sf.solana.type.v1` protobuf definitions for foundational store support
+* Expose `Account` message in `sf.solana.type.v1` protobuf definitions
 
 ## v1.1.3
 
