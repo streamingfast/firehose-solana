@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/gagliardetto/solana-go"
@@ -560,7 +561,7 @@ func toPBReward(rewards []rpc.BlockReward) (out []*pbsol.Reward) {
 			RewardType:  toPBRewardType(r.RewardType),
 		}
 		if r.Commission != nil {
-			reward.Commission = int32(*r.Commission)
+			reward.Commission = strconv.Itoa(int(*r.Commission))
 		}
 		out = append(out, reward)
 
