@@ -4,9 +4,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
-## Unreleased
-
-* Expose `Account` message in `sf.solana.type.v1` protobuf definitions
+## v1.1.4
+* Fix missing `Commission` field from reward.
+* Expose `Account` message in `sf.solana.type.v1` protobuf definitions.
 
 ## v1.1.3
 
