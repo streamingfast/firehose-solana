@@ -30,9 +30,12 @@ import (
 //todo: find right value for maxSupportedTransactionVersion
 
 var MaxSupportedTransactionVersion = uint64(0)
+var RewardsOpt = true
+
 var GetBlockOpts = &rpc.GetBlockOpts{
 	Commitment:                     rpc.CommitmentConfirmed,
 	MaxSupportedTransactionVersion: &MaxSupportedTransactionVersion,
+	Rewards:                        &RewardsOpt,
 }
 
 type fetchBlock func(ctx context.Context, requestedSlot uint64) (slot uint64, out *rpc.GetBlockResult, err error)
