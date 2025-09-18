@@ -549,13 +549,18 @@ func toPbSignatures(signatures []solana.Signature) (out [][]byte) {
 }
 
 func toPBReward(rewards []rpc.BlockReward) (out []*pbsol.Reward) {
-	for _, reward := range rewards {
-		out = append(out, &pbsol.Reward{
-			Pubkey:      reward.Pubkey.String(),
-			Lamports:    reward.Lamports,
-			PostBalance: reward.PostBalance,
-			RewardType:  toPBRewardType(reward.RewardType),
-		})
+	for _, r := range rewards {
+		reward := &pbsol.Reward{
+			Pubkey:      r.Pubkey.String(),
+			Lamports:    r.Lamports,
+			PostBalance: r.PostBalance,
+			RewardType:  toPBRewardType(r.RewardType),
+		}
+		if r.Commission != nil {
+			reward.Commission = int32(*r.Commission)
+		}
+		out = append(out, reward)
+
 	}
 
 	slices.SortFunc(out, func(a, b *pbsol.Reward) int {
