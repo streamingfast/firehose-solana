@@ -10,6 +10,7 @@
 /firesol
 .idea
 venv
+*.spkg
 *.tfstate
 *.tfstate.*.backup
 *.tfstate.backup

@@ -3,9 +3,3 @@ global:
   language: golang
   variant: application
   sfreleaser-min-version: v0.7.0
-release:
-  pre-build-hooks:
-    #- substreams pack -o "{{ .buildDir }}/substreams-solana-{{ .release.Version }}.spkg" substreams.yaml
-  upload-extra-assets:
-    #- "{{ .buildDir }}/substreams-solana-{{ .release.Version }}.spkg"
-  goreleaser-docker-image: goreleaser/goreleaser-cross:v1.22
