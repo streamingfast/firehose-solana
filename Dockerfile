@@ -1,6 +1,6 @@
-ARG FIREHOSE_CORE_VERSION=v1.6.5
+ARG FIREHOSE_CORE_VERSION=latest
 
-FROM ghcr.io/streamingfast/firehose-core:$FIREHOSE_CORE_VERSION as core
+FROM ghcr.io/streamingfast/firehose-core:$FIREHOSE_CORE_VERSION AS core
 
 FROM ubuntu:24.04
 
@@ -11,7 +11,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     rm -rf /var/cache/apt /var/lib/apt/lists/*
 
 RUN rm /etc/localtime && ln -snf /usr/share/zoneinfo/America/Montreal /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
-
 
 ADD /firesol /app/firesol
 
@@ -24,7 +23,7 @@ ADD /firesol /app/firesol
 # so we hijack the file to "execute" our specialized bash script
 #RUN echo ". /etc/profile.d/99-firehose-solana.sh" > /root/.bash_aliases
 
-ENV PATH "$PATH:/app"
+ENV PATH="$PATH:/app"
 
 COPY --from=core /app/firecore /app/firecore
 
