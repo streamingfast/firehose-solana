@@ -332,6 +332,7 @@ func toPbTransactionMeta(meta *rpc.TransactionMeta) (*pbsol.TransactionStatusMet
 		LoadedReadonlyAddresses: toPbReadonlyAddresses(meta.LoadedAddresses.ReadOnly),
 		ReturnData:              returnData,
 		ComputeUnitsConsumed:    meta.ComputeUnitsConsumed,
+		CostUnits:               meta.CostUnits,
 	}, nil
 }
 
