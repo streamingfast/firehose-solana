@@ -20,6 +20,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	logging.InstantiateLoggers(logging.WithDefaultLevel(zap.InfoLevel))
 	rootCmd.AddCommand(newFetchCmd(logger, tracer))
+	rootCmd.AddCommand(NewPrintBlockCmd(logger, tracer))
 
 	rootCmd.AddCommand(tools.ToolsCmd)
 

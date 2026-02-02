@@ -36,3 +36,4 @@ venv
 /.fleet/settings.json
 /firesol-legacy
 /block/fetcher/secret.go
+/.claude
