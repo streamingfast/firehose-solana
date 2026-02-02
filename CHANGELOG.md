@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## v1.3.1
+
+* added `print-block` subcommand for debugging
+
 ## v1.3.0
 
 * added `cost_units` field to `sf.solana.type.v1.TransactionStatusMeta` message.
