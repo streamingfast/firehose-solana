@@ -26,6 +26,7 @@ func init() {
 
 	tools.ToolsCmd.AddCommand(NewUpgradeCmd(logger, tracer))
 	tools.ToolsCmd.AddCommand(NewTrxChecker(logger, tracer))
+	tools.ToolsCmd.AddCommand(NewMergeCostUnitsCmd(logger, tracer))
 }
 
 func main() {
