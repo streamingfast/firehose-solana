@@ -37,3 +37,4 @@ venv
 /firesol-legacy
 /block/fetcher/secret.go
 /.claude
+/dist

@@ -131,7 +131,7 @@ func getMergeCostUnitsRunner(rootLog *zap.Logger) func(cmd *cobra.Command, args 
 
 			// Merge cost units from cost unit blocks into source blocks
 			for k := 0; k < len(blocks); k++ {
-				mergedBlock, err := mergeCostunits(blocks[k], costBlocks[k])
+				mergedBlock, err := mergeCostunits(blocks[k], costBlocks[k], logger)
 				if err != nil {
 					return fmt.Errorf("merging cost units for block %d: %w", blocks[k].Number, err)
 				}
@@ -160,7 +160,7 @@ func getMergeCostUnitsRunner(rootLog *zap.Logger) func(cmd *cobra.Command, args 
 	}
 }
 
-func mergeCostunits(block *pbbstream.Block, costunitBlock *pbbstream.Block) (*pbbstream.Block, error) {
+func mergeCostunits(block *pbbstream.Block, costunitBlock *pbbstream.Block, logger *zap.Logger) (*pbbstream.Block, error) {
 	b := &pbsol.Block{}
 	err := block.Payload.UnmarshalTo(b)
 	if err != nil {
@@ -185,14 +185,21 @@ func mergeCostunits(block *pbbstream.Block, costunitBlock *pbbstream.Block) (*pb
 	}
 
 	// Copy cost units from each transaction
+	costUnitsSet := 0
 	for i := range b.Transactions {
 		if b.Transactions[i].Meta != nil && costUnitB.Transactions[i].Meta != nil {
 			costUnits := costUnitB.Transactions[i].Meta.CostUnits
 			b.Transactions[i].Meta.CostUnits = costUnits
 			if costUnits != nil {
-				fmt.Printf("Block %d, Transaction %d: CostUnits = %d\n", block.Number, i, *costUnits)
+				costUnitsSet++
 			}
 		}
+	}
+
+	if costUnitsSet > 0 {
+		logger.Info("set cost units for block", zap.Uint64("block_num", block.Number), zap.Int("transactions", costUnitsSet))
+	} else {
+		logger.Info("no cost units for block", zap.Uint64("block_num", block.Number))
 	}
 
 	err = block.Payload.MarshalFrom(b)
