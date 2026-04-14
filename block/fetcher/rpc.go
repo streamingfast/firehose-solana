@@ -188,7 +188,7 @@ func blockFromBlockResult(slot uint64, finalizedSlot uint64, result *rpc.GetBloc
 		libNum = result.ParentSlot
 	}
 
-	fixedPreviousBlockHash := fixPreviousBlockHash(result, slot, isMainnet, logger)
+	fixedPreviousBlockHash, fixedParentSlot := fixPreviousBlockHash(result, slot, isMainnet, logger)
 
 	transactions, err := toPbTransactions(result.Transactions)
 	if err != nil {
@@ -209,7 +209,7 @@ func blockFromBlockResult(slot uint64, finalizedSlot uint64, result *rpc.GetBloc
 	block := &pbsol.Block{
 		PreviousBlockhash: fixedPreviousBlockHash,
 		Blockhash:         result.Blockhash.String(),
-		ParentSlot:        result.ParentSlot,
+		ParentSlot:        fixedParentSlot,
 		Transactions:      transactions,
 		Rewards:           toPBReward(result.Rewards),
 		BlockTime:         blockTime,
@@ -274,22 +274,32 @@ var blockToPatch = map[string]string{
 	"7xYBuK3myGxhx33xUVhohwjr4nELpTEBou1wc8rB4bqE": "HS2BL2FVkpr5HVaTsGSXLN8yQJ6h4kV6SuyekPRPZ9fK", // devnet block 391855925 , parent 923
 	"AsuR5cPfVncxaJHS3Lq5rvVfe19P8Fzo7EmiqrDNwcnG": "5rKdbsGmhhVF9Nthcbp5jYJSY7BsLu2giPa9mYYn1A2v", // devnet block 391855936
 	"4XtYuP72JSzLdpiUDeEU7DnaoVYEKpwKieTLVpqCzs8z": "5LGci4evGEzktJFCgBjxpLYwMKVo65J91KeJrptkfvhp", // devnet block 391855957, parent 391855952
-
+	"Au8NJm8XjtLBwpbYVC71A5qgYf6ov6H43wvhrE1twc36": "2dRDJkNokwVPL5L3hhM2SearFNcairkAPd5mY8SFbAqu",
 }
 
-func fixPreviousBlockHash(blockResult *rpc.GetBlockResult, slot uint64, isMainnet bool, logger *zap.Logger) (previousFixedBlockHash string) {
+var parentSlotFix = map[string]uint64{
+	"Au8NJm8XjtLBwpbYVC71A5qgYf6ov6H43wvhrE1twc36": 455406515,
+}
+
+func fixPreviousBlockHash(blockResult *rpc.GetBlockResult, slot uint64, isMainnet bool, logger *zap.Logger) (previousFixedBlockHash string, fixedParentSlot uint64) {
 	if slot == 0 {
-		return ""
+		return "", blockResult.ParentSlot
 	}
 	if isMainnet && slot == 1690557 {
-		return "V7euK9EAB5YLuQVyeEHynevUthkNPRbsvHHMoAHNnE2"
+		return "V7euK9EAB5YLuQVyeEHynevUthkNPRbsvHHMoAHNnE2", blockResult.ParentSlot
 	}
+
+	fixedParentSlot, ok := parentSlotFix[blockResult.Blockhash.String()]
+	if !ok {
+		fixedParentSlot = blockResult.ParentSlot
+	}
+
 	if prev, ok := blockToPatch[blockResult.Blockhash.String()]; ok {
 		logger.Info("patching previous block hash", zap.String("block_hash", blockResult.Blockhash.String()), zap.String("previous_block_hash", prev))
-		return prev
+		return prev, fixedParentSlot
 
 	}
-	return blockResult.PreviousBlockhash.String()
+	return blockResult.PreviousBlockhash.String(), fixedParentSlot
 }
 
 func toPbTransactions(transactions []rpc.TransactionWithMeta) (out []*pbsol.ConfirmedTransaction, err error) {
