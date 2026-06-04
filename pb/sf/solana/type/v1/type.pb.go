@@ -25,11 +25,12 @@ const (
 type RewardType int32
 
 const (
-	RewardType_Unspecified RewardType = 0
-	RewardType_Fee         RewardType = 1
-	RewardType_Rent        RewardType = 2
-	RewardType_Staking     RewardType = 3
-	RewardType_Voting      RewardType = 4
+	RewardType_Unspecified      RewardType = 0
+	RewardType_Fee              RewardType = 1
+	RewardType_Rent             RewardType = 2
+	RewardType_Staking          RewardType = 3
+	RewardType_Voting           RewardType = 4
+	RewardType_DeactivatedStake RewardType = 5
 )
 
 // Enum value maps for RewardType.
@@ -40,13 +41,15 @@ var (
 		2: "Rent",
 		3: "Staking",
 		4: "Voting",
+		5: "DeactivatedStake",
 	}
 	RewardType_value = map[string]int32{
-		"Unspecified": 0,
-		"Fee":         1,
-		"Rent":        2,
-		"Staking":     3,
-		"Voting":      4,
+		"Unspecified":      0,
+		"Fee":              1,
+		"Rent":             2,
+		"Staking":          3,
+		"Voting":           4,
+		"DeactivatedStake": 5,
 	}
 )
 
@@ -1382,7 +1385,7 @@ const file_sf_solana_type_v1_type_proto_rawDesc = "" +
 	"\rUnixTimestamp\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\"0\n" +
 	"\vBlockHeight\x12!\n" +
-	"\fblock_height\x18\x01 \x01(\x04R\vblockHeight*I\n" +
+	"\fblock_height\x18\x01 \x01(\x04R\vblockHeight*_\n" +
 	"\n" +
 	"RewardType\x12\x0f\n" +
 	"\vUnspecified\x10\x00\x12\a\n" +
@@ -1390,7 +1393,8 @@ const file_sf_solana_type_v1_type_proto_rawDesc = "" +
 	"\x04Rent\x10\x02\x12\v\n" +
 	"\aStaking\x10\x03\x12\n" +
 	"\n" +
-	"\x06Voting\x10\x04BEZCgithub.com/streamingfast/firehose-solana/pb/sf/solana/type/v1;pbsolb\x06proto3"
+	"\x06Voting\x10\x04\x12\x14\n" +
+	"\x10DeactivatedStake\x10\x05BEZCgithub.com/streamingfast/firehose-solana/pb/sf/solana/type/v1;pbsolb\x06proto3"
 
 var (
 	file_sf_solana_type_v1_type_proto_rawDescOnce sync.Once
