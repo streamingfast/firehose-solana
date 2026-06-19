@@ -159,7 +159,7 @@ func getRelinkOneBlockRunner(logger *zap.Logger, tweak payloadTweaker) func(cmd 
 		}
 		confirmation += "\n\nProceed?"
 
-		if confirmed, wasAnswered := cli.AskConfirmation(confirmation); !confirmed || !wasAnswered {
+		if confirmed, wasAnswered := cli.AskConfirmation("%s", confirmation); !confirmed || !wasAnswered {
 			logger.Info("aborted by user")
 			return nil
 		}
