@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/streamingfast/bstream"
 	pbbstream "github.com/streamingfast/bstream/pb/sf/bstream/v1"
+	"github.com/streamingfast/cli"
 	"github.com/streamingfast/cli/sflags"
 	"github.com/streamingfast/dstore"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
@@ -130,6 +131,9 @@ func getRelinkOneBlockRunner(logger *zap.Logger, tweak payloadTweaker) func(cmd 
 			zap.String("new_parent_id", parentID),
 		)
 
+		oldParentNum := block.ParentNum
+		oldParentID := block.ParentId
+
 		block.ParentNum = parentNum
 		block.ParentId = parentID
 		if err := tweak(block, parentNum, parentID); err != nil {
@@ -137,6 +141,28 @@ func getRelinkOneBlockRunner(logger *zap.Logger, tweak payloadTweaker) func(cmd 
 		}
 
 		newName := bstream.BlockFileName(block)
+
+		targetURL := store.ObjectURL(newName)
+		deleteOriginal := newName != name && sflags.MustGetBool(cmd, "delete-original")
+
+		confirmation := fmt.Sprintf(`About to relink one-block-file:
+  Writing to:    %s
+  Block:         #%d %s
+  Parent change: #%d %s -> #%d %s`,
+			targetURL,
+			block.Number, block.Id,
+			oldParentNum, oldParentID,
+			parentNum, parentID,
+		)
+		if deleteOriginal {
+			confirmation += fmt.Sprintf("\n  Deleting original: %s", store.ObjectURL(name))
+		}
+		confirmation += "\n\nProceed?"
+
+		if confirmed, wasAnswered := cli.AskConfirmation(confirmation); !confirmed || !wasAnswered {
+			logger.Info("aborted by user")
+			return nil
+		}
 
 		pr, pw := io.Pipe()
 		go func() {
@@ -156,7 +182,7 @@ func getRelinkOneBlockRunner(logger *zap.Logger, tweak payloadTweaker) func(cmd 
 
 		logger.Info("wrote relinked one-block-file", zap.String("file", store.ObjectURL(newName)))
 
-		if newName != name && sflags.MustGetBool(cmd, "delete-original") {
+		if deleteOriginal {
 			if err := store.DeleteObject(ctx, name); err != nil {
 				return fmt.Errorf("deleting original %q: %w", path, err)
 			}
