@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## Unreleased
+
+* added `relink-oneblock` and `relink-account-oneblock` tools to rewrite a one-block-file with a new parent block number and hash.
+
 ## v1.3.1
 
 * added `print-block` subcommand for debugging
