@@ -6,7 +6,15 @@ for instructions to keep up to date.
 
 ## Unreleased
 
+* Bumped `firehose-core` to `v1.15.0` for parallel block fetching.
+
 * added `relink-oneblock` and `relink-account-oneblock` tools to rewrite a one-block-file with a new parent block number and hash.
+
+* added `merge-cost-units` tools command to add cost units from other merged-blocks (while keeping extra data from source like untruncated logs).
+
+* added `DeactivatedStake` reward type.
+
+* Fixed parent slot mapping to account for specific cases.
 
 ## v1.3.1
 
