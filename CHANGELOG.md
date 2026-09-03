@@ -4,7 +4,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
-## Unreleased
+## v1.4.0
 
 * Added `version` and `transaction_config` fields to `sf.solana.type.v1.Message` for Solana transaction v1
   (SIMD-0296). `version` holds the numeric wire version (0 or 1) and is unset for a legacy message, so v0 and
