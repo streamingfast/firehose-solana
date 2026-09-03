@@ -309,7 +309,7 @@ type Message struct {
 	// The compute budget carried inline in a v1 message. Unset for legacy and v0
 	// messages, which request the same settings through ComputeBudget program
 	// instructions instead.
-	TransactionConfig *TransactionConfig `protobuf:"bytes,8,opt,name=transaction_config,json=transactionConfig,proto3" json:"transaction_config,omitempty"`
+	TransactionConfig *TransactionConfig `protobuf:"bytes,8,opt,name=transaction_config,json=transactionConfig,proto3,oneof" json:"transaction_config,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1405,7 +1405,7 @@ const file_sf_solana_type_v1_type_proto_rawDesc = "" +
 	"\n" +
 	"signatures\x18\x01 \x03(\fR\n" +
 	"signatures\x124\n" +
-	"\amessage\x18\x02 \x01(\v2\x1a.sf.solana.type.v1.MessageR\amessage\"\xdd\x03\n" +
+	"\amessage\x18\x02 \x01(\v2\x1a.sf.solana.type.v1.MessageR\amessage\"\xf9\x03\n" +
 	"\aMessage\x128\n" +
 	"\x06header\x18\x01 \x01(\v2 .sf.solana.type.v1.MessageHeaderR\x06header\x12!\n" +
 	"\faccount_keys\x18\x02 \x03(\fR\vaccountKeys\x12)\n" +
@@ -1413,10 +1413,11 @@ const file_sf_solana_type_v1_type_proto_rawDesc = "" +
 	"\finstructions\x18\x04 \x03(\v2&.sf.solana.type.v1.CompiledInstructionR\finstructions\x12\x1c\n" +
 	"\tversioned\x18\x05 \x01(\bR\tversioned\x12`\n" +
 	"\x15address_table_lookups\x18\x06 \x03(\v2,.sf.solana.type.v1.MessageAddressTableLookupR\x13addressTableLookups\x12\x1d\n" +
-	"\aversion\x18\a \x01(\rH\x00R\aversion\x88\x01\x01\x12S\n" +
-	"\x12transaction_config\x18\b \x01(\v2$.sf.solana.type.v1.TransactionConfigR\x11transactionConfigB\n" +
+	"\aversion\x18\a \x01(\rH\x00R\aversion\x88\x01\x01\x12X\n" +
+	"\x12transaction_config\x18\b \x01(\v2$.sf.solana.type.v1.TransactionConfigH\x01R\x11transactionConfig\x88\x01\x01B\n" +
 	"\n" +
-	"\b_version\"\xb5\x02\n" +
+	"\b_versionB\x15\n" +
+	"\x13_transaction_config\"\xb5\x02\n" +
 	"\x11TransactionConfig\x12&\n" +
 	"\fpriority_fee\x18\x01 \x01(\x04H\x00R\vpriorityFee\x88\x01\x01\x121\n" +
 	"\x12compute_unit_limit\x18\x02 \x01(\rH\x01R\x10computeUnitLimit\x88\x01\x01\x12I\n" +

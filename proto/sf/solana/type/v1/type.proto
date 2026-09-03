@@ -54,7 +54,7 @@ message Message {
   // The compute budget carried inline in a v1 message. Unset for legacy and v0
   // messages, which request the same settings through ComputeBudget program
   // instructions instead.
-  TransactionConfig transaction_config = 8;
+  optional TransactionConfig transaction_config = 8;
 }
 
 // Compute budget settings carried inline in the message of a v1 transaction.
