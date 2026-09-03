@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"cmp"
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -21,16 +20,17 @@ import (
 	"github.com/streamingfast/dstore"
 	firecoreRPC "github.com/streamingfast/firehose-core/rpc"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
-	sfsol "github.com/streamingfast/solana-go"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-//todo: find right value for maxSupportedTransactionVersion
-
-var MaxSupportedTransactionVersion = uint64(0)
+// MaxSupportedTransactionVersion caps the transaction versions getBlock is willing to
+// return. It must not run ahead of what solana-go can decode: the RPC rejects a block
+// containing a transaction newer than this cap, which is the failure we want, whereas a
+// version solana-go cannot decode yields wrong account keys and instructions instead.
+var MaxSupportedTransactionVersion = uint64(1)
 var RewardsOpt = true
 
 var GetBlockOpts = &rpc.GetBlockOpts{
@@ -320,14 +320,15 @@ func toPbTransactionMeta(meta *rpc.TransactionMeta) (*pbsol.TransactionStatusMet
 	if meta == nil {
 		return &pbsol.TransactionStatusMeta{}, nil
 	}
-	returnData, err := toPbReturnData(meta.ReturnData)
-	if err != nil {
-		return nil, fmt.Errorf("decoding return data: %w", err)
-	}
+	returnData := toPbReturnData(meta.ReturnData)
 
 	innerInstructions := toPbInnerInstructions(meta.InnerInstructions)
 
 	trxErr, err := toPbTransactionError(meta.Err)
+	if err != nil {
+		return nil, fmt.Errorf("encoding transaction error: %w", err)
+	}
+
 	return &pbsol.TransactionStatusMeta{
 		Err:                     trxErr,
 		Fee:                     meta.Fee,
@@ -346,23 +347,14 @@ func toPbTransactionMeta(meta *rpc.TransactionMeta) (*pbsol.TransactionStatusMet
 	}, nil
 }
 
-func toPbReturnData(data rpc.ReturnData) (*pbsol.ReturnData, error) {
-	if len(data.Data) == 0 {
-		return nil, nil
-	}
-	d, err := base64.StdEncoding.DecodeString(data.Data[0])
-	if err != nil {
-		return nil, fmt.Errorf("decoding return data: %w", err)
-	}
-	pId, err := sfsol.PublicKeyFromBase58(data.ProgramId)
-
-	if err != nil {
-		return nil, fmt.Errorf("decoding program id: %w", err)
+func toPbReturnData(data rpc.ReturnData) *pbsol.ReturnData {
+	if len(data.Data.Content) == 0 {
+		return nil
 	}
 	return &pbsol.ReturnData{
-		ProgramId: pId.ToSlice(),
-		Data:      d,
-	}, nil
+		ProgramId: data.ProgramId.Bytes(),
+		Data:      data.Data.Content,
+	}
 }
 
 func toPbReadonlyAddresses(readonlyAddresses solana.PublicKeySlice) [][]byte {
@@ -438,7 +430,7 @@ func toPbInnerInstructions(instructions []rpc.InnerInstruction) []*pbsol.InnerIn
 	return out
 }
 
-func compileInstructionsToPbInnerInstructionArray(instructions []solana.CompiledInstruction) (out []*pbsol.InnerInstruction) {
+func compileInstructionsToPbInnerInstructionArray(instructions []rpc.CompiledInstruction) (out []*pbsol.InnerInstruction) {
 	for _, compiledInstruction := range instructions {
 
 		var accounts []byte
@@ -459,11 +451,11 @@ func compileInstructionsToPbInnerInstructionArray(instructions []solana.Compiled
 	return
 }
 
-func toStackHeight(stackHeight uint32) *uint32 {
+func toStackHeight(stackHeight uint16) *uint32 {
 	if stackHeight == 0 {
 		return nil
 	}
-	s := stackHeight
+	s := uint32(stackHeight)
 	return &s
 }
 
@@ -499,8 +491,37 @@ func toPbMessage(message solana.Message) *pbsol.Message {
 		RecentBlockhash:     message.RecentBlockhash[:],
 		Instructions:        toPbInstructions(message.Instructions),
 		Versioned:           message.IsVersioned(),
+		Version:             toPbMessageVersion(message.GetVersion()),
 		AddressTableLookups: toPbAddressTableLookups(message.AddressTableLookups),
+		TransactionConfig:   toPbTransactionConfig(message.TransactionConfig),
 	}
+}
+
+// toPbTransactionConfig maps the compute budget a v1 message carries inline. Legacy and
+// v0 messages leave it empty and request the same settings through ComputeBudget program
+// instructions instead, so they map to nil.
+func toPbTransactionConfig(config solana.TransactionConfig) *pbsol.TransactionConfig {
+	if config.IsEmpty() {
+		return nil
+	}
+	return &pbsol.TransactionConfig{
+		PriorityFee:                 config.PriorityFee,
+		ComputeUnitLimit:            config.ComputeUnitLimit,
+		LoadedAccountsDataSizeLimit: config.LoadedAccountsDataSizeLimit,
+		HeapSize:                    config.HeapSize,
+	}
+}
+
+// toPbMessageVersion maps a decoded message version onto the transaction version as it
+// appears on the wire. A legacy message carries no version prefix and maps to nil.
+// solana.MessageVersion numbers legacy first, so a versioned message's wire version is
+// its constant minus one: MessageVersionV0 is 1 and gives wire version 0.
+func toPbMessageVersion(version solana.MessageVersion) *uint32 {
+	if version == solana.MessageVersionLegacy {
+		return nil
+	}
+	wireVersion := uint32(version) - 1
+	return &wireVersion
 }
 
 func toPbInstructions(instructions []solana.CompiledInstruction) []*pbsol.CompiledInstruction {

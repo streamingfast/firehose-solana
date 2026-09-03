@@ -4,6 +4,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## Unreleased
+
+* Added `version` and `transaction_config` fields to `sf.solana.type.v1.Message` for Solana transaction v1
+  (SIMD-0296). `version` holds the numeric wire version (0 or 1) and is unset for a legacy message, so v0 and
+  v1 can finally be told apart; the existing `versioned` boolean is unchanged. `transaction_config` holds the
+  compute budget that a v1 message carries inline instead of expressing it through ComputeBudget program
+  instructions.
+
+* The RPC poller now sets both fields and asks `getBlock` for transaction version 1.
+
+* Moved solana-go from a fork of v1.8.4 to a fork of upstream v1.23.0, which is the release that
+  decodes a v1 message. The fork now carries a single addition, the `costUnits` field that upstream
+  does not expose. Upstream supplies better types for what the old fork patched in, which removes a
+  base64 decode and a base58 parse from the return data mapping and drops the
+  `github.com/streamingfast/solana-go` dependency altogether.
+
+* Fixed the transaction meta conversion silently discarding an error from the transaction error
+  encoder, which let a block go out with no error set on a failed transaction.
+
 ## v1.3.3
 
 * Fix `DeactivatedStake` parsing from rpc.
