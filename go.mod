@@ -3,7 +3,7 @@ module github.com/streamingfast/firehose-solana
 go 1.26.0
 
 replace (
-	github.com/gagliardetto/solana-go => github.com/streamingfast/gagliardetto-solana-go v0.2.1-0.20260903142031-5d92ea17b100
+	github.com/gagliardetto/solana-go => github.com/streamingfast/gagliardetto-solana-go v1.23.0-fh-1
 	github.com/graph-gophers/graphql-go => github.com/streamingfast/graphql-go v0.0.0-20210204202750-0e485a040a3c
 	github.com/jhump/protoreflect => github.com/streamingfast/protoreflect v0.0.0-20231205191344-4b629d20ce8d
 )
