@@ -34,12 +34,41 @@ message Transaction {
 message Message {
   MessageHeader header = 1;
   repeated bytes account_keys = 2;
+  // The blockhash that determines when the transaction expires. A v1 message calls
+  // this the lifetime specifier; it is carried here unchanged.
   bytes recent_blockhash = 3;
   // Top-level instructions
   // T instructions (?)
   repeated CompiledInstruction instructions = 4;
+  // True for any message that carries a version prefix, which is every message
+  // except a legacy one. Read `version` to tell the versions apart.
   bool versioned = 5;
+  // Only a v0 message uses address lookup tables. Always empty for legacy and v1
+  // messages.
   repeated MessageAddressTableLookup address_table_lookups = 6;
+
+  // The transaction version as it appears on the wire: 0 for a v0 message, 1 for a
+  // v1 message. Unset for a legacy message, which carries no version prefix.
+  optional uint32 version = 7;
+
+  // The compute budget carried inline in a v1 message. Unset for legacy and v0
+  // messages, which request the same settings through ComputeBudget program
+  // instructions instead.
+  TransactionConfig transaction_config = 8;
+}
+
+// Compute budget settings carried inline in the message of a v1 transaction.
+// Every field is unset when the transaction leaves it out, in which case the
+// runtime default noted on the field applies.
+message TransactionConfig {
+  // Priority fee in lamports. Unset means no priority fee.
+  optional uint64 priority_fee = 1;
+  // Maximum compute units. Unset means 0.
+  optional uint32 compute_unit_limit = 2;
+  // Maximum bytes of account data that may be loaded. Unset means 0.
+  optional uint32 loaded_accounts_data_size_limit = 3;
+  // Heap size in bytes, always a multiple of 1024. Unset means 32768.
+  optional uint32 heap_size = 4;
 }
 
 message MessageHeader {

@@ -4,6 +4,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## Unreleased
+
+* Added `version` and `transaction_config` fields to `sf.solana.type.v1.Message` for Solana transaction v1
+  (SIMD-0296). `version` holds the numeric wire version (0 or 1) and is unset for a legacy message, so v0 and
+  v1 can finally be told apart; the existing `versioned` boolean is unchanged. `transaction_config` holds the
+  compute budget that a v1 message carries inline instead of expressing it through ComputeBudget program
+  instructions.
+
+* The RPC poller now sets `version` on every message it produces. It does not yet populate
+  `transaction_config`, and `MaxSupportedTransactionVersion` still caps `getBlock` at version 0,
+  because the pinned solana-go fork decodes only legacy and v0 messages.
+
 ## v1.3.3
 
 * Fix `DeactivatedStake` parsing from rpc.

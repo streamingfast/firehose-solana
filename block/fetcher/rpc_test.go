@@ -163,3 +163,39 @@ func Test_toPbAccountKeys(t *testing.T) {
 	}
 	require.Equal(t, expected, pbAccounts)
 }
+
+func Test_toPbMessageVersion(t *testing.T) {
+	cases := []struct {
+		name     string
+		version  solana.MessageVersion
+		expected *uint32
+	}{
+		{
+			name:     "legacy message has no wire version",
+			version:  solana.MessageVersionLegacy,
+			expected: nil,
+		},
+		{
+			name:     "v0 message is wire version 0",
+			version:  solana.MessageVersionV0,
+			expected: ptr(uint32(0)),
+		},
+		{
+			// solana-go exposes no MessageVersionV1 constant yet, so the value it will
+			// hold is spelled out here.
+			name:     "v1 message is wire version 1",
+			version:  solana.MessageVersionV0 + 1,
+			expected: ptr(uint32(1)),
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			require.Equal(t, c.expected, toPbMessageVersion(c.version))
+		})
+	}
+}
+
+func ptr[T any](v T) *T {
+	return &v
+}

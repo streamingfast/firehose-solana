@@ -28,8 +28,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-//todo: find right value for maxSupportedTransactionVersion
-
+// MaxSupportedTransactionVersion caps the transaction versions getBlock is willing to
+// return. It must stay at 0 for as long as the solana-go fork decodes only legacy and
+// v0 messages: raising it makes the RPC serve v1 transactions, whose message layout the
+// v0 decoder reads as v0 and turns into wrong account keys and instructions rather than
+// an error.
 var MaxSupportedTransactionVersion = uint64(0)
 var RewardsOpt = true
 
@@ -499,8 +502,21 @@ func toPbMessage(message solana.Message) *pbsol.Message {
 		RecentBlockhash:     message.RecentBlockhash[:],
 		Instructions:        toPbInstructions(message.Instructions),
 		Versioned:           message.IsVersioned(),
+		Version:             toPbMessageVersion(message.GetVersion()),
 		AddressTableLookups: toPbAddressTableLookups(message.AddressTableLookups),
 	}
+}
+
+// toPbMessageVersion maps a decoded message version onto the transaction version as it
+// appears on the wire. A legacy message carries no version prefix and maps to nil.
+// solana.MessageVersion numbers legacy first, so a versioned message's wire version is
+// its constant minus one: MessageVersionV0 is 1 and gives wire version 0.
+func toPbMessageVersion(version solana.MessageVersion) *uint32 {
+	if version == solana.MessageVersionLegacy {
+		return nil
+	}
+	wireVersion := uint32(version) - 1
+	return &wireVersion
 }
 
 func toPbInstructions(instructions []solana.CompiledInstruction) []*pbsol.CompiledInstruction {
