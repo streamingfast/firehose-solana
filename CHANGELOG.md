@@ -12,9 +12,16 @@ for instructions to keep up to date.
   compute budget that a v1 message carries inline instead of expressing it through ComputeBudget program
   instructions.
 
-* The RPC poller now sets `version` on every message it produces. It does not yet populate
-  `transaction_config`, and `MaxSupportedTransactionVersion` still caps `getBlock` at version 0,
-  because the pinned solana-go fork decodes only legacy and v0 messages.
+* The RPC poller now sets both fields and asks `getBlock` for transaction version 1.
+
+* Moved solana-go from a fork of v1.8.4 to a fork of upstream v1.23.0, which is the release that
+  decodes a v1 message. The fork now carries a single addition, the `costUnits` field that upstream
+  does not expose. Upstream supplies better types for what the old fork patched in, which removes a
+  base64 decode and a base58 parse from the return data mapping and drops the
+  `github.com/streamingfast/solana-go` dependency altogether.
+
+* Fixed the transaction meta conversion silently discarding an error from the transaction error
+  encoder, which let a block go out with no error set on a failed transaction.
 
 ## v1.3.3
 
