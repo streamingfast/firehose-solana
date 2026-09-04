@@ -27,6 +27,7 @@ func init() {
 	tools.ToolsCmd.AddCommand(NewUpgradeCmd(logger, tracer))
 	tools.ToolsCmd.AddCommand(NewTrxChecker(logger, tracer))
 	tools.ToolsCmd.AddCommand(NewMergeCostUnitsCmd(logger, tracer))
+	tools.ToolsCmd.AddCommand(NewAddTransactionConfigsCmd(logger, tracer))
 	tools.ToolsCmd.AddCommand(NewRelinkOneBlockCmd(logger, tracer))
 	tools.ToolsCmd.AddCommand(NewRelinkAccountOneBlockCmd(logger, tracer))
 }

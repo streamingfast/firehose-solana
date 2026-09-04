@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## Unreleased
+
+* Added `firesol tools add-transaction-configs <source> <complement> <destination> -s <start> -t <stop>`, which
+  writes the blocks of the source store to the destination with the `version` and `transaction_config` fields of
+  each transaction message taken from the block of the same number in the complement store. The source store is
+  the truth for everything else.
+
+  Both stores must hold the same blocks under the same bundle filenames, each block holding the same transactions
+  in the same order; a block missing from the complement, a block hash that differs between the two, a transaction
+  count that differs or a transaction whose signatures differ stops the run rather than writing a block built from
+  two different chains. Whole bundles are written, so the range is widened to the bundle holding its first block
+  and the one holding its last.
+
 ## v1.4.0
 
 * Added `version` and `transaction_config` fields to `sf.solana.type.v1.Message` for Solana transaction v1
