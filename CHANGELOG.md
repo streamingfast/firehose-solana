@@ -6,6 +6,10 @@ for instructions to keep up to date.
 
 ## Unreleased
 
+* Added `VATDebit = 6` to `sf.solana.type.v1.RewardType`, with the same number as in Agave's storage proto. Agave
+  4.3.0-rc.1 emits a reward of that type, with a negative `lamports` value, for the validator admission ticket burn.
+  The RPC poller maps the `VATDebit` reward type to it instead of panicking on an unsupported reward type.
+
 * Added `firesol tools add-transaction-configs <source> <complement> <destination> -s <start> -t <stop>`, which
   writes the blocks of the source store to the destination with the `version` and `transaction_config` fields of
   each transaction message taken from the block of the same number in the complement store. The source store is

@@ -163,6 +163,8 @@ enum RewardType {
   Staking = 3;
   Voting = 4;
   DeactivatedStake = 5;
+  // Burn of the validator admission ticket. The reward carries a negative lamports value.
+  VATDebit = 6;
 }
 
 message Reward {

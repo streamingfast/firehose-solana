@@ -607,7 +607,10 @@ func toPBReward(rewards []rpc.BlockReward) (out []*pbsol.Reward) {
 }
 
 // not yet declared in the solana-go rpc package
-const rewardTypeDeactivatedStake = rpc.RewardType("DeactivatedStake")
+const (
+	rewardTypeDeactivatedStake = rpc.RewardType("DeactivatedStake")
+	rewardTypeVATDebit         = rpc.RewardType("VATDebit")
+)
 
 func toPBRewardType(rewardType rpc.RewardType) pbsol.RewardType {
 	switch rewardType {
@@ -621,6 +624,8 @@ func toPBRewardType(rewardType rpc.RewardType) pbsol.RewardType {
 		return pbsol.RewardType_Staking
 	case rewardTypeDeactivatedStake:
 		return pbsol.RewardType_DeactivatedStake
+	case rewardTypeVATDebit:
+		return pbsol.RewardType_VATDebit
 	case "":
 		return pbsol.RewardType_Unspecified
 	default:
