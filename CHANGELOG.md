@@ -4,7 +4,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
-## Unreleased
+## v1.5.0
 
 * Added `VATDebit = 6` to `sf.solana.type.v1.RewardType`, with the same number as in Agave's storage proto. Agave
   4.3.0-rc.1 emits a reward of that type, with a negative `lamports` value, for the validator admission ticket burn.
@@ -20,6 +20,10 @@ for instructions to keep up to date.
   count that differs or a transaction whose signatures differ stops the run rather than writing a block built from
   two different chains. Whole bundles are written, so the range is widened to the bundle holding its first block
   and the one holding its last.
+
+* Moved solana-go from the `github.com/streamingfast/gagliardetto-solana-go` fork (`v1.23.0-fh-1`) back to upstream
+  `github.com/gagliardetto/solana-go` at `937b5507386a`, which now includes the `costUnits` field the fork added. The
+  `replace` directive is gone.
 
 ## v1.4.0
 
