@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## Unreleased
+
+* Added `firesol tools remove-vote-transactions <source> <destination> -s <start> -t <stop>`, which writes the
+  blocks of the source store to the destination without their vote transactions. A vote transaction is one whose
+  message lists the Vote program in its static account keys, failed or not. Everything else in the block is
+  written unchanged.
+
 ## v1.5.0
 
 * Added `VATDebit = 6` to `sf.solana.type.v1.RewardType`, with the same number as in Agave's storage proto. Agave
