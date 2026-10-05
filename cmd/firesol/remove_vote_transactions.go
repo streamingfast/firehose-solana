@@ -23,7 +23,8 @@ func NewRemoveVoteTransactionsCmd(logger *zap.Logger, tracer logging.Tracer) *co
 		Long: `A vote transaction is one whose message lists the Vote program
 (Vote111111111111111111111111111111111111111) in its static account keys, failed or not. This is
 the same rule the 'blocks_without_votes' module of solana-common uses, except failed transactions
-that are not votes are kept. Everything else in the block is written unchanged.
+that are not votes are kept. The legacy 'payload_buffer' field, a second copy of the block that
+older files carry next to 'payload', is dropped. Everything else in the block is written unchanged.
 
 Whole bundles are written, so the range is widened to the bundle holding its first block and
 the one holding its last.`,
@@ -144,6 +145,9 @@ func removeVoteTransactions(block *pbbstream.Block) (out *pbbstream.Block, kept 
 	if err := block.Payload.MarshalFrom(solBlock); err != nil {
 		return nil, 0, 0, fmt.Errorf("marshaling block: %w", err)
 	}
+
+	// Readers ignore 'payload_buffer' when 'payload' is set, and it still holds the vote transactions.
+	block.PayloadBuffer = nil
 
 	return block, kept, before - kept, nil
 }

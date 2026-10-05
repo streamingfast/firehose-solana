@@ -25,10 +25,14 @@ func TestRemoveVoteTransactions(t *testing.T) {
 	)
 	source.Rewards = []*pbsol.Reward{{Lamports: 42}}
 
-	out, kept, removed, err := removeVoteTransactions(bstreamBlock(t, source))
+	in := bstreamBlock(t, source)
+	in.PayloadBuffer = in.Payload.Value
+
+	out, kept, removed, err := removeVoteTransactions(in)
 	require.NoError(t, err)
 	assert.Equal(t, 3, kept)
 	assert.Equal(t, 2, removed)
+	assert.Nil(t, out.PayloadBuffer, "the legacy copy of the block is dropped")
 
 	block := solanaPayload(t, out)
 

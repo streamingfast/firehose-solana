@@ -8,8 +8,9 @@ for instructions to keep up to date.
 
 * Added `firesol tools remove-vote-transactions <source> <destination> -s <start> -t <stop>`, which writes the
   blocks of the source store to the destination without their vote transactions. A vote transaction is one whose
-  message lists the Vote program in its static account keys, failed or not. Everything else in the block is
-  written unchanged.
+  message lists the Vote program in its static account keys, failed or not. The legacy `payload_buffer` field,
+  which older merged blocks carry as a second copy of the block next to `payload`, is dropped. Everything else in
+  the block is written unchanged.
 
 ## v1.5.0
 
