@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"slices"
 
 	"github.com/gagliardetto/solana-go"
@@ -27,13 +28,19 @@ that are not votes are kept. The legacy 'payload_buffer' field, a second copy of
 older files carry next to 'payload', is dropped. Everything else in the block is written unchanged.
 
 Whole bundles are written, so the range is widened to the bundle holding its first block and
-the one holding its last.`,
+the one holding its last.
+
+The source files hold 100 blocks each. With '--target-bundle-size', the destination files hold
+that many blocks instead, like 'firecore tools resize-merged-blocks' writes them. A file is
+written once all of its blocks were read, so a last file whose blocks go past the end of the
+source store is not written. The source files must follow each other without a missing file.`,
 		Args: cobra.ExactArgs(2),
 		RunE: getRemoveVoteTransactionsRunner(logger),
 	}
 
 	cmd.Flags().Uint64P("start-block", "s", 0, "First block to process")
 	cmd.Flags().Uint64P("stop-block", "t", 0, "Last block to process, 0 to run to the end of the source store")
+	cmd.Flags().Uint64("target-bundle-size", mergedBlocksBundleSize, "Number of blocks per merged-blocks file written to the destination store, a multiple of 100")
 
 	return cmd
 }
@@ -66,28 +73,57 @@ func getRemoveVoteTransactionsRunner(rootLog *zap.Logger) func(cmd *cobra.Comman
 			return fmt.Errorf("stop block %d is below start block %d", stop, start)
 		}
 
+		targetBundleSize, err := cmd.Flags().GetUint64("target-bundle-size")
+		if err != nil {
+			return err
+		}
+		if targetBundleSize == 0 || targetBundleSize%mergedBlocksBundleSize != 0 {
+			return fmt.Errorf("target bundle size %d must be a positive multiple of %d", targetBundleSize, mergedBlocksBundleSize)
+		}
+
+		bundler := &mergedBlocksBundler{
+			bundleSize:   targetBundleSize,
+			lowBlockNum:  start - start%targetBundleSize,
+			stopBlockNum: math.MaxUint64,
+			write: func(lowBlockNum uint64, blocks []*pbbstream.Block) error {
+				return writeMergedBlocks(lowBlockNum, destStore, blocks)
+			},
+		}
+		if stop != 0 {
+			bundler.stopBlockNum = stop - stop%targetBundleSize + targetBundleSize
+		}
+
 		rootLog.Info("starting to remove vote transactions",
 			zap.String("source", args[0]),
 			zap.String("destination", args[1]),
 			zap.Uint64("start", start),
 			zap.Uint64("stop", stop),
+			zap.Uint64("target_bundle_size", targetBundleSize),
 		)
 
 		var blocksProcessed, transactionsKept, votesRemoved int
 		lastFileProcessed := ""
 
-		startWalkFrom := fmt.Sprintf("%010d", start-(start%mergedBlocksBundleSize))
+		startWalkFrom := filename(bundler.lowBlockNum - bundler.lowBlockNum%mergedBlocksBundleSize)
 		err = sourceStore.WalkFrom(ctx, "", startWalkFrom, func(filename string) error {
 			startBlock := mustParseUint64(filename)
 
-			if stop != 0 && startBlock > stop {
+			if startBlock >= bundler.stopBlockNum {
 				rootLog.Debug("stopping at merged block file above stop block", zap.String("filename", filename), zap.Uint64("stop", stop))
 				return io.EOF
 			}
 
-			if startBlock+mergedBlocksBundleSize < start {
+			if startBlock+mergedBlocksBundleSize <= bundler.lowBlockNum {
 				rootLog.Debug("skipping merged block file below start block", zap.String("filename", filename))
 				return nil
+			}
+
+			if lastFileProcessed == "" {
+				// The source store can begin after the start block, the files below its first
+				// one have no block to write
+				bundler.lowBlockNum = max(bundler.lowBlockNum, startBlock-startBlock%targetBundleSize)
+			} else if expected := mustParseUint64(lastFileProcessed) + mergedBlocksBundleSize; startBlock != expected {
+				return fmt.Errorf("merged-blocks file %s is missing from the source store, found %s after %s", fmt.Sprintf("%010d", expected), filename, lastFileProcessed)
 			}
 
 			blocks, err := readBundle(ctx, sourceStore, filename)
@@ -107,16 +143,26 @@ func getRemoveVoteTransactionsRunner(rootLog *zap.Logger) func(cmd *cobra.Comman
 				votesRemoved += removed
 			}
 
-			if err := writeMergedBlocks(startBlock, destStore, blocks); err != nil {
-				return fmt.Errorf("writing merged block %d: %w", startBlock, err)
+			if err := bundler.add(blocks); err != nil {
+				return err
+			}
+			if err := bundler.writeBundlesEndingBefore(startBlock + mergedBlocksBundleSize); err != nil {
+				return err
 			}
 
 			lastFileProcessed = filename
 
+			if bundler.done() {
+				return io.EOF
+			}
 			return nil
 		})
 		if err != nil && !errors.Is(err, io.EOF) {
 			return err
+		}
+
+		if len(bundler.blocks) > 0 {
+			rootLog.Warn("last merged-blocks file not written, the source store ends before its last block", zap.String("filename", filename(bundler.lowBlockNum)))
 		}
 
 		rootLog.Info("complete",
