@@ -10,7 +10,8 @@ for instructions to keep up to date.
   blocks of the source store to the destination without their vote transactions. A vote transaction is one whose
   message lists the Vote program in its static account keys, failed or not. The legacy `payload_buffer` field,
   which older merged blocks carry as a second copy of the block next to `payload`, is dropped. Everything else in
-  the block is written unchanged.
+  the block is written unchanged. With `--target-bundle-size`, it writes merged-blocks files of that many blocks
+  instead of 100, like `firecore tools resize-merged-blocks`, in the same pass.
 
 ## v1.5.0
 
