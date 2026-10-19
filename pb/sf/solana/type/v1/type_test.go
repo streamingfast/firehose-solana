@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestBlock_GetFirehoseBlockTime(t *testing.T) {
@@ -25,12 +26,12 @@ func TestBlock_GetFirehoseBlockTime(t *testing.T) {
 		},
 		{
 			name:  "block producer time takes precedence",
-			block: &Block{BlockTime: &UnixTimestamp{Timestamp: 1760000000}, BlockProducerTimeNanos: 1760000000123456789},
+			block: &Block{BlockTime: &UnixTimestamp{Timestamp: 1760000000}, BlockProducerTimeNanos: proto.Uint64(1760000000123456789)},
 			want:  time.Unix(1760000000, 123456789),
 		},
 		{
 			name:  "block producer time without block time",
-			block: &Block{BlockProducerTimeNanos: 1760000000123456789},
+			block: &Block{BlockProducerTimeNanos: proto.Uint64(1760000000123456789)},
 			want:  time.Unix(1760000000, 123456789),
 		},
 	}
