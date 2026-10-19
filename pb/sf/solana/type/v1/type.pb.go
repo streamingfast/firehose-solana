@@ -96,9 +96,13 @@ type Block struct {
 	BlockTime         *UnixTimestamp          `protobuf:"bytes,6,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
 	BlockHeight       *BlockHeight            `protobuf:"bytes,7,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 	// StreamingFast additions
-	Slot          uint64 `protobuf:"varint,20,opt,name=slot,proto3" json:"slot,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Slot uint64 `protobuf:"varint,20,opt,name=slot,proto3" json:"slot,omitempty"`
+	// Time at which the leader produced the block, in nanoseconds since the Unix epoch, taken from the
+	// Alpenglow block footer. The value is part of the block, so every node reports the same one. Unset
+	// when the block has no footer, which is the case for every block produced before Alpenglow.
+	BlockProducerTimeNanos *uint64 `protobuf:"varint,21,opt,name=block_producer_time_nanos,json=blockProducerTimeNanos,proto3,oneof" json:"block_producer_time_nanos,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Block) Reset() {
@@ -183,6 +187,13 @@ func (x *Block) GetBlockHeight() *BlockHeight {
 func (x *Block) GetSlot() uint64 {
 	if x != nil {
 		return x.Slot
+	}
+	return 0
+}
+
+func (x *Block) GetBlockProducerTimeNanos() uint64 {
+	if x != nil && x.BlockProducerTimeNanos != nil {
+		return *x.BlockProducerTimeNanos
 	}
 	return 0
 }
@@ -1390,7 +1401,7 @@ var File_sf_solana_type_v1_type_proto protoreflect.FileDescriptor
 
 const file_sf_solana_type_v1_type_proto_rawDesc = "" +
 	"\n" +
-	"\x1csf/solana/type/v1/type.proto\x12\x11sf.solana.type.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8f\x03\n" +
+	"\x1csf/solana/type/v1/type.proto\x12\x11sf.solana.type.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xed\x03\n" +
 	"\x05Block\x12-\n" +
 	"\x12previous_blockhash\x18\x01 \x01(\tR\x11previousBlockhash\x12\x1c\n" +
 	"\tblockhash\x18\x02 \x01(\tR\tblockhash\x12\x1f\n" +
@@ -1401,7 +1412,9 @@ const file_sf_solana_type_v1_type_proto_rawDesc = "" +
 	"\n" +
 	"block_time\x18\x06 \x01(\v2 .sf.solana.type.v1.UnixTimestampR\tblockTime\x12A\n" +
 	"\fblock_height\x18\a \x01(\v2\x1e.sf.solana.type.v1.BlockHeightR\vblockHeight\x12\x12\n" +
-	"\x04slot\x18\x14 \x01(\x04R\x04slot\"\x96\x01\n" +
+	"\x04slot\x18\x14 \x01(\x04R\x04slot\x12>\n" +
+	"\x19block_producer_time_nanos\x18\x15 \x01(\x04H\x00R\x16blockProducerTimeNanos\x88\x01\x01B\x1c\n" +
+	"\x1a_block_producer_time_nanos\"\x96\x01\n" +
 	"\x14ConfirmedTransaction\x12@\n" +
 	"\vtransaction\x18\x01 \x01(\v2\x1e.sf.solana.type.v1.TransactionR\vtransaction\x12<\n" +
 	"\x04meta\x18\x02 \x01(\v2(.sf.solana.type.v1.TransactionStatusMetaR\x04meta\"c\n" +
@@ -1588,6 +1601,7 @@ func file_sf_solana_type_v1_type_proto_init() {
 	if File_sf_solana_type_v1_type_proto != nil {
 		return
 	}
+	file_sf_solana_type_v1_type_proto_msgTypes[0].OneofWrappers = []any{}
 	file_sf_solana_type_v1_type_proto_msgTypes[3].OneofWrappers = []any{}
 	file_sf_solana_type_v1_type_proto_msgTypes[4].OneofWrappers = []any{}
 	file_sf_solana_type_v1_type_proto_msgTypes[7].OneofWrappers = []any{}

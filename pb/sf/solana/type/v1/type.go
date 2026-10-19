@@ -28,6 +28,9 @@ func (x *Block) GetFirehoseBlockParentID() string {
 }
 
 func (x *Block) GetFirehoseBlockTime() time.Time {
+	if x.BlockProducerTimeNanos != nil {
+		return time.Unix(0, int64(*x.BlockProducerTimeNanos))
+	}
 	if x.BlockTime == nil {
 		return time.Unix(0, 0)
 	}

@@ -6,6 +6,10 @@ for instructions to keep up to date.
 
 ## Unreleased
 
+* Added `block_producer_time_nanos` to `sf.solana.type.v1.Block`: the time, in nanoseconds since the Unix epoch, that
+  the leader wrote in the Alpenglow block footer. It is unset for blocks without a footer. When it is set, the Firehose
+  block time is taken from it instead of `block_time`, which has whole-second precision.
+
 * Added `firesol tools remove-vote-transactions <source> <destination> -s <start> -t <stop>`, which writes the
   blocks of the source store to the destination without their vote transactions. A vote transaction is one whose
   message lists the Vote program in its static account keys, failed or not. The legacy `payload_buffer` field,
