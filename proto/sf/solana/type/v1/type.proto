@@ -19,6 +19,11 @@ message Block {
 
   // StreamingFast additions
   uint64 slot = 20;
+
+  // Time at which the leader produced the block, in nanoseconds since the Unix epoch, taken from the
+  // Alpenglow block footer. The value is part of the block, so every node reports the same one. 0 when
+  // the block has no footer, which is the case for every block produced before Alpenglow.
+  uint64 block_producer_time_nanos = 21;
 }
 
 message ConfirmedTransaction {
