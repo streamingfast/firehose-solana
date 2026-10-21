@@ -15,7 +15,11 @@ for instructions to keep up to date.
   message lists the Vote program in its static account keys, failed or not. The legacy `payload_buffer` field,
   which older merged blocks carry as a second copy of the block next to `payload`, is dropped. Everything else in
   the block is written unchanged. With `--target-bundle-size`, it writes merged-blocks files of that many blocks
-  instead of 100, like `firecore tools resize-merged-blocks`, in the same pass.
+  instead of 100, like `firecore tools resize-merged-blocks`, in the same pass. It starts at the first
+  merged-blocks file missing from the destination, so a restarted run does not write the files again. When the
+  source store ends before the stop block, it checks for the next source file every 5 seconds until it reaches the
+  stop block; a stop block far in the future, like `999999999999999900`, keeps it following the source store. With
+  a stop block of 0, it stops at the end of the source store.
 
 ## v1.5.0
 

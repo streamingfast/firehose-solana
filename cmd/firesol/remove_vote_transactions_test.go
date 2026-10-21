@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
+	"math"
 	"testing"
 
 	"github.com/gagliardetto/solana-go"
+	"github.com/streamingfast/dstore"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -50,4 +53,32 @@ func withAccountKeys(trx *pbsol.ConfirmedTransaction, keys ...solana.PublicKey) 
 	}
 
 	return trx
+}
+
+func TestFirstMissingMergedBlocksFile(t *testing.T) {
+	store := dstore.NewMockStore(nil)
+	for _, name := range []string{"0000000000", "0000001000", "0000002000", "0000004000", "0000005000"} {
+		store.SetFile(name, nil)
+	}
+
+	tests := []struct {
+		name         string
+		lowBlockNum  uint64
+		stopBlockNum uint64
+		expected     uint64
+	}{
+		{"stops at the first missing file", 0, math.MaxUint64, 3000},
+		{"starts from the low block number", 4000, math.MaxUint64, 6000},
+		{"first file missing", 3000, math.MaxUint64, 3000},
+		{"stops at the stop block", 0, 2000, 2000},
+		{"empty store range", 10000, math.MaxUint64, 10000},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := firstMissingMergedBlocksFile(context.Background(), store, test.lowBlockNum, 1000, test.stopBlockNum)
+			require.NoError(t, err)
+			assert.Equal(t, test.expected, got)
+		})
+	}
 }
