@@ -598,8 +598,8 @@ github.com/streamingfast/dtracing v0.0.0-20260303163312-862cb0fb60c9 h1:RaMv0J2e
 github.com/streamingfast/dtracing v0.0.0-20260303163312-862cb0fb60c9/go.mod h1:huOJyjMYS6K8upTuxDxaNd+emD65RrXoVBvh8f1/7Ns=
 github.com/streamingfast/firehose-core v1.20.2-0.20261009152627-5f8a2a1e995d h1:/oTLZq4iRozMF9Yx9bRzLBKMyRF8t35FlKS8AOavVPg=
 github.com/streamingfast/firehose-core v1.20.2-0.20261009152627-5f8a2a1e995d/go.mod h1:5yU0HK+QbuqpIMXINgpHD33v+r+WI1PiXxFv7EUAqnE=
-github.com/streamingfast/firehose-networks v0.3.0 h1:B8OQi8AyWibO447B6pPBrTLVaCAeNLzINLDrHSz+x8A=
-github.com/streamingfast/firehose-networks v0.3.0/go.mod h1:Amq/pDHhecniGGzItUBqwnTbdNI5sigtAS8STa4AGNY=
+github.com/streamingfast/firehose-networks v0.3.1 h1:zPpbRLhNtxAgdo5dPADwlQLirg0v5HWBcBcQEZWLYxQ=
+github.com/streamingfast/firehose-networks v0.3.1/go.mod h1:Amq/pDHhecniGGzItUBqwnTbdNI5sigtAS8STa4AGNY=
 github.com/streamingfast/logging v0.0.0-20210811175431-f3b44b61606a/go.mod h1:4GdqELhZOXj4xwc4IaBmzofzdErGynnaSzuzxy0ZIBo=
 github.com/streamingfast/logging v0.0.0-20220304183711-ddba33d79e27/go.mod h1:4GdqELhZOXj4xwc4IaBmzofzdErGynnaSzuzxy0ZIBo=
 github.com/streamingfast/logging v0.0.0-20220304214715-bc750a74b424/go.mod h1:VlduQ80JcGJSargkRU4Sg9Xo63wZD/l8A5NC/Uo1/uU=

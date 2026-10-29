@@ -182,7 +182,7 @@ require (
 	github.com/streamingfast/dmetrics v0.0.0-20260819172634-28069dc8018a // indirect
 	github.com/streamingfast/dsession v0.0.0-20260414190543-79b9846e7c58 // indirect
 	github.com/streamingfast/dtracing v0.0.0-20260303163312-862cb0fb60c9 // indirect
-	github.com/streamingfast/firehose-networks v0.3.0 // indirect
+	github.com/streamingfast/firehose-networks v0.3.1 // indirect
 	github.com/streamingfast/opaque v0.0.0-20210811180740-0c01d37ea308 // indirect
 	github.com/streamingfast/pbgo v0.0.6-0.20260206150405-2b95acf70437 // indirect
 	github.com/streamingfast/sf-tracing v0.0.0-20251218140752-bafd5572499f // indirect
