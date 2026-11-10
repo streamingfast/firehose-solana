@@ -4,7 +4,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
-## Unreleased
+## v1.6.0
 
 * Added `transaction_indexes` to `sf.solana.type.v1.Account`: the indexes, in ascending order, of the transactions
   that wrote the account in the slot. An account can be written by several transactions of the same slot, and the
@@ -27,6 +27,12 @@ for instructions to keep up to date.
   which older merged blocks carry as a second copy of the block next to `payload`, is dropped. Everything else in
   the block is written unchanged. With `--target-bundle-size`, it writes merged-blocks files of that many blocks
   instead of 100, like `firecore tools resize-merged-blocks`, in the same pass.
+
+* Bumped `firehose-core` from `v1.15.0` to `v1.20.2-0.20261009152627-5f8a2a1e995d`, along with `bstream` and
+  `dstore`. See the [firehose-core changelog](https://github.com/streamingfast/firehose-core/blob/develop/CHANGELOG.md)
+  for the changes `firesol` picks up.
+
+* The `solana` Substreams package built from `substreams.yaml` is now `v0.1.6`, with the protobuf changes above.
 
 ## v1.5.0
 
