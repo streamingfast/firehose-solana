@@ -6,6 +6,17 @@ for instructions to keep up to date.
 
 ## Unreleased
 
+* Added `transaction_indexes` to `sf.solana.type.v1.Account`: the indexes, in ascending order, of the transactions
+  that wrote the account in the slot. An account can be written by several transactions of the same slot, and the
+  account block carries its state after the last one. The list is empty when no transaction wrote the account, for
+  example a reward, a sysvar update or a feature activation. An index is the transaction's position in the block as
+  Agave executed it, so it no longer matches `Block.transactions` after `firesol tools remove-vote-transactions`.
+
+* Added `BlockRevenueSharing = 7` to `sf.solana.type.v1.RewardType`, with the same number as in Agave's storage
+  proto. Once SIMD-0123 (`block_revenue_sharing`) is active, Agave 4.5 pays a stake account's share of the block
+  revenue as a reward of that type, next to the account's `Staking` reward and under the same pubkey. The RPC poller
+  maps the `BlockRevenueSharing` reward type to it instead of panicking on an unsupported reward type.
+
 * Added `block_producer_time_nanos` to `sf.solana.type.v1.Block`: the time, in nanoseconds since the Unix epoch, that
   the leader wrote in the Alpenglow block footer. It is unset for blocks without a footer. When it is set, the Firehose
   block time is taken from it instead of `block_time`, which has whole-second precision.

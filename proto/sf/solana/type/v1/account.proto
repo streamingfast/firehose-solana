@@ -20,4 +20,10 @@ message Account {
   bytes owner = 2;
   bytes data = 3;
   bool deleted = 7;
+  // Indexes of the transactions that wrote this account in the slot, in ascending order. An index
+  // is the position Agave gave the transaction in the block, which is its position in
+  // `Block.transactions` unless transactions were removed from the block afterwards. Empty when
+  // no transaction wrote the account, for example a reward, a sysvar update or a feature
+  // activation.
+  repeated uint32 transaction_indexes = 8;
 }
