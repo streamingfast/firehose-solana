@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"math"
 	"slices"
+	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/spf13/cobra"
@@ -32,8 +34,17 @@ the one holding its last.
 
 The source files hold 100 blocks each. With '--target-bundle-size', the destination files hold
 that many blocks instead, like 'firecore tools resize-merged-blocks' writes them. A file is
-written once all of its blocks were read, so a last file whose blocks go past the end of the
-source store is not written. The source files must follow each other without a missing file.`,
+written once all of its blocks were read, so with a stop block of 0, a last file whose blocks go
+past the end of the source store is not written. The source files must follow each other without
+a missing file.
+
+The files already in the destination store, from the first one of the range up to the first one
+missing, are not written again: the command starts at the first file missing.
+
+When the source store ends before the stop block, the command checks for the next source file
+every 5 seconds until it reaches the stop block. A stop block far in the future, like
+999999999999999900, keeps it following the source store as new files are written. With a stop
+block of 0, it stops at the end of the source store.`,
 		Args: cobra.ExactArgs(2),
 		RunE: getRemoveVoteTransactionsRunner(logger),
 	}
@@ -93,19 +104,35 @@ func getRemoveVoteTransactionsRunner(rootLog *zap.Logger) func(cmd *cobra.Comman
 			bundler.stopBlockNum = stop - stop%targetBundleSize + targetBundleSize
 		}
 
+		resumeFrom, err := firstMissingMergedBlocksFile(ctx, destStore, bundler.lowBlockNum, targetBundleSize, bundler.stopBlockNum)
+		if err != nil {
+			return fmt.Errorf("listing destination store: %w", err)
+		}
+		if resumeFrom != bundler.lowBlockNum {
+			rootLog.Info("skipping merged-blocks files already in the destination store",
+				zap.String("first", filename(bundler.lowBlockNum)),
+				zap.String("last", filename(resumeFrom-targetBundleSize)),
+			)
+			bundler.lowBlockNum = resumeFrom
+		}
+		if bundler.done() {
+			rootLog.Info("every merged-blocks file of the range is already in the destination store")
+			return nil
+		}
+
 		rootLog.Info("starting to remove vote transactions",
 			zap.String("source", args[0]),
 			zap.String("destination", args[1]),
 			zap.Uint64("start", start),
 			zap.Uint64("stop", stop),
 			zap.Uint64("target_bundle_size", targetBundleSize),
+			zap.String("first_file_written", filename(bundler.lowBlockNum)),
 		)
 
 		var blocksProcessed, transactionsKept, votesRemoved int
 		lastFileProcessed := ""
 
-		startWalkFrom := filename(bundler.lowBlockNum - bundler.lowBlockNum%mergedBlocksBundleSize)
-		err = sourceStore.WalkFrom(ctx, "", startWalkFrom, func(filename string) error {
+		processFile := func(filename string) error {
 			startBlock := mustParseUint64(filename)
 
 			if startBlock >= bundler.stopBlockNum {
@@ -156,7 +183,29 @@ func getRemoveVoteTransactionsRunner(rootLog *zap.Logger) func(cmd *cobra.Comman
 				return io.EOF
 			}
 			return nil
-		})
+		}
+
+		walkFrom := filename(bundler.lowBlockNum - bundler.lowBlockNum%mergedBlocksBundleSize)
+		for {
+			err = sourceStore.WalkFrom(ctx, "", walkFrom, processFile)
+			if err != nil || stop == 0 {
+				break
+			}
+
+			// The source store ends before the stop block, wait for its next file to be written
+			if lastFileProcessed != "" {
+				walkFrom = filename(mustParseUint64(lastFileProcessed) + mergedBlocksBundleSize)
+			}
+			rootLog.Info("waiting for next merged block file", zap.String("filename", walkFrom), zap.Duration("retry_delay", sourceFileRetryDelay))
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+			case <-time.After(sourceFileRetryDelay):
+			}
+			if err != nil {
+				break
+			}
+		}
 		if err != nil && !errors.Is(err, io.EOF) {
 			return err
 		}
@@ -174,6 +223,28 @@ func getRemoveVoteTransactionsRunner(rootLog *zap.Logger) func(cmd *cobra.Comman
 
 		return nil
 	}
+}
+
+// sourceFileRetryDelay is how long remove-vote-transactions waits before checking again for the
+// next source file when the source store ends before the stop block.
+const sourceFileRetryDelay = 5 * time.Second
+
+// firstMissingMergedBlocksFile returns the low block number of the first merged-blocks file of
+// `bundleSize` blocks, from `lowBlockNum` up to `stopBlockNum`, that the store does not hold.
+func firstMissingMergedBlocksFile(ctx context.Context, store dstore.Store, lowBlockNum, bundleSize, stopBlockNum uint64) (uint64, error) {
+	err := store.WalkFrom(ctx, "", filename(lowBlockNum), func(name string) error {
+		if lowBlockNum >= stopBlockNum || name != filename(lowBlockNum) {
+			return io.EOF
+		}
+
+		lowBlockNum += bundleSize
+		return nil
+	})
+	if err != nil && !errors.Is(err, io.EOF) {
+		return 0, err
+	}
+
+	return lowBlockNum, nil
 }
 
 // removeVoteTransactions returns the block without its vote transactions, and reports how many
