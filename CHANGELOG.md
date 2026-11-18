@@ -4,6 +4,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## Unreleased
+
+* Added `firesol tools compare-blocks`, firecore's `compare-blocks` with a Solana block sanitizer. Comparing RPC
+  poller blocks with geyser plugin ones flags every block with rewards, because the poller sorts them while geyser
+  keeps the validator's order, and older poller versions write a zero commission as `"0"` where geyser leaves it
+  empty. `FIRESOL_COMPARE_IGNORE_REWARDS_ORDER=true` compares a block's rewards ignoring their order, and
+  `FIRESOL_COMPARE_IGNORE_ZERO_COMMISSION_FORMAT=true` treats a `"0"` commission the same as an empty one. Without
+  them, blocks are compared as stored, like `firecore tools compare-blocks`.
+
 ## v1.6.0
 
 * Added `transaction_indexes` to `sf.solana.type.v1.Account`: the indexes, in ascending order, of the transactions

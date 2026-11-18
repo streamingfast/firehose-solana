@@ -31,6 +31,7 @@ func init() {
 	tools.ToolsCmd.AddCommand(NewRemoveVoteTransactionsCmd(logger, tracer))
 	tools.ToolsCmd.AddCommand(NewRelinkOneBlockCmd(logger, tracer))
 	tools.ToolsCmd.AddCommand(NewRelinkAccountOneBlockCmd(logger, tracer))
+	tools.ToolsCmd.AddCommand(NewToolsCompareBlocksCmd(logger))
 }
 
 func main() {
