@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
+## Unreleased
+
+* The RPC poller writes a reward's zero commission as an empty string, like the geyser plugin. It used to write
+  `"0"`, so the same block differed between the two extractors.
+
+* The RPC poller sorts a block's rewards by lamports, then by pubkey. Sorting by lamports alone was an unstable sort,
+  and many rewards share the same lamports (often 0), so fetching the same block twice could give different orders.
+  The order is now the same every time and from any RPC endpoint. It still differs from the geyser plugin's, which
+  keeps the validator's order: RPC endpoints don't agree on one.
+
 ## v1.6.0
 
 * Added `transaction_indexes` to `sf.solana.type.v1.Account`: the indexes, in ascending order, of the transactions

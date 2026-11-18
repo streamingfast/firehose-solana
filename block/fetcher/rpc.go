@@ -592,15 +592,22 @@ func toPBReward(rewards []rpc.BlockReward) (out []*pbsol.Reward) {
 			PostBalance: r.PostBalance,
 			RewardType:  toPBRewardType(r.RewardType),
 		}
-		if r.Commission != nil {
+		// a zero commission is left empty, like the geyser plugin does
+		if r.Commission != nil && *r.Commission != 0 {
 			reward.Commission = strconv.Itoa(int(*r.Commission))
 		}
 		out = append(out, reward)
 
 	}
 
+	// RPC endpoints don't agree on the order of rewards, so sort them. Many rewards share the same
+	// lamports (often 0), so break ties on the pubkey: the order is the same however often, and from
+	// whichever endpoint, a block is fetched.
 	slices.SortFunc(out, func(a, b *pbsol.Reward) int {
-		return cmp.Compare(a.Lamports, b.Lamports)
+		if c := cmp.Compare(a.Lamports, b.Lamports); c != 0 {
+			return c
+		}
+		return cmp.Compare(a.Pubkey, b.Pubkey)
 	})
 
 	return
