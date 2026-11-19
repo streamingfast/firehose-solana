@@ -181,12 +181,12 @@ func Test_toPbMessageVersion(t *testing.T) {
 		{
 			name:     "v0 message is wire version 0",
 			version:  solana.MessageVersionV0,
-			expected: ptr(uint32(0)),
+			expected: new(uint32(0)),
 		},
 		{
 			name:     "v1 message is wire version 1",
 			version:  solana.MessageVersionV1,
-			expected: ptr(uint32(1)),
+			expected: new(uint32(1)),
 		},
 	}
 
@@ -195,10 +195,6 @@ func Test_toPbMessageVersion(t *testing.T) {
 			require.Equal(t, c.expected, toPbMessageVersion(c.version))
 		})
 	}
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }
 
 func Test_toPbTransactionConfig(t *testing.T) {
@@ -215,34 +211,34 @@ func Test_toPbTransactionConfig(t *testing.T) {
 		{
 			name: "a v1 message carrying only a priority fee leaves the rest unset",
 			config: solana.TransactionConfig{
-				PriorityFee: ptr(uint64(5000)),
+				PriorityFee: new(uint64(5000)),
 			},
 			expected: &pbsol.TransactionConfig{
-				PriorityFee: ptr(uint64(5000)),
+				PriorityFee: new(uint64(5000)),
 			},
 		},
 		{
 			name: "every config value is carried through",
 			config: solana.TransactionConfig{
-				PriorityFee:                 ptr(uint64(5000)),
-				ComputeUnitLimit:            ptr(uint32(200000)),
-				LoadedAccountsDataSizeLimit: ptr(uint32(65536)),
-				HeapSize:                    ptr(uint32(262144)),
+				PriorityFee:                 new(uint64(5000)),
+				ComputeUnitLimit:            new(uint32(200000)),
+				LoadedAccountsDataSizeLimit: new(uint32(65536)),
+				HeapSize:                    new(uint32(262144)),
 			},
 			expected: &pbsol.TransactionConfig{
-				PriorityFee:                 ptr(uint64(5000)),
-				ComputeUnitLimit:            ptr(uint32(200000)),
-				LoadedAccountsDataSizeLimit: ptr(uint32(65536)),
-				HeapSize:                    ptr(uint32(262144)),
+				PriorityFee:                 new(uint64(5000)),
+				ComputeUnitLimit:            new(uint32(200000)),
+				LoadedAccountsDataSizeLimit: new(uint32(65536)),
+				HeapSize:                    new(uint32(262144)),
 			},
 		},
 		{
 			name: "a zero value is kept, since requesting zero differs from not requesting",
 			config: solana.TransactionConfig{
-				ComputeUnitLimit: ptr(uint32(0)),
+				ComputeUnitLimit: new(uint32(0)),
 			},
 			expected: &pbsol.TransactionConfig{
-				ComputeUnitLimit: ptr(uint32(0)),
+				ComputeUnitLimit: new(uint32(0)),
 			},
 		},
 	}
@@ -296,14 +292,14 @@ func Test_toPbTransaction_v1_roundtrip(t *testing.T) {
 	out := toPbTransaction(decoded)
 
 	require.True(t, out.Message.Versioned)
-	require.Equal(t, ptr(uint32(1)), out.Message.Version)
+	require.Equal(t, new(uint32(1)), out.Message.Version)
 	require.Empty(t, out.Message.AddressTableLookups, "v1 has no address lookup tables")
 	require.Equal(t, blockhash[:], out.Message.RecentBlockhash)
 	require.Equal(t, [][]byte{payer.Bytes(), recipient.Bytes(), solana.SystemProgramID.Bytes()}, out.Message.AccountKeys)
 	require.Len(t, out.Message.Instructions, 1)
 	require.Equal(t, &pbsol.TransactionConfig{
-		PriorityFee:      ptr(uint64(1_000)),
-		ComputeUnitLimit: ptr(uint32(20_000)),
+		PriorityFee:      new(uint64(1_000)),
+		ComputeUnitLimit: new(uint32(20_000)),
 	}, out.Message.TransactionConfig)
 }
 
