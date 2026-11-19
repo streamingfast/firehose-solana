@@ -110,7 +110,7 @@ func MustNewTransactionError(e any) *TransactionError {
 		panic(fmt.Errorf("unknown error name: %s", errorName))
 	}
 
-	if mapErr, ok := e.(map[string]interface{}); ok {
+	if mapErr, ok := e.(map[string]any); ok {
 		if len(mapErr) != 1 {
 			panic(fmt.Errorf("unknown error map: %v", mapErr))
 		}
@@ -181,7 +181,7 @@ func (e *InsufficientFundsForRentError) Encode(encoder *bin.Encoder) error {
 }
 
 func MustNewProgramExecutionTemporarilyRestrictedError(e any) *ProgramExecutionTemporarilyRestrictedError {
-	mapE, ok := e.(map[string]interface{})
+	mapE, ok := e.(map[string]any)
 	if !ok {
 		panic(fmt.Errorf("expected map[string]interface{}, got: %T", e))
 	}
@@ -202,7 +202,7 @@ func MustNewProgramExecutionTemporarilyRestrictedError(e any) *ProgramExecutionT
 }
 
 func MustNewInsufficientFundsForRentError(e any) *InsufficientFundsForRentError {
-	mapE, ok := e.(map[string]interface{})
+	mapE, ok := e.(map[string]any)
 	if !ok {
 		panic(fmt.Errorf("expected map[string]interface{}, got: %T", e))
 	}

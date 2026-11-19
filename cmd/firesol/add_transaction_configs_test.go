@@ -20,8 +20,8 @@ func TestAddTransactionConfigs(t *testing.T) {
 	source.Transactions[0].Meta = &pbsol.TransactionStatusMeta{Fee: 5000}
 
 	complement := solanaBlock(t, 100, "block-100",
-		transaction("sig-a", ptr(uint32(1)), &pbsol.TransactionConfig{PriorityFee: ptr(uint64(42))}),
-		transaction("sig-b", ptr(uint32(0)), nil),
+		transaction("sig-a", new(uint32(1)), &pbsol.TransactionConfig{PriorityFee: new(uint64(42))}),
+		transaction("sig-b", new(uint32(0)), nil),
 	)
 	complement.Transactions[0].Meta = &pbsol.TransactionStatusMeta{Fee: 9999}
 
@@ -43,7 +43,7 @@ func TestAddTransactionConfigs(t *testing.T) {
 }
 
 func TestAddTransactionConfigsUnsetsWhatTheComplementDoesNotHave(t *testing.T) {
-	source := solanaBlock(t, 100, "block-100", transaction("sig-a", ptr(uint32(1)), &pbsol.TransactionConfig{PriorityFee: ptr(uint64(42))}))
+	source := solanaBlock(t, 100, "block-100", transaction("sig-a", new(uint32(1)), &pbsol.TransactionConfig{PriorityFee: new(uint64(42))}))
 	complement := solanaBlock(t, 100, "block-100", transaction("sig-a", nil, nil))
 
 	merged, versionsSet, configsSet, err := addTransactionConfigs(bstreamBlock(t, source), bstreamBlock(t, complement))
@@ -124,8 +124,4 @@ func solanaPayload(t *testing.T, block *pbbstream.Block) *pbsol.Block {
 	require.NoError(t, block.Payload.UnmarshalTo(out))
 
 	return out
-}
-
-func ptr[T any](in T) *T {
-	return &in
 }
