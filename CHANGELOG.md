@@ -6,6 +6,13 @@ for instructions to keep up to date.
 
 ## Unreleased
 
+* Added `firesol tools compare-blocks`, firecore's `compare-blocks` with a Solana block sanitizer. Comparing RPC
+  poller blocks with geyser plugin ones flags every block with rewards, because the poller sorts them while geyser
+  keeps the validator's order, and older poller versions write a zero commission as `"0"` where geyser leaves it
+  empty. `FIRESOL_COMPARE_IGNORE_REWARDS_ORDER=true` compares a block's rewards ignoring their order, and
+  `FIRESOL_COMPARE_IGNORE_ZERO_COMMISSION_FORMAT=true` treats a `"0"` commission the same as an empty one. Without
+  them, blocks are compared as stored, like `firecore tools compare-blocks`.
+
 * The RPC poller writes a reward's zero commission as an empty string, like the geyser plugin. It used to write
   `"0"`, so the same block differed between the two extractors.
 
