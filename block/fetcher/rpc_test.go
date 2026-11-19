@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
 	pbsol "github.com/streamingfast/firehose-solana/pb/sf/solana/type/v1"
 
 	bin "github.com/streamingfast/binary"
@@ -322,4 +323,30 @@ func Test_toPbTransaction_legacy_has_no_version(t *testing.T) {
 	require.False(t, out.Message.Versioned)
 	require.Nil(t, out.Message.Version)
 	require.Nil(t, out.Message.TransactionConfig)
+}
+
+func Test_toPBReward(t *testing.T) {
+	zero, five := uint8(0), uint8(5)
+	a := solana.MustPublicKeyFromBase58("5CBkJdDPMWCmss3Y48B36w78Bgxur4mDib6tQ9yMKe1B")
+	b := solana.MustPublicKeyFromBase58("B9aUcoqmbxJgbPb28oVoZg6WsXUj6Hf6Wu5P7CUbJ6NU")
+	c := solana.MustPublicKeyFromBase58("ASUga5j73Rd4zDMhKQYdyo2BZQEdU4MFhCLFg1v38We9")
+	in := []rpc.BlockReward{
+		{Pubkey: c, Lamports: 4814176221, PostBalance: 20153915197, RewardType: rpc.RewardTypeVoting, Commission: &five},
+		{Pubkey: b, Lamports: 0, PostBalance: 101240160, RewardType: rpc.RewardTypeVoting, Commission: &zero},
+		{Pubkey: a, Lamports: 0, PostBalance: 279937009, RewardType: rpc.RewardTypeVoting},
+	}
+
+	out := toPBReward(in)
+	require.Len(t, out, 3)
+	// equal lamports are ordered by pubkey, whatever the input order
+	require.Equal(t, a.String(), out[0].Pubkey)
+	require.Equal(t, b.String(), out[1].Pubkey)
+	require.Equal(t, c.String(), out[2].Pubkey)
+	// a zero commission is empty, like the geyser plugin writes it
+	require.Equal(t, "", out[0].Commission)
+	require.Equal(t, "", out[1].Commission)
+	require.Equal(t, "5", out[2].Commission)
+
+	reversed := []rpc.BlockReward{in[2], in[1], in[0]}
+	require.Equal(t, out, toPBReward(reversed), "the order doesn't depend on the input order")
 }
