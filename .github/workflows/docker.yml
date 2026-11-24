@@ -52,6 +52,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Short commit
+        id: sha
+        shell: bash
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Generate docker tags/labels from github build context
         id: meta
         uses: docker/metadata-action@v6
@@ -74,6 +79,16 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      # Scan the pushed sha tag (also carried by the release tag), a critical/high finding fails the job
+      - name: Scan the image
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        uses: streamingfast/actions/image-scan/gate@v1
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sha.outputs.short }}
+          dockerhub-user: ${{ secrets.DOCKER_SCOUT_USER }}
+          dockerhub-password: ${{ secrets.DOCKER_SCOUT_PASSWORD }}
+          severities: critical,high
 
   slack-notifications:
     needs: [build]
