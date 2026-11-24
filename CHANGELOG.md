@@ -6,6 +6,8 @@ for instructions to keep up to date.
 
 ## Unreleased
 
+* Bumped `golang.org/x/net` to v0.62.0, `github.com/klauspost/compress` to v1.20.2 and `github.com/go-jose/go-jose/v4` to v4.1.6 to fix critical/high CVEs reported by the image scan.
+
 * Added `firesol tools compare-blocks`, firecore's `compare-blocks` with a Solana block sanitizer. Comparing RPC
   poller blocks with geyser plugin ones flags every block with rewards, because the poller sorts them while geyser
   keeps the validator's order, and older poller versions write a zero commission as `"0"` where geyser leaves it
