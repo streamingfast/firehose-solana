@@ -4,7 +4,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). See [MAINTAINERS.md](./MAINTAINERS.md)
 for instructions to keep up to date.
 
-## Unreleased
+## v1.7.0
 
 * Bumped `golang.org/x/net` to v0.62.0, `github.com/klauspost/compress` to v1.20.2 and `github.com/go-jose/go-jose/v4` to v4.1.6 to fix critical/high CVEs reported by the image scan.
 
